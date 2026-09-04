@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QuantumSession compilation reuses qubits after deleted QuantumVariables."""
+
 
 # Created by ann81984 at 06.05.2022
 # import pytest

@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QuantumModulus and BigInteger arithmetic, including Montgomery multiplication, under Jasp tracing."""
 
 import math
 import random

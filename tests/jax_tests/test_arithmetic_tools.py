@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests arithmetic tool functions q_min, q_max, q_floor, q_ceil, and q_fractional."""
 
 from math import ceil, floor
 

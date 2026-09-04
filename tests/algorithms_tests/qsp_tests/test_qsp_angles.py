@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests angle-finding routines for GQSP, QSP, and QSVT phase sequences."""
 
 import numpy as np
 import pytest

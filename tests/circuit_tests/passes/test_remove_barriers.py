@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the remove_barriers circuit pass in qrisp.circuit.pass_management.passes.remove_barriers."""
 
 from __future__ import annotations
 

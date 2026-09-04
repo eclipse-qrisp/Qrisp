@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the BlockEncoding.inv matrix inversion transformation in qrisp.block_encodings."""
 
 import numpy as np
 import pytest

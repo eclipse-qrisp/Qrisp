@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests VQE ground-state energy for the H2 molecule via qrisp.vqe.problems.electronic_structure."""
 
 import jax.numpy as jnp
 import numpy as np

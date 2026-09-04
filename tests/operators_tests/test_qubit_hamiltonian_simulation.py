@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QubitOperator trotterization, ground state energy, and QPE-based Hamiltonian simulation."""
 
 import numpy as np
 from scipy.linalg import expm, norm

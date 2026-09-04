@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the Catalyst/QIR/MLIR compilation interface for Jasp programs via qjit."""
 
 import itertools
 import time

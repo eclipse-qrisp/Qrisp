@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests that multiplying a QubitOperator by zero produces an operator with an empty terms dict."""
 
 from qrisp.operators.qubit import X
 

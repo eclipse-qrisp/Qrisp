@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the conjugate environment using a QFT-based Fourier adder, including controlled versions."""
 
 import numpy as np
 

@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for abstract (symbolic) parameters in gates such as PGate and xxyy."""
 
 # Created by ann81984 at 04.05.2022
 import random

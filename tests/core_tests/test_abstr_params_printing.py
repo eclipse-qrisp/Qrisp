@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests printing and conversion of circuits with abstract parameters between qrisp and qiskit."""
 
 # Created by nik40643 at 23.06.2023
 

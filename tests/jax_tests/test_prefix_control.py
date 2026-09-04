@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the Jasp control-flow primitives q_fori_loop, q_while_loop, and q_cond."""
 
 from qrisp import *
 from qrisp.jasp import *

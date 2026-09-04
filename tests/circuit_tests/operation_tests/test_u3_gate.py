@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for U3Gate and its named variants in qrisp.circuit.standard_operations."""
 
 import numpy as np
 import pytest

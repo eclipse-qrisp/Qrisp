@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests compilation of QuantumEnvironment blocks (invert, qache) via jasp_function_test."""
 
 from qrisp import *
 from qrisp.jasp import *

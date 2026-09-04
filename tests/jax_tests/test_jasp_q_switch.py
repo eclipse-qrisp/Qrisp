@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests q_switch branch selection under Jasp tracing, including tree/sequential methods and control."""
+
 
 # classical indexed switch tests
 

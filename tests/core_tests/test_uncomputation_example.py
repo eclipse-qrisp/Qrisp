@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests uncomputation, recomputation, and environment interactions for quantum variables."""
 
 # Created by ann81984 at 07.05.2022
 import numpy as np

@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the resolve_swaps pass in qrisp.circuit.pass_management.passes.resolve_swaps."""
 
 from __future__ import annotations
 

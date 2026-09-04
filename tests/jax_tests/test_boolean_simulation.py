@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the boolean_simulation decorator: parity, pytree returns, and callback_threshold."""
 
 import jax.numpy as jnp
 from jax import lax

@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests FermionicOperator.from_pyscf for molecular Hamiltonians."""
 
 from qrisp import QuantumVariable
 from qrisp.operators import FermionicOperator

@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QAOA for the Max-k-Colorable Subgraph problem with one-hot and binary QuantumColor encodings."""
 
 import random
 from operator import itemgetter

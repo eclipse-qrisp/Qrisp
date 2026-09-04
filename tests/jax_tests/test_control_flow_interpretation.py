@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests Jasp interpretation of JAX control flow (fori_loop, switch, scan) and qswitch state prep."""
 
 from jax import random
 from jax.lax import fori_loop, switch

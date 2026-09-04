@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the sample and expectation_value primitives, including classical and mixed returns under Jasp."""
 
 from qrisp import QuantumBool, QuantumFloat, conjugate, control, cx, h, measure, t, x
 from qrisp.jasp import expectation_value, jaspify, jrange, q_while_loop, sample

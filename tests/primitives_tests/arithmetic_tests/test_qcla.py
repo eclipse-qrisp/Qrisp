@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the quantum carry-lookahead adder (qcla) carry generation and addition for qq and cq cases."""
 
 import numpy as np
 

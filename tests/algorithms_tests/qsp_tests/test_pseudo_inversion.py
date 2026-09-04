@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QSVT-based pseudo-inversion on a small non-Hermitian matrix."""
 
 import numpy as np
 from qrisp.gqsp import pseudo_inversion

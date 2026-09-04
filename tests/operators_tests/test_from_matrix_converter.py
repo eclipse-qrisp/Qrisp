@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QubitOperator.from_matrix against random sparse matrices."""
 
 from scipy.sparse import random as random_sparse
 from scipy.sparse.linalg import norm

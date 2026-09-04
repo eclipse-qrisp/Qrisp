@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the QuantumBacktrackingTree class in qrisp.quantum_backtracking."""
 
 from qrisp.quantum_backtracking import QuantumBacktrackingTree
 from sympy import Float

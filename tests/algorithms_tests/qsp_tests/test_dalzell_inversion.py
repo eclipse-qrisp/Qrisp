@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests Dalzell's inversion algorithm from qrisp.gqsp on a small matrix block encoding."""
 
 import numpy as np
 import pytest

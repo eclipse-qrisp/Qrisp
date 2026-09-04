@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the GXX_converter function in qrisp.misc.GMS_tools."""
 
 # Created by ann81984 at 29.04.2022
 import random

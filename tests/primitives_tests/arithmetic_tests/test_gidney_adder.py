@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests gidney_adder correctness, carry/control options, ancilla cleanup, and T-count vs cuccaro_adder."""
 
 import numpy as np
 import pytest

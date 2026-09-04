@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the convert_to_prx circuit pass in qrisp.circuit.pass_management.passes.convert_to_prx."""
 
 import numpy as np
 

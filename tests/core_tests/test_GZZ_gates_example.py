@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the GZZ_converter and gms_multi_cx_fan_in functions in qrisp.misc.GMS_tools."""
 
 # Created by ann81984 at 05.05.2022
 import numpy as np

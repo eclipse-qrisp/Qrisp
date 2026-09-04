@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests cuccaro_adder addition with c_in, c_out, ctrl, and classical/quantum addends."""
 
 import pytest
 

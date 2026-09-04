@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QubitOperator conversion to Pauli representation and extraction of Pauli coefficient dicts."""
 
 from numpy import isclose
 from numpy.linalg import norm

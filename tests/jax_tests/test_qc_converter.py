@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for Jaspr.to_qc, covering circuit conversion, measurement arrays, parity, and processed measurements."""
 
 from qrisp import QuantumArray, QuantumBool, QuantumCircuit, QuantumFloat, QuantumVariable, control, cx, measure, rz, x
 from qrisp.jasp import ProcessedMeasurement, flatten_pjit, make_jaspr, qache

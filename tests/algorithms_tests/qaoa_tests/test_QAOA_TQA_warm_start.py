@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests that TQA warm-start initialization outperforms random initialization for QAOA MaxCut."""
 
 import networkx as nx
 from qrisp.qaoa import *

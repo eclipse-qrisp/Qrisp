@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests gidney carry-venting adders: carry_venting_adder, dirty_ancillae_adder, gidney_cq_venting_adder."""
 
 import pytest
 

@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests encoding and measuring a QuantumString containing the phrase hello world."""
+
 
 # Created by ann81984 at 06.05.2022
 # import pytest

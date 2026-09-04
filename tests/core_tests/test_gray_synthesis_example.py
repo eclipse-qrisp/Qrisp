@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests gray code logic synthesis against a TruthTable in qrisp.alg_primitives.logic_synthesis."""
 
 # Created by ann81984 at 27.04.2022
 import pytest

@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests comparison operators (eq, neq, lt, gt, leq, geq) for QuantumFloat and QuantumModulus."""
 
 import numpy as np
 

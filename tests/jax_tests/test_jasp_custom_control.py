@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the custom_control decorator for custom-controlled subroutines under Jasp tracing."""
 
 from qrisp import *
 from qrisp.jasp import *

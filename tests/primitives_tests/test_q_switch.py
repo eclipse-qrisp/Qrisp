@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the q_switch primitive across index types, branch methods, and branch cutoffs."""
 
 from qrisp import QuantumFloat, h, inpl_mult, multi_measurement, q_switch, x
 

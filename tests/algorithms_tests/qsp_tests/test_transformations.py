@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QET, GQET, QSVT, and GQSVT on non-Hermitian and nested block encodings."""
 
 import numpy as np
 import pytest

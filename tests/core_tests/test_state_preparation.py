@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for state preparation via prepare_qswitch and QuantumVariable.init_state."""
 
 import jax.numpy as jnp
 import numpy as np

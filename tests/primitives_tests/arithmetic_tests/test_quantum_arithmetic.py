@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QuantumFloat arithmetic operations: addition, subtraction, multiplication, division, and tensordot."""
+
 
 def test_quantum_arithmetic():
     import numpy as np

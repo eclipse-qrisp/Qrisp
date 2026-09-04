@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests Hamiltonian trotterization under Jasp tracing, including QPE on the H2 molecule."""
 
 from qrisp import QuantumFloat
 from qrisp.jasp import terminal_sampling

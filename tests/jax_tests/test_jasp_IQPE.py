@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests IQPE (iterative quantum phase estimation) under Jasp tracing."""
+
 
 def test_IQPE_integration():
     import numpy as np

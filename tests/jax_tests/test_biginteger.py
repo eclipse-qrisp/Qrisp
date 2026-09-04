@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the Jasp BigInteger arithmetic implementation: ops, shifts, div/mod, and modular inverse."""
 
 import math
 import random

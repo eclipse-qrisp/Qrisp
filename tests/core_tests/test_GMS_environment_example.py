@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the GMSEnvironment for combining phase gates into a single GMS gate."""
 
 # Created by ann81984 at 05.05.2022
 import numpy as np

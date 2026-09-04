@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests fourier_adder via the generic in-place adder test harness."""
 
 from qrisp import fourier_adder, inpl_adder_test
 

@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the CircuitPass class in qrisp.circuit.pass_management.circuit_pass."""
 
 from __future__ import annotations
 

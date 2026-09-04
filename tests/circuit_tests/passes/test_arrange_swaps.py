@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the arrange_swaps circuit pass in qrisp.circuit.pass_management.passes.arrange_swaps."""
 
 from qrisp.circuit import QuantumCircuit
 from qrisp.circuit.pass_management.passes.arrange_swaps import arrange_swaps

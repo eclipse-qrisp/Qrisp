@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the Jasp minimize routine with SPSA and COBYLA on a variational expectation value."""
+
 
 def test_jasp_minimize():
     import jax.numpy as jnp

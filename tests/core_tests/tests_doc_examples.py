@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QuantumArray, QuantumDictionary, QuantumFloat, and environment examples from the docs."""
+
 
 def test_QuantumArray_indexing():
     from qrisp import QuantumArray, QuantumBool, QuantumFloat, h

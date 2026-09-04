@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************/
 
+"""Tests remaud_adder correctness and its ladder synthesis helpers (ladder1_synth_jax, ladder2_synth_jax)."""
 
 from qrisp import *
 from qrisp.jasp import *

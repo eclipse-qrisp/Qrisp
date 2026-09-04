@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QDrift Hamiltonian simulation on an Ising chain."""
 
 import jax.numpy as jnp
 import networkx as nx

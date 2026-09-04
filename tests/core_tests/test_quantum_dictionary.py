@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QuantumDictionary creation, dereferencing, tuple keys, and the load method."""
 
 # Created by ann81984 at 28.06.2022
 from qrisp import (

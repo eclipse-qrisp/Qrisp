@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests IQAE by computing a numerical integral of (sin(x))^2."""
+
 
 def test_IQAE_integration():
     import numpy as np

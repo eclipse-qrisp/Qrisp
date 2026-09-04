@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests quotient and remainder computation via q_divmod on signed QuantumFloat values."""
 
 # Created by ann81984 at 06.05.2022
 from qrisp.alg_primitives.arithmetic import QuantumFloat, q_divmod

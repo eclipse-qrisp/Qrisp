@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the VQEProblem class in qrisp.vqe.vqe_problem."""
 
 import numpy as np
 from qrisp.vqe.vqe_problem import *

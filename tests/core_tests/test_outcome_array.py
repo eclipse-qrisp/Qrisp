@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests OutcomeArray hashing and string representation for use as a dictionary key."""
+
 
 def outome_array_hashing_test():
     import numpy as np

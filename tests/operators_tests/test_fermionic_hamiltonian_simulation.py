@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests trotterization of fermionic Hamiltonians in qrisp.operators.fermionic."""
 
 from qrisp import *
 from qrisp.operators.fermionic import a, c

@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the quantum_counting algorithm under Jasp tracing."""
+
 
 def test_jasp_quantum_counting():
     import numpy as np

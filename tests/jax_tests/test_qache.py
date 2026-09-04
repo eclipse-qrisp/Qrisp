@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the qache decorator, verifying traced-function caching and Jaspr reuse across call sites."""
 
 from qrisp import *
 from qrisp.jasp import *

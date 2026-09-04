@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests QITE (quantum imaginary time evolution) under Jasp tracing with the GC and HOPF methods."""
+
 
 def test_jasp_QITE_GC():
     import jax.numpy as jnp

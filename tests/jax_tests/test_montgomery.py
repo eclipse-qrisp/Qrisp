@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for Jasp Montgomery modular multiplication and order-finding via QPE."""
+
 
 def test_montgomery_jasp_qq():
     import numpy as np

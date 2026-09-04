@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the QAOA implementation for the E3LIN2 (eThrLinTwo) constraint satisfaction problem."""
 
 import itertools
 

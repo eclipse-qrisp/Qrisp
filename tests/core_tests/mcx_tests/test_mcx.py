@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the mcx function across multiple gate synthesis methods."""
+
 
 def test_mcx():
     import numpy as np

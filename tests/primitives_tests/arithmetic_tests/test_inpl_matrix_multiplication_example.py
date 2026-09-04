@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests in-place matrix-vector multiplication on a QuantumArray via inplace_matrix_app."""
 
 # Created by ann81984 at 22.07.2022
 import numpy as np

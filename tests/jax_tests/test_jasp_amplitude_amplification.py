@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests amplitude_amplification under Jasp tracing on QuantumBool, QuantumArray, and oblivious inputs."""
 
 import numpy as np
 

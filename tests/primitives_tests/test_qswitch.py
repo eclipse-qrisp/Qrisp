@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the deprecated qswitch primitive across case methods and case-amount cutoffs."""
 
 # qswitch is deprecated, use q_switch instead
 

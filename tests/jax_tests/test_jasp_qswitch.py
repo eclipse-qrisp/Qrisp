@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the deprecated qswitch case-selection function under Jasp tracing (tree and sequential methods)."""
+
 
 # qswitch is deprecated, use q_switch instead
 

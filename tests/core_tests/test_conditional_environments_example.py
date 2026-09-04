@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests condition and control environments with QuantumChar, QuantumFloat, and QuantumArray."""
+
 
 # Created by ann81984 at 29.04.2022
 # import pytest

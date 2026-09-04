@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests controlled gate synthesis and multi-controlled circuits, including ctrl_state and U3Gate control."""
 
 import time
 from collections.abc import Mapping

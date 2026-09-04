@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests GQSP-based signal convolution against SciPy's cyclic convolution."""
 
 import numpy as np
 from qrisp.gqsp import convolve

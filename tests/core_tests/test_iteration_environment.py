@@ -14,6 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests the IterationEnvironment context manager, including precompile mode and custom control use."""
 
 from qrisp.grover import diffuser
 
