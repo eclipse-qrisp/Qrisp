@@ -1,7 +1,7 @@
 Development Guide
 =================
 
-Welcome, and thank you for your interest in contributing to Qrisp!
+Welcome, and thank you for your interest in contributing to Eclipse Qrisp®!
 
 .. image:: /_static/qrisp_development.png
     :align: center

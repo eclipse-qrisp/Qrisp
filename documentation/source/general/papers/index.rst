@@ -3,7 +3,7 @@
 Research
 --------
 
-Below, we present a collection of scientific papers and articles that have either contributed to the development of Qrisp or highlight its applications and advantages in the field of quantum computing. These citations provide a foundation for understanding the theoretical underpinnings and practical implications of Qrisp. We encourage researchers, developers, and enthusiasts to explore these resources to gain a deeper insight into the capabilities and potential of Qrisp.
+Below, we present a collection of scientific papers and articles that have either contributed to the development of Eclipse Qrisp® or highlight its applications and advantages in the field of quantum computing. These citations provide a foundation for understanding the theoretical underpinnings and practical implications of Qrisp. We encourage researchers, developers, and enthusiasts to explore these resources to gain a deeper insight into the capabilities and potential of Qrisp.
 
 Research from within the Qrisp community
 ========================================

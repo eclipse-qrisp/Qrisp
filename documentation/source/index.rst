@@ -19,7 +19,7 @@
             <img alt="./_static/eclipse_font.png" class="align-bottom-left scaled-image" src="./_static/eclipse_font.png" width="126">
             <img alt="./_static/logo_white.png" src="./_static/logo_white.png" width="260" style="margin: 0.4rem 0; display: block;">
             <h3 style="font-weight: 600; margin-top: 0;">The next generation of quantum <br> algorithm development</h3>
-            <p style="margin-right: 30pt">Qrisp is a high-level language for building and compiling quantum algorithms. Its structured programming model supports scalable, maintainable development. With seamless JAX integration, Qrisp enables hybrid real-time algorithm design and analysis.</p>
+            <p style="margin-right: 30pt">Eclipse Qrisp® is a high-level language for building and compiling quantum algorithms. Its structured programming model supports scalable, maintainable development. With seamless JAX integration, Qrisp enables hybrid real-time algorithm design and analysis.</p>
 
             <div class="homepage-button-container">
                 <div class="homepage-button-container-row">

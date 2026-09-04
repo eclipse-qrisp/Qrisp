@@ -6,7 +6,7 @@ Introduction
 
 Quantum computing promises strong speedups for problems across optimization, chemistry, and machine learning - but actually *programming* a quantum computer remains far harder than it should be. Most quantum frameworks still operate at the level of individual qubits and gates: the quantum equivalent of writing assembly. The result is code that is tedious to write, difficult to maintain, and nearly impossible to scale.
 
-Qrisp is a high-level quantum programming framework, written in pure Python, that closes this gap. It lets developers express quantum algorithms using typed variables, infix arithmetic, automatic memory management, and classical control flow - concepts familiar from everyday software engineering - while compiling everything down to executable quantum circuits. With its JAX-based compilation backend (Jasp), Qrisp scales to problem sizes that are entirely out of reach for interpreter-level circuit construction, and natively supports real-time classical computation within quantum programs.
+Eclipse Qrisp® is a high-level quantum programming framework, written in pure Python, that closes this gap. It lets developers express quantum algorithms using typed variables, infix arithmetic, automatic memory management, and classical control flow - concepts familiar from everyday software engineering - while compiling everything down to executable quantum circuits. With its JAX-based compilation backend (Jasp), Qrisp scales to problem sizes that are entirely out of reach for interpreter-level circuit construction, and natively supports real-time classical computation within quantum programs.
 
 Qrisp targets three goals simultaneously:
 
