@@ -111,6 +111,13 @@ class QuantumFloat(QuantumVariable):
     Here, the 3 indicates the number of mantissa qubits and the -1 indicates the
     exponent.
 
+    .. note::
+
+        ``msize`` and ``exponent`` also accept a ``jax.Array`` under Jasp
+        tracing, but only in the sense of a 0-d, traced scalar (e.g. a value
+        computed from a measurement inside ``@jaspify``/``make_jaspr``).
+        Never an actual multi-element array.
+
     For unsigned QuantumFloats, the decoder function is given by
 
     .. math::
@@ -327,6 +334,14 @@ class QuantumFloat(QuantumVariable):
         signed: bool = False,
     ) -> None:
         """Construct a QuantumFloat with the given mantissa size, exponent, and sign.
+
+        .. note::
+
+            The ``jax.Array`` accepted by ``msize`` and ``exponent`` is a
+            0-d, traced scalar under Jasp tracing (e.g. a value computed from
+            a measurement inside ``@jaspify``/``make_jaspr``), not an actual
+            multi-element array. Outside of tracing, both are plain Python
+            integers.
 
         Parameters
         ----------
