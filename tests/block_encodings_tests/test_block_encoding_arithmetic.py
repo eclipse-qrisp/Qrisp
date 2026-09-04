@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from qrisp import QuantumBool, QuantumFloat, QuantumVariable, jaspify, measure, terminal_sampling, x
-from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding
+from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding, ProductBlockEncoding
 from qrisp.operators import X, Y, Z
 
 
@@ -258,6 +258,69 @@ def test_block_encoding_linear_combination_validates_inputs():
 
     with pytest.raises(ValueError, match="same number of operands"):
         BlockEncoding.linear_combination([block_encoding, two_operand_block_encoding])
+
+
+def test_block_encoding_product_is_flattened_and_keeps_separate_ancillas():
+    """Verify that nested products preserve factor order and ancilla ownership."""
+    first = BlockEncoding(2, [QuantumFloat(2)], lambda ancilla, operand: None)
+    second = BlockEncoding(3, [QuantumBool()], lambda ancilla, operand: None)
+    third = BlockEncoding(5, [QuantumFloat(1)], lambda ancilla, operand: None)
+
+    product = (first @ second) @ third
+
+    assert isinstance(product, ProductBlockEncoding)
+    assert product.factors == (first, second, third)
+    assert product.alpha == 30
+    assert product.num_ancs == first.num_ancs + second.num_ancs + third.num_ancs
+    assert [template.qv_size for template in product._anc_templates] == [2, 1, 1]
+
+    with pytest.raises(TypeError):
+        product.factors[0] = first
+    with pytest.raises(AttributeError):
+        product.factors = ()
+    with pytest.raises(AttributeError):
+        product._factors = ()
+
+
+def test_block_encoding_product_applies_factors_in_reverse_order():
+    """Verify that A @ B applies B before A."""
+    calls = []
+
+    def first_unitary(ancilla, operand):
+        calls.append("first")
+
+    def second_unitary(ancilla, operand):
+        calls.append("second")
+
+    first = BlockEncoding(1, [QuantumBool()], first_unitary)
+    second = BlockEncoding(1, [QuantumBool()], second_unitary)
+    product = first @ second
+    ancillas = product.create_ancillas()
+    operand = QuantumVariable(1)
+
+    product.unitary(*ancillas, operand)
+
+    assert calls == ["second", "first"]
+
+
+def test_block_encoding_product_supports_pytree_and_structural_dagger():
+    """Verify product reconstruction and reversed factor daggers."""
+    first = BlockEncoding(2, [], lambda operand: None)
+    second = BlockEncoding(3, [], lambda operand: None)
+    third = BlockEncoding(5, [], lambda operand: None)
+    product = first @ second @ third
+
+    leaves, treedef = tree_flatten(product)
+    reconstructed = tree_unflatten(treedef, leaves)
+    dagger = product.dagger()
+
+    assert isinstance(reconstructed, ProductBlockEncoding)
+    assert len(reconstructed.factors) == 3
+    assert reconstructed.alpha == product.alpha
+    assert isinstance(dagger, ProductBlockEncoding)
+    assert len(dagger.factors) == 3
+    assert [factor.alpha for factor in dagger.factors] == [third.alpha, second.alpha, first.alpha]
+    assert dagger.alpha == product.alpha
 
 
 def test_linear_combination_block_encoding_has_immutable_derived_representation():

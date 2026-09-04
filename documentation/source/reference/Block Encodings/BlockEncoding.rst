@@ -6,6 +6,10 @@ BlockEncoding
 .. currentmodule:: qrisp.block_encodings
 .. autoclass:: BlockEncoding
 
+.. autoclass:: LinearCombinationBlockEncoding
+
+.. autoclass:: ProductBlockEncoding
+
 Constructors
 ------------
 

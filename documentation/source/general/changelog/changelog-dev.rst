@@ -29,7 +29,9 @@ Improvements
   Block-encoding linear combinations now use a single LCU construction instead
   of recursively nested binary combinations. Mutually exclusive LCU branches
   reuse one shared ancilla workspace, including for heterogeneous ancilla
-  layouts. Block-encoding linear combinations can be constructed explicitly with
+  layouts. Products now retain an immutable flattened factor representation
+  while using separate ancillas for each factor. Block-encoding linear
+  combinations can be constructed explicitly with
   :meth:`~qrisp.block_encodings.BlockEncoding.linear_combination`
   (`PR #865 <https://github.com/eclipse-qrisp/Qrisp/pull/865>`_).
 

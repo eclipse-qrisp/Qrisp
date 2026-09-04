@@ -1049,6 +1049,9 @@ class BlockEncoding:
     def _get_lcu_terms(self) -> _LCUTerms:
         return ((1, self),)
 
+    def _get_product_factors(self) -> _ProductFactors:
+        return (self,)
+
     @classmethod
     def linear_combination(
         cls,
@@ -1381,18 +1384,7 @@ class BlockEncoding:
         if not isinstance(other, BlockEncoding):
             return NotImplemented
 
-        m = len(self._anc_templates)
-        n = len(other._anc_templates)
-
-        def new_unitary(*args):
-            other_args = args[m : m + n] + args[m + n :]
-            other.unitary(*other_args)
-            self_args = args[:m] + args[m + n :]
-            self.unitary(*self_args)
-
-        new_anc_templates = self._anc_templates + other._anc_templates
-        new_alpha = self.alpha * other.alpha
-        return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops)
+        return ProductBlockEncoding(self._get_product_factors() + other._get_product_factors())
 
     def __radd__(self, other: Any) -> BlockEncoding | NotImplementedType:
         """Support adding a BlockEncoding to the start value used by sum()."""
@@ -1625,6 +1617,7 @@ class BlockEncoding:
 
 _LCUTerm = tuple[ArrayLike, BlockEncoding]
 _LCUTerms = tuple[_LCUTerm, ...]
+_ProductFactors = tuple[BlockEncoding, ...]
 
 
 def _is_statically_zero(value: Any) -> bool:
@@ -1835,3 +1828,109 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         """Reconstruct a linear combination from flattened terms."""
         terms = tuple((children[index], children[index + 1]) for index in range(0, 2 * aux_data, 2))
         return cls(terms)
+
+
+@register_pytree_node_class
+class ProductBlockEncoding(BlockEncoding):
+    """A block encoding represented by an immutable product of factors.
+
+    Factors are stored in mathematical order. The unitary applies them in
+    reverse order, so ``A @ B`` applies ``B`` before ``A``. Each factor keeps
+    its own ancillas; no ancilla reuse is assumed.
+
+    """
+
+    def __init__(self, factors: Sequence[BlockEncoding]) -> None:
+        flattened_factors: list[BlockEncoding] = []
+        for factor in factors:
+            if not isinstance(factor, BlockEncoding):
+                raise TypeError(f"Expected every factor to be a BlockEncoding, but got {type(factor).__name__}.")
+            flattened_factors.extend(factor._get_product_factors())
+
+        if len(flattened_factors) == 0:
+            raise ValueError("At least one product factor is required.")
+
+        num_ops = flattened_factors[0].num_ops
+        if any(factor.num_ops != num_ops for factor in flattened_factors):
+            raise ValueError("All product factors must have the same number of operands.")
+
+        self._factors = tuple(flattened_factors)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Prevent reassignment of the authoritative factor representation."""
+        if name == "_factors" and hasattr(self, "_factors"):
+            raise AttributeError("Product factors are immutable.")
+        object.__setattr__(self, name, value)
+
+    @property
+    def factors(self) -> _ProductFactors:
+        """The immutable product factors in mathematical order."""
+        return self._factors
+
+    @property
+    def alpha(self) -> ArrayLike:
+        """Return the normalization derived from the product factors."""
+        alpha = 1
+        for factor in self.factors:
+            alpha = alpha * factor.alpha
+        return alpha
+
+    @property
+    def _anc_templates(self) -> list[QuantumVariableTemplate]:
+        return [template for factor in self.factors for template in factor._anc_templates]
+
+    @property
+    def unitary(self) -> Callable[..., None]:
+        """Return the unitary that composes the factor unitaries."""
+        # TODO: Implement qubit-efficient strategies from: https://arxiv.org/pdf/2509.15779
+        factor_ancilla_counts = tuple(factor.num_ancs for factor in self.factors)
+
+        def unitary(*args):
+            total_ancillas = sum(factor_ancilla_counts)
+            operands = args[total_ancillas:]
+            offset = 0
+            factor_args = []
+            for factor, num_ancillas in zip(self.factors, factor_ancilla_counts):
+                factor_ancillas = args[offset : offset + num_ancillas]
+                factor_args.append((factor, factor_ancillas))
+                offset += num_ancillas
+
+            for factor, factor_ancillas in reversed(factor_args):
+                factor.unitary(*factor_ancillas, *operands)
+
+        return unitary
+
+    @property
+    def num_ops(self) -> int:
+        """Return the common number of operands in the product factors."""
+        return self.factors[0].num_ops
+
+    @property
+    def num_ancs(self) -> int:
+        """Return the total number of factor ancillas."""
+        return sum(factor.num_ancs for factor in self.factors)
+
+    @property
+    def is_hermitian(self) -> bool:
+        """Return whether the product is known to have a Hermitian unitary."""
+        return len(self.factors) == 1 and self.factors[0].is_hermitian
+
+    def _get_product_factors(self) -> _ProductFactors:
+        return self.factors
+
+    def dagger(self) -> ProductBlockEncoding:
+        """Return the product dagger with reversed, individually inverted factors."""
+        return ProductBlockEncoding(tuple(factor.dagger() for factor in reversed(self.factors)))
+
+    def tree_flatten(self) -> tuple[_ProductFactors, None]:
+        """Flatten the authoritative product factors for JAX pytree handling."""
+        return self.factors, None
+
+    @classmethod
+    def tree_unflatten(
+        cls: type[ProductBlockEncoding],
+        aux_data: None,
+        children: tuple[BlockEncoding, ...],
+    ) -> ProductBlockEncoding:
+        """Reconstruct a product from flattened factors."""
+        return cls(children)
