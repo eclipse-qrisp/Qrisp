@@ -61,6 +61,24 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
+- **Faster COLD/LCD circuit compilation and Hamiltonian construction**
+  :meth:`compile_U_cold <qrisp.cold.DCQOProblem.compile_U_cold>` and
+  :meth:`~qrisp.cold.DCQOProblem.run` no longer recompute Trotter term
+  grouping on every timestep, and Ising-type Hamiltonians (identity,
+  single-qubit Pauli, or :math:`Z \otimes Z` terms only — the case for every
+  built-in QUBO Hamiltonian) are now Trotterized via a new native-gate fast
+  path (``fast_trotterization``) that skips the general per-term
+  ``QuantumEnvironment``/session-merge machinery, falling back automatically
+  and transparently for any other operator. Separately, building large QUBO
+  Hamiltonians (``create_COLD_instance``, ``create_LCD_instance``) no
+  longer costs :math:`\mathcal{O}(N^4)` for a dense :math:`N`-qubit QUBO — a
+  new ``QubitOperator.sum`` classmethod merges many operators in a single
+  :math:`\mathcal{O}(M)` pass
+  (:math:`M` = total term count), replacing the previous pattern of folding
+  many terms together via Python's built-in ``sum()``, which repeatedly
+  copies the entire running total through :ref:`QubitOperator`'s ``__add__``
+  and costs :math:`\mathcal{O}(M^2)`.
+
 Other New Features
 ------------------
 
@@ -163,6 +181,11 @@ Bug Fixes
 * Removed a stray double blank line in ``QubitOperator.simulate``, left behind
   by an import-hoisting cleanup, which broke ``ruff format --check`` on
   ``main`` right after merge.
+
+* Fixed two AGP coefficient shape bugs in ``create_LCD_instance`` with
+  ``agp_type="nc"``: the ``uniform`` and non-uniform coefficient builders
+  each wrapped their result one list level too deep, handing a whole
+  per-qubit array where a single coefficient was expected.
 
 Compatibility
 -------------
