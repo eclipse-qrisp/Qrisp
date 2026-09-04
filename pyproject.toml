@@ -64,7 +64,7 @@ docs = [
     "sphinx-design==0.7.0",
     "sphinx-thebe==0.3.1",
     "sphinx-new-tab-link==0.8.1",
-    "pydata-sphinx-theme==0.17.1",
+    "pydata-sphinx-theme==0.21.0",
 ]
 dev-code-style = [
     "ruff==0.16.5",
