@@ -1104,7 +1104,9 @@ class BlockEncoding:
     @classmethod
     def _from_lcu_terms(cls, terms: Sequence[_LCUTerm]) -> BlockEncoding:
         """Build a linear-combination block encoding from weighted terms."""
-        terms = tuple(terms)
+        terms = _canonicalize_lcu_terms(terms)
+        if len(terms) == 0:
+            raise ValueError("Cannot construct a block encoding from an all-zero linear combination.")
         if len(terms) == 1:
             coefficient, block_encoding = terms[0]
             if isinstance(coefficient, (int, float, complex, np.number)) and coefficient == 1:
@@ -1625,6 +1627,35 @@ _LCUTerm = tuple[ArrayLike, BlockEncoding]
 _LCUTerms = tuple[_LCUTerm, ...]
 
 
+def _is_statically_zero(value: Any) -> bool:
+    """Return whether ``value`` is a concrete scalar zero."""
+    if isinstance(value, jax.core.Tracer):
+        return False
+    try:
+        value = np.asarray(value)
+    except Exception:
+        return False
+    return value.ndim == 0 and bool(value == 0)
+
+
+def _canonicalize_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
+    """Merge identity-equal child encodings and remove concrete zero terms."""
+    merged_terms: list[_LCUTerm] = []
+    for coefficient, block_encoding in terms:
+        for index, (_, existing_block_encoding) in enumerate(merged_terms):
+            if existing_block_encoding is block_encoding:
+                merged_terms[index] = (merged_terms[index][0] + coefficient, block_encoding)
+                break
+        else:
+            merged_terms.append((coefficient, block_encoding))
+
+    return tuple(
+        (coefficient, block_encoding)
+        for coefficient, block_encoding in merged_terms
+        if not _is_statically_zero(coefficient)
+    )
+
+
 @register_pytree_node_class
 class LinearCombinationBlockEncoding(BlockEncoding):
     """A block encoding represented by an immutable tuple of LCU terms."""
@@ -1667,9 +1698,9 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         phase for a negative coefficient.
 
         """
-        terms = tuple((coefficient, block_encoding) for coefficient, block_encoding in terms)
+        terms = _canonicalize_lcu_terms(terms)
         if len(terms) == 0:
-            raise ValueError("At least one block-encoding is required.")
+            raise ValueError("Cannot construct a block encoding from an all-zero linear combination.")
         if any(not isinstance(block_encoding, BlockEncoding) for _, block_encoding in terms):
             raise TypeError("Expected every item to be a BlockEncoding.")
 

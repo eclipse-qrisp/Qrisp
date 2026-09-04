@@ -198,6 +198,50 @@ def test_block_encoding_flattened_linear_combination():
     _compare_results(res_target, main(BE_direct), n)
 
 
+def test_block_encoding_lcu_canonicalizes_repeated_references():
+    """Verify that repeated references are merged into one weighted term."""
+    block_encoding = BlockEncoding(1, [], lambda operand: None)
+
+    combination = BlockEncoding.linear_combination(
+        [block_encoding, block_encoding],
+        coefficients=[2, 3],
+    )
+
+    assert combination.terms == ((5, block_encoding),)
+
+
+def test_block_encoding_lcu_removes_static_zero_terms():
+    """Verify that concrete zero coefficients are removed."""
+    first = BlockEncoding(1, [], lambda operand: None)
+    second = BlockEncoding(1, [], lambda operand: None)
+
+    combination = BlockEncoding.linear_combination([first, second], coefficients=[0, 2])
+
+    assert combination.terms == ((2, second),)
+
+
+def test_block_encoding_lcu_rejects_all_zero_terms():
+    """Verify that static cancellation cannot create a zero-normalization LCU."""
+    block_encoding = BlockEncoding(1, [], lambda operand: None)
+
+    with pytest.raises(ValueError, match="all-zero linear combination"):
+        BlockEncoding.linear_combination([block_encoding, block_encoding], coefficients=[1, -1])
+
+
+def test_block_encoding_lcu_preserves_dynamic_coefficients():
+    """Verify that dynamic coefficients are not compared in Python."""
+    import jax
+    import jax.numpy as jnp
+
+    block_encoding = BlockEncoding(2, [], lambda operand: None)
+
+    def normalization(coefficient):
+        combination = BlockEncoding.linear_combination([block_encoding], coefficients=[coefficient])
+        return combination.alpha
+
+    assert jax.jit(normalization)(jnp.array(3.0)) == 6.0
+
+
 def test_block_encoding_linear_combination_validates_inputs():
     """Verify that linear combination input errors are reported."""
     block_encoding = BlockEncoding(1, [], lambda operand: None)
