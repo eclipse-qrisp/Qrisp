@@ -21,7 +21,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from types import NotImplementedType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import jax
 import jax.numpy as jnp
@@ -32,7 +32,7 @@ from jax.typing import ArrayLike
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.ancilla_layout import _AncillaLayout, _maximum_layout_size
-from qrisp.core import QuantumVariable
+from qrisp.core import QuantumVariable, mcx
 from qrisp.core.gate_application_functions import gphase, h, measure, reset, ry, x, z
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import (
@@ -1049,6 +1049,9 @@ class BlockEncoding:
     def _get_lcu_terms(self) -> _LCUTerms:
         return ((1, self),)
 
+    def _get_product_factors(self) -> _ProductFactors:
+        return (self,)
+
     @classmethod
     def linear_combination(
         cls,
@@ -1381,18 +1384,7 @@ class BlockEncoding:
         if not isinstance(other, BlockEncoding):
             return NotImplemented
 
-        m = len(self._anc_templates)
-        n = len(other._anc_templates)
-
-        def new_unitary(*args):
-            other_args = args[m : m + n] + args[m + n :]
-            other.unitary(*other_args)
-            self_args = args[:m] + args[m + n :]
-            self.unitary(*self_args)
-
-        new_anc_templates = self._anc_templates + other._anc_templates
-        new_alpha = self.alpha * other.alpha
-        return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops)
+        return ProductBlockEncoding(self._get_product_factors() + other._get_product_factors())
 
     def __radd__(self, other: Any) -> BlockEncoding | NotImplementedType:
         """Support adding a BlockEncoding to the start value used by sum()."""
@@ -1625,6 +1617,8 @@ class BlockEncoding:
 
 _LCUTerm = tuple[ArrayLike, BlockEncoding]
 _LCUTerms = tuple[_LCUTerm, ...]
+_ProductFactors = tuple[BlockEncoding, ...]
+_ProductStrategy = Literal["separate", "qubit_efficient"]
 
 
 def _is_statically_zero(value: Any) -> bool:
@@ -1835,3 +1829,207 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         """Reconstruct a linear combination from flattened terms."""
         terms = tuple((children[index], children[index + 1]) for index in range(0, 2 * aux_data, 2))
         return cls(terms)
+
+
+@register_pytree_node_class
+class ProductBlockEncoding(BlockEncoding):
+    """A block encoding represented by an immutable product of factors.
+
+    Factors are stored in mathematical order. The unitary applies them in
+    reverse order, so ``A @ B`` applies ``B`` before ``A``. By default, the
+    qubit-efficient strategy packs the factor ancillas into one shared
+    workspace and uses a shift register to separate the garbage generated at
+    successive steps. The separate strategy retains distinct ancillas for
+    every factor.
+
+    Parameters
+    ----------
+    factors : Sequence[BlockEncoding]
+        Block-encoding factors in mathematical order.
+    strategy : {"separate", "qubit_efficient"}
+        Unitary implementation strategy. ``"qubit_efficient"`` is the default;
+        it reuses one workspace and records failed factor applications in a
+        shift register. ``"separate"`` uses distinct ancillas for every factor.
+
+    """
+
+    def __init__(
+        self,
+        factors: Sequence[BlockEncoding],
+        strategy: _ProductStrategy = "qubit_efficient",
+    ) -> None:
+        if strategy not in ("separate", "qubit_efficient"):
+            raise ValueError(f"Unknown product strategy: {strategy}")
+
+        flattened_factors: list[BlockEncoding] = []
+        for factor in factors:
+            if not isinstance(factor, BlockEncoding):
+                raise TypeError(f"Expected every factor to be a BlockEncoding, but got {type(factor).__name__}.")
+            flattened_factors.extend(factor._get_product_factors())
+
+        if len(flattened_factors) == 0:
+            raise ValueError("At least one product factor is required.")
+
+        num_ops = flattened_factors[0].num_ops
+        if any(factor.num_ops != num_ops for factor in flattened_factors):
+            raise ValueError("All product factors must have the same number of operands.")
+
+        self._factors = tuple(flattened_factors)
+        self._strategy = strategy
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Prevent reassignment of the authoritative factor representation."""
+        if name in {"_factors", "_strategy"} and hasattr(self, name):
+            raise AttributeError("Product representation is immutable.")
+        object.__setattr__(self, name, value)
+
+    @property
+    def factors(self) -> _ProductFactors:
+        """The immutable product factors in mathematical order."""
+        return self._factors
+
+    @property
+    def strategy(self) -> _ProductStrategy:
+        """The unitary implementation strategy used by the product."""
+        return self._strategy
+
+    @property
+    def alpha(self) -> ArrayLike:
+        """Return the normalization derived from the product factors."""
+        alpha = 1
+        for factor in self.factors:
+            alpha = alpha * factor.alpha
+        return alpha
+
+    @property
+    def _anc_templates(self) -> list[QuantumVariableTemplate]:
+        if self.strategy == "qubit_efficient":
+            if len(self.factors) == 1:
+                return list(self.factors[0]._anc_templates)
+            if all(factor.num_ancs == 0 for factor in self.factors):
+                return []
+
+            factor_layouts = tuple(_AncillaLayout.from_templates(factor._anc_templates) for factor in self.factors)
+            shift_size = (len(self.factors) - 1).bit_length()
+            return [
+                QuantumFloat(shift_size).template(),
+                QuantumVariable(_maximum_layout_size(factor_layouts)).template(),
+            ]
+        return [template for factor in self.factors for template in factor._anc_templates]
+
+    @property
+    def unitary(self) -> Callable[..., None]:
+        """Return the unitary selected by the product implementation strategy."""
+        if self.strategy == "qubit_efficient":
+            return self._unitary_qubit_efficient
+        return self._unitary_separate
+
+    @property
+    def _unitary_separate(self) -> Callable[..., None]:
+        """Return the unitary that composes factors with separate ancillas."""
+        factor_ancilla_counts = tuple(factor.num_ancs for factor in self.factors)
+
+        def unitary(*args):
+            total_ancillas = sum(factor_ancilla_counts)
+            operands = args[total_ancillas:]
+            offset = 0
+            factor_args = []
+            for factor, num_ancillas in zip(self.factors, factor_ancilla_counts):
+                factor_ancillas = args[offset : offset + num_ancillas]
+                factor_args.append((factor, factor_ancillas))
+                offset += num_ancillas
+
+            for factor, factor_ancillas in reversed(factor_args):
+                factor.unitary(*factor_ancillas, *operands)
+
+        return unitary
+
+    @property
+    def _unitary_qubit_efficient(self) -> Callable[..., None]:
+        """Return the unitary using one shared workspace and a shift register."""
+        if len(self.factors) == 1 or all(factor.num_ancs == 0 for factor in self.factors):
+
+            def unitary(*args):
+                operands = args[self.num_ancs :]
+                factor_ancillas = args[: self.num_ancs]
+                for factor in reversed(self.factors):
+                    factor.unitary(*factor_ancillas, *operands)
+
+            return unitary
+
+        factor_layouts = tuple(_AncillaLayout.from_templates(factor._anc_templates) for factor in self.factors)
+
+        def unitary(*args):
+            shift_register = args[0]
+            shared_workspace = args[1]
+            operands = args[2:]
+            zero_flag = QuantumBool()
+
+            for factor_index, factor in enumerate(reversed(self.factors)):
+                layout_index = len(self.factors) - 1 - factor_index
+                factor_layout = factor_layouts[layout_index]
+                factor_ancillas = factor_layout.construct_views(shared_workspace)
+
+                # Only the shift-zero sector carries the still-valid product
+                # branch. Other sectors contain garbage from earlier factors.
+                with conjugate(mcx)(shift_register, zero_flag, ctrl_state=0):
+                    with control(zero_flag):
+                        factor.unitary(*factor_ancillas, *operands)
+
+                if factor_index == len(self.factors) - 1 or len(factor_layout.sizes) == 0:
+                    continue
+
+                # Implement |s, w> -> |s + 1, w> for w != 0 and leave w = 0
+                # fixed on the workspace prefix used by this factor. This
+                # reversible permutation moves newly generated garbage out of
+                # shift zero without modifying its workspace value. The
+                # compute-control-uncompute pattern restores the temporary
+                # predicate qubit after every permutation.
+                active_workspace = shared_workspace.reg[: factor_layout.total_size]
+                with conjugate(mcx)(active_workspace, zero_flag, ctrl_state=0):
+                    with control(zero_flag, ctrl_state=0):
+                        shift_register += 1
+
+            zero_flag.delete()
+
+        return unitary
+
+    @property
+    def num_ops(self) -> int:
+        """Return the common number of operands in the product factors."""
+        return self.factors[0].num_ops
+
+    @property
+    def num_ancs(self) -> int:
+        """Return the number of ancilla variables used by the strategy."""
+        if self.strategy == "qubit_efficient":
+            return len(self._anc_templates)
+        return sum(factor.num_ancs for factor in self.factors)
+
+    @property
+    def is_hermitian(self) -> bool:
+        """Return whether the product is known to have a Hermitian unitary."""
+        return len(self.factors) == 1 and self.factors[0].is_hermitian
+
+    def _get_product_factors(self) -> _ProductFactors:
+        return self.factors
+
+    def dagger(self) -> ProductBlockEncoding:
+        """Return the product dagger with reversed, individually inverted factors."""
+        return ProductBlockEncoding(
+            tuple(factor.dagger() for factor in reversed(self.factors)),
+            strategy=self.strategy,
+        )
+
+    def tree_flatten(self) -> tuple[_ProductFactors, _ProductStrategy]:
+        """Flatten the authoritative product factors for JAX pytree handling."""
+        return self.factors, self.strategy
+
+    @classmethod
+    def tree_unflatten(
+        cls: type[ProductBlockEncoding],
+        aux_data: _ProductStrategy,
+        children: tuple[BlockEncoding, ...],
+    ) -> ProductBlockEncoding:
+        """Reconstruct a product from flattened factors."""
+        return cls(children, strategy=aux_data)

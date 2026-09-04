@@ -16,7 +16,7 @@
 
 """Assembles the BlockEncoding class by attaching its constructor and transformation methods."""
 
-from .block_encoding_base import BlockEncoding, LinearCombinationBlockEncoding
+from .block_encoding_base import BlockEncoding, LinearCombinationBlockEncoding, ProductBlockEncoding
 from .constructors import (
     build_from_array,
     build_from_eye,
@@ -42,4 +42,4 @@ BlockEncoding.pseudo_inv = apply_pseudo_inv
 BlockEncoding.sim = apply_sim
 BlockEncoding.svt = apply_svt
 
-__all__ = ["BlockEncoding", "LinearCombinationBlockEncoding"]
+__all__ = ["BlockEncoding", "LinearCombinationBlockEncoding", "ProductBlockEncoding"]
