@@ -16,8 +16,10 @@
 """
 
 import pytest
+import sympy as sp
 
-from qrisp import QuantumFloat
+from qrisp import QuantumBool, QuantumFloat, h, multi_measurement, x
+from qrisp.qtypes.quantum_float import create_output_qf
 
 
 @pytest.mark.parametrize(
@@ -113,3 +115,516 @@ def test_encoder_rejects_out_of_bounds_values(msize, exponent, signed, out_of_bo
 
     with pytest.raises(ValueError, match="Not enough qubits to encode value"):
         qf.encoder(out_of_bounds_value)
+
+
+class TestArithmeticDifferentExponents:
+    """Regression tests for create_output_qf's exponent-type bug with different-exponent operands."""
+
+    def test_add_then_reuse_result_with_negative_exponent(self):
+        """Test that a QuantumFloat produced by + keeps a plain-int exponent."""
+        a = QuantumFloat(3, -1, signed=False)
+        b = QuantumFloat(2, -2, signed=True)
+        a[:] = 1.5
+        b[:] = 0.25
+
+        c = a + b
+        assert isinstance(c.exponent, int)
+        assert c.get_measurement() == {1.75: 1.0}
+
+        # c.exponent must be a plain int here: a jax.Array exponent would hit
+        # jax's integer_pow, which rejects negative exponents, when raising
+        # 2**exponent below.
+        d = a - c
+        assert isinstance(d.exponent, int)
+        assert d.get_measurement() == {-0.25: 1.0}
+
+        e = d * b
+        assert e.get_measurement() == {-0.0625: 1.0}
+
+    def test_sub_different_exponents(self):
+        """Test that subtracting operands with different exponents keeps a plain-int exponent."""
+        a = QuantumFloat(4, 0, signed=True)
+        b = QuantumFloat(3, -2, signed=False)
+        a[:] = 3
+        b[:] = 1.5
+
+        c = a - b
+        assert isinstance(c.exponent, int)
+        assert c.get_measurement() == {1.5: 1.0}
+
+
+class TestArithmeticOperators:
+    """Tests for QuantumFloat arithmetic operators outside of tracing mode."""
+
+    def test_mul_classical_int(self):
+        """Test multiplication of a QuantumFloat by a classical int."""
+        a = QuantumFloat(3)
+        a[:] = 3
+        b = a * 5
+        assert b.get_measurement() == {15: 1.0}
+
+    def test_mul_classical_negative_int(self):
+        """Test multiplication of a signed QuantumFloat by a negative int."""
+        a = QuantumFloat(3, signed=True)
+        a[:] = 3
+        b = a * -2
+        assert b.get_measurement() == {-6: 1.0}
+
+    def test_mul_unsigned_by_negative_int(self):
+        """Test that multiplying an unsigned QuantumFloat by a negative int still signs the result."""
+        a = QuantumFloat(3, signed=False)
+        a[:] = 3
+        b = a * -2
+        assert b.get_measurement() == {-6: 1.0}
+        assert b.signed is True
+
+    def test_mul_classical_zero(self):
+        """Test that multiplying by the classical scalar 0 returns 0 instead of hanging."""
+        a = QuantumFloat(3, signed=True)
+        a[:] = 3
+        b = a * 0
+        assert b.get_measurement() == {0: 1.0}
+
+    def test_mul_classical_zero_shares_session(self):
+        """Test that the zero-product result joins self's session instead of a detached one."""
+        a = QuantumFloat(3, signed=True)
+        a[:] = 3
+        b = a * 0
+        assert b.qs is a.qs
+
+        c = a + b
+        assert c.get_measurement() == {3: 1.0}
+
+    def test_rsub(self):
+        """Test reflected subtraction (classical value minus a QuantumFloat)."""
+        a = QuantumFloat(3, signed=True)
+        a[:] = 2
+        b = 5 - a
+        assert b.get_measurement() == {3: 1.0}
+
+    def test_pow_negative_not_inversion_raises(self):
+        """Test that a negative power other than -1 raises NotImplementedError."""
+        a = QuantumFloat(3)
+        a[:] = 2
+        with pytest.raises(NotImplementedError):
+            _ = a**-2
+
+    def test_pow_non_integer_raises(self):
+        """Test that a non-integer power raises TypeError."""
+        a = QuantumFloat(3)
+        a[:] = 2
+        with pytest.raises(TypeError):
+            _ = a**1.5
+
+    def test_pow_zero(self):
+        """Test that a QuantumFloat to the power of 0 encodes 1."""
+        a = QuantumFloat(3)
+        a[:] = 5
+        b = a**0
+        assert b.get_measurement() == {1: 1.0}
+
+    def test_pow_positive_integer(self):
+        """Test exponentiation of a QuantumFloat by a positive integer."""
+        a = QuantumFloat(3)
+        a[:] = 2
+        b = a**3
+        assert b.get_measurement() == {8: 1.0}
+
+    def test_pow_inversion(self):
+        """Test that a QuantumFloat to the power of -1 computes its (approximate) inverse."""
+        a = QuantumFloat(3, -1)
+        a[:] = 2
+        b = a**-1
+        assert b.get_measurement() == {0.5: 1.0}
+
+    def test_truediv(self):
+        """Test division of one QuantumFloat by another."""
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 6
+        b[:] = 2
+        c = a / b
+        assert c.get_measurement() == {3.0: 1.0}
+
+    def test_floordiv(self):
+        """Test floor division of one unsigned, integer QuantumFloat by another."""
+        a = QuantumFloat(3)
+        b = QuantumFloat(3)
+        a[:] = 7
+        b[:] = 2
+        c = a // b
+        assert c.get_measurement() == {3: 1.0}
+
+    def test_floordiv_rejects_signed(self):
+        """Test that floor division raises for signed operands."""
+        a = QuantumFloat(3, signed=True)
+        b = QuantumFloat(3)
+        with pytest.raises(NotImplementedError, match="Floor division not implemented for signed QuantumFloats"):
+            a // b
+
+    def test_floordiv_rejects_non_integer_exponent(self):
+        """Test that floor division raises for operands with a negative exponent."""
+        a = QuantumFloat(3, -1)
+        b = QuantumFloat(3)
+        with pytest.raises(ValueError, match="Tried to perform floor division on non-integer QuantumFloats"):
+            a // b
+
+    def test_add_classical_scalar(self):
+        """Test addition of a classical scalar to a QuantumFloat."""
+        a = QuantumFloat(4)
+        a[:] = 3
+        b = a + 2
+        assert b.get_measurement() == {5: 1.0}
+
+    def test_sub_classical_scalar(self):
+        """Test subtraction of a classical scalar from a QuantumFloat."""
+        a = QuantumFloat(4, signed=True)
+        a[:] = 5
+        b = a - 2
+        assert b.get_measurement() == {3: 1.0}
+
+    def test_iadd_quantum_float(self):
+        """Test in-place addition of a QuantumFloat to another QuantumFloat."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = 3
+        b[:] = 2
+        a += b
+        assert a.get_measurement() == {5: 1.0}
+
+    def test_isub_classical_scalar(self):
+        """Test in-place subtraction of a classical scalar from a QuantumFloat."""
+        a = QuantumFloat(4, signed=True)
+        a[:] = 5
+        a -= 2
+        assert a.get_measurement() == {3: 1.0}
+
+    def test_isub_quantum_float(self):
+        """Test in-place subtraction of a QuantumFloat from another QuantumFloat."""
+        a = QuantumFloat(4, signed=True)
+        b = QuantumFloat(4)
+        a[:] = 5
+        b[:] = 2
+        a -= b
+        assert a.get_measurement() == {3: 1.0}
+
+    def test_imul(self):
+        """Test in-place multiplication of a QuantumFloat by a classical scalar."""
+        a = QuantumFloat(4)
+        a[:] = 3
+        a *= 2
+        assert a.get_measurement() == {6: 1.0}
+
+    def test_ilshift(self):
+        """Test that <<= shifts a QuantumFloat's exponent up by k."""
+        a = QuantumFloat(4)
+        a[:] = 2
+        a <<= 2
+        assert a.get_measurement() == {8: 1.0}
+
+
+class TestComparisonOperators:
+    """Tests for QuantumFloat comparison operators outside of tracing mode."""
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(2, 5, True), (5, 2, False), (3, 3, False)],
+    )
+    def test_lt(self, a_value, b_value, expected):
+        """Test the < operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a < b).get_measurement() == {expected: 1.0}
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(5, 2, True), (2, 5, False), (3, 3, False)],
+    )
+    def test_gt(self, a_value, b_value, expected):
+        """Test the > operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a > b).get_measurement() == {expected: 1.0}
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(2, 5, True), (5, 2, False), (3, 3, True)],
+    )
+    def test_le(self, a_value, b_value, expected):
+        """Test the <= operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a <= b).get_measurement() == {expected: 1.0}
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(5, 2, True), (2, 5, False), (3, 3, True)],
+    )
+    def test_ge(self, a_value, b_value, expected):
+        """Test the >= operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a >= b).get_measurement() == {expected: 1.0}
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(3, 3, True), (3, 4, False)],
+    )
+    def test_eq(self, a_value, b_value, expected):
+        """Test the == operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a == b).get_measurement() == {expected: 1.0}
+
+    @pytest.mark.parametrize(
+        "a_value,b_value,expected",
+        [(3, 3, False), (3, 4, True)],
+    )
+    def test_ne(self, a_value, b_value, expected):
+        """Test the != operator between two QuantumFloats."""
+        a = QuantumFloat(4)
+        b = QuantumFloat(4)
+        a[:] = a_value
+        b[:] = b_value
+        assert (a != b).get_measurement() == {expected: 1.0}
+
+    def test_comparison_as_conditional_environment(self):
+        """Regression test: comparisons must also work as `with` conditions, not just plain expressions."""
+        qf = QuantumFloat(3)
+        qbl = QuantumBool()
+        qf[:] = 0
+        with qf == 0:
+            qbl.flip()
+        assert qbl.get_measurement() == {True: 1.0}
+
+        qf2 = QuantumFloat(3)
+        qbl2 = QuantumBool()
+        qf2[:] = 3
+        with qf2 == 0:
+            qbl2.flip()
+        assert qbl2.get_measurement() == {False: 1.0}
+
+        qf3 = QuantumFloat(3)
+        qbl3 = QuantumBool()
+        qf3[:] = 1
+        with qf3 < 3:
+            qbl3.flip()
+        assert qbl3.get_measurement() == {True: 1.0}
+
+
+class TestUtilityMethods:
+    """Tests for QuantumFloat's non-dunder public methods."""
+
+    def test_exp_shift(self):
+        """Test that exp_shift performs a free (gate-less) bitshift."""
+        a = QuantumFloat(4)
+        a[:] = 2
+        a.exp_shift(2)
+        assert a.get_measurement() == {8: 1.0}
+
+    def test_exp_shift_rejects_non_integer(self):
+        """Test that exp_shift rejects a non-integer shift amount."""
+        a = QuantumFloat(4)
+        with pytest.raises(TypeError, match="non-integer"):
+            a.exp_shift(1.5)
+
+    def test_add_sign(self):
+        """Test that add_sign turns an unsigned QuantumFloat into a signed one."""
+        qf = QuantumFloat(4)
+        assert qf.signed is False
+        qf.add_sign()
+        assert qf.signed is True
+
+    def test_add_sign_rejects_already_signed(self):
+        """Test that add_sign raises when called on an already-signed QuantumFloat."""
+        qf = QuantumFloat(4, signed=True)
+        with pytest.raises(ValueError, match="Tried to add sign to signed QuantumFloat"):
+            qf.add_sign()
+
+    def test_sign_rejects_unsigned(self):
+        """Test that sign() raises when called on an unsigned QuantumFloat."""
+        qf = QuantumFloat(4, signed=False)
+        with pytest.raises(ValueError, match="Tried to retrieve sign qubit of unsigned QuantumFloat"):
+            qf.sign()
+
+    def test_significant(self):
+        """Test that significant(k) returns the qubit with significance k."""
+        qf = QuantumFloat(6, -3)
+        x(qf.significant(-2))
+        assert qf.get_measurement() == {0.25: 1.0}
+
+    def test_significant_rejects_out_of_range(self):
+        """Test that significant() raises for a significance outside mshape."""
+        qf = QuantumFloat(4, 0)
+        with pytest.raises(ValueError, match="Tried to retrieve invalid significant"):
+            qf.significant(100)
+
+    def test_significant_at_mshape_bounds(self):
+        """Test significant() at both ends of mshape, where it's most likely to be off-by-one."""
+        qf = QuantumFloat(6, -3)
+        min_sig, max_sig = qf.mshape
+        x(qf.significant(min_sig))
+        x(qf.significant(max_sig - 1))
+        assert qf.get_measurement() == {2**min_sig + 2 ** (max_sig - 1): 1.0}
+
+    def test_truncate(self):
+        """Test that truncate rounds a value to the closest representable one."""
+        qf = QuantumFloat(4, -1)
+        assert qf.truncate(0.5102341) == 0.5
+
+    def test_truncate_extreme_values(self):
+        """Test that truncate clips values far outside the representable range instead of overflowing."""
+        qf = QuantumFloat(4)
+        assert qf.truncate(1e30) == 15
+        assert qf.truncate(-1e30) == 0
+
+        signed_qf = QuantumFloat(4, signed=True)
+        assert signed_qf.truncate(1e30) == 15
+        assert signed_qf.truncate(-1e30) == -16
+
+    def test_truncate_large_msize(self):
+        """Test that truncate's clipping bound doesn't overflow for a very large mantissa size."""
+        qf = QuantumFloat(1024)
+        assert qf.truncate(0) == 0
+        assert qf.truncate(5) == 5
+
+    def test_get_ev(self):
+        """Test that get_ev computes the expectation value of a measurement."""
+        qf = QuantumFloat(4)
+        h(qf)
+        assert qf.get_ev() == 7.5
+
+    def test_encode_rounding_unsigned(self):
+        """Test that encode(rounding=True) rounds to the closest representable value."""
+        qf = QuantumFloat(4, -1)
+        qf.encode(0.5102341, rounding=True)
+        assert qf.get_measurement() == {0.5: 1.0}
+
+    def test_encode_rounding_signed(self):
+        """Test that encode(rounding=True) rounds correctly for a signed QuantumFloat."""
+        qf = QuantumFloat(3, -1, signed=True)
+        qf.encode(-1.2, rounding=True)
+        assert qf.get_measurement() == {-1.0: 1.0}
+
+    def test_init_from_same_shape(self):
+        """Test that init_from copies a value between identically-shaped QuantumFloats."""
+        a = QuantumFloat(4, -1)
+        a[:] = 2.5
+        b = QuantumFloat(4, -1)
+        b.init_from(a)
+        assert b.get_measurement() == {2.5: 1.0}
+
+    def test_init_from_signed_different_size(self):
+        """Test that init_from copies a signed value into a larger signed QuantumFloat."""
+        a = QuantumFloat(3, 0, signed=True)
+        a[:] = -3
+        b = QuantumFloat(5, 0, signed=True)
+        b.init_from(a)
+        assert b.get_measurement() == {-3: 1.0}
+
+    def test_init_from_unsigned_different_exponent(self):
+        """Test that init_from copies a value between QuantumFloats with different exponents."""
+        a = QuantumFloat(3, -2, signed=False)
+        a[:] = 1.5
+        b = QuantumFloat(5, -3, signed=False)
+        b.init_from(a)
+        assert b.get_measurement() == {1.5: 1.0}
+
+    def test_incr_default_step(self):
+        """Test that incr() with no argument increments by 2**exponent."""
+        qf = QuantumFloat(4, -1)
+        qf[:] = 1.0
+        qf.incr()
+        assert qf.get_measurement() == {1.5: 1.0}
+
+    def test_incr_explicit_value(self):
+        """Test that incr(value) increments by the given classical value."""
+        qf = QuantumFloat(4)
+        qf[:] = 3
+        qf.incr(2)
+        assert qf.get_measurement() == {5: 1.0}
+
+    def test_hash(self):
+        """Test that __hash__ is based on object identity."""
+        qf = QuantumFloat(3)
+        assert hash(qf) == id(qf)
+
+    def test_msize(self):
+        """Test that msize excludes the sign qubit from the total qubit count."""
+        qf = QuantumFloat(4, signed=True)
+        assert qf.msize == 4
+        assert qf.size == 5
+
+    def test_sb_poly(self):
+        """Test that sb_poly returns the expected semi-boolean polynomial coefficients."""
+        qf = QuantumFloat(3, -1, signed=True, name="sb_poly_test_x")
+        coeffs = [float(c) for c in sp.Poly(qf.sb_poly(5)).coeffs()]
+        assert coeffs == [0.5, 1.0, 2.0, 28.0]
+
+    def test_jdecoder(self):
+        """Test that jdecoder matches decoder outside of tracing mode."""
+        qf = QuantumFloat(3, -1, signed=True)
+        assert qf.jdecoder(5) == qf.decoder(5)
+
+    def test_quantum_bit_shift(self):
+        """Test that quantum_bit_shift performs a controlled bit shift on the hardware."""
+        qf = QuantumFloat(4)
+        qf[:] = 1
+        qbl = QuantumBool()
+        h(qbl)
+
+        with qbl:
+            qf.quantum_bit_shift(2)
+
+        # Joint measurement (rather than the statevector's pretty-printed string,
+        # which is brittle across sympy/Qrisp versions) confirms the shift is
+        # correlated with qbl: unshifted (1) when False, shifted (4) when True.
+        assert multi_measurement([qf, qbl]) == {(1, False): 0.5, (4, True): 0.5}
+
+
+class TestModuleLevelHelpers:
+    """Tests for quantum_float.py's module-level helper functions."""
+
+    def test_create_output_qf_sympy_expr(self):
+        """Test create_output_qf sizing an output for an arbitrary polynomial expression."""
+        a = QuantumFloat(3, 0, signed=False, name="cq_helper_a")
+        b = QuantumFloat(3, 0, signed=False, name="cq_helper_b")
+        sym_a, sym_b = sp.symbols("cq_helper_a cq_helper_b")
+        poly = sym_a * sym_b + 2 * sym_a + 3
+
+        out = create_output_qf([a, b], poly)
+        assert (out.msize, out.exponent, out.signed) == (7, 0, False)
+
+    def test_create_output_qf_polynomial_operand_order_independent(self):
+        """Test that create_output_qf's polynomial sizing doesn't depend on operand list order."""
+        u = QuantumFloat(3, -1, name="order_u")
+        v = QuantumFloat(2, -2, name="order_v", signed=True)
+        sym_u, sym_v = sp.symbols("order_u order_v")
+        poly = sym_u * sym_v
+
+        forward = create_output_qf([u, v], poly)
+        reverse = create_output_qf([v, u], poly)
+        assert (forward.msize, forward.exponent, forward.signed) == (
+            reverse.msize,
+            reverse.exponent,
+            reverse.signed,
+        )
+
+    def test_create_output_qf_polynomial_duplicate_name_raises(self):
+        """Test that create_output_qf rejects operands sharing a name instead of silently mis-sizing."""
+        u = QuantumFloat(3, -1, name="dup_name")
+        v = QuantumFloat(2, -2, name="dup_name", signed=True)
+        poly = sp.Symbol("dup_name") ** 2
+
+        with pytest.raises(ValueError, match="Duplicate QuantumFloat name"):
+            create_output_qf([u, v], poly)

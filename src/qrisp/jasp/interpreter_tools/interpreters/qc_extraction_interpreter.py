@@ -1,18 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Interpreter for converting Jaspr into static QuantumCircuit objects.
 
 QuantumCircuit Extraction Interpreter
 =====================================
@@ -61,7 +63,6 @@ This module provides three key classes/concepts:
    - Handles array operations on measurements (using MeasurementArray)
    - Creates ProcessedMeasurement placeholders for classical post-processing
    - Delegates to default JAX evaluation for pure classical operations
-
 """
 
 import numpy as np
@@ -446,6 +447,11 @@ def apply_array_primitive(prim_name, params, invalues):
         for dim in dimensions:
             result = np.flip(result, axis=dim)
 
+    elif prim_name == "convert_element_type":
+        # Type conversion on measurement data is a no-op for circuit
+        # extraction — measurement results are placeholders anyway.
+        result = encoded[0]
+
     elif prim_name == "dynamic_update_slice":
         # dynamic_update_slice(operand, update, start_indices)
         # Updates a slice of operand starting at start_indices with the values from update
@@ -678,6 +684,7 @@ def make_qc_extraction_eqn_evaluator(qc):
             ParityOperation,
             QuantumPrimitive,
             extract_invalues,
+            insert_call_outvalues,
             insert_outvalues,
         )
         from qrisp.jasp.interpreter_tools.interpreters import cond_to_cl_control
@@ -689,25 +696,31 @@ def make_qc_extraction_eqn_evaluator(qc):
         # SECTION 4.1: Control Flow and Structural Primitives
         # -----------------------------------------------------------------
 
-        if prim_name == "jit" and (
-            isinstance(eqn.params["jaxpr"], Jaspr) or any(contains_measurement_data(v) for v in invalues)
-        ):
-            # Nested Jaspr (from @qache or similar) - evaluate with our interpreter
+        if prim_name == "jit":
+            # Always recursively evaluate nested jit calls with our
+            # interpreter so that quantum operations inside @qache'd
+            # sub-functions (user_func, sampling_helper_*) are extracted
+            # into the QuantumCircuit rather than being silently skipped.
             from qrisp.jasp import eval_jaxpr
 
-            definition_jaxpr = eqn.params["jaxpr"]
-            res = eval_jaxpr(definition_jaxpr.jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(
-                *(definition_jaxpr.consts + invalues)
-            )
+            definition = eqn.params["jaxpr"]
+            if isinstance(definition, Jaspr):
+                inner_jaxpr = definition.jaxpr
+                inner_consts = definition.consts
+            elif hasattr(definition, "jaxpr"):
+                inner_jaxpr = definition.jaxpr
+                inner_consts = definition.consts
+            else:
+                inner_jaxpr = definition
+                inner_consts = []
 
-            if len(definition_jaxpr.jaxpr.outvars) == 1:
+            res = eval_jaxpr(inner_jaxpr, eqn_evaluator=qc_extraction_eqn_evaluator)(*(inner_consts + invalues))
+
+            if len(inner_jaxpr.outvars) == 1:
                 res = [res]
 
             insert_outvalues(eqn, context_dic, res)
             return
-
-        elif prim_name == "jit":
-            return True
 
         elif prim_name == "cond":
             # Conditional branching - may become classically controlled operation
@@ -804,6 +817,12 @@ def make_qc_extraction_eqn_evaluator(qc):
                 # ProcessedMeasurement stays processed
                 context_dic[eqn.outvars[0]] = ProcessedMeasurement()
                 return
+            elif isinstance(inval, ParityHandle):
+                # ParityHandle represents a parity measurement result.
+                # Any type conversion on it is meaningless during circuit
+                # extraction — produce a ProcessedMeasurement placeholder.
+                context_dic[eqn.outvars[0]] = ProcessedMeasurement()
+                return
             elif isinstance(inval, list) and len(inval) and isinstance(inval[0], (ProcessedMeasurement, Clbit)):
                 # List of measurement data
                 if new_dtype is not None and not np.issubdtype(new_dtype, np.bool_):
@@ -832,6 +851,7 @@ def make_qc_extraction_eqn_evaluator(qc):
             "rev",
             "dynamic_update_slice",
             "select_n",
+            "convert_element_type",
         ):
             # Check if any input contains measurement data
             if any(contains_measurement_data(v) for v in invalues):
