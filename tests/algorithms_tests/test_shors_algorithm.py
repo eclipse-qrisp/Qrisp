@@ -86,7 +86,7 @@ def test_extract_order_combines_three_outcomes():
 
 
 def test_extract_order_combination_beyond_int64_range(monkeypatch):
-    """`_extract_order` must combine large candidates via `math.lcm`, not `np.lcm`, which overflows above int64 range."""
+    """`_extract_order` must combine large candidates via `math.lcm`, not `np.lcm` (overflows past int64)."""
     # r1, r2 differ by 2 and are both odd, so gcd(r1, r2) == 1 and their lcm
     # is their exact product, well beyond numpy's int64 range. Neither is a
     # multiple of the true order (4) alone or combined, so the combination
