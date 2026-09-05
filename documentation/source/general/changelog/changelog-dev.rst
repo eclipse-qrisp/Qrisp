@@ -93,6 +93,16 @@ Other New Features
   fully understand and take responsibility for the changes implemented
   (`PR #816 <https://github.com/eclipse-qrisp/Qrisp/pull/816>`_).
 
+- Added :func:`thapliyal_adder <qrisp.thapliyal_adder>`, exposing the Thapliyal
+  in-place adder from `arXiv:1712.02630 <https://arxiv.org/abs/1712.02630>`_ with
+  a modern, Jasp-compatible signature mirroring
+  :func:`cuccaro_adder <qrisp.cuccaro_adder>`. It works in both static and dynamic
+  (JASP) modes, accepts a classical or quantum first operand, handles unequal
+  register sizes (only the first operand is resized, giving modulo addition when
+  it is truncated), and supports ``c_in``, ``c_out``, and a
+  :func:`custom_control <qrisp.custom_control>`-based controlled version
+  (`issue #395 <https://github.com/eclipse-qrisp/Qrisp/issues/395>`_).
+  
 .. Add other new features above this line
 
 Bug Fixes
