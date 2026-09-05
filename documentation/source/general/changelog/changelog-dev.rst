@@ -61,6 +61,12 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
+- Sped up ``BigInteger.__lshift__``/``__rshift__`` (~3x faster at 2048-bit
+  width), added doctest-verified ``Examples``, and added test coverage
+  across the ``BigInteger``/Jasp-Montgomery backend and Shor's
+  algorithm/RSA, previously untested
+  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
+
 - Added type hints across :class:`~qrisp.QuantumFloat`, fixed stale
   docstring examples, and sped up ``significant()``, ``init_from()``, and
   ``encode(..., rounding=True)`` (now O(1))
@@ -161,6 +167,21 @@ Bug Fixes
   negative-length loop range under Jasp
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
 
+* Fixed several crashes and a correctness bug in the ``BigInteger``/Shor's
+  algorithm backend: continued-fraction period recovery, mixed-type
+  Montgomery encode/decode, a broken traced ``egcd``, ``QuantumArray``
+  matrix multiplication against a classical matrix, and order-finding
+  verifying candidates against a mutated value instead of the original
+  base (which also masked an exponential-time candidate-combination
+  fallback)
+  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
+
+* Fixed ``OverflowError``\ s from ``numpy``'s fixed-width ``gcd``/``lcm`` on
+  large integers in Shor's algorithm, a silent wrong-result bug when
+  Montgomery-encoding mismatched ``BigInteger`` widths, and a bare
+  ``IndexError`` when order-finding exhausts all measurement outcomes
+  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
+
 * Fix a code typo in the Jasp tutorial which printed the wrong variable
   when checking which variables are dynamic.
   (`PR #828 <https://github.com/eclipse-qrisp/Qrisp/pull/828>`_).
@@ -210,6 +231,11 @@ API Changes
   helpful ``ImportError`` when the ``iqm-client[qrisp]`` package is
   not installed.
   (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
+
+* Renamed five internal ``qrisp.shor`` helper functions to be private, and
+  removed the unused ``BigInteger.__sub_alt__`` method as none were part of
+  the documented public API
+  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
 * Renamed the *Split & Cyclic Shift* helper used by
   :func:`~qrisp.dicke_state` from ``split_cycle_shift`` to
