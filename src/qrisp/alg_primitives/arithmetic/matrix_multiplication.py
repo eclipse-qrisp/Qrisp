@@ -27,6 +27,42 @@ from qrisp.core import QuantumArray
 from qrisp.core.gate_application_functions import p, z
 
 
+def _trunc_poly(poly: sp.Expr, trunc_bounds: tuple[int, int]) -> sp.Expr:
+    """Truncate a polynomial to the given power-of-2 bounds.
+
+    Truncates a polynomial of the form ``p(x) = 2**k_0*x**i_0 +
+    2**k_1*x**i_1 + ...`` by removing every summand whose coefficient's
+    power of 2 does not lie within ``trunc_bounds``.
+
+    Parameters
+    ----------
+    poly : sympy.Expr
+        The polynomial to truncate.
+    trunc_bounds : tuple[int, int]
+        The (lower, upper) power-of-2 bounds to truncate to.
+
+    Returns
+    -------
+    sympy.Expr
+        The truncated polynomial, expanded.
+
+    """
+    # sympy's type stubs don't model Poly's dynamic attribute surface, so
+    # pyright can't see .trunc()/.expr here even though they're real members.
+    # Convert to sympy polynomial
+    poly_repr = sp.poly(poly)
+
+    # Clip upper bound
+    poly_repr = poly_repr.trunc(2.0 ** (trunc_bounds[1]))  # pyright: ignore[reportAttributeAccessIssue]
+
+    # Clip lower bound
+    poly_repr = poly_repr / 2.0 ** trunc_bounds[0]
+    poly_repr = poly_repr - sp.poly(poly_repr).trunc(1)
+    poly_repr = poly_repr * 2.0 ** trunc_bounds[0]
+
+    return poly_repr.expr.expand()
+
+
 def q_matmul(q_array_0, q_array_1, output_array=None, res_bit_shape="eq", phase_tolerant=False):
     """Matrix multiplication for QuantumArrays.
 
@@ -453,10 +489,8 @@ def inplace_matrix_app(vector, matrix):
         # Generate inverse equation
         eval_inverse = modinv(coeff, 2**bit) * (-target_values[i].subs({x[j]: 0}) + ancilla_symbol)
 
-        from qrisp.qtypes.quantum_float import trunc_poly
-
         # Truncate coefficients in order to stay inside Z/ 2^n Z
-        eval_inverse = trunc_poly(eval_inverse, (0, bit))
+        eval_inverse = _trunc_poly(eval_inverse, (0, bit))
 
         # Rewrite the remaining evaluation equations in terms of the new variable
         subs_dic = {x[j]: eval_inverse}
@@ -466,7 +500,7 @@ def inplace_matrix_app(vector, matrix):
             target_values[k] = target_values[k].subs(subs_dic).subs({ancilla_symbol: x[j]})
 
             # Truncate coefficients
-            target_values[k] = trunc_poly(target_values[k], (0, bit))
+            target_values[k] = _trunc_poly(target_values[k], (0, bit))
 
         eliminated_variables.append(j)
 
