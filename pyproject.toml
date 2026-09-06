@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qrisp"
-version = "0.9.7"
+version = "0.9.8"
 authors = [
     {name = "The Qrisp authors"},
 ]
@@ -67,7 +67,7 @@ docs = [
     "pydata-sphinx-theme==0.17.1",
 ]
 dev-code-style = [
-    "ruff==0.16.4",
+    "ruff==0.16.5",
 ]
 dev-testing = [
     "pytest==9.1.1",

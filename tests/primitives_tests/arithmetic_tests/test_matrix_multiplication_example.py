@@ -17,8 +17,10 @@
 
 # Created by ann81984 at 06.05.2022
 import numpy as np
+import sympy as sp
 
 from qrisp import QuantumArray, QuantumFloat, dot, tensordot
+from qrisp.alg_primitives.arithmetic.matrix_multiplication import _trunc_poly
 
 np.random.seed(42)  # Deterministic for reproducible test results
 
@@ -134,3 +136,10 @@ def test_quantum_array_iterator_is_iterable():
 
     iterator = iter(q_array)
     assert iter(iterator) is iterator
+
+
+def test_trunc_poly():
+    """Test that _trunc_poly removes summands outside the given power-of-2 bounds."""
+    sym_x = sp.symbols("x")
+    poly = 8 * sym_x + 4 * sym_x**2 + 1
+    assert _trunc_poly(poly, (2, 3)) == 4.0 * sym_x**2
