@@ -1596,19 +1596,17 @@ class QubitOperator(Hamiltonian):
             Deprecated alias for ``diagonalization_method``. Using this argument
             raises :class:`~qrisp.misc.exceptions.QrispDeprecationWarning`.
         backend : BackendLike, optional
-            The backend on which to evaluate the quantum circuit. The default can be
-            specified in the file default_backend.py.
+            The backend on which to evaluate the quantum circuit. By default, the
+            :class:`~qrisp.interface.QrispSimulatorBackend` is used.
         compile : bool, optional
             Boolean indicating if the .compile method of the underlying QuantumSession
             should be called before. The default is ``True``.
         compilation_kwargs  : dict, optional
             Keyword arguments for the compile method. For more details check
-            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`. The default
-            is ``{}``.
+            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`.
         subs_dic : dict, optional
             A dictionary of Sympy symbols and floats to specify parameters in the case
             of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
-            The default is ``{}``.
         precompiled_qc : QuantumCircuit, optional
             A precompiled quantum circuit.
         _measurement_data : QubitOperatorMeasurement
