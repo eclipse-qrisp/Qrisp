@@ -67,6 +67,11 @@ Improvements
   algorithm/RSA, previously untested
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
+- Expanded the ``count_ops`` (Jasp resource-estimation) test suite with
+  small, exact-value edge-case tests, and improved the docstrings of the
+  ``jaspification`` module (``jaspify``, ``simulate_jaspr``, ``stimulate``)
+  (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
+
 - Added type hints across :class:`~qrisp.QuantumFloat`, fixed stale
   docstring examples, and sped up ``significant()``, ``init_from()``, and
   ``encode(..., rounding=True)`` (now O(1))
