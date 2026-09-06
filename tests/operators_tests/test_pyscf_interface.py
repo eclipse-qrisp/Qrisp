@@ -44,4 +44,4 @@ def test_pyscf_interface():
         qv = QuantumVariable(12)
         return qv
 
-    H_ferm.expectation_value(state_prep)()
+    H_ferm.expectation_value(state_prep, max_shots=None)()

@@ -461,7 +461,7 @@ class VQEProblem:
             init_point,
             optimizer,
             options,
-            _measurement_data=measurement_data,
+            measurement_data=measurement_data,
         )
 
         return opt_res
@@ -557,7 +557,7 @@ class VQEProblem:
             init_point,
             optimizer,
             options,
-            _measurement_data=measurement_data,
+            measurement_data=measurement_data,
         )
 
         def circuit_generator(qarg):
