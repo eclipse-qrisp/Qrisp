@@ -1858,6 +1858,7 @@ class ProductBlockEncoding(BlockEncoding):
         factors: Sequence[BlockEncoding],
         strategy: _ProductStrategy = "qubit_efficient",
     ) -> None:
+        """Initialize a product block encoding with the given factors and strategy."""
         if strategy not in ("separate", "qubit_efficient"):
             raise ValueError(f"Unknown product strategy: {strategy}")
 
