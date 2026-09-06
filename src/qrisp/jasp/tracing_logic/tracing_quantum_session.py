@@ -222,6 +222,14 @@ class TracingQuantumSession:
             (the variable already has qubits assigned).
 
         """
+
+        if self.abs_qst is None:
+            raise RuntimeError(
+                "Tried to create QuantumVariable outside of a quantum tracing "
+                "context (use jaspify, make_jaspr, sample or similar features "
+                "to enter a quantum tracing context)"
+            )
+
         self._check_in_scope()
 
         if size is not None:

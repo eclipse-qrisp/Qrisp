@@ -197,3 +197,22 @@ def test_quantum_arithmetic():
 
     for a, b in meas_res.keys():
         assert (b * 5) % (2**n) == a
+
+
+def test_q_mult_invalid_method():
+    """Test that q_mult raises ValueError naming the invalid method and the valid choices."""
+    import pytest
+
+    from qrisp import QuantumFloat, q_mult
+
+    a = QuantumFloat(3)
+    b = QuantumFloat(3)
+
+    with pytest.raises(ValueError) as exc_info:
+        q_mult(a, b, method="invalid_method")
+
+    message = str(exc_info.value)
+    assert "invalid_method" in message
+    assert "auto" in message
+    assert "sbp" in message
+    assert "hybrid" in message
