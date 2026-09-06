@@ -199,12 +199,12 @@ def sim_qsp(T_values, H, M):
 
     @jaspify(terminal_sampling=True)
     def magnetization(t):
-        magnetization = M.expectation_value(psi, precision=0.001)(t)
+        magnetization = M.expectation_value(psi, precision=0.001, max_shots=None)(t)
         return magnetization
 
     @jaspify(terminal_sampling=True)
     def energy(t):
-        energy = H.expectation_value(psi, precision=0.001)(t)
+        energy = H.expectation_value(psi, precision=0.001, max_shots=None)(t)
         return energy
 
     for t in T_values:

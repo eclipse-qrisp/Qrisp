@@ -72,11 +72,11 @@ def test_gqet(L, poly):
 
     @jaspify(terminal_sampling=True)
     def main():
-        E = H.expectation_value(transformed_psi_prep, precision=0.001)()
+        E = H.expectation_value(transformed_psi_prep, precision=0.001, max_shots=None)()
         return E
 
     # Calculate the energy
-    E0 = H.expectation_value(psi_prep, precision=0.001)()
+    E0 = H.expectation_value(psi_prep, precision=0.001, max_shots=None)()
     E1 = main()
 
     # Compare to target values

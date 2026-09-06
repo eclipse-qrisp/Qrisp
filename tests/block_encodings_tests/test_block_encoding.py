@@ -197,7 +197,7 @@ def test_block_encoding_ev():
     be_ev = BE.expectation_value(operand_prep, shots=1_000_000)(np.pi / 4)
 
     # Standard mode (Static Execution): Pauli measurements
-    op_ev = H.expectation_value(operand_prep, precision=0.001)(np.pi / 4)
+    op_ev = H.expectation_value(operand_prep, precision=0.001, max_shots=None)(np.pi / 4)
 
     assert np.abs(be_ev_jasp - be_ev) < 1e-2
     assert np.abs(be_ev - op_ev) < 1e-2

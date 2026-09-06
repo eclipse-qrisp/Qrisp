@@ -16,8 +16,13 @@
 
 """Implements the QubitOperator class for Pauli/ladder operators, measurement, and trotterization."""
 
-from itertools import product
+from __future__ import annotations
 
+from itertools import product
+from typing import Any, Callable, Literal, TYPE_CHECKING
+import warnings
+
+import jax
 import jax.numpy as jnp
 import numpy as np
 import scipy.sparse as sp_sparse  # aliased: `sp` is already sympy, below
@@ -44,9 +49,14 @@ from qrisp.jasp import check_for_tracing_mode, jrange, q_switch
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
-from qrisp.operators.qubit.measurement import get_measurement
+from qrisp.operators.qubit.jasp_measurement import _jasp_expectation_value_helper
+from qrisp.operators.qubit.measurement import _expectation_value_helper
 from qrisp.operators.qubit.qubit_term import QubitTerm
+from qrisp.misc.exceptions import QrispDeprecationWarning
+
+if TYPE_CHECKING:
+    from qrisp.interface import BackendLike
+    from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
 
 threshold = 1e-9
 
@@ -1518,16 +1528,20 @@ class QubitOperator(Hamiltonian):
 
     def expectation_value(
         self,
-        state_prep,
-        precision=0.01,
-        diagonalisation_method="commuting_qw",
-        backend=None,
-        compile=True,
-        compilation_kwargs={},
-        subs_dic={},
-        precompiled_qc=None,
-        measurement_data=None,  # measurement settings
-    ):
+        state_prep: Callable[..., QuantumVariable],
+        *,
+        precision: float = 0.01,
+        shots: int | None = None,
+        max_shots: int | None = 100_000,
+        diagonalization_method: Literal["commuting", "commuting_qw"] | None = None,
+        diagonalisation_method: Literal["commuting", "commuting_qw"] | None = None,
+        backend: BackendLike | None = None,
+        compile: bool = True,
+        compilation_kwargs: dict[Any, Any] | None = None,
+        subs_dic: dict[Any, Any] | None = None,
+        precompiled_qc: QuantumCircuit | None = None,
+        _measurement_data: QubitOperatorMeasurement | None = None,
+    ) -> Callable[..., float | jax.Array]:
         r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
         This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
 
@@ -1539,7 +1553,9 @@ class QubitOperator(Hamiltonian):
 
         .. note::
 
-            When used with Jasp, only ``state_prep``, ``precision`` and ``diagonalisation_method`` are relevant parameters. Additional parameters are ignored.
+            When used with Jasp, ``state_prep``, ``precision``, ``shots``,
+            ``max_shots`` and ``diagonalization_method`` control measurement.
+            Circuit and backend parameters are ignored.
 
         Parameters
         ----------
@@ -1549,13 +1565,32 @@ class QubitOperator(Hamiltonian):
             The state preparation function can only take classical values as arguments.
             This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
         precision : float, optional
-            The precision with which the expectation of the Hamiltonian is to be evaluated.
-            The default is 0.01. The number of shots scales quadratically with the inverse precision.
-        diagonalisation_method : str, optional
+            Target absolute precision for the expectation value. The number of
+            shots is estimated from the measurement-group variances and scales
+            approximately as ``1 / precision**2``. It also increases with the
+            magnitude of the Hamiltonian through the coefficient-dependent
+            variances (and hence its norm). These variances are estimated from
+            the operator rather than measured from the state, so the resulting
+            shot count and achieved precision are estimates, not guarantees.
+            The default is 0.01.
+        shots : int, optional
+            Explicit total number of shots. If supplied, this takes precedence
+            over ``precision`` and is distributed across measurement groups.
+            The requested total must not exceed ``max_shots``.
+        max_shots : int, optional
+            Hard upper bound for the total number of shots. With the default
+            ``100_000``, a ``ValueError`` is raised before measurement if the
+            precision-based shot estimate exceeds this limit. For explicit
+            ``shots``, the requested total is checked directly. Pass ``None``
+            to disable this safety limit.
+        diagonalization_method : str, optional
             Specifies the method for grouping and diagonalizing the :ref:`QubitOperator`.
             Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms,
             and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
             The default is ``commuting_qw``.
+        diagonalisation_method : str, optional
+            Deprecated alias for ``diagonalization_method``. Using this argument
+            raises :class:`~qrisp.misc.exceptions.QrispDeprecationWarning`.
         backend : BackendLike, optional
             The backend on which to evaluate the quantum circuit. The default can be
             specified in the file default_backend.py.
@@ -1572,13 +1607,14 @@ class QubitOperator(Hamiltonian):
             The default is ``{}``.
         precompiled_qc : QuantumCircuit, optional
             A precompiled quantum circuit.
-        measurement_data : QubitOperatorMeasurement
+        _measurement_data : QubitOperatorMeasurement
             Cached data to accelerate the measurement procedure. Automatically generated by default.
 
         Returns
         -------
         callable
-            A function returning an array containing the expectaion value.
+            A function returning a Python ``float`` in static mode or a
+            zero-dimensional :class:`jax.Array` in Jasp mode.
 
         Examples
         --------
@@ -1693,15 +1729,31 @@ class QubitOperator(Hamiltonian):
 
         """
 
+        if diagonalization_method is not None and diagonalisation_method is not None:
+            raise ValueError("Specify only one of diagonalization_method and diagonalisation_method.")
+
+        if diagonalisation_method is not None:
+            warnings.warn(
+                "diagonalisation_method is deprecated; use diagonalization_method instead.",
+                QrispDeprecationWarning,
+                stacklevel=2,
+            )
+            diagonalization_method = diagonalisation_method
+
+        if diagonalization_method is None:
+            diagonalization_method = "commuting_qw"
+
         def return_function(*args):
 
             if check_for_tracing_mode():
-                return get_jasp_measurement(
+                return _jasp_expectation_value_helper(
                     self,
                     state_prep,
-                    args,
                     precision=precision,
-                    diagonalisation_method=diagonalisation_method,
+                    shots=shots,
+                    max_shots=max_shots,
+                    state_args=args,
+                    diagonalization_method=diagonalization_method,
                 )
             else:
                 if precompiled_qc is not None:
@@ -1709,17 +1761,19 @@ class QubitOperator(Hamiltonian):
                 else:
                     qarg = state_prep(*args)
 
-                return get_measurement(
+                return _expectation_value_helper(
                     self,
                     qarg,
                     precision=precision,
-                    diagonalisation_method=diagonalisation_method,
+                    shots=shots,
+                    max_shots=max_shots,
+                    diagonalization_method=diagonalization_method,
                     backend=backend,
                     compile=compile,
                     compilation_kwargs=compilation_kwargs,
                     subs_dic=subs_dic,
                     precompiled_qc=precompiled_qc,
-                    measurement_data=measurement_data,
+                    _measurement_data=_measurement_data,
                 )
 
         return return_function

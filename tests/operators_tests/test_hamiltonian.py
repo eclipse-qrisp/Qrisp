@@ -29,7 +29,7 @@ def test_pauli_hamiltonian():
         return qv
 
     H = Z(0) * Z(1)
-    res = H.expectation_value(state_prep, precision=0.001)()
+    res = H.expectation_value(state_prep, precision=0.001, max_shots=None)()
     assert np.abs(res - 0.0) < 2e-2
 
     # What is the semantics here?
@@ -60,7 +60,7 @@ def test_trotterization():
         x(qv)
         return qv
 
-    E1 = G.expectation_value(state_prep, precision=0.001)()
+    E1 = G.expectation_value(state_prep, precision=0.001, max_shots=None)()
     assert np.abs(E1 - (-0.78)) < 2e-2
 
     # Find minimum Eigenvalue with Hamiltonian simulation + QPE
