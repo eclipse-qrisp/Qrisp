@@ -52,6 +52,7 @@ from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp.operators.qubit.jasp_measurement import _jasp_expectation_value_helper
 from qrisp.operators.qubit.measurement import _expectation_value_helper
+from qrisp.operators.qubit.measurement_plan import _validate_shot_parameters
 from qrisp.operators.qubit.qubit_term import QubitTerm
 
 if TYPE_CHECKING:
@@ -1619,6 +1620,15 @@ class QubitOperator(Hamiltonian):
             A function returning a Python ``float`` in static mode or a
             zero-dimensional :class:`jax.Array` in Jasp mode.
 
+        Raises
+        ------
+        ValueError
+            If both diagonalization-method spellings are supplied, if the
+            measurement method or shot parameters are invalid, or if the
+            calculated shot requirement exceeds ``max_shots``.
+        QrispDeprecationWarning
+            If the deprecated ``diagonalisation_method`` spelling is used.
+
         Examples
         --------
         We define a Hamiltonian, and measure its expectation value for the state of a :ref:`QuantumFloat`.
@@ -1744,6 +1754,10 @@ class QubitOperator(Hamiltonian):
 
         if diagonalization_method is None:
             diagonalization_method = "commuting_qw"
+        if diagonalization_method not in ["commuting", "commuting_qw"]:
+            raise ValueError(f"Unknown diagonalization method: {diagonalization_method}.")
+
+        _validate_shot_parameters(precision, shots, max_shots)
 
         def return_function(*args):
 

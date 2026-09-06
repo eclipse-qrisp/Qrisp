@@ -128,6 +128,22 @@ def _calculate_shot_weights(standard_deviations: Sequence[float]) -> list[float]
     return [total_standard_deviation * standard_deviation for standard_deviation in standard_deviations]
 
 
+def _validate_shot_parameters(
+    precision: float,
+    shots: int | None,
+    max_shots: int | None,
+) -> None:
+    """Validate static shot-allocation parameters."""
+    if shots is not None:
+        if not isinstance(shots, int) or shots < 1:
+            raise ValueError("shots must be a positive integer.")
+    elif not np.isfinite(precision) or precision <= 0:
+        raise ValueError("precision must be a finite positive number.")
+
+    if max_shots is not None and (not isinstance(max_shots, int) or max_shots < 1):
+        raise ValueError("max_shots must be a positive integer or None.")
+
+
 def _calculate_shot_counts(
     shot_weights: Sequence[float],
     precision: float = 0.01,
@@ -142,19 +158,15 @@ def _calculate_shot_counts(
     proportionally using largest-remainder rounding. ``max_shots`` applies to
     both modes and raises before any backend or sampler is called.
     """
+    _validate_shot_parameters(precision, shots, max_shots)
+
     if shots is not None:
-        if not isinstance(shots, int) or shots < 1:
-            raise ValueError("shots must be a positive integer.")
         requested_shots = shots
     else:
-        if not np.isfinite(precision) or precision <= 0:
-            raise ValueError("precision must be a finite positive number.")
         raw_shots = [weight / precision**2 for weight in shot_weights]
         requested_shots = int(np.ceil(sum(raw_shots)))
 
     if max_shots is not None:
-        if not isinstance(max_shots, int) or max_shots < 1:
-            raise ValueError("max_shots must be a positive integer or None.")
         if requested_shots > max_shots:
             raise ValueError(
                 f"The measurement requires approximately {requested_shots} shots, "
