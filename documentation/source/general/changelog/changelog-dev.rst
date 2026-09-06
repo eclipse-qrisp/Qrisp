@@ -203,6 +203,14 @@ New Tutorials/ Updated Documentation
 API Changes
 -----------
 
+* Extended :meth:`~qrisp.operators.qubit.QubitOperator.expectation_value` with
+  explicit ``shots`` and ``max_shots`` controls alongside the existing
+  ``precision`` parameter for managing the measurement shot budget. The
+  method now uses the American-spelled ``diagonalization_method`` parameter;
+  the former ``diagonalisation_method`` name remains available as a deprecated
+  compatibility alias
+  (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
+
 * :class:`~qrisp.interface.IQMBackend` is now a delegation shim that
   re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` (IQM client).
   The backend implementation and its tests live in the IQM client
