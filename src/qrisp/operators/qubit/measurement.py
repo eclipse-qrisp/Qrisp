@@ -25,7 +25,7 @@ import numpy as np
 from numba import njit
 
 from qrisp.circuit import QuantumCircuit, Qubit
-from qrisp.core import QuantumArray, QuantumVariable, QuantumSession, merge
+from qrisp.core import QuantumArray, QuantumSession, QuantumVariable, merge
 from qrisp.core.compilation import qompiler
 from qrisp.interface import BackendLike, BatchedBackend
 from qrisp.operators.qubit.measurement_plan import _create_measurement_plan, _normalize_hamiltonian
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from qrisp.operators.hamiltonian import Hamiltonian
 
 
-def _expectation_value_helper(
+def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     hamiltonian: Hamiltonian,
     qarg: QuantumVariable | QuantumArray | list[Qubit],
     *,
@@ -121,6 +121,7 @@ class QubitOperatorMeasurement:
         hamiltonian: Hamiltonian,
         diagonalization_method: Literal["commuting", "commuting_qw"] = "commuting_qw",
     ) -> None:
+        """Build and cache the static data needed for backend measurements."""
         self.plan = _create_measurement_plan(hamiltonian, diagonalization_method)
         self.groups = self.plan.groups
         self.stds = self.plan.standard_deviations
@@ -128,7 +129,7 @@ class QubitOperatorMeasurement:
         self.shots_list = self.plan.shot_weights
         self.change_of_basis_gates = self.plan.change_of_basis_gates
 
-    def get_measurement(
+    def get_measurement(  # noqa: PLR0913, PLR0917
         self,
         qc: QuantumCircuit,
         qubit_list: list,
@@ -137,7 +138,7 @@ class QubitOperatorMeasurement:
         shots: int | None = None,
         max_shots: int | None = None,
     ) -> float:
-
+        """Measure the expectation value using the cached measurement plan."""
         from qrisp.misc import get_measurement_from_qc
 
         results = []
@@ -146,7 +147,7 @@ class QubitOperatorMeasurement:
 
         shots_list = self.plan.allocate_shots(precision, shots=shots, max_shots=max_shots)
 
-        for group, gate, shots in zip(
+        for group, gate, group_shots in zip(
             self.measurement_operators,
             self.change_of_basis_gates,
             shots_list,
@@ -156,7 +157,7 @@ class QubitOperatorMeasurement:
             curr = qc.copy()
             curr.append(gate, qubits)
 
-            results.append(get_measurement_from_qc(curr, list(qubit_list), backend, shots))
+            results.append(get_measurement_from_qc(curr, list(qubit_list), backend, group_shots))
             meas_ops.append([term.serialize() for term in group.terms_dict])
             meas_coeffs.append(list(group.terms_dict.values()))
 
@@ -176,7 +177,10 @@ def create_padded_array(list_of_lists, use_tuples=False):
 
     Parameters
     ----------
-    list_of_lists (list): A list of lists with potentially different lengths.
+    list_of_lists : list
+        A list of lists with potentially different lengths.
+    use_tuples : bool
+        Whether to pad rows with serialized-observable tuples instead of zeros.
 
     Returns
     -------
@@ -215,6 +219,7 @@ def evaluate_expectation(samples, probs, operators, coefficients):
 
 
 def evaluate_observable(observable: tuple, x: int):
+    """Evaluate one serialized observable for a sampled bitstring."""
     # This function evaluates how to compute the energy of a measurement sample x.
     # Since we are also considering ladder operators, this energy can either be
     # 0, -1 or 1. For more details check out the comments of QubitOperator.get_conjugation_circuit

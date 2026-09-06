@@ -18,9 +18,9 @@
 
 from __future__ import annotations
 
-from itertools import product
-from typing import Any, Callable, Literal, TYPE_CHECKING
 import warnings
+from itertools import product
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 import jax
 import jax.numpy as jnp
@@ -46,13 +46,13 @@ from qrisp import (
     sx_dg,
 )
 from qrisp.jasp import check_for_tracing_mode, jrange, q_switch
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp.operators.qubit.jasp_measurement import _jasp_expectation_value_helper
 from qrisp.operators.qubit.measurement import _expectation_value_helper
 from qrisp.operators.qubit.qubit_term import QubitTerm
-from qrisp.misc.exceptions import QrispDeprecationWarning
 
 if TYPE_CHECKING:
     from qrisp.interface import BackendLike
@@ -1542,7 +1542,10 @@ class QubitOperator(Hamiltonian):
         precompiled_qc: QuantumCircuit | None = None,
         _measurement_data: QubitOperatorMeasurement | None = None,
     ) -> Callable[..., float | jax.Array]:
-        r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
+        r"""Estimate a Hamiltonian expectation value from a prepared quantum state.
+
+        The ``expectation value`` function allows to estimate the expectation value
+        of a Hamiltonian for a state that is specified by a preparation procedure.
         This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
 
         Note that this method measures the **hermitized** version of the operator:
@@ -1728,7 +1731,6 @@ class QubitOperator(Hamiltonian):
         applied.
 
         """
-
         if diagonalization_method is not None and diagonalisation_method is not None:
             raise ValueError("Specify only one of diagonalization_method and diagonalisation_method.")
 

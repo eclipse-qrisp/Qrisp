@@ -55,6 +55,7 @@ class MeasurementPlan:
     change_of_basis_gates : list[Any]
         Basis-change gates for normal backend execution. Jasp plans leave this
         list empty because gates are applied while tracing state preparation.
+
     """
 
     hamiltonian: Hamiltonian
@@ -73,19 +74,16 @@ class MeasurementPlan:
         max_shots: int | None = None,
     ) -> list[int]:
         """Return per-group shots for the requested precision or total."""
-
         return _calculate_shot_counts(self.shot_weights, precision, shots, max_shots)
 
 
 def _normalize_hamiltonian(hamiltonian: Hamiltonian) -> Hamiltonian:
     """Return the operator form used by expectation-value measurements."""
-
     return hamiltonian.hermitize().eliminate_ladder_conjugates().apply_threshold(0)
 
 
 def _split_ladder_groups(groups: list[Hamiltonian]) -> list[Hamiltonian]:
     """Split groups so each basis-change construction has compatible ladders."""
-
     return [
         subgroup
         for group in groups
@@ -115,8 +113,8 @@ def _construct_measurement_groups(
     ------
     ValueError
         If ``diagonalization_method`` is unknown.
-    """
 
+    """
     if diagonalization_method == "commuting_qw":
         return _split_ladder_groups(hamiltonian.commuting_qw_groups())
     if diagonalization_method == "commuting":
@@ -126,7 +124,6 @@ def _construct_measurement_groups(
 
 def _calculate_shot_weights(standard_deviations: Sequence[float]) -> list[float]:
     """Return variance-proportional relative shot weights."""
-
     total_standard_deviation = sum(standard_deviations)
     return [total_standard_deviation * standard_deviation for standard_deviation in standard_deviations]
 
@@ -145,7 +142,6 @@ def _calculate_shot_counts(
     proportionally using largest-remainder rounding. ``max_shots`` applies to
     both modes and raises before any backend or sampler is called.
     """
-
     if shots is not None:
         if not isinstance(shots, int) or shots < 1:
             raise ValueError("shots must be a positive integer.")
@@ -207,8 +203,8 @@ def _create_measurement_plan(
     construct_basis_gates : bool, optional
         Whether to create normal backend basis-change gates. Jasp passes
         ``False`` because its gates are created while tracing state prep.
-    """
 
+    """
     normalized_hamiltonian = _normalize_hamiltonian(hamiltonian)
     if len(normalized_hamiltonian.terms_dict) == 0:
         return MeasurementPlan(

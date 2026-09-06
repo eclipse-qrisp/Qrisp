@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import jax
 import jax.numpy as jnp
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from qrisp.operators.hamiltonian import Hamiltonian
 
 
-def _jasp_expectation_value_helper(
+def _jasp_expectation_value_helper(  # noqa: PLR0913
     hamiltonian: Hamiltonian,
     state_prep: Callable[..., QuantumVariable],
     *,
@@ -92,6 +92,7 @@ def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
 
 @jax.jit
 def jasp_evaluate_observable_jitted(observable: tuple, x: int):
+    """Evaluate one serialized observable for a sampled bitstring."""
     # This function evaluates how to compute the energy of a measurement sample x.
     # Since we are also considering ladder operators, this energy can either be
     # 0, -1 or 1. For more details check out the comments of QubitOperator.get_conjugation_circuit
@@ -120,6 +121,7 @@ def jasp_evaluate_observable_jitted(observable: tuple, x: int):
 
 @jax.jit
 def sum_over_observables_and_samples(observables, x_values, coefficients):
+    """Sum serialized observable values over all samples in one group."""
 
     def body_fun(i, val):
         sum_val = val
