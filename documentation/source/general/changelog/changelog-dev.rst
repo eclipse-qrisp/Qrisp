@@ -174,6 +174,10 @@ Bug Fixes
   ``int`` outside tracing, crashing later negative ``2**exponent`` calls
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+* Fixed a bug where the ``catalyst_interpreter`` failed to compile JAXPRs with
+  constants, by passing the constants to ``eval_jaxpr``
+  (`PR #750 <https://github.com/eclipse-qrisp/Qrisp/pull/750>`_).
+
 Compatibility
 -------------
 
