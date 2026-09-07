@@ -5,6 +5,15 @@ Eclipse Qrisp Community Day
 
 `Click here to register <https://luma.com/56k6pve5>`__ and be part of the very first Eclipse Qrisp Community Day!
 
+.. image:: /_static/EQCD_2026_banner.png
+   :alt: Eclipse Qrisp Community Day 2026 — 29 October 2026, Fraunhofer FOKUS, Berlin. Organised by Eclipse Foundation and Fraunhofer FOKUS.
+   :align: center
+   :width: 75%
+
+.. raw:: html
+
+   <div style="height: 1rem;"></div>
+
 Join the Qrisp Community in Berlin for a full day dedicated to quantum programming with Qrisp. The event will feature technical talks, community discussions, hands-on insights, and opportunities to connect with the people building and using Qrisp.
 
 .. list-table::
@@ -61,8 +70,3 @@ Agenda
 Come meet the community, deepen your technical knowledge, and help shape the future of Qrisp!
 
 `Register now <https://luma.com/56k6pve5>`__
-
-.. image:: /_static/EQCD_2026_banner.png
-   :alt: Eclipse Qrisp Community Day 2026 — 29 October 2026, Fraunhofer FOKUS, Berlin. Organised by Eclipse Foundation and Fraunhofer FOKUS.
-   :align: center
-   :width: 100%
