@@ -97,6 +97,16 @@ class _Disentangler(Operation):
         self.warning = warning
 
 
+# A disentangler is a pure marker: its only state is the `warning` flag, nothing
+# mutates it in place, and Instruction.copy() routes through Operation.copy() (a
+# shallow copy), so copies never alias these. That makes it safe to insert one
+# shared instance per flag instead of constructing a fresh Operation -- and a
+# fresh QuantumCircuit(1) definition -- for every marker. The insertion sites
+# below are per-qubit or per-measurement, so this is a hot path on wide circuits.
+_DISENTANGLER = _Disentangler(warning=False)
+_DISENTANGLER_WITH_WARNING = _Disentangler(warning=True)
+
+
 def _insert_disentangling(qc: QuantumCircuit) -> QuantumCircuit:
     """Inserts disentangling operations into the circuit where appropriate."""
     for qb in qc.qubits:
@@ -124,7 +134,7 @@ def _insert_disentangling(qc: QuantumCircuit) -> QuantumCircuit:
                 qubit_index = instr.qubits.index(qubit)
 
                 if is_permeable(instr.op, [qubit_index]):
-                    reversed_data.insert(j + 1, Instruction(_Disentangler(), [qubit]))
+                    reversed_data.insert(j + 1, Instruction(_DISENTANGLER, [qubit]))
                     disentangling_counter += 1
                     j += 1
                 else:

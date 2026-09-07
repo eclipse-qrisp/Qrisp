@@ -30,7 +30,7 @@ from typing import Any
 
 from qrisp.circuit import ClControlledOperation, CXGate, Instruction, Measurement, QuantumCircuit
 from qrisp.permeability.type_checker import is_permeable
-from qrisp.simulator.preprocessing.disentangling import _Disentangler
+from qrisp.simulator.preprocessing.disentangling import _DISENTANGLER, _DISENTANGLER_WITH_WARNING
 
 
 def _count_measurements_and_treat_alloc(qc: QuantumCircuit, insert_reset: bool = True) -> int:
@@ -50,7 +50,7 @@ def _count_measurements_and_treat_alloc(qc: QuantumCircuit, insert_reset: bool =
         elif instr.op.name == "qb_dealloc":
             qc.data.pop(i)
             if insert_reset:
-                qc.data.insert(i, Instruction(_Disentangler(True), qubits=instr.qubits))
+                qc.data.insert(i, Instruction(_DISENTANGLER_WITH_WARNING, qubits=instr.qubits))
             else:
                 continue
         i += 1
@@ -115,7 +115,7 @@ def _handle_deferred_measurement(
 
     if next_instr_is_reset:
         new_data.append(Instruction(CXGate(), [ancilla] + instr.qubits))
-        new_data.append(Instruction(_Disentangler(), [instr.qubits[0]]))
+        new_data.append(Instruction(_DISENTANGLER, [instr.qubits[0]]))
 
     clbit_to_ancilla[instr.clbits[0]] = ancilla
 
@@ -128,7 +128,7 @@ def _handle_reset(
 ) -> None:
     """Replace a reset that is used later with an ancilla-based reset."""
     reset_qubit = instr.qubits[0]
-    new_data.append(Instruction(_Disentangler(), [reset_qubit]))
+    new_data.append(Instruction(_DISENTANGLER, [reset_qubit]))
 
     for following_instr in data:
         if reset_qubit in following_instr.qubits:
@@ -140,7 +140,7 @@ def _handle_reset(
     ancilla = qc.add_qubit()
     new_data.append(Instruction(CXGate(), instr.qubits + [ancilla]))
     new_data.append(Instruction(CXGate(), [ancilla] + instr.qubits))
-    new_data.append(Instruction(_Disentangler(), [ancilla]))
+    new_data.append(Instruction(_DISENTANGLER, [ancilla]))
 
 
 def _handle_classical_control(
@@ -169,7 +169,7 @@ def _handle_classical_control(
         )
 
     for qubit in control_qubits:
-        new_data.append(Instruction(_Disentangler(), [qubit]))
+        new_data.append(Instruction(_DISENTANGLER, [qubit]))
 
 
 def _make_measurement_instructions(measurements: list[tuple[Any, Any]]) -> list[Instruction]:
@@ -193,7 +193,7 @@ def _insert_multiverse_measurements(qc: QuantumCircuit) -> tuple[QuantumCircuit,
 
             next_instr_is_reset = _find_measurement_follow_up(data, meas_qubit, meas_clbit)
             if next_instr_is_reset is None:
-                new_data.append(Instruction(_Disentangler(), [meas_qubit]))
+                new_data.append(Instruction(_DISENTANGLER, [meas_qubit]))
                 new_measurements.append((instr.qubits[0], instr.clbits[0]))
                 continue
 
