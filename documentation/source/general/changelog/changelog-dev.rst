@@ -297,7 +297,7 @@ Development
 
 * Added a CI test workflow for macOS and Windows, in addition to the existing Linux workflow.
   The new ``multi.yml`` workflow runs on Python 3.11, 3.12, and 3.13 on the latest macOS and Windows runners.
-  (`PR #685 <https://github.com/eclipse-qrisp/Qrisp/pull/685>`_).
+  (`PR #697 <https://github.com/eclipse-qrisp/Qrisp/pull/697>`_).
 
 Dependency Upgrades
 -------------------
