@@ -254,7 +254,14 @@ def _nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None
     # to traverse next. In our case, this can mess with the topological ordering
     # Therefore we allways traverse the child with the highest topological index
 
-    visited_nodes = set()
+    # Visited nodes are removed from the causal graph rather than tracked in a side
+    # set. That is load-bearing for performance, not just bookkeeping: nx.descendants
+    # costs O(V + E) of the subgraph reachable from `node`, so leaving consumed nodes
+    # in place makes every later traversal re-walk them, turning the whole loop from
+    # O(V + E) into O(len(node_costs) * (V + E)). Filtering the descendants afterwards
+    # does not help - the walk itself is the expensive part. Membership in `graph` is
+    # therefore the authoritative "not yet consumed" marker.
+    # `graph` is local to this function and unused after the loop, so removal is safe.
 
     def _topological_desc_traversal(
         graph: nx.DiGraph, node: int, tp_dic: dict[int, int], callback: Callable[[int], None]
@@ -264,19 +271,26 @@ def _nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None
 
         Unlike a standard recursive depth-first search, this function retrieves all
         descendants of the starting node at once, sorts them based on their
-        topological index, and applies the callback function sequentially.#
+        topological index, and applies the callback function sequentially.
+
+        Every node passed to ``callback`` is then removed from ``graph``, so each node
+        is reported exactly once across all traversals.
         """
-        if node in visited_nodes:
+        # Already consumed by an earlier traversal (it was in that node's causal past)
+        if node not in graph:
             return
 
-        # Only fetch descendants that haven't been visited yet
-        node_list = [x for x in nx.descendants(graph, node) if x not in visited_nodes]
+        node_list = list(nx.descendants(graph, node))
         node_list.sort(key=lambda x: -tp_dic[x])
 
         for n in node_list:
             callback(n)
 
         callback(node)
+
+        # Shrink the graph so subsequent traversals only walk what is left
+        graph.remove_nodes_from(node_list)
+        graph.remove_node(node)
 
     def _topological_df_traversal(
         graph: nx.DiGraph, node: int, tp_dic: dict[int, int], callback: Callable[[int], None]
@@ -287,20 +301,24 @@ def _nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None
         This function recursively visits the unvisited neighbors of a node. At each
         branching step, it sorts the neighbors so that nodes with a higher
         topological index are traversed first, preserving the intended causal order.
+
+        As in :func:`_topological_desc_traversal`, visited nodes are removed from
+        ``graph`` so that the non-tree causal graph is not traversed twice.
         """
-        if node in visited_nodes:
+        if node not in graph:
             return
 
-        # Get unvisited neighbors and sort by topological index
-        neighbors = [x for x in graph.neighbors(node) if x not in visited_nodes]
+        neighbors = list(graph.neighbors(node))
         neighbors.sort(key=lambda x: -tp_dic[x])
 
-        # Recursively traverse
+        # Recursively traverse. Children are re-read from the graph on every step
+        # because a recursive call may have consumed several of them at once.
         for n in neighbors:
-            if n not in visited_nodes:
+            if n in graph:
                 _topological_df_traversal(graph, n, tp_dic, callback)
 
         callback(node)
+        graph.remove_node(node)
 
     # The circuits in this list will be the circuits whose execution is the absolute
     # minimum in order to evaluate a certain non-unitary operation
@@ -318,10 +336,9 @@ def _nx_reorder_circuit(qc: QuantumCircuit, preferential_gates: list[str] | None
         evaluation_list = []
 
         def callback(x: int) -> None:
-            # The callback acts as the gatekeeper, marking nodes as processed
-            if x not in visited_nodes:
-                evaluation_list.append(x)
-                visited_nodes.add(x)
+            # Removal from `graph` (see _topological_desc_traversal) already
+            # guarantees each node reaches this callback exactly once.
+            evaluation_list.append(x)
 
         # Traverse causal graph
         _topological_desc_traversal(graph, evaluation_node, tp_dic, callback)
