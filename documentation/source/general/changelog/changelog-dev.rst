@@ -22,6 +22,30 @@ New Features
   rejects kernels that return classical values with a descriptive 
   error — use ``terminal_sampling=False`` (the default) for those cases.
 
+- **Backend-based sampling via** ``@backend_sampler``
+  The new :func:`~qrisp.jasp.backend_sampler` decorator routes
+  :func:`~qrisp.jasp.sample` and :func:`~qrisp.jasp.expectation_value`
+  calls through a real quantum backend instead of the Jaspify simulator.
+  The quantum circuit is extracted once, executed on the backend for all
+  shots, and the classical post-processing (decoding, accumulator updates,
+  expectation-value computation) is replayed via the Jaspr's own while-loop
+  — compiled through :func:`jax.jit`.
+
+  Key capabilities:
+
+  * Supports any backend implementing the :ref:`Backend Interface <BackendInterface>`.
+  * Handles multiple ``sample()`` / ``expectation_value()`` calls in the
+    same decorated function, each independently routed.
+  * Propagates the backend interception through JAX control-flow
+    primitives (``fori_loop``, ``while_loop``, ``cond``, ``scan``,
+    nested ``jit`` / ``pjit``).
+  * Raises ``RuntimeError`` for kernels containing real-time feedback
+    (mid-circuit measurements whose outcomes control subsequent gates).
+  * Raises ``RuntimeError`` when quantum operations are used without a
+    surrounding ``sample()`` / ``expectation_value()`` call.
+  * Raises ``ValueError`` for a non-positive shot count — including a
+    dynamic one, which only becomes concrete once the backend runs.
+
 Improvements
 ------------
 
@@ -37,6 +61,7 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
+
 - Improved the simulator's circuit preprocessing: circuit reordering is
   faster, and gate grouping for circuits with 63+ qubits now stays on the
   fast Numba-jitted path (via chunked qubit bitmasks) instead of falling
@@ -44,6 +69,11 @@ Improvements
   used for simulator preprocessing are strictly internal and marked with a
   leading underscore.
   (`PR #704 <https://github.com/eclipse-qrisp/Qrisp/pull/704>`_)
+
+- Added type hints across :class:`~qrisp.QuantumFloat`, fixed stale
+  docstring examples, and sped up ``significant()``, ``init_from()``, and
+  ``encode(..., rounding=True)`` (now O(1))
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 Other New Features
 ------------------
@@ -148,6 +178,11 @@ Bug Fixes
   by an import-hoisting cleanup, which broke ``ruff format --check`` on
   ``main`` right after merge.
 
+* Fixed a bug where :class:`~qrisp.QuantumFloat` add/sub with different
+  exponents silently produced a ``jax.Array`` exponent instead of a plain
+  ``int`` outside tracing, crashing later negative ``2**exponent`` calls
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
+
 Compatibility
 -------------
 
@@ -156,6 +191,11 @@ Compatibility
   plain Python integers (i.e. outside of Jasp tracing).  The latter previously
   produced an incorrect state silently
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
+* :class:`~qrisp.QuantumFloat` methods now raise specific exception types
+  (``TypeError``, ``ValueError``, ``NotImplementedError``) instead of a
+  generic ``Exception``. Code using ``except Exception:`` is unaffected
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 .. Add compatibility notes above this line
 
@@ -166,6 +206,10 @@ New Tutorials/ Updated Documentation
   module (control flow, sampling, simulators, optimization tools,
   ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
   (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
+
+- Added a :ref:`Community Day <community_day>` page announcing the first
+  Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
+  link and agenda.
 
 .. Add new tutorials above this line
 
@@ -179,6 +223,14 @@ API Changes
   helpful ``ImportError`` when the ``iqm-client[qrisp]`` package is
   not installed.
   (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
+
+* Renamed the *Split & Cyclic Shift* helper used by
+  :func:`~qrisp.dicke_state` from ``split_cycle_shift`` to
+  ``_split_cycle_shift``, marking it private.  Its parameters were renamed
+  from ``highIndex``/``lowIndex`` to ``n``/``k`` to match the notation of
+  `arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_.  The unitary
+  implemented is unchanged
+  (`PR #814 <https://github.com/eclipse-qrisp/Qrisp/pull/814>`_).
 
 .. Add API changes above this line
 
@@ -247,10 +299,10 @@ Development
   typed as returning ``None``, breaking every subclass override
   (`PR #817 <https://github.com/eclipse-qrisp/Qrisp/pull/817>`_).
 
-* Added a ``pull_request`` trigger to the ``ruff format --check`` workflow,
-  which previously ran only on pushes to ``main``. This meant formatting
-  regressions were never caught during PR review and only surfaced once
-  merged into ``main``.
+* Consolidated the ``ruff`` ``reviewdog.yml`` and ``ruff_checks.yml``
+  workflows into a single ``code_style.yml``, with the ``ruff format --check``
+  gate now running on both pull requests and pushes to ``main``
+  (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
 Dependency Upgrades
 -------------------
