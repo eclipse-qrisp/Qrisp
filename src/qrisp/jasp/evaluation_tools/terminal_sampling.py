@@ -1,26 +1,27 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the terminal_sampling decorator for sampling a hybrid simulation's terminal quantum state directly."""
 
 from qrisp.jasp.jasp_expression import make_jaspr
 
 
 def terminal_sampling(func=None, shots=0):
-    """The ``terminal_sampling`` decorator performs a hybrid simulation and afterwards
-    samples from the resulting quantum state.
+    """The ``terminal_sampling`` decorator runs a hybrid simulation and samples from the resulting quantum state.
+
     The idea behind this function is that it is very cheap for a classical simulator
     to sample from a given quantum state without simulating the whole state from
     scratch. For quantum simulators that simulate pure quantum computations
@@ -29,22 +30,36 @@ def terminal_sampling(func=None, shots=0):
     because mid-circuit measurements can alter the classical computation.
 
     In general, generating N samples from a hybrid program requires N executions
-    of said programm. If it is however known that the quantum state is the same
+    of said program. If it is however known that the quantum state is the same
     regardless of mid-circuit measurement outcomes, we can use the terminal sampling
     function. If this condition is not met, the ``terminal_sampling`` function
     will not return a valid distribution. A demonstration for this is given in the
     examples section.
 
-    To use the terminal sampling decorator, a Jasp-compatible function returning
-    some QuantumVariables has to be given as a parameter.
+    .. note::
+
+        ``terminal_sampling`` only supports sampling kernels that return
+        :ref:`QuantumVariables <QuantumVariable>`.  Kernels that return
+        classical values (from :func:`mid-circuit measurements <measure>`)
+        are **not** supported — use :func:`~qrisp.jasp.sample` with
+        ``@jaspify(terminal_sampling=False)`` (the default) for those.
+
+        Additionally, terminal sampling currently cannot be combined with the
+        ``stim`` simulator backend (i.e. calling the lower-level
+        ``simulate_jaspr`` with both ``simulator="stim"`` and
+        ``terminal_sampling=True`` raises an exception).
+
+    To use the terminal sampling decorator, a Jasp-compatible sampling kernel
+    returning some QuantumVariables has to be given as a parameter.
 
     Parameters
     ----------
     func : callable
-        A Jasp compatible function returning QuantumVariables.
+        A Jasp-compatible sampling kernel returning QuantumVariables.
     shots : int, optional
-        An integer specifying the amount of shots. The default is None, which
-        will result in probabilities being returned.
+        An integer specifying the amount of shots. The default is ``0``,
+        which results in the exact probabilities being returned instead of
+        shot-sampled counts.
 
     Returns
     -------
@@ -82,12 +97,12 @@ def terminal_sampling(func=None, shots=0):
 
     **Example of invalid use**
 
-    In this example we demonstrate a hybrid program that can not be properly sample
+    In this example we demonstrate a hybrid program that can not be properly sampled
     via ``terminal_sampling``. The key ingredient here is a realtime component.
 
     ::
 
-        from qrisp import QuantumBool, measure, control
+        from qrisp import QuantumBool, QuantumFloat, h, measure, control
 
         @terminal_sampling
         def main():

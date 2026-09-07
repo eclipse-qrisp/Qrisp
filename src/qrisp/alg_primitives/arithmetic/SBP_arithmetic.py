@@ -1,19 +1,24 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Implements QuantumFloat mult/add/sub and phase-polynomial application via semi-Boolean polynomials."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
 import sympy as sp
@@ -37,6 +42,10 @@ from qrisp.core import (
     z,
 )
 from qrisp.misc import gate_wrap
+
+if TYPE_CHECKING:
+    # NOTE: Local import to avoid a circular import (qrisp.qtypes imports from qrisp.alg_primitives.arithmetic).
+    from qrisp.qtypes.quantum_float import QuantumFloat
 
 # Threshold of rounding used in detecting integer multiples of pi
 pi_mult_round_threshold = 11
@@ -632,14 +641,14 @@ def U_g_inpl_adder(modified_var, summand, mult_factor=1):
 # while performing conditional additions using CNOT gates.
 # The approach is therefore a hybrid of SBP-method and traditional logic approaches
 def hybrid_mult(
-    x,
-    y,
-    output_qf=None,
+    x: QuantumFloat,
+    y: QuantumFloat,
+    output_qf: QuantumFloat | None = None,
     init_op="h",
     terminal_op="qft",
     phase_tolerant=False,
     cl_factor=1,
-):
+) -> QuantumFloat:
     """An advanced algorithm for multiplication which has better depth, gate-count
     and compile time than :meth:`sbp_mult <qrisp.sbp_mult>`.
     It does not support squaring a single QuantumFloat though.
@@ -904,7 +913,37 @@ def hybrid_mult(
 
 
 # Wrapper for choosing the best multiplication algorithm
-def q_mult(factor_1, factor_2, target=None, method="auto"):
+def q_mult(
+    factor_1: QuantumFloat, factor_2: QuantumFloat, target: QuantumFloat | None = None, method: str = "auto"
+) -> QuantumFloat:
+    """Multiply two QuantumFloats, picking (or forcing) the underlying algorithm.
+
+    Parameters
+    ----------
+    factor_1 : QuantumFloat
+        The first factor.
+    factor_2 : QuantumFloat
+        The second factor.
+    target : QuantumFloat, optional
+        The QuantumFloat to store the result in. By default, a suitably
+        sized QuantumFloat is created (ignored for ``method="hybrid"``,
+        which always creates its own).
+    method : str, optional
+        Either ``"auto"`` (squares via ``"sbp"`` when ``factor_1`` and
+        ``factor_2`` share a register, ``"hybrid"`` otherwise),
+        ``"sbp"``, or ``"hybrid"``. The default is ``"auto"``.
+
+    Returns
+    -------
+    QuantumFloat
+        The QuantumFloat containing the product.
+
+    Raises
+    ------
+    ValueError
+        If ``method`` is not one of ``"auto"``, ``"sbp"``, or ``"hybrid"``.
+
+    """
     if method == "auto":
         if factor_1.reg == factor_2.reg:
             return q_mult(factor_1, factor_2, target, method="sbp")
@@ -924,6 +963,9 @@ def q_mult(factor_1, factor_2, target=None, method="auto"):
         from qrisp.alg_primitives.arithmetic import hybrid_mult
 
         return hybrid_mult(factor_1, factor_2)
+
+    else:
+        raise ValueError(f"Don't know multiplication method {method} (available are 'auto', 'sbp', 'hybrid')")
 
 
 def QFT_inpl_mult(qv, inplace_mult=1):

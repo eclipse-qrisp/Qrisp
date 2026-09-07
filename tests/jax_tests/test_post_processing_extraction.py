@@ -920,6 +920,54 @@ def test_while_primitive():
     assert result == 2, f"Jitted: Expected 2, got {result}"
 
 
+def test_scan_primitive_num_carry_one():
+    """Test that a jax.lax.scan with a single (non-tuple) carry works with post-processing.
+
+    Regression test for two bugs found and fixed in evaluate_scan_under_trace
+    (control_flow_interpretation.py), both specific to num_carry == 1 (a bare,
+    non-tuple carry): an unguarded list(carry) call that crashed with
+    "TypeError: iteration over a 0-d array", and a carry/pytree structure
+    mismatch between scan's input and output that crashed with a jax.lax.scan
+    structure-mismatch error.
+    """
+    import jax
+
+    @make_jaspr
+    def test_with_scan():
+        qv = QuantumFloat(3)
+        h(qv[0])
+        h(qv[1])
+
+        meas1 = measure(qv[0])
+        meas2 = measure(qv[1])
+
+        from jax.lax import convert_element_type
+
+        m1 = convert_element_type(meas1, int)
+        m2 = convert_element_type(meas2, int)
+
+        xs = jnp.array([1, 1, 1])
+
+        def body(carry, xi):
+            return carry + xi, carry
+
+        # m1 + m2 is a bare scalar, not a tuple -> num_carry == 1
+        final_carry, _ = jax.lax.scan(body, m1 + m2, xs)
+        return final_carry
+
+    jaspr = test_with_scan()
+    post_proc = jaspr.extract_post_processing()
+
+    result = post_proc(jnp.array([False, False, False]))
+    assert result == 3, f"Expected 3, got {result}"
+
+    result = post_proc(jnp.array([True, False, False]))
+    assert result == 4, f"Expected 4, got {result}"
+
+    result = post_proc(jnp.array([True, True, False]))
+    assert result == 5, f"Expected 5, got {result}"
+
+
 def test_terminal_sampling_comparison():
     """Compare post-processing extraction with terminal sampling across various algorithms.
 

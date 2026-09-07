@@ -58,19 +58,19 @@ Shor's algorithm is among the most famous quantum algorithm since it provides a 
 Despite this importance, the amount of software that is actually able to compile the algorithm to the circuit level is extremely limited. This is because a key operation within the algorithm (modular in-place multiplication) is difficult to implement and has strong requirements for the underlying compiler. These problems highlight how the Qrisp programming-model delivers significant advantages to quantum programmers because the quantum part of the algorithm can be expressend within a few lines of code:
 
 ```python
-
 from qrisp import QuantumFloat, QuantumModulus, h, QFT, control
+
 
 def find_order(a, N):
     qg = QuantumModulus(N)
     qg[:] = 1
-    qpe_res = QuantumFloat(2*qg.size + 1, exponent = -(2*qg.size + 1))
+    qpe_res = QuantumFloat(2 * qg.size + 1, exponent=-(2 * qg.size + 1))
     h(qpe_res)
     for i in range(len(qpe_res)):
         with control(qpe_res[i]):
             qg *= a
-        a = (a*a)%N
-    QFT(qpe_res, inv = True)
+        a = (a * a) % N
+    QFT(qpe_res, inv=True)
     return qpe_res.get_measurement()
 ```
 

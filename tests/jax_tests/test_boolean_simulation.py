@@ -243,6 +243,41 @@ def test_parity_boolean_simulation_inside_loop():
     assert jnp.array_equal(result, expected), f"Expected {expected}, got {result}"
 
 
+def test_scan_boolean_simulation_num_carry_one():
+    """Test that a jax.lax.scan with a single (non-tuple) carry works under boolean_simulation.
+
+    Regression test for two bugs found and fixed in evaluate_scan_under_trace
+    (control_flow_interpretation.py), both specific to num_carry == 1 (a bare,
+    non-tuple carry): an unguarded list(carry) call that crashed with
+    "TypeError: iteration over a 0-d array", and a carry/pytree structure
+    mismatch between scan's input and output that crashed with a jax.lax.scan
+    structure-mismatch error.
+    """
+
+    @boolean_simulation
+    def test_scan_under_boolean_simulation():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[2])
+
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+
+        init_carry = jnp.int64(m0) + jnp.int64(m1) + jnp.int64(m2)
+        xs = jnp.array([1, 2, 3], dtype=jnp.int64)
+
+        def body(carry, xi):
+            return carry + xi, carry
+
+        # init_carry is a bare scalar, not a tuple -> num_carry == 1
+        final_carry, _ = lax.scan(body, init_carry, xs)
+        return final_carry
+
+    result = test_scan_under_boolean_simulation()
+    assert result == 8, f"Expected 8, got {result}"
+
+
 def test_boolean_simulation_pytree():
     """Test that boolean_simulation preserves PyTree structure in return values."""
 
