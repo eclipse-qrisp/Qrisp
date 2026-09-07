@@ -45,10 +45,35 @@ from numba import njit
 
 from qrisp.circuit import ClControlledOperation, Instruction, QuantumCircuit
 
-_WINDOW_SIZE = 100  # The number of instructions to consider in a single window for grouping.
-_CHUNK_SIZE = 62  # Bits per int64 chunk in the chunked qubit-bitmask path (62 to keep the sign bit free).
-_MAX_GROUP_QUBITS = 7  # A group's precalculated unitary is capped at this many qubits.
+# Tuning constants for the grouping search. The specific values below are empirical:
+# they were arrived at by measurement rather than derived, so treat them as knobs to be
+# re-measured rather than as constants with a closed-form justification.
+
+# How far ahead of the current instruction the block search looks. The search stops on
+# its own once every qubit of the candidate group has been blocked, so this only bites
+# on circuits where a group's qubits stay untouched for a long stretch -- a rarely used
+# ancilla or flag qubit, for instance. It therefore trades search time against how many
+# far-apart gates still get merged.
+_WINDOW_SIZE = 100
+
+# Bits per int64 chunk in the chunked qubit-bitmask path. int64 offers 63 value bits, so
+# 62 is one short of the maximum; the spare bit keeps intermediate values comfortably
+# non-negative rather than relying on two's-complement behaviour.
+_CHUNK_SIZE = 62
+
+# Upper bound on the number of qubits a group may span. The group's unitary is
+# precalculated as a dense 2**k x 2**k matrix, so this caps that matrix at 128x128 and
+# is what stops the recursion below from expanding a group indefinitely.
+_MAX_GROUP_QUBITS = 7
+
+# A circuit with fewer qubits than this fits its qubit bitmask into a single int64 and
+# takes the scalar fast path; anything wider needs the chunked representation.
 _SCALAR_BITMASK_LIMIT = _CHUNK_SIZE + 1
+
+# (qubit count, recursion depth) thresholds, read in order by
+# _optimal_grouping_recursion_parameter. Wider circuits get a deeper search because the
+# per-gate saving from a good grouping grows with the size of the statevector, which
+# buys more search time.
 _GROUPING_RECURSION_PARAMETERS = ((16, 2), (20, 3), (24, 4), (28, 6), (32, 7), (34, 8))
 
 
@@ -114,6 +139,10 @@ class _GroupedInstruction:
 
     def get_instruction(self) -> Instruction:
         """Returns a single Instruction object that represents the grouped instructions."""
+        # The group is materialised as a small QuantumCircuit over just the group's own
+        # qubits, which is then wrapped into a single Instruction. Turning it into one
+        # Operation is what lets the simulator precalculate the combined unitary once
+        # and apply it to the statevector in a single pass.
         temp_qc = QuantumCircuit()
         temp_qc.qubits = self.qubits
 
@@ -135,14 +164,29 @@ class _GroupedInstruction:
 # gain.
 def _group_qc(qc: QuantumCircuit) -> QuantumCircuit:
     """Groups the instructions of a quantum circuit into larger blocks to reduce simulation overhead."""
+    # The slack added on top of the per-width parameter is likewise empirical: the
+    # recursion also terminates on its own once a group has no expansion options left or
+    # has reached _MAX_GROUP_QUBITS, so this is a safety ceiling rather than the value
+    # that normally decides when the search stops.
     max_recursion_depth = _optimal_grouping_recursion_parameter(len(qc.qubits)) + 12
 
     int_qc = _IntegerCircuit(qc)
     num_instructions = len(int_qc.data)
+
+    # Instructions absorbed into a group are flagged here rather than deleted. Deleting
+    # them would mean rebuilding the bitmask array and re-indexing on every group found,
+    # which costs a pass over the whole circuit per group; a flag array lets the bitmask
+    # representation be built once and reused for the entire sweep.
     processed = np.zeros(num_instructions, dtype=bool)
 
     final_data = []
 
+    # Sweep left to right. Each unprocessed unitary instruction seeds one group search,
+    # and the resulting group is emitted at that instruction's position -- absorbed
+    # instructions from further right are skipped when the sweep reaches them. Note that
+    # this is what reorders the circuit: a gate may be pulled earlier to join a group,
+    # which is legitimate precisely because the search only admits gates that commute
+    # with everything in between.
     current_idx = 0
     while current_idx < num_instructions:
         if processed[current_idx]:
@@ -191,6 +235,10 @@ def _find_group(
         current_idx=current_idx,
     )
 
+    # Every candidate grouping is scored by _GroupedInstruction.gain and the best one
+    # wins. options[0] is the grouping over just the seed instruction's own qubits, whose
+    # gain is positive by construction, so the search can never do worse than emitting
+    # the seed instruction on its own.
     best_gain = -float("inf")
     best_group = options[0]
     for opt in options:
@@ -300,9 +348,19 @@ def _binary_get_circuit_block_jitted(  # noqa: PLR0913, PLR0917
     """Determines which instructions can be grouped together based on the current set of qubits.
 
     Path A: Ultra-fast scalar bitwise logic for circuits < 63 qubits"""
+    # Qubit sets are int64 bitmasks here, so set membership, intersection and subset
+    # tests are single machine instructions. The whole point of the integer encoding is
+    # to make this innermost loop cheap enough to run for every candidate grouping.
     expansion_options = 0
     instruction_indices = []
+
+    # Tracks how far into established_indices we have got. Those are the instructions a
+    # previous recursion step already accepted into the group; they are re-emitted
+    # without being re-tested.
     ee_counter = 0
+
+    # Only look ahead _WINDOW_SIZE instructions. The loop below also breaks out as soon
+    # as `qubits` becomes empty, which is the usual reason it terminates early.
     window_size = _WINDOW_SIZE
     end_idx = min(current_idx + window_size, len(int_qc_data))
 
@@ -367,6 +425,10 @@ def _binary_get_circuit_block_jitted_chunked(  # noqa: PLR0912, PLR0913, PLR0917
     """Determines which instructions can be grouped together based on the current set of qubits.
 
     Path B: Chunked-Vector logic for massive circuits >= 63 qubits"""
+    # Identical logic to the scalar path above, but every bitmask is an array of int64
+    # chunks and every test therefore becomes a loop over chunks with an early exit.
+    # Keeping this as a separate jitted function rather than generalising the scalar one
+    # means circuits narrow enough for a single int64 pay nothing for the generality.
     expansion_options = np.zeros(num_chunks, dtype=np.int64)
     instruction_indices = []
     ee_counter = 0
@@ -434,6 +496,8 @@ def _binary_get_circuit_block_jitted_chunked(  # noqa: PLR0912, PLR0913, PLR0917
 
 def _int_to_qb_set_generic(data: int | np.ndarray, qc: QuantumCircuit) -> list[Any]:
     """Converts an integer or array of integers representing qubit indices into a list of qubit objects."""
+    # Accepts either representation, so callers do not have to branch on which path the
+    # circuit is using.
     res = []
     if isinstance(data, np.ndarray):
         for c, chunk in enumerate(data):
@@ -442,6 +506,8 @@ def _int_to_qb_set_generic(data: int | np.ndarray, qc: QuantumCircuit) -> list[A
             while temp > 0:
                 if temp & 1:
                     qb_idx = c * _CHUNK_SIZE + bit_idx
+                    # The final chunk is padded out to a full _CHUNK_SIZE bits, so bits
+                    # above the qubit count carry no meaning and are skipped.
                     if qb_idx < len(qc.qubits):
                         res.append(qc.qubits[qb_idx])
                 temp = temp >> 1
@@ -480,6 +546,13 @@ class _IntegerCircuit:
 
     def __init__(self, qc: QuantumCircuit) -> None:
         """Initialize an integer bitmask representation of a quantum circuit."""
+        # Translates the circuit into the form the jitted search consumes: one bitmask
+        # per instruction recording which qubits it touches, plus a flag per instruction
+        # recording whether it is unitary. Non-unitary instructions (measure, reset,
+        # disentangle, classically controlled operations) cannot be absorbed into a
+        # group, and they also block the qubits they act on from being grouped further.
+        # Keeping that as a separate boolean array means the bitmask itself is always a
+        # plain non-negative set of qubits.
         self.source = qc
         self.qb_to_index = {qc.qubits[i]: i for i in range(len(qc.qubits))}
         self.n = len(qc.qubits)
@@ -494,6 +567,11 @@ class _IntegerCircuit:
 
         self.is_unitary = np.array(is_unitary_list, dtype=np.bool_)
 
+        # The dual path. A circuit narrow enough for a single int64 gets the scalar
+        # representation; a wider one gets an array of int64 chunks. Both are handled by
+        # jitted code -- the chunked path exists so that wide circuits do not have to
+        # fall back to arbitrary-precision Python integers, which would leave the jitted
+        # search behind entirely.
         if self.n < _SCALAR_BITMASK_LIMIT:
             self.use_chunks = False
             res_list = []

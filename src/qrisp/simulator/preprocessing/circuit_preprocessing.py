@@ -47,11 +47,30 @@ from qrisp.simulator.preprocessing.circuit_reordering import _reorder_circuit
 from qrisp.simulator.preprocessing.disentangling import _insert_disentangling
 from qrisp.simulator.preprocessing.gate_grouping import _group_qc
 
+# Disentangling is only attempted above this width. Splitting the state into
+# independent branches costs analysis time and pays off in proportion to how large the
+# statevector would otherwise become, so it is not worth doing for narrow circuits. The
+# specific value is empirical -- see the TO-DO in _circuit_preprocessor below.
 _DISENTANGLING_QUBIT_THRESHOLD = 45
 
 
 def _circuit_preprocessor(qc: QuantumCircuit) -> QuantumCircuit:
     """Preprocesses a quantum circuit by applying disentangling, grouping, and reordering operations."""
+    # The three passes run in this order for a reason:
+    #
+    # 1. Disentangling inserts markers telling the simulator where the state may be
+    #    split into independent branches. It goes first because the later passes treat
+    #    those markers as ordinary non-unitary instructions, which is what lets the
+    #    reordering pass pull them forward.
+    # 2. Gate grouping merges runs of small gates into single medium-sized unitaries,
+    #    which is where most of the simulation speed-up comes from. It also shortens the
+    #    instruction list considerably, so running it before the reordering pass means
+    #    the causal graph built there is correspondingly smaller.
+    # 3. Reordering moves measurements, resets and disentanglers as early as it can, so
+    #    that branches which turn out to have vanishing probability are abandoned before
+    #    the remaining gates are applied to them. It runs last so that its ordering is
+    #    final: the grouping pass is free to move gates around, and would otherwise be
+    #    able to undo the ordering established here.
     if len(qc.data) == 0:
         return qc.copy()
 

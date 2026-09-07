@@ -20,10 +20,33 @@ Circuit Reordering
 ==================
 
 The functions in this module reorder circuits so that measurements, resets,
-and disentanglers are performed as early as possible. This is beneficial
-because the simulation of two decoherent states can be parallelized better.
-Furthermore, if a measurement implies that one of the states has vanishing
-probability, that state no longer requires further simulation.
+and disentanglers are performed as early as possible.
+
+The benefit is the width of the tensor factors the simulator carries. A factor
+spanning n qubits holds 2**n amplitudes, so keeping the simulation small means
+splitting qubits off into their own factors as soon as they become separable.
+
+Measurements, resets and disentanglers mark where a qubit is *likely* to be
+separable, not where it is guaranteed to be. A measurement often indicates that
+the algorithm has brought the qubit into a computational basis state, but
+nothing about measuring a qubit forces that to be the case. Splitting there is
+therefore speculative: the simulator attempts to factor the qubit out and leaves
+the state untouched if it cannot (see
+:mod:`~qrisp.simulator.preprocessing.disentangling`). For the many algorithms
+that do measure computational basis states the assumption holds often enough to
+be very effective, so performing these operations at the earliest point their
+prerequisites allow keeps the factors narrower for everything that follows.
+Where a split does collapse a factor onto a single outcome, the alternative
+drops out of the simulation altogether.
+
+This applies to measurements even though :func:`~qrisp.simulator.simulator.run`
+does not execute them in place: the multiverse rewrite in
+:mod:`~qrisp.simulator.preprocessing.measurement_handling` defers the outcome
+onto an ancilla and leaves a disentangler behind at that point, so an early
+measurement still becomes an early attempt to split.
+:func:`~qrisp.simulator.simulator.single_shot_sim` is the one case where nothing
+is speculative: it measures inline, samples an outcome and collapses the state,
+so the measured qubit really is separable afterwards.
 
 Causal Graph
 ------------
@@ -133,6 +156,11 @@ def _nx_get_causal_graph(
     # Create graph object
     graph = nx.DiGraph()
 
+    # These dictionaries track, per qubit and per classical bit, the most recent
+    # instruction that touched it. That is all the state needed to build the graph in a
+    # single forward pass: a new instruction depends exactly on the last instruction on
+    # each of its operands, and any earlier dependency is already implied transitively.
+    #
     # This distionary contains the information, which node of the graph
     # if the most up to date noce for a qubit
     current_node_qubits = {}
@@ -169,10 +197,15 @@ def _nx_get_causal_graph(
             # Update the dictionary
             current_node_clbits[cb] = new_node
 
+        # An instruction acting on several operands whose last writer was the same
+        # instruction would otherwise produce that edge more than once.
         # Make sure every node is listed only once
         node_set = list(set(node_set))
 
-        # Add the edges
+        # Add the edges. With inverted=True the edges run against circuit order, so the
+        # descendants of a node are the instructions that have to be executed *before*
+        # it. That is the direction the reordering pass wants: the set of gates needed to
+        # reach a given measurement is then simply that node's descendant set.
         if inverted:
             for node in node_set:
                 graph.add_edge(new_node, node)
@@ -180,7 +213,10 @@ def _nx_get_causal_graph(
             for node in node_set:
                 graph.add_edge(node, new_node)
 
-        # Log if the new node is non unitary
+        # Log if the new node is non unitary. The name is historical: what actually
+        # gets collected is the nodes the caller wants pulled forward -- the gate names
+        # in preferential_gates, plus the "final_op" sentinels that _nx_reorder_circuit
+        # appends so that every qubit's remaining gates are covered.
         if instruction.op.name in preferential_gates + ["final_op"]:
             non_unitary_nodes.append(new_node)
 
