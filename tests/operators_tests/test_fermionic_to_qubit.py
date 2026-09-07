@@ -17,7 +17,7 @@
 
 from qrisp.vqe.problems.electronic_structure import *
 
-from qrisp.operators.fermionic import a, c
+from qrisp.operators.fermionic import a_f as a, c_f as c
 from qrisp.operators.qubit import X, Y, Z
 
 

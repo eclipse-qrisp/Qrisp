@@ -50,11 +50,11 @@ class FermionicOperator(Hamiltonian):
 
     Examples
     --------
-    A ladder term operator can be specified conveniently in terms of ``a`` (lowering, i.e., annihilation), ``c`` (raising, i.e., creation) operators:
+    A ladder term operator can be specified conveniently in terms of ``a_f`` (lowering, i.e., annihilation), ``c_f`` (raising, i.e., creation) operators:
 
     ::
         
-        from qrisp.operators.fermionic import a, c
+        from qrisp.operators.fermionic import a_f as a, c_f as c
 
         O = a(2)*c(1)+a(3)*c(2)
         O
@@ -94,7 +94,7 @@ class FermionicOperator(Hamiltonian):
 
         ::
 
-            from qrisp.operators import *
+            from qrisp.operators.fermionic import a_f as a, c_f as c
 
             O = a(0)*a(1) - a(1)*a(0)
             print(O.reduce())
@@ -172,7 +172,7 @@ class FermionicOperator(Hamiltonian):
 
         Examples
         --------
-        >>> from qrisp.operators import a, c
+        >>> from qrisp.operators.fermionic import a_f as a, c_f as c
         >>> O = a(0)*c(1)+a(1)*c(0)+0.5*a(1)+0.5*c(1)
         >>> O.coeffs()
         array([1. , 1. , 0.5, 0.5])
@@ -226,7 +226,7 @@ class FermionicOperator(Hamiltonian):
 
         ::
 
-            from qrisp.operators import *
+            from qrisp.operators.fermionic import a_f as a, c_f as c
 
             O = a(0)*c(1)*a(2) + a(3)
             print(O.dagger())
@@ -252,7 +252,7 @@ class FermionicOperator(Hamiltonian):
 
         ::
 
-            from qrisp.operators import *
+            from qrisp.operators.fermionic import a_f as a, c_f as c
 
             O = a(0)*c(1)*a(2) + a(3)
             print(O.hermitize())
@@ -680,7 +680,7 @@ class FermionicOperator(Hamiltonian):
         ::
 
             from qrisp import *
-            from qrisp.operators import a,c
+            from qrisp.operators.fermionic import a_f as a, c_f as c
             import numpy as np
 
             def state_prep(theta):

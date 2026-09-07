@@ -19,7 +19,7 @@ from qrisp import *
 
 
 def test_fermionic_term():
-    from qrisp.operators.fermionic import a, c
+    from qrisp.operators.fermionic import a_f as a, c_f as c
 
     O_0 = a(0) * c(1)
     O_1 = c(1) * a(0)
