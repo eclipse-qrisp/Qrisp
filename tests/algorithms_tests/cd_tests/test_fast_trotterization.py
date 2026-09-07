@@ -3,7 +3,7 @@ import sympy as sp
 from scipy.linalg import expm, norm
 
 from qrisp import QuantumVariable, h
-from qrisp.algorithms.cold.fast_trotterization import fast_trotterization, is_flat_ising_operator
+from qrisp.algorithms.cold._fast_trotterization import fast_trotterization, is_flat_ising_operator
 from qrisp.operators.qubit import A, C, P0, X, Y, Z
 
 

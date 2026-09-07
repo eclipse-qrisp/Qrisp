@@ -22,7 +22,7 @@ from scipy.optimize import Bounds, minimize
 
 from qrisp import h, z
 from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
-from qrisp.algorithms.cold.fast_trotterization import fast_trotterization
+from qrisp.algorithms.cold._fast_trotterization import fast_trotterization
 from qrisp.operators import QubitOperator
 
 
@@ -62,7 +62,7 @@ class DCQOProblem:
     -----
     For performance, ``H_init``, ``H_prob``, ``A_lam``, and ``H_control`` are
     Trotterized via :func:`fast_trotterization
-    <qrisp.algorithms.cold.fast_trotterization.fast_trotterization>`, which
+    <qrisp.algorithms.cold._fast_trotterization.fast_trotterization>`, which
     emits native single- and two-qubit rotation gates directly (bypassing
     :meth:`QubitOperator.trotterization <qrisp.operators.qubit.QubitOperator.trotterization>`'s
     general per-term environment machinery) whenever a Hamiltonian contains
@@ -412,7 +412,7 @@ class DCQOProblem:
         QUBO. Ising-type Hamiltonians (the default for QUBO problems built via
         :func:`create_COLD_instance <qrisp.algorithms.cold.problems.QUBO.create_COLD_instance>`)
         are Trotterized via the fast native-gate path in
-        :func:`fast_trotterization <qrisp.algorithms.cold.fast_trotterization.fast_trotterization>`,
+        :func:`fast_trotterization <qrisp.algorithms.cold._fast_trotterization.fast_trotterization>`,
         which avoids per-term QuantumSession merging overhead that otherwise
         dominates for larger N.
 
