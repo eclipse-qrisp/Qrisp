@@ -154,14 +154,18 @@ class BufferedQuantumState:
         assert isinstance(self.quantum_state, stim.TableauSimulator)
         return self.quantum_state.measure(self.qubit_to_index_dict[qubit[0]])
 
-    def reset(self, qubit: Sequence[Qubit]) -> None:
-        """Reset a qubit to the |0> state via measurement and a conditional flip."""
-        if qubit[0] not in self.qubit_to_index_dict:
+    def reset(self, qubits: Qubit) -> None:
+        """Reset a qubit to the |0> state via measurement and a conditional flip.
+
+        Takes a single Qubit, matching QuantumCircuit.reset -- the other
+        implementer of the duck-typed interface described in the class docstring.
+        """
+        if qubits not in self.qubit_to_index_dict:
             return
 
-        meas_res = self.measure(qubit, track_measurement=False)
+        meas_res = self.measure([qubits], track_measurement=False)
         if meas_res:
-            self.buffer_qc.append(XGate(), qubit)
+            self.buffer_qc.append(XGate(), [qubits])
 
     def copy(self) -> "BufferedQuantumState":
         """Return an independent copy of this buffered quantum state."""
