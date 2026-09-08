@@ -17,7 +17,7 @@
 """Implements in-place ripple-carry addition of QuantumFloats using the Thapliyal adder."""
 
 from qrisp import *  # noqa: F403
-from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_procedure
+from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import thapliyal_adder
 
 
 class RemovedFunctionError(Exception):
@@ -121,7 +121,7 @@ def inpl_add(
     min_sig = min(signficance_range_intersetion)
 
     # If the maximum significance is higher than the maximum signficance of qf2, we need
-    # to augment some ancilla qubits because the Cuccaro-procedure requires equal
+    # to augment some ancilla qubits because the adder requires equal
     # amount of input qubits
 
     from qrisp.core import QuantumVariable
@@ -133,7 +133,7 @@ def inpl_add(
     else:
         augmented_qf2_qbs = qf2.reg
 
-    # Determine the bit window of which bits should participate in the Cuccaro-procedure
+    # Determine the bit window of which bits should participate in the addition
     bit_window_1 = [
         significance_range_qf1.index(min_sig),
         significance_range_qf1.index(max_sig),
@@ -186,7 +186,9 @@ def inpl_add(
             qs.cx(qf2[-1], ancilla_var[i])
 
     if adder == "thapliyal":
-        thapliyal_procedure(qs, qubit_list_2[:-1], qubit_list_1[:-1], output_qubit=qubit_list_1[-1])
+        # Add qf2's bits (a) into qf1's bits (b) in place, routing the carry-out
+        # into qf1's final (sign) qubit via the public adder's c_out slot.
+        thapliyal_adder(qubit_list_2[:-1], qubit_list_1[:-1], c_out=qubit_list_1[-1])
     else:
         raise Exception("Adder " + adder + " not implemented")
 
