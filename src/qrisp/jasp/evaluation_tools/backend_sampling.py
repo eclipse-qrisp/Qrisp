@@ -24,7 +24,7 @@ The actual Jaspr interpreters (``_extract_to_qc_args``,
 ``_body_loop_evaluator``, ``_make_backend_sampling_fn``) live in
 :mod:`~qrisp.jasp.interpreter_tools.interpreters.backend_sampling_interpreter`.
 This module only contains the outer decorator and the
-``pure_callback`` interception layer.
+``io_callback`` interception layer.
 
 Architecture
 ============
@@ -36,14 +36,14 @@ Architecture
 **Piece 1 — :func:`_make_backend_eqn_evaluator`**
     Intercepts ``sampling_eval_function`` / ``expectation_value_eval_function``
     pjit calls in the outer Jaspr and replaces each with a
-    :func:`jax.pure_callback` wrapping the backend-sampling factory
+    :func:`jax.experimental.io_callback` wrapping the backend-sampling factory
     from the interpreter module.
 
 **Piece 2 — :func:`backend_sampler` / :func:`_make_backend_sampler_wrapper`**
     The decorator that traces the user function with
     :func:`~jax.make_jaxpr`, wires piece 1 into the standard
     Jaspr evaluation loop, and evaluates the Jaspr in pure Python
-    (the ``pure_callback`` provides the JIT boundary).
+    (the ``io_callback`` provides the JIT boundary).
 
 .. rubric:: Usage
 
@@ -66,7 +66,8 @@ Architecture
     result = main(1)  # JAX array, shape (100,), routed through backend
 """
 
-from jax import ShapeDtypeStruct, jit, pure_callback
+from jax import ShapeDtypeStruct, jit
+from jax.experimental import io_callback
 from jax.tree_util import tree_flatten, tree_structure, tree_unflatten
 
 from qrisp.circuit import fast_append
@@ -74,33 +75,75 @@ from qrisp.jasp import make_jaxpr
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     eval_jaxpr,
     extract_invalues,
+    insert_call_outvalues,
     insert_outvalues,
 )
 from qrisp.jasp.interpreter_tools.interpreters.backend_sampling_interpreter import (
     _make_backend_sampling_fn,
-    find_named_jaxpr,
+)
+from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
+    evaluate_cond_under_trace,
+    evaluate_scan_under_trace,
+    evaluate_while_loop_under_trace,
 )
 
-__all__ = ["backend_sampler", "find_named_jaxpr"]
+__all__ = ["backend_sampler"]
 
 
 # ===========================================================================
-# Eqn evaluator that intercepts eval functions with pure_callback
+# Eqn evaluator that intercepts eval functions with io_callback
 # ===========================================================================
 
 
-def _make_backend_eqn_evaluator(backend):
-    """Return an ``eqn_evaluator`` that swaps the eval functions for ``pure_callback`` calls.
+def _make_backend_eqn_evaluator(backend, error_box):
+    """Return an ``eqn_evaluator`` that swaps the eval functions for ``io_callback`` calls.
 
     Intercepts ``sampling_eval_function`` and
     ``expectation_value_eval_function`` pjit calls and wraps each in
-    :func:`jax.pure_callback`.  Every other primitive falls through to
-    default evaluation.
+    :func:`jax.experimental.io_callback`.  Every other primitive falls
+    through to default evaluation.
+
+    The effectful callback (as opposed to :func:`jax.pure_callback`) is
+    deliberate: the wrapped function submits a job to a backend and
+    consumes randomness while expanding the returned counts into
+    individual shots, so it is not a pure function of its arguments.
+    ``io_callback`` is the primitive JAX documents for this case, and it
+    guarantees the callback executes exactly once per logical call -- it
+    is never dropped by dead-code elimination nor replayed by a
+    transformation.  That guarantee is what makes it well defined for the
+    callback to raise, which the backend sampler relies on to report
+    invalid shot counts and real-time-feedback kernels
+    (:func:`jax.pure_callback` documents raising inside the callback as
+    undefined behaviour).
+
+    *error_box* is a list the callback appends the original exception to
+    before letting it escape.  XLA re-raises anything a callback throws as
+    an ``XlaRuntimeError`` carrying the Python traceback in its message,
+    so the caller in :func:`_make_backend_sampler_wrapper` uses the boxed
+    exception to restore the type and message the sampler reported.
     """
 
     def eqn_evaluator(eqn, context_dic, eqn_evaluator=None):
         name = eqn.params.get("name", "")
         prim = eqn.primitive.name
+
+        # ``expectation_value(..., return_dict=True)`` renames its eval
+        # function to mark itself for the terminal-sampling interpreter,
+        # which returns a dict of outcomes.  There is no equivalent here:
+        # results leave this decorator through a jitted
+        # :func:`jax.experimental.io_callback`, which has to declare a
+        # static output shape and so cannot return a dict.  Reject it
+        # rather than fall through -- untouched, the quantum state reaches
+        # the jit boundary and XLA fails with an unintelligible aval error.
+        if prim in ("jit", "pjit") and name == "dict_sampling_eval_function":
+            raise NotImplementedError(
+                "backend_sampler does not support "
+                "expectation_value(..., return_dict=True): a dict of outcomes "
+                "cannot be returned through the jitted io_callback this "
+                "decorator relies on. Use return_dict=False to obtain the "
+                "expectation value, sample() to obtain the individual shots, "
+                "or terminal_sampling() for the dict form."
+            )
 
         if prim in ("jit", "pjit") and name in (
             "sampling_eval_function",
@@ -111,23 +154,27 @@ def _make_backend_eqn_evaluator(backend):
 
             fn = _make_backend_sampling_fn(inner_jaxpr, name, backend)
 
-            # Build result shapes.  For a single output variable use a
-            # single ShapeDtypeStruct (callback returns a scalar); for
-            # multiple outputs (pytree returns from the new sample()
-            # signature) use a list so the callback returns a flat tuple.
-            if len(eqn.outvars) == 1:
-                result_shapes = ShapeDtypeStruct(
-                    eqn.outvars[0].aval.shape,
-                    eqn.outvars[0].aval.dtype,
-                )
-                outvals = pure_callback(fn, result_shapes, *invalues)
-                outvals = [outvals]
-            else:
-                result_shapes = [ShapeDtypeStruct(v.aval.shape, v.aval.dtype) for v in eqn.outvars]
-                outvals = pure_callback(fn, result_shapes, *invalues)
-                outvals = list(outvals)
+            # A shape is declared per outvar: sample() returns one array per
+            # leaf of the kernel's return pytree, so a container return shows
+            # up here as several outvars rather than a single array.
+            result_shapes = tuple(ShapeDtypeStruct(outvar.aval.shape, outvar.aval.dtype) for outvar in eqn.outvars)
 
-            insert_outvalues(eqn, context_dic, outvals)
+            def callback(*args, fn=fn):
+                try:
+                    res = fn(*args)
+                except Exception as exc:
+                    error_box.append(exc)
+                    raise
+                # eval_jaxpr unpacks a lone output, while io_callback needs a
+                # pytree matching result_shapes.
+                return res if isinstance(res, tuple) else (res,)
+
+            # ``io_callback`` rather than ``pure_callback``: ``fn`` submits a
+            # backend job and consumes randomness, so it is neither pure nor
+            # safe to elide or replay.  See _make_backend_eqn_evaluator for
+            # the full rationale.
+            outvals = io_callback(callback, result_shapes, *invalues)
+            insert_outvalues(eqn, context_dic, list(outvals))
             return False
 
         # Everything else: default evaluation.
@@ -224,13 +271,15 @@ def backend_sampler(backend):
         result = main(1)
         # result is a JAX array of shape (100,) with backend results
 
-    Using a custom backend:
+    Using a different backend -- any :class:`~qrisp.interface.Backend` works,
+    for instance Qiskit's ``AerSimulator``:
 
     .. code-block:: python
 
-        from qrisp.interface import QrispSimulatorBackend
+        from qiskit_aer import AerSimulator
+        from qrisp.interface import QiskitBackend
 
-        backend = QrispSimulatorBackend()
+        backend = QiskitBackend(backend=AerSimulator())
 
         @backend_sampler(backend=backend)
         def main():
@@ -288,119 +337,32 @@ def backend_sampler(backend):
 # Control-flow handlers — propagate the custom evaluator downwards
 # ===========================================================================
 #
-# Each handler re-evaluates the primitive's sub-Jaxpr(s) with *eqn_evaluator*,
-# so that sample() / expectation_value() calls nested inside jit, while, cond
-# or scan are intercepted and replaced with pure_callback.  All handlers
-# return ``False`` to signal that the equation has been fully handled.
+# ``while``/``cond``/``scan`` are delegated to the shared *under_trace*
+# helpers, which re-interpret the sub-Jaxpr(s) with *eqn_evaluator* and replay
+# them as real traced JAX primitives.  ``jit``/``pjit`` has no shared helper,
+# so it is handled here (as in post_processing_interpreter.py).  Handlers are
+# called for their side effect on *context_dic*; the dispatch below reports the
+# equation as handled.
 
 
 def _handle_jit(eqn, context_dic, eqn_evaluator):
     """Re-evaluate a ``jit``/``pjit`` call with *eqn_evaluator*."""
     closed_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
     if closed_jaxpr is None:
-        return False
+        return
 
     invalues = extract_invalues(eqn, context_dic)
     inner_eval = eval_jaxpr(closed_jaxpr, eqn_evaluator=eqn_evaluator)
     outvals = inner_eval(*(invalues + list(closed_jaxpr.consts)))
-
-    if len(closed_jaxpr.jaxpr.outvars) == 1:
-        outvals = [outvals]
-    insert_outvalues(eqn, context_dic, outvals)
-    return False
-
-
-def _handle_while(eqn, context_dic, eqn_evaluator):
-    """Re-evaluate a ``while`` loop with *eqn_evaluator* in both sub-Jaxprs."""
-    import jax.lax
-
-    invalues = extract_invalues(eqn, context_dic)
-    n_cond = eqn.params["cond_nconsts"]
-    n_body = eqn.params["body_nconsts"]
-    n_all = n_cond + n_body
-
-    def body_fun(val):
-        consts = val[n_cond:n_all]
-        carries = val[n_all:]
-        res = eval_jaxpr(
-            eqn.params["body_jaxpr"],
-            eqn_evaluator=eqn_evaluator,
-        )(*(consts + carries))
-        if not isinstance(res, tuple):
-            res = (res,)
-        return val[:n_all] + tuple(res)
-
-    def cond_fun(val):
-        consts = val[:n_cond]
-        carries = val[n_all:]
-        return eval_jaxpr(
-            eqn.params["cond_jaxpr"],
-            eqn_evaluator=eqn_evaluator,
-        )(*(consts + carries))
-
-    outvals = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[n_all:]
-    insert_outvalues(eqn, context_dic, outvals)
-    return False
-
-
-def _handle_cond(eqn, context_dic, eqn_evaluator):
-    """Re-evaluate a ``cond`` with *eqn_evaluator* in every branch."""
-    import jax.lax
-
-    invalues = extract_invalues(eqn, context_dic)
-    branches = [eval_jaxpr(b, eqn_evaluator=eqn_evaluator) for b in eqn.params["branches"]]
-    outvals = jax.lax.switch(invalues[0], branches, *invalues[1:])
-    if len(eqn.outvars) == 1:
-        outvals = (outvals,)
-    insert_outvalues(eqn, context_dic, outvals)
-    return False
-
-
-def _handle_scan(eqn, context_dic, eqn_evaluator):
-    """Re-evaluate a ``scan`` with *eqn_evaluator* in the body Jaxpr."""
-    import jax.lax
-
-    invalues = extract_invalues(eqn, context_dic)
-    n_consts = eqn.params.get("num_consts", 0)
-    n_carry = eqn.params.get("num_carry", 0)
-    length = eqn.params.get("length", None)
-
-    const_args = tuple(invalues[:n_consts])
-
-    def body_fun(carry, x):
-        carry_args = carry if isinstance(carry, tuple) else (carry,)
-        xs_args = x if isinstance(x, tuple) else (x,)
-        res = eval_jaxpr(
-            eqn.params["jaxpr"],
-            eqn_evaluator=eqn_evaluator,
-        )(*(const_args + carry_args + xs_args))
-        if not isinstance(res, tuple):
-            res = (res,)
-        return res[:n_carry], res[n_carry:] if len(res) > n_carry else ()
-
-    carry_init = tuple(invalues[n_consts : n_consts + n_carry])
-    if n_carry == 1:
-        carry_init = carry_init[0]
-    xs = tuple(invalues[n_consts + n_carry :])
-    if len(xs) == 1:
-        xs = xs[0]
-
-    outvals = jax.lax.scan(body_fun, carry_init, xs, length=length)
-
-    # Result is (carry, ys); flatten for insert
-    flat_out = list(outvals[0]) if isinstance(outvals[0], tuple) else [outvals[0]]
-    if outvals[1] is not None:
-        flat_out.extend(list(outvals[1]) if isinstance(outvals[1], tuple) else [outvals[1]])
-    insert_outvalues(eqn, context_dic, tuple(flat_out))
-    return False
+    insert_call_outvalues(eqn, context_dic, outvals, len(closed_jaxpr.jaxpr.outvars))
 
 
 _CONTROL_FLOW_HANDLERS = {
     "jit": _handle_jit,
     "pjit": _handle_jit,
-    "while": _handle_while,
-    "cond": _handle_cond,
-    "scan": _handle_scan,
+    "while": evaluate_while_loop_under_trace,
+    "cond": evaluate_cond_under_trace,
+    "scan": evaluate_scan_under_trace,
 }
 
 
@@ -424,7 +386,11 @@ def _make_backend_sampler_wrapper(func, backend):
             raise
 
         # ── Build evaluators ────────────────────────────────────────
-        be_evaluator = _make_backend_eqn_evaluator(backend)
+        # Anything the backend callback raises comes back out of XLA as an
+        # XlaRuntimeError; error_box carries the original exception so it
+        # can be restored below.
+        error_box = []
+        be_evaluator = _make_backend_eqn_evaluator(backend, error_box)
 
         # Use a factory to avoid parameter-name shadowing:
         # the inner function captures itself via closure, so nested
@@ -440,11 +406,12 @@ def _make_backend_sampler_wrapper(func, backend):
                 # recursively calls eval_jaxpr with *eqn_evaluator* (our
                 # custom evaluator), so that sample() / expectation_value()
                 # calls nested inside jit, while, cond, or scan are
-                # intercepted and replaced with pure_callback.
+                # intercepted and replaced with io_callback.
                 handler = _CONTROL_FLOW_HANDLERS.get(eqn.primitive.name)
                 if handler is None:
                     return True
-                return handler(eqn, context_dic, eqn_evaluator)
+                handler(eqn, context_dic, eqn_evaluator)
+                return False
 
             return eqn_evaluator
 
@@ -453,12 +420,22 @@ def _make_backend_sampler_wrapper(func, backend):
         # ── Evaluate the Jaspr ──────────────────────────────────────
         # The outer evaluator propagates through jit/pjit/while/cond/
         # scan via the handlers above, replacing sample()/EV calls with
-        # pure_callback.  The resulting computation graph contains only
-        # classical JAX ops and pure_callback — safe for jit.
+        # io_callback.  The resulting computation graph contains only
+        # classical JAX ops and io_callback — safe for jit.
         with fast_append(3):
             flat_args = list(tree_flatten(args)[0])
             eval_fn = eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)
-            res = jit(eval_fn)(*flat_args)
+            try:
+                res = jit(eval_fn)(*flat_args)
+            except Exception:
+                # XLA wraps a callback error into an XlaRuntimeError whose
+                # message is the pasted-in Python traceback.  Re-raise what
+                # the sampler actually reported, so callers see e.g. the
+                # ValueError for an invalid shot count rather than an
+                # opaque runtime error.
+                if error_box:
+                    raise error_box[0] from None
+                raise
 
         # Evaluating the Jaspr gives the flat outputs (a bare value if there is
         # only one of them), so the structure of the decorated function's return

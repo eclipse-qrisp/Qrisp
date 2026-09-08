@@ -28,11 +28,13 @@ from qrisp.operators import QubitOperator
 MatrixType = Union[npt.NDArray[Any], csr_array, csr_matrix]
 
 
-def build_from_array(cls: BlockEncoding, A: MatrixType) -> BlockEncoding:
+def build_from_array(cls: type[BlockEncoding], A: MatrixType) -> BlockEncoding:
     r"""Constructs a BlockEncoding from a 2-D array.
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     A : ndarray | csr_array | csr_matrix
         2-D array of shape ``(N,N,)`` for a power of two ``N``.
 

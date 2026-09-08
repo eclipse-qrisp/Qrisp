@@ -60,6 +60,8 @@ New Features
     (mid-circuit measurements whose outcomes control subsequent gates).
   * Raises ``RuntimeError`` when quantum operations are used without a
     surrounding ``sample()`` / ``expectation_value()`` call.
+  * Raises ``ValueError`` for a non-positive shot count — including a
+    dynamic one, which only becomes concrete once the backend runs.
 
 - **layerize — ASAP circuit scheduling pass**
   The new :func:`~qrisp.layerize` pass reorders circuit instructions
@@ -103,6 +105,19 @@ Improvements
   ``TICK`` — use :func:`~qrisp.promote_barriers` to widen one.  These
   ``TICK``\ s are purely presentational: :func:`~qrisp.find_detectors` strips
   every incoming ``TICK`` and regenerates the moment structure it needs.
+
+- Improved the simulator's circuit preprocessing: circuit reordering is
+  faster, and gate grouping for circuits with 63+ qubits now stays on the
+  fast Numba-jitted path (via chunked qubit bitmasks) instead of falling
+  back to a slower, non-jitted implementation. All functions and classes
+  used for simulator preprocessing are strictly internal and marked with a
+  leading underscore.
+  (`PR #704 <https://github.com/eclipse-qrisp/Qrisp/pull/704>`_)
+
+- Added type hints across :class:`~qrisp.QuantumFloat`, fixed stale
+  docstring examples, and sped up ``significant()``, ``init_from()``, and
+  ``encode(..., rounding=True)`` (now O(1))
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 Other New Features
 ------------------
@@ -203,6 +218,19 @@ Bug Fixes
   when checking which variables are dynamic.
   (`PR #828 <https://github.com/eclipse-qrisp/Qrisp/pull/828>`_).
 
+* Removed a stray double blank line in ``QubitOperator.simulate``, left behind
+  by an import-hoisting cleanup, which broke ``ruff format --check`` on
+  ``main`` right after merge.
+
+* Fixed a bug where :class:`~qrisp.QuantumFloat` add/sub with different
+  exponents silently produced a ``jax.Array`` exponent instead of a plain
+  ``int`` outside tracing, crashing later negative ``2**exponent`` calls
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
+
+* Fixed a bug where the ``catalyst_interpreter`` failed to compile JAXPRs with
+  constants, by passing the constants to ``eval_jaxpr``
+  (`PR #750 <https://github.com/eclipse-qrisp/Qrisp/pull/750>`_).
+
 Compatibility
 -------------
 
@@ -211,6 +239,11 @@ Compatibility
   plain Python integers (i.e. outside of Jasp tracing).  The latter previously
   produced an incorrect state silently
   (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
+* :class:`~qrisp.QuantumFloat` methods now raise specific exception types
+  (``TypeError``, ``ValueError``, ``NotImplementedError``) instead of a
+  generic ``Exception``. Code using ``except Exception:`` is unaffected
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 .. Add compatibility notes above this line
 
@@ -221,6 +254,10 @@ New Tutorials/ Updated Documentation
   module (control flow, sampling, simulators, optimization tools,
   ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
   (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
+
+- Added a :ref:`Community Day <community_day>` page announcing the first
+  Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
+  link and agenda.
 
 .. Add new tutorials above this line
 
@@ -234,6 +271,14 @@ API Changes
   helpful ``ImportError`` when the ``iqm-client[qrisp]`` package is
   not installed.
   (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
+
+* Renamed the *Split & Cyclic Shift* helper used by
+  :func:`~qrisp.dicke_state` from ``split_cycle_shift`` to
+  ``_split_cycle_shift``, marking it private.  Its parameters were renamed
+  from ``highIndex``/``lowIndex`` to ``n``/``k`` to match the notation of
+  `arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_.  The unitary
+  implemented is unchanged
+  (`PR #814 <https://github.com/eclipse-qrisp/Qrisp/pull/814>`_).
 
 .. Add API changes above this line
 
@@ -293,6 +338,19 @@ Development
   used to avoid circular imports) and ``E402`` (module-level imports placed
   after a module docstring)
   (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
+
+* Added type hints across ``BlockEncoding`` and the ``QubitOperator``/
+  ``Hamiltonian`` operator algebra. This exposed two latent bugs:
+  ``BlockEncoding``'s constructor methods (``from_lcu``, ``from_operator``,
+  etc.) had their ``cls`` parameter typed as an instance rather than
+  ``type[BlockEncoding]``, and ``Hamiltonian``'s abstract methods were
+  typed as returning ``None``, breaking every subclass override
+  (`PR #817 <https://github.com/eclipse-qrisp/Qrisp/pull/817>`_).
+
+* Consolidated the ``ruff`` ``reviewdog.yml`` and ``ruff_checks.yml``
+  workflows into a single ``code_style.yml``, with the ``ruff format --check``
+  gate now running on both pull requests and pushes to ``main``
+  (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
 Dependency Upgrades
 -------------------
