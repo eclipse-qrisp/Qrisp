@@ -19,7 +19,7 @@
 
 import jax.numpy as jnp
 
-from qrisp import IterationEnvironment, invert, merge, rx, ry, rz, rzz
+from qrisp import IterationEnvironment, gphase, invert, merge, rx, ry, rz, rzz
 from qrisp.jasp import check_for_tracing_mode, jrange
 
 
@@ -63,6 +63,7 @@ def _emit_flat_trotter_step(H, qarg, t, steps, forward_evolution):
     for term, term_coeff in H.terms_dict.items():
         factor_dict = term.factor_dict
         if len(factor_dict) == 0:
+            gphase(-sign * jnp.real(term_coeff) * t / steps, qarg[0])
             continue
         angle = 2 * sign * jnp.real(term_coeff) * t / steps
         if len(factor_dict) == 1:
@@ -114,7 +115,7 @@ def fast_trotterization(H, order=1, method="commuting_qw", forward_evolution=Tru
     :func:`is_flat_ising_operator`). For any other operator (containing
     ladder operators, projectors, 3+-qubit terms, or non-Z 2-qubit terms),
     this transparently falls back to ``H.trotterization(...)``, so it is
-    always at least as general and always at least as correct as calling
+    always at least as general and always correct as calling
     ``.trotterization()`` directly.
 
     Parameters

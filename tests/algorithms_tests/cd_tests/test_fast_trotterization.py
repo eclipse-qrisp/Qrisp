@@ -18,9 +18,11 @@ import numpy as np
 import sympy as sp
 from scipy.linalg import expm, norm
 
-from qrisp import QuantumVariable, h
+from qrisp import QuantumBool, QuantumVariable, control, h
 from qrisp.algorithms.cold._fast_trotterization import fast_trotterization, is_flat_ising_operator
 from qrisp.operators.qubit import A, C, P0, X, Y, Z
+from qrisp.operators.qubit.qubit_operator import QubitOperator
+from qrisp.operators.qubit.qubit_term import QubitTerm
 
 
 def _up_to_global_phase_close(sv1, sv2, tol=1e-6):
@@ -80,6 +82,31 @@ def test_fast_trotterization_matches_general_path():
                 sv_general = qv_general.qs.statevector_array()
 
                 assert _up_to_global_phase_close(sv_fast, sv_general)
+
+
+def test_fast_trotterization_identity_term_observable_under_control():
+    """An identity term's global phase becomes an observable relative phase under control(), so it must not be dropped."""
+    H = QubitOperator({QubitTerm({}): 0.7}) + X(0)
+    assert is_flat_ising_operator(H)
+
+    U_fast = fast_trotterization(H)
+    U_general = H.trotterization()
+
+    ctrl_fast = QuantumBool()
+    h(ctrl_fast)
+    qv_fast = QuantumVariable(1)
+    with control(ctrl_fast[0]):
+        U_fast(qv_fast, t=0.5)
+    sv_fast = ctrl_fast.qs.statevector_array()
+
+    ctrl_general = QuantumBool()
+    h(ctrl_general)
+    qv_general = QuantumVariable(1)
+    with control(ctrl_general[0]):
+        U_general(qv_general, t=0.5)
+    sv_general = ctrl_general.qs.statevector_array()
+
+    assert np.allclose(sv_fast, sv_general, atol=1e-8)
 
 
 def test_fast_trotterization_falls_back_correctly():
