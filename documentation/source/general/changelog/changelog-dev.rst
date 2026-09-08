@@ -43,17 +43,11 @@ Improvements
   grouping on every timestep, and Ising-type Hamiltonians (identity,
   single-qubit Pauli, or :math:`Z \otimes Z` terms only — the case for every
   built-in QUBO Hamiltonian) are now Trotterized via a new native-gate fast
-  path (``fast_trotterization``) that skips the general per-term
-  ``QuantumEnvironment``/session-merge machinery, falling back automatically
-  and transparently for any other operator. Separately, building large QUBO
-  Hamiltonians (``create_COLD_instance``, ``create_LCD_instance``) no
-  longer costs :math:`\mathcal{O}(N^4)` for a dense :math:`N`-qubit QUBO — a
-  new ``QubitOperator.sum`` classmethod merges many operators in a single
-  :math:`\mathcal{O}(M)` pass
-  (:math:`M` = total term count), replacing the previous pattern of folding
-  many terms together via Python's built-in ``sum()``, which repeatedly
-  copies the entire running total through :ref:`QubitOperator`'s ``__add__``
-  and costs :math:`\mathcal{O}(M^2)`.
+  path (``fast_trotterization``), falling back automatically for any other
+  operator. Separately, a new ``QubitOperator.sum`` classmethod builds large
+  QUBO Hamiltonians (``create_COLD_instance``, ``create_LCD_instance``) in a
+  single pass instead of via Python's built-in ``sum()``, which no longer
+  costs :math:`\mathcal{O}(N^4)` for a dense :math:`N`-qubit QUBO.
 
 Other New Features
 ------------------

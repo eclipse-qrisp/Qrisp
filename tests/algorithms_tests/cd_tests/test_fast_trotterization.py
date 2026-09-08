@@ -1,3 +1,19 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
 import numpy as np
 import sympy as sp
 from scipy.linalg import expm, norm
@@ -13,6 +29,7 @@ def _up_to_global_phase_close(sv1, sv2, tol=1e-6):
 
 
 def test_is_flat_ising_operator():
+    """is_flat_ising_operator accepts identity/single-qubit/Z*Z-only operators and rejects everything else."""
     N = 4
     assert is_flat_ising_operator(sum(X(i) for i in range(N)))
     assert is_flat_ising_operator(sum(Y(i) for i in range(N)))
@@ -31,6 +48,7 @@ def test_is_flat_ising_operator():
 
 
 def test_fast_trotterization_matches_general_path():
+    """fast_trotterization produces the same evolved state as QubitOperator.trotterization() for eligible operators."""
     N = 4
     np.random.seed(0)
     cx_, cy_, cz_ = (np.random.uniform(-1, 1, N) for _ in range(3))
@@ -65,9 +83,7 @@ def test_fast_trotterization_matches_general_path():
 
 
 def test_fast_trotterization_falls_back_correctly():
-    # A ladder-operator Hamiltonian is not eligible for the fast path;
-    # fast_trotterization must produce the exact same circuit/behavior as
-    # calling .trotterization() directly.
+    """fast_trotterization matches .trotterization() exactly for an ineligible (ladder-operator) Hamiltonian."""
     H = A(0) * C(1) * Z(2) + 0.5 * Y(3)
     assert not is_flat_ising_operator(H)
 

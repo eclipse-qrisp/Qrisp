@@ -1,3 +1,19 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
 import numpy as np
 
 from qrisp.algorithms.cold.problems.QUBO import create_COLD_instance, create_LCD_instance
@@ -7,9 +23,8 @@ from qrisp.operators.qubit.qubit_operator import QubitOperator
 
 
 def test_qubit_operator_sum_matches_naive_sum():
-    # Sparse: half the coefficients are exactly zero, matching a sparse QUBO's
-    # coupling matrix. Naive fold-sum() prunes these terms; QubitOperator.sum
-    # must match that behavior term-for-term.
+    """QubitOperator.sum matches plain sum(), including pruning of exact-zero coefficients."""
+    # Half the coefficients are exactly zero, matching a sparse QUBO's coupling matrix.
     coeffs = [0.3, 0.0, -0.7, 0.0, 1.1, 0.0, -0.2, 0.5]
     N = len(coeffs)
 
@@ -22,6 +37,7 @@ def test_qubit_operator_sum_matches_naive_sum():
 
 
 def test_create_cold_instance_H_prob_matches_naive_build():
+    """create_COLD_instance's H_prob matches a naive-sum() reference build."""
     Q = Q6
     N = Q.shape[0]
     h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
@@ -39,6 +55,7 @@ def test_create_cold_instance_H_prob_matches_naive_build():
 
 
 def test_create_lcd_instance_H_prob_and_nc_agp_match_naive_build():
+    """create_LCD_instance(agp_type="nc")'s H_prob and nested-commutator A_lam match a naive-sum() reference build."""
     Q = Q6
     N = Q.shape[0]
     h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)

@@ -1,3 +1,19 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
 import numpy as np
 import sympy as sp
 
@@ -8,6 +24,7 @@ from qrisp.operators.qubit import X, Y, Z
 
 
 def test_cold_uniform_magnitude():
+    """COLD with uniform AGP coefficients, magnitude objective, finds the known solution."""
 
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -22,6 +39,7 @@ def test_cold_uniform_magnitude():
 
 
 def test_cold_nonuniform_magnitude():
+    """COLD with non-uniform AGP coefficients, magnitude objective, finds the known solution."""
 
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -36,6 +54,7 @@ def test_cold_nonuniform_magnitude():
 
 
 def test_cold_uniform_cost():
+    """COLD with uniform AGP coefficients, expectation-value objective, finds the known solution."""
 
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -50,6 +69,7 @@ def test_cold_uniform_cost():
 
 
 def test_cold_nonuniform_cost():
+    """COLD with non-uniform AGP coefficients, expectation-value objective, finds the known solution."""
 
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -64,6 +84,7 @@ def test_cold_nonuniform_cost():
 
 
 def test_coldcrab_uniform_cost():
+    """COLD with CRAB-randomized pulses, uniform AGP, expectation-value objective, finds the known solution."""
 
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -79,6 +100,7 @@ def test_coldcrab_uniform_cost():
 
 
 def test_coldcrab_uniform_magnitude():
+    """COLD with CRAB-randomized pulses, uniform AGP, magnitude objective, finds the known solution."""
 
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -93,6 +115,7 @@ def test_coldcrab_uniform_magnitude():
 
 
 def test_cold_expvalue_method_backend():
+    """COLD's expectation-value objective runs against an explicit measurement backend, not just the default statevector path."""
 
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
     problem_args = {"method": "COLD", "uniform": True}  # , "agp_type": "order1"}
@@ -111,6 +134,7 @@ def test_cold_expvalue_method_backend():
 
 
 def test_cold_full_example():
+    """End-to-end COLD run built directly via DCQOProblem (not solve_QUBO's factory helpers)."""
 
     Q = np.array(
         [
