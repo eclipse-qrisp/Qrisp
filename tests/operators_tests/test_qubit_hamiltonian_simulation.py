@@ -40,7 +40,7 @@ def test_qubit_hamiltonian_simulation():
             x(qv[0])
             return qv
 
-        E1 = H.expectation_value(state_prep, precision=0.001)()
+        E1 = H.expectation_value(state_prep, precision=0.001, max_shots=None)()
         assert abs(E1 - E0) < 5e-2
 
         qpe_res = QPE(state_prep(), U, precision=6, kwargs={"steps": 3}, iter_spec=True)

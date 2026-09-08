@@ -15,10 +15,14 @@
 ********************************************************************************
 """
 
+import inspect
 import random
+
+import pytest
 
 from qrisp import QuantumFloat, QuantumVariable, cx, h, jaspify, x
 from qrisp.default_backend import QrispSimulatorBackend
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators import P0, P1, A, C, X, Y, Z
 
 
@@ -34,18 +38,28 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive=False):
             print(H)
             assert (
                 abs(
-                    H.expectation_value(state_prep, precision=0.0005, backend=non_sampling_backend)()
-                    - H.to_pauli().expectation_value(state_prep, precision=0.0005, backend=non_sampling_backend)()
+                    H.expectation_value(state_prep, precision=0.0005, max_shots=None, backend=non_sampling_backend)()
+                    - H.to_pauli().expectation_value(
+                        state_prep, precision=0.0005, max_shots=None, backend=non_sampling_backend
+                    )()
                 )
                 < 1e-1
             )
             assert (
                 abs(
                     H.expectation_value(
-                        state_prep, precision=0.0005, diagonalisation_method="commuting", backend=non_sampling_backend
+                        state_prep,
+                        precision=0.0005,
+                        max_shots=None,
+                        diagonalization_method="commuting",
+                        backend=non_sampling_backend,
                     )()
                     - H.to_pauli().expectation_value(
-                        state_prep, precision=0.0005, diagonalisation_method="commuting", backend=non_sampling_backend
+                        state_prep,
+                        precision=0.0005,
+                        max_shots=None,
+                        diagonalization_method="commuting",
+                        backend=non_sampling_backend,
                     )()
                 )
                 < 1e-1
@@ -127,8 +141,81 @@ def test_expectation_value_issue_165():
 
     H = A(0) * C(1) * C(2) * A(3) + P1(0) * P1(2) + P1(1) * P1(3)
 
-    assert H.expectation_value(state_prep, diagonalisation_method="commuting")() == 0
-    assert H.expectation_value(state_prep, diagonalisation_method="commuting_qw")() == 0
+    assert H.expectation_value(state_prep, diagonalization_method="commuting")() == 0
+    assert H.expectation_value(state_prep, diagonalization_method="commuting_qw")() == 0
+
+
+def test_expectation_value_accepts_deprecated_diagonalisation_alias():
+    def state_prep():
+        return QuantumVariable(1)
+
+    with pytest.warns(QrispDeprecationWarning, match="use diagonalization_method instead"):
+        X(0).expectation_value(state_prep, diagonalisation_method="commuting_qw")()
+
+
+def test_expectation_value_rejects_both_diagonalization_spellings():
+    method_kwargs = {
+        "diagonalization_method": "commuting_qw",
+        "diagonalisation_method": "commuting",
+    }
+
+    with pytest.raises(ValueError, match="Specify only one"):
+        X(0).expectation_value(lambda: QuantumVariable(1), **method_kwargs)
+
+
+def test_expectation_value_default_max_shots():
+    """The default shot safety limit rejects an over-budget precision estimate."""
+
+    def state_prep():
+        return QuantumVariable(1)
+
+    with pytest.raises(ValueError, match="exceeds max_shots=100000"):
+        X(0).expectation_value(state_prep, precision=0.001)()
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"precision": 0}, "precision must be a finite positive number"),
+        ({"precision": -0.1}, "precision must be a finite positive number"),
+        ({"precision": float("nan")}, "precision must be a finite positive number"),
+        ({"shots": 0}, "shots must be a positive integer"),
+        ({"max_shots": 0}, "max_shots must be a positive integer or None"),
+        ({"diagonalization_method": "unknown"}, "Unknown diagonalization method"),
+    ],
+)
+def test_expectation_value_rejects_invalid_parameters_at_construction(kwargs, message):
+    with pytest.raises(ValueError, match=message):
+        X(0).expectation_value(lambda: QuantumVariable(1), **kwargs)
+
+
+def test_expectation_value_validates_empty_hamiltonian_parameters():
+    with pytest.raises(ValueError, match="shots must be a positive integer"):
+        (0 * X(0)).expectation_value(lambda: QuantumVariable(1), shots=0)
+
+
+def test_expectation_value_shots_take_precedence_over_invalid_precision():
+    X(0).expectation_value(lambda: QuantumVariable(1), precision=0, shots=10)
+
+
+def test_expectation_value_options_are_keyword_only():
+    parameters = list(inspect.signature(X(0).expectation_value).parameters.values())
+
+    assert [parameter.name for parameter in parameters] == [
+        "state_prep",
+        "precision",
+        "shots",
+        "max_shots",
+        "diagonalization_method",
+        "diagonalisation_method",
+        "backend",
+        "compile",
+        "compilation_kwargs",
+        "subs_dic",
+        "precompiled_qc",
+        "_measurement_data",
+    ]
+    assert all(parameter.kind is inspect.Parameter.KEYWORD_ONLY for parameter in parameters[1:])
 
 
 def test_expectation_value_batched_backend():

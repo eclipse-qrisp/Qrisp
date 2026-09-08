@@ -34,7 +34,7 @@ def test_vqe_heisenberg():
 
     results = []
     for i in range(5):
-        res = vqe.run(QuantumVariable(G.number_of_nodes()), depth=2, max_iter=50)
+        res = vqe.run(QuantumVariable(G.number_of_nodes()), depth=2, max_iter=50, mes_kwargs={"max_shots": None})
         results.append(res)
 
     assert np.abs(min(results) - (-8.0)) < 1e-1
@@ -52,7 +52,13 @@ def test_jasp_vqe_heisenberg():
 
         results = jnp.array([0.0] * 5)
         for i in range(5):
-            res = vqe.run(QuantumFloat(G.number_of_nodes()), depth=1, max_iter=50, optimizer="SPSA")
+            res = vqe.run(
+                QuantumFloat(G.number_of_nodes()),
+                depth=1,
+                max_iter=50,
+                optimizer="SPSA",
+                mes_kwargs={"max_shots": None},
+            )
             results = results.at[i].set(res)
 
         return results
