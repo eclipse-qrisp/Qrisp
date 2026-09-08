@@ -20,7 +20,7 @@ This module implements the custom ``eval_jaxpr`` evaluators that replace
 quantum execution with pre-computed backend results inside
 :func:`~qrisp.jasp.backend_sampler`.  The outer interception (replacing
 ``sampling_eval_function`` / ``expectation_value_eval_function`` pjit
-calls with :func:`jax.pure_callback`) lives in
+calls with :func:`jax.experimental.io_callback`) lives in
 :mod:`~qrisp.jasp.evaluation_tools.backend_sampling`.
 
 Architecture
@@ -28,7 +28,7 @@ Architecture
 
 :func:`backend_sampler` is built from three pieces.  Pieces 1 and 2
 (the interpreter layer) live here; Piece 3 (the outer decorator and
-``pure_callback`` interception) lives in the evaluation-tools module.
+``io_callback`` interception) lives in the evaluation-tools module.
 
 **Piece 1 — :func:`_make_backend_sampling_fn`**
     A factory that receives a ``sampling_eval_function`` (or
@@ -72,7 +72,7 @@ Tracing a simple kernel that applies a Hadamard to a 3-qubit
 
     { lambda ; a:QuantumState. let
         b:f64[500] = pjit[
-          name=sampling_eval_function          ← intercept ② (outer, in evaluation_tools)
+          name=sampling_eval_function          ← intercept ① (outer, in evaluation_tools)
           jaxpr={ lambda ; d:f64[500] e:i64[]. let
               _:i64[] = pjit[
                 name=_backend_shots_marker
@@ -83,7 +83,7 @@ Tracing a simple kernel that applies a Hadamard to a 3-qubit
                 body_jaxpr={ lambda ; g:i64[] h:f64[500] i:QuantumState. let
                     j:QuantumState = jasp.create_quantum_kernel
                     k:QuantumState l:f64[500] = pjit[
-                      name=sampling_body_func  ← intercept ③ (this module)
+                      name=sampling_body_func  ← intercept ② (this module)
                       jaxpr={ ...
                         pjit[name=user_func] ...
                         pjit[name=sampling_helper_1] ...
@@ -98,19 +98,24 @@ Tracing a simple kernel that applies a Hadamard to a 3-qubit
         ] ...
       in (b,) }
 
-The three interception points ①②③ correspond to the architecture
-described above.  Interception ② lives in the evaluation-tools module;
-interception ③ (and the supporting ``_extract_to_qc_args``) lives here.
+There are two interception points, ① and ② (note that these do not
+line up one-to-one with the three *pieces* above).  Interception ① is
+Piece 3: it swaps the eval-function pjit for a
+:func:`jax.experimental.io_callback` and lives in the evaluation-tools
+module.  Interception ② is Pieces 1
+and 2: it replaces ``sampling_body_func`` with the pre-computed
+post-processing, and lives here along with the supporting
+:func:`_extract_to_qc_args`.
 
 ::
 
     ┌─ outer Jaspr ──────────────────────────────────────────────┐
     │                                                             │
-    │  sampling_eval_function / expectation_value_eval_function   │  ← pure_callback (evaluation_tools)
+    │  sampling_eval_function / expectation_value_eval_function   │  ← intercept ① io_callback (evaluation_tools)
     │  ┌─ inner Jaxpr ─────────────────────────────────────────┐ │
     │  │  while i < shots:                                      │ │
     │  │    create_quantum_kernel                               │ │
-    │  │    sampling_body_func(i, acc, *kernel_args, qs)        │ │  ← intercept ③ (this module)
+    │  │    sampling_body_func(i, acc, *kernel_args, qs)        │ │  ← intercept ② (this module)
     │  │    consume_quantum_kernel                              │ │
     │  └────────────────────────────────────────────────────────┘ │
     │  result = acc (or acc / shots for EV)                      │
@@ -120,8 +125,8 @@ Key design properties
 ---------------------
 
 * **Single backend call per invocation** — the circuit is built once,
-  the backend runs once, and only lightweight post-processing varies
-  per shot.
+  the backend runs once with the specified number of shots,
+  and only lightweight post-processing is applied per shot.
 * **No manual accumulator logic** — the Jaspr's own while-loop,
   accumulator typing, indexing, and update rules are reused via
   :func:`eval_jaxpr`.  The module never inspects accumulator shapes
@@ -142,6 +147,9 @@ from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     extract_invalues,
     insert_outvalues,
 )
+from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
+    evaluate_while_loop_under_trace,
+)
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
 
 # ===========================================================================
@@ -149,7 +157,7 @@ from qrisp.jasp.jasp_expression.centerclass import Jaspr
 # ===========================================================================
 
 
-def find_named_jaxpr(jaxpr, target_name):
+def _find_named_jaxpr(jaxpr, target_name):
     """Recursively find a ``jit`` / ``pjit`` sub-Jaxpr with the given name.
 
     Searches through nested jit calls and control-flow bodies
@@ -181,7 +189,7 @@ def find_named_jaxpr(jaxpr, target_name):
             # Recurse into nested jit bodies.
             sub = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
             if sub is not None:
-                result = find_named_jaxpr(sub.jaxpr, target_name)
+                result = _find_named_jaxpr(sub.jaxpr, target_name)
                 if result is not None:
                     return result
         # Recurse into control-flow bodies (while, cond, scan).
@@ -191,7 +199,7 @@ def find_named_jaxpr(jaxpr, target_name):
                 if not isinstance(branches, (list, tuple)):
                     branches = [branches]
                 for branch in branches:
-                    result = find_named_jaxpr(branch.jaxpr, target_name)
+                    result = _find_named_jaxpr(branch.jaxpr, target_name)
                     if result is not None:
                         return result
     return None
@@ -253,6 +261,93 @@ def _extract_to_qc_args(inner_jaxpr, body_jaspr, *invals):
     return captured_invalues[0][:-1]
 
 
+def _sampling_body_call(body_jaxpr):
+    """Return the ``sampling_body_func`` call inside a loop body, or ``None``."""
+    for body_eqn in body_jaxpr.eqns:
+        if body_eqn.primitive.name in ("jit", "pjit") and body_eqn.params.get("name") == "sampling_body_func":
+            return body_eqn
+    return None
+
+
+def _cond_carry_indices(cond_jaxpr, cond_nconsts):
+    """Return the indices of the carries referenced by a loop condition."""
+    indices = []
+    for cond_eqn in cond_jaxpr.eqns:
+        for operand in cond_eqn.invars:
+            for pos, invar in enumerate(cond_jaxpr.invars):
+                carry = pos - cond_nconsts
+                if invar is operand and carry >= 0 and carry not in indices:
+                    indices.append(carry)
+    return indices
+
+
+def _find_sampling_loop_index(jaxpr):
+    """Return the position of the loop counter in the ``sampling_body_func`` invars.
+
+    The counter is derived structurally rather than inferred from avals.
+    The sampling loop's ``cond_jaxpr`` is an ``i < shots`` comparison, which
+    narrows the carries down to two: the counter and the shot bound.  Of
+    those two, only the counter is threaded into ``sampling_body_func``, so
+    intersecting the condition's operands with the body call's arguments
+    identifies it uniquely -- without relying on the order of either the
+    comparison's operands or the loop's carries.
+
+    This deliberately avoids matching on shapes and dtypes.  JAX prepends
+    captured closure values to the loop body's invars and to the body call's
+    arguments, so an aval-based search can select a captured value instead of
+    the counter -- silently, when that value is an integer scalar, leaving
+    every iteration reading the same shot.
+
+    Parameters
+    ----------
+    jaxpr : jax.extend.core.Jaxpr
+        The eval-function Jaxpr (``sampling_eval_function`` or
+        ``expectation_value_eval_function``) containing the sampling loop.
+
+    Returns
+    -------
+    int
+        Index of the loop counter within the ``sampling_body_func`` call's
+        invars.
+
+    """
+    for eqn in jaxpr.eqns:
+        if eqn.primitive.name != "while":
+            continue
+
+        body_jaxpr = eqn.params["body_jaxpr"].jaxpr
+        call_eqn = _sampling_body_call(body_jaxpr)
+        if call_eqn is None:
+            continue
+
+        body_nconsts = eqn.params["body_nconsts"]
+        carries = _cond_carry_indices(eqn.params["cond_jaxpr"].jaxpr, eqn.params["cond_nconsts"])
+
+        hits = []
+        for carry in carries:
+            body_pos = body_nconsts + carry
+            if body_pos >= len(body_jaxpr.invars):
+                continue
+            body_var = body_jaxpr.invars[body_pos]
+            pos = next((i for i, operand in enumerate(call_eqn.invars) if operand is body_var), None)
+            if pos is not None:
+                hits.append((pos, body_var.aval))
+
+        if len(hits) != 1:
+            raise RuntimeError(
+                "Could not unambiguously identify the sampling loop index: "
+                f"{len(hits)} of the loop condition's operands are passed to "
+                "sampling_body_func (expected exactly one)."
+            )
+
+        i_pos, aval = hits[0]
+        if getattr(aval, "shape", None) != () or not jnp.issubdtype(aval.dtype, jnp.integer):
+            raise RuntimeError(f"Expected the sampling loop index to be an integer scalar, found {aval}.")
+        return i_pos
+
+    raise RuntimeError("Could not locate the sampling while loop inside the eval function Jaxpr")
+
+
 def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
     """Return ``fn(*kernel_args, shots) → result`` for a given eval Jaxpr.
 
@@ -268,34 +363,14 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
     measurement bits for that shot.  All accumulator typing, indexing,
     and update logic is handled by the Jaspr itself.
     """
-    body_jaxpr = find_named_jaxpr(inner_jaxpr.jaxpr, "sampling_body_func")
+    body_jaxpr = _find_named_jaxpr(inner_jaxpr.jaxpr, "sampling_body_func")
     if body_jaxpr is None:
         raise RuntimeError("sampling_body_func not found inside eval function Jaxpr")
     body_jaspr = Jaspr(body_jaxpr)
 
-    # ── Pre-compute invar positions ─────────────────────────────────
-    # The accumulator output is always the first outvar (return value
-    # of sampling_body_func).  Match its aval against the invars to
-    # find the accumulator position (robust against captured vars).
-    # The loop index *i* is the first int64 scalar before the acc.
-    acc_out_aval = body_jaspr.outvars[0].aval
-    acc_pos = None
-    for idx, invar in enumerate(body_jaspr.invars):
-        aval = invar.aval
-        if type(aval) is type(acc_out_aval) and aval.shape == acc_out_aval.shape and aval.dtype == acc_out_aval.dtype:
-            acc_pos = idx
-            break
-    if acc_pos is None:
-        raise RuntimeError("Could not identify accumulator position in sampling_body_func invars")
-
-    i_pos = None
-    for idx in range(acc_pos):
-        aval = body_jaspr.invars[idx].aval
-        if hasattr(aval, "dtype") and aval.dtype == jnp.int64 and aval.shape == ():
-            i_pos = idx
-            break
-    if i_pos is None:
-        raise RuntimeError("Could not identify loop-index position in sampling_body_func invars")
+    # ── Locate the loop counter ───────────────────────────────────
+    # Derived from the loop's own condition; see _find_sampling_loop_index.
+    i_pos = _find_sampling_loop_index(inner_jaxpr.jaxpr)
 
     def backend_sampling_fn(*invals):
         # invals may include JAX-implicitly-prepended captured closure
@@ -304,6 +379,19 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         n_expected = len(inner_jaxpr.jaxpr.invars)
         actual_args = invals[-n_expected:]
         shots = int(actual_args[-1])
+
+        # sample() carries a static shot count, which the decorator already
+        # rejected at tracing time.  An expectation_value shot count is a tracer
+        # by then -- even when the user passed a plain int -- so it arrives here
+        # unvalidated, and here it is finally concrete.  Catch it before it turns
+        # into an opaque failure further down (a sampling body that is never
+        # reached, or an empty measurement array to index).
+        if shots < 1:
+            raise ValueError(
+                f"backend_sampler requires a positive number of shots, got shots={shots}. "
+                "A shot count of 0 selects exact probabilities, which only a simulator can provide "
+                "(see terminal_sampling)."
+            )
 
         # ── Phase 1: static analysis ────────────────────────────────
         # Extract to_qc_args by running inner_jaxpr until the first
@@ -333,13 +421,20 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         # Run the backend ONCE.
         raw = backend.run(qc, shots=shots)
 
-        # Expand & shuffle into a list of *shots* measurement arrays.
-        meas_results_list = []
-        for bitstring, count in raw.items():
-            bit_array = jnp.array([c == "1" for c in bitstring], dtype=jnp.bool_)
-            meas_results_list.extend([bit_array] * int(count))
-        np.random.shuffle(meas_results_list)
-        meas_results_array = jnp.stack(meas_results_list) if meas_results_list else jnp.array([], dtype=jnp.bool_)
+        # Expand & shuffle into an array of *shots* measurement rows.
+        # Each distinct bitstring is parsed once and the rows are duplicated in
+        # bulk with np.repeat.  The backend reports O(distinct outcomes)
+        # entries while the expansion is O(shots), so building one small array
+        # per shot and stacking them dominates the runtime at high shot counts.
+        items = list(raw.items())
+        counts = [int(count) for _, count in items]
+        if sum(counts):
+            unique_bits = np.array([[c == "1" for c in bitstring] for bitstring, _ in items], dtype=np.bool_)
+            expanded_bits = np.repeat(unique_bits, counts, axis=0)
+            np.random.shuffle(expanded_bits)
+            meas_results_array = jnp.asarray(expanded_bits)
+        else:
+            meas_results_array = jnp.array([], dtype=jnp.bool_)
 
         # ── Phase 2: dynamic loop evaluation ────────────────────────
         def post_proc(meas_results, *all_non_qs_args):
@@ -352,7 +447,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
             """
             return body_jaspr.extract_post_processing(*all_non_qs_args)(meas_results)
 
-        loop_eqn_evaluator = _body_loop_evaluator(post_proc, meas_results_array, i_pos, acc_pos)
+        loop_eqn_evaluator = _body_loop_evaluator(post_proc, meas_results_array, i_pos)
 
         # Evaluate the inner Jaspr (the ``sampling_eval_function`` /
         # ``expectation_value_eval_function`` Jaxpr).  This runs the
@@ -381,7 +476,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
 # ===========================================================================
 
 
-def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
+def _body_loop_evaluator(post_proc, meas_results, i_pos):
     """Build an ``eqn_evaluator`` for the *inner_jaxpr*.
 
     The *inner_jaxpr* is a ``sampling_eval_function`` or an
@@ -405,7 +500,7 @@ def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
         if prim_name in ("jit", "pjit") and eqn.params.get("name") == "sampling_body_func":
             invalues = extract_invalues(eqn, context_dic)
             # invalues = [*captured, i, acc, *kernel_args, qs]
-            # acc is at acc_pos, qs at -1, i at i_pos
+            # qs is at -1, the loop counter at i_pos
             iteration = invalues[i_pos]
             qs_val = invalues[-1]
 
@@ -433,31 +528,9 @@ def _body_loop_evaluator(post_proc, meas_results, i_pos, acc_pos):
             return False
 
         if prim_name == "while":
-            invalues = extract_invalues(eqn, context_dic)
-            n_body_consts = eqn.params.get("body_nconsts", 0)
-            n_cond_consts = eqn.params.get("cond_nconsts", 0)
-            total_consts = n_body_consts + n_cond_consts
-
-            def body_fun(loop_state):
-                # loop_state = (cond_consts, body_consts, *carries)
-                body_consts = loop_state[n_cond_consts:total_consts]
-                carries = loop_state[total_consts:]
-                res = eval_jaxpr(eqn.params["body_jaxpr"], eqn_evaluator=eqn_evaluator)(
-                    *(list(body_consts) + list(carries))
-                )
-                if not isinstance(res, tuple):
-                    res = (res,)
-                return loop_state[:total_consts] + tuple(res)
-
-            def cond_fun(loop_state):
-                cond_consts = loop_state[:n_cond_consts]
-                carries = loop_state[total_consts:]
-                return eval_jaxpr(eqn.params["cond_jaxpr"], eqn_evaluator=eqn_evaluator)(
-                    *(list(cond_consts) + list(carries))
-                )
-
-            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[total_consts:]
-            insert_outvalues(eqn, context_dic, outvalues)
+            # Propagate this evaluator through the loop body/condition so the
+            # interceptions above still apply inside the loop.
+            evaluate_while_loop_under_trace(eqn, context_dic, eqn_evaluator=eqn_evaluator)
             return False
 
         # ── Default (all other primitives) ──────────────────────────

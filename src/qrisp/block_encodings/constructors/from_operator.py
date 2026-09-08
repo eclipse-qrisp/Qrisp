@@ -21,11 +21,16 @@ from qrisp.block_encodings.constructors.from_lcu import build_from_lcu
 from qrisp.operators import FermionicOperator, QubitOperator
 
 
-def build_from_operator(cls: BlockEncoding, O: QubitOperator | FermionicOperator) -> BlockEncoding:
+def build_from_operator(
+    cls: type[BlockEncoding],
+    O: QubitOperator | FermionicOperator,  # noqa: E741 -- public, keyword-callable API name
+) -> BlockEncoding:
     r"""Constructs a BlockEncoding from an operator.
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     O : QubitOperator | FermionicOperator
         The operator to be block-encoded.
 

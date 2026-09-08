@@ -25,7 +25,7 @@ from qrisp.qtypes import QuantumBool
 
 
 def build_from_projector(
-    cls: BlockEncoding,
+    cls: type[BlockEncoding],
     left: Union[int, Tuple[int, ...], Callable],
     right: Optional[Union[int, Tuple[int, ...], Callable]] = None,
     kernel: bool = False,
@@ -35,6 +35,8 @@ def build_from_projector(
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     left : int | tuple of int | Callable
         An integer or a tuple of integers representing a computational basis state $\ket{\phi}$,
         or a function ``left(*operands)`` preparing a state $\ket{\phi}$ from $\ket{0}$.
@@ -113,7 +115,7 @@ def build_from_projector(
         # {0.0: 0.25, 1.0: 0.25, 2.0: 0.25, 3.0: 0.25}
 
     """
-    if kernel or (right == None):
+    if kernel or (right is None):
         right = left
 
     # left

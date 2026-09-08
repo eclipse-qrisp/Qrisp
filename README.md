@@ -37,7 +37,7 @@ You can install Qrisp using pip:
 pip install qrisp
 ```
 
-Qrisp has been confirmed to work with Python version 3.11 & 3.12.
+Qrisp requires Python 3.11 or later, up to and including Python 3.13 (`>=3.11, <3.14`).
 
 Qrisp is compatible with any QASM-capable quantum backend! In particular, it offers convenient interfaces for using IBM, IQM and AQT quantum computers, and any quantum backend provider is invited to reach out for a tight integration! 
 

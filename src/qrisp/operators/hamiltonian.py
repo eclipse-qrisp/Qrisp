@@ -64,12 +64,12 @@ class Hamiltonian(ABC):
     #
 
     @abstractmethod
-    def _repr_latex_(self):
+    def _repr_latex_(self) -> str:
         """ """
         pass
 
     @abstractmethod
-    def __str__(self):
+    def __str__(self) -> str:
         """Returns a string representing the Hamiltonian.
 
         Returns
@@ -81,7 +81,7 @@ class Hamiltonian(ABC):
         pass
 
     @abstractmethod
-    def __add__(self, other):
+    def __add__(self, other: "int | float | complex | Hamiltonian") -> "Hamiltonian":
         """Returns the sum of the operator self and other.
 
         Parameters
@@ -98,13 +98,13 @@ class Hamiltonian(ABC):
         pass
 
     @abstractmethod
-    def __sub__(self, other):
+    def __sub__(self, other: "int | float | complex | Hamiltonian") -> "Hamiltonian":
         """Returns the difference of the operator self and other.
 
         Parameters
         ----------
         other : int, float, complex or Hamiltonian
-            A scalar or a Hamiltonian to substract from the operator self.
+            A scalar or a Hamiltonian to subtract from the operator self.
 
         Returns
         -------
@@ -115,13 +115,13 @@ class Hamiltonian(ABC):
         pass
 
     @abstractmethod
-    def __rsub__(self, other):
+    def __rsub__(self, other: "int | float | complex | Hamiltonian") -> "Hamiltonian":
         """Returns the difference of the operator other and self.
 
         Parameters
         ----------
         other : int, float, complex or Hamiltonian
-            A scalar or a Hamiltonian to substract the operator self from.
+            A scalar or a Hamiltonian to subtract the operator self from.
 
         Returns
         -------
@@ -132,7 +132,7 @@ class Hamiltonian(ABC):
         pass
 
     @abstractmethod
-    def __mul__(self, other):
+    def __mul__(self, other: "int | float | complex | Hamiltonian") -> "Hamiltonian":
         """Returns the product of the operator self and other.
 
         Parameters
@@ -149,7 +149,7 @@ class Hamiltonian(ABC):
         pass
 
     @abstractmethod
-    def __iadd__(self, other):
+    def __iadd__(self, other: "int | float | complex | Hamiltonian") -> "Hamiltonian":
         """Adds other to the operator self.
 
         Parameters
@@ -161,19 +161,19 @@ class Hamiltonian(ABC):
         pass
 
     @abstractmethod
-    def __isub__(self, other):
-        """Substracts other from the operator self.
+    def __isub__(self, other: "int | float | complex | Hamiltonian") -> "Hamiltonian":
+        """Subtracts other from the operator self.
 
         Parameters
         ----------
         other : int, float, complex or Hamiltonian
-            A scalar or a Hamiltonian to substract from the operator self.
+            A scalar or a Hamiltonian to subtract from the operator self.
 
         """
         pass
 
     @abstractmethod
-    def __imul__(self, other):
+    def __imul__(self, other: "int | float | complex | Hamiltonian") -> "Hamiltonian":
         """Multiplys other to the operator self.
 
         Parameters
@@ -185,7 +185,7 @@ class Hamiltonian(ABC):
         pass
 
     @abstractmethod
-    def apply_threshold(self, threshold):
+    def apply_threshold(self, threshold: float) -> "Hamiltonian":
         """Removes all terms with coefficient absolute value below the specified threshold.
 
         Parameters
@@ -197,7 +197,7 @@ class Hamiltonian(ABC):
         pass
 
     @abstractmethod
-    def ground_state_energy(self):
+    def ground_state_energy(self) -> float:
         """Calculates the ground state energy (i.e., the minimum eigenvalue) of the Hamiltonian classically.
 
         Returns

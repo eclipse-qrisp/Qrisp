@@ -357,7 +357,7 @@ def terminal_sampling_evaluator(sampling_res_type):
         if len(eqn.outvars) > 1 and len(decoded_meas_res) == 1:
             flat = decoded_meas_res[0]
             if hasattr(flat, "ndim"):
-                if flat.ndim == 2 and flat.shape[1] == len(eqn.outvars):
+                if flat.ndim == 2 and flat.shape[1] == len(eqn.outvars):  # noqa: PLR2004
                     decoded_meas_res = [flat[:, i] for i in range(flat.shape[1])]
                 elif flat.ndim == 1 and flat.shape[0] == len(eqn.outvars):
                     decoded_meas_res = [flat[i] for i in range(flat.shape[0])]
