@@ -694,7 +694,11 @@ class TestEdgeCases:
     """Boundary conditions and error cases."""
 
     def test_zero_shots_jit(self):
-        """shots=0 raises ValueError at validation time."""
+        """shots=0 is rejected while tracing, before the loop is built.
+
+        Outside tracing mode shots=0 is legitimate -- it selects the exact
+        probabilities via terminal_sampling -- so only the traced path raises.
+        """
 
         def kernel():
             qf = QuantumFloat(3)
@@ -705,11 +709,15 @@ class TestEdgeCases:
         def main():
             return sample(kernel, shots=0)()
 
-        with pytest.raises(ValueError, match="positive integer"):
+        with pytest.raises(ValueError, match="at least one shot is required"):
             main()
 
     def test_zero_shots_tuple_jit(self):
-        """shots=0 raises ValueError (same as scalar case)."""
+        """shots=0 is rejected for a multi-value return too.
+
+        The guard sits in sample() ahead of any accumulator, so the return
+        signature makes no difference to it.
+        """
 
         def kernel():
             a = QuantumFloat(3)
@@ -721,7 +729,7 @@ class TestEdgeCases:
         def main():
             return sample(kernel, shots=0)()
 
-        with pytest.raises(ValueError, match="positive integer"):
+        with pytest.raises(ValueError, match="at least one shot is required"):
             main()
 
     def test_dynamic_kernel_arg_jit(self):
