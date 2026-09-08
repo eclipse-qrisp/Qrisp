@@ -57,24 +57,6 @@ class DCQOProblem:
         A function receiving a :ref:`QuantumVariable` for preparing the inital state.
         By default, the groundstate of the x-operator $\ket{-}^n$ is prepared.
 
-
-    Notes
-    -----
-    For performance, ``H_init``, ``H_prob``, ``A_lam``, and ``H_control`` are
-    Trotterized via :func:`fast_trotterization
-    <qrisp.algorithms.cold._fast_trotterization.fast_trotterization>`, which
-    emits native single- and two-qubit rotation gates directly (bypassing
-    :meth:`QubitOperator.trotterization <qrisp.operators.qubit.QubitOperator.trotterization>`'s
-    general per-term environment machinery) whenever a Hamiltonian contains
-    only identity, single-qubit Pauli, or two-qubit $Z \\otimes Z$ terms --
-    which covers the built-in QUBO Hamiltonians constructed by
-    :func:`create_COLD_instance <qrisp.algorithms.cold.problems.QUBO.create_COLD_instance>`
-    and :func:`create_LCD_instance <qrisp.algorithms.cold.problems.QUBO.create_LCD_instance>`.
-    This is what makes :meth:`compile_U_cold <qrisp.algorithms.cold.DCQOProblem.compile_U_cold>`
-    practical for larger problems; Hamiltonians containing ladder operators
-    or other Pauli structures fall back automatically to the general
-    Trotterization and remain fully correct, just without this speedup.
-
     Examples
     --------
     For a quick demonstration we build a DCQO problem instance for a 4x4 QUBO. We choose a first order AGP ansatz with uniform coefficients and solve it with LCD.
@@ -336,11 +318,6 @@ class DCQOProblem:
         of the system Hamiltonian, the adiabatic gauge potential (AGP) and
         local pulses (given by ``H_control``) with optimized parameters.
 
-        ``H_init``, ``H_prob``, ``A_lam``, and (for COLD) ``H_control`` are each
-        Trotterized via :func:`fast_trotterization`, which automatically uses a
-        fast native-gate path for Ising-type Hamiltonians and falls back to
-        :meth:`QubitOperator.trotterization` otherwise.
-
         Parameters
         ----------
         qarg : :ref:`QuantumVariable`
@@ -404,18 +381,6 @@ class DCQOProblem:
 
     def compile_U_cold(self, qarg, N_opt, N_steps, T, CRAB=False):
         """Compiles the circuit that is created by the :meth:`apply_cold_hamiltonian <qrisp.cold.DCQOProblem.apply_cold_hamiltonian>` method.
-
-        Notes
-        -----
-        Compilation time is dominated by how many Trotter-step gates need to be
-        built and compiled, which scales like $O(N^2 \\cdot N_{steps})$ for a dense
-        QUBO. Ising-type Hamiltonians (the default for QUBO problems built via
-        :func:`create_COLD_instance <qrisp.algorithms.cold.problems.QUBO.create_COLD_instance>`)
-        are Trotterized via the fast native-gate path in
-        :func:`fast_trotterization <qrisp.algorithms.cold._fast_trotterization.fast_trotterization>`,
-        which avoids per-term QuantumSession merging overhead that otherwise
-        dominates for larger N.
-
 
         Parameters
         ----------
