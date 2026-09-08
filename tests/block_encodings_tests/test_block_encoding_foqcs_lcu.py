@@ -32,6 +32,138 @@ from qrisp.block_encodings.constructors.foqcs_lcu import (
 from qrisp.operators import X, Y, Z
 from qrisp.typing import NDArrayLike
 
+_COMPONENTS = ("X", "Y", "Z")
+
+
+def _spin_glass_coefficients():
+    """Return the physical coefficients shared by spin-glass tests."""
+    g = {
+        "X": np.array([0.31, -0.47, 0.22], dtype=complex),
+        "Y": np.array([-0.18, 0.29, 0.41], dtype=complex),
+        "Z": np.array([0.52, -0.13, -0.36], dtype=complex),
+    }
+    J = {
+        "X": [
+            np.array([0.17, -0.24], dtype=complex),
+            np.array([0.33], dtype=complex),
+        ],
+        "Y": [
+            np.array([-0.21, 0.15], dtype=complex),
+            np.array([-0.28], dtype=complex),
+        ],
+        "Z": [
+            np.array([0.39, -0.11], dtype=complex),
+            np.array([0.26], dtype=complex),
+        ],
+    }
+    return g, J
+
+
+def _spin_glass_matrix_to_diag_list(J, L):
+    return {
+        axis: [
+            np.array([J[axis][i, i + distance] for i in range(L - distance)], dtype=complex) for distance in range(1, L)
+        ]
+        for axis in _COMPONENTS
+    }
+
+
+def _spin_glass_operator(L, g, J):
+    terms = []
+    pauli = {"X": X, "Y": Y, "Z": Z}
+
+    for axis in _COMPONENTS:
+        P = pauli[axis]
+        for i in range(L):
+            terms.append(g[axis][i] * P(L - 1 - i))
+        for distance in range(1, L):
+            for i in range(L - distance):
+                terms.append(J[axis][distance - 1][i] * P(L - 1 - i) * P(L - 1 - (i + distance)))
+
+    return sum(terms[1:], terms[0])
+
+
+def _spin_glass_prep_data():
+    g, J = _spin_glass_coefficients()
+    phys_norm = np.linalg.norm(_flatten_spin_glass_coeffs(g, J))
+    g = {axis: values / phys_norm for axis, values in g.items()}
+    J = {axis: [values / phys_norm for values in diagonals] for axis, diagonals in J.items()}
+
+    prep_g = {
+        "X": np.sqrt(g["X"]),
+        "Y": np.sqrt(-1j * g["Y"]),
+        "Z": np.sqrt(g["Z"]),
+    }
+    prep_J = {
+        "X": [np.sqrt(diagonal) for diagonal in J["X"]],
+        "Y": [np.sqrt(-diagonal) for diagonal in J["Y"]],
+        "Z": [np.sqrt(diagonal) for diagonal in J["Z"]],
+    }
+    alpha = np.linalg.norm(_flatten_spin_glass_coeffs(prep_g, prep_J)) ** 2
+    return g, J, prep_g, prep_J, alpha
+
+
+def _heisenberg_prep_data(L):
+    g, J = _generate_heisenberg_coeff()
+    prep_g, prep_J, norm = _preprocess_heisenberg_coeff(g, J, L)
+    return (
+        g,
+        J,
+        {"X": prep_g[0], "Y": prep_g[1], "Z": prep_g[2]},
+        {"X": prep_J[0], "Y": prep_J[1], "Z": prep_J[2]},
+        norm,
+    )
+
+
+def _make_foqcs_block_encoding(prep, L, g, J, norm):
+    prep_r = partial(prep, L=L, g=g, J=J)
+    prep_l = partial(prep, L=L, g=g, J=J, conjugate=True)
+    return BlockEncoding.from_foqcs_lcu_prep(prep_r=prep_r, prep_l=prep_l, num_q_ops=L, norm=norm)
+
+
+def _prepare_operand(psi, L):
+    operand = QuantumVariable(L)
+    operand.init_state(psi, method="qswitch")
+    return operand
+
+
+def _apply_once(BE, L, psi=None):
+    operand = QuantumVariable(L)
+    if psi is not None:
+        operand.init_state(psi, method="qswitch")
+    return operand, BE.apply(operand)
+
+
+def _is_zero_measurement(value):
+    return value == 0 or (isinstance(value, str) and set(value) <= {"0"})
+
+
+def _measurement_key_to_int(value):
+    return int(value[::-1], 2) if isinstance(value, str) else value
+
+
+def _post_selection(res_dict):
+    filtered = {}
+    for key, probability in res_dict.items():
+        if all(_is_zero_measurement(value) for value in key[1:]):
+            operand = _measurement_key_to_int(key[0])
+            filtered[operand] = filtered.get(operand, 0) + probability
+
+    success_prob = sum(filtered.values())
+    assert success_prob > 0
+    return {key: probability / success_prob for key, probability in filtered.items()}
+
+
+@terminal_sampling
+def _sample_block_encoding(BE, L):
+    operand, ancillas = _apply_once(BE, L)
+    return operand, *ancillas
+
+
+@terminal_sampling
+def _sample_rus(BE, psi, L):
+    return BE.apply_rus(partial(_prepare_operand, L=L))(psi)
+
 
 def _heisenberg_from_def(L: int, g: NDArrayLike, J: NDArrayLike):
     assert len(J) == 3, "J must be a list of length 3."
@@ -95,12 +227,10 @@ def _flatten_spin_glass_coeffs(g: dict, J: dict):
     return np.array(coeffs, dtype=complex)
 
 
-def _generate_heisenberg_coeff():
-    g = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-    J = np.array(np.random.uniform(-1, 1, 3), dtype="complex")
-    # Fix coefficients for debugging
-    # g = np.array([0.80054361+0.j,  0.50905072+0.j, -0.89045545+0.j])
-    # J = np.array([0.98167489+0.j, -0.32435597+0.j,  0.42262456+0.j])
+def _generate_heisenberg_coeff(seed=20260904):
+    rng = np.random.default_rng(seed)
+    g = np.array(rng.uniform(-1, 1, 3), dtype="complex")
+    J = np.array(rng.uniform(-1, 1, 3), dtype="complex")
     # Normalize
     norm = np.linalg.norm(np.block([g, J]))
     g /= norm
@@ -127,17 +257,9 @@ def _preprocess_heisenberg_coeff(g, J, L):
     return _g, _J, norm
 
 
-def _prep_psi(q_num):
-    # Generate state amplitudes.
-    psi = np.random.uniform(-1, 1, 2 ** (q_num)) + 1j * np.random.uniform(-1, 1, 2 ** (q_num))
-    # Fix operands state for debugging  #q_num = 4
-    # psi = [0.57501513+0.26902124j, -0.16783319+0.96769323j, -0.15515405+0.02518714j,
-    #        -0.90288347-0.93298597j, 0.08905568-0.48063457j,  0.34150327+0.74670678j,
-    #        -0.06620886+0.96652259j, 0.76446858+0.88954485j,  0.26407693-0.21105958j,
-    #        -0.64653787-0.73012458j, 0.29551929+0.96235332j, -0.23794186-0.8503716j,
-    #         0.58938419-0.67645356j, 0.04926328-0.06230936j,  0.74225725-0.00355716j,
-    #         0.62479001+0.83636103j
-    #         ]
+def _prep_psi(q_num, seed=20260905):
+    rng = np.random.default_rng(seed)
+    psi = rng.uniform(-1, 1, 2**q_num) + 1j * rng.uniform(-1, 1, 2**q_num)
     psi /= np.linalg.norm(psi)
     return psi
 
@@ -157,17 +279,16 @@ def _pick_ops_with_anc_all_zero(sv: NDArrayLike, anc: NDArrayLike, L: int) -> ND
     return res_ops
 
 
+###########################################################################################################
+#### PREP state preparation tests #########################################################################
+###########################################################################################################
 def test_foqcs_lcu_heisenberg_prep():
     r"""Verifies Heisenberg model `foqcs_prep_heisenberg` PREP statevector
     against the manually constructed expected statevector.
     """
     # Initialize variables + their values
     L = 4
-    g, J = _generate_heisenberg_coeff()
-    g, J, _ = _preprocess_heisenberg_coeff(g, J, L)
-
-    heis_g = {"X": g[0], "Y": g[1], "Z": g[2]}
-    heis_J = {"X": J[0], "Y": J[1], "Z": J[2]}
+    g, J, heis_g, heis_J, _ = _heisenberg_prep_data(L)
 
     d_state = QuantumVariable(L * 2 + 6)
 
@@ -207,7 +328,7 @@ def test_foqcs_lcu_heisenberg_prep():
         """
         return coeff * np.kron([1 if i == 2 ** (6 - q) else 0 for i in range(2**6)], param)
 
-    coeff_arr = [g[0], g[1], g[2], J[0], J[1], J[2]]
+    coeff_arr = [heis_g["X"], heis_g["Y"], heis_g["Z"], heis_J["X"], heis_J["Y"], heis_J["Z"]]
     param_arr = [
         np.kron(dicke_1, zero_n),
         dicke_double,
@@ -230,7 +351,8 @@ def test_foqcs_lcu_spin_glass_prep():
     """
     # Initialize variables + their values
     L = 3
-    coeff = np.random.uniform(-1, 1, (3, L, L))
+    rng = np.random.default_rng(20260906)
+    coeff = rng.uniform(-1, 1, (3, L, L))
     g = []
     J = []
 
@@ -242,34 +364,6 @@ def test_foqcs_lcu_spin_glass_prep():
     g = np.array(g, dtype=complex)
     J = np.array(J, dtype=complex)
     d_state = QuantumVariable(5 * L)
-
-    # Fix coefficients for debugging
-    # g = np.array( [[-0.4808829 +0.j, -0.86150457+0.j,  0.22114172+0.j],
-    #                [-0.1736148 +0.j,  0.49011868+0.j,  0.78437336+0.j],
-    #                [-0.33825609+0.j, -0.19728503+0.j, -0.5482909 +0.j]])
-    # J = np.array([[[ 0.        +0.j,  0.45669928+0.j, -0.29835039+0.j],
-    #                [ 0.45669928+0.j,  0.        +0.j, -0.66928103+0.j],
-    #                [-0.29835039+0.j, -0.66928103+0.j,  0.        +0.j]],
-    #               [[ 0.        +0.j, -0.24574681+0.j,  0.07099358+0.j],
-    #                [-0.24574681+0.j,  0.        +0.j, -0.08502734+0.j],
-    #                [ 0.07099358+0.j, -0.08502734+0.j,  0.        +0.j]],
-    #               [[ 0.        +0.j, -0.49783128+0.j,  0.68088956+0.j],
-    #                [-0.49783128+0.j,  0.        +0.j, -0.82130807+0.j],
-    #                [ 0.68088956+0.j, -0.82130807+0.j,  0.        +0.j]]])
-
-    # Normalize
-    norms_kNN = np.zeros((3, L))
-
-    for x in range(3):
-        norms_kNN[x, 0] = np.linalg.norm(g[x])
-
-        for k in range(1, L):
-            J_kNN = []
-
-            for i in range(L - k):
-                J_kNN.append(J[x, i, i + k])
-
-            norms_kNN[x, k] = np.linalg.norm(J_kNN)
 
     spin_glass_g = {"X": g[0], "Y": g[1], "Z": g[2]}
 
@@ -288,168 +382,48 @@ def test_foqcs_lcu_spin_glass_prep():
     qc = d_state.qs.compile()
     statev = qc.statevector_array()
 
-    g_betas = []  # Squared normalization factors for all g components (X, Y, Z) --> [g_beta_X, g_beta_Y, g_beta_Z]
-    J_betas = [
-        [],
-        [],
-        [],
-    ]  # Squared normalization factors for all J components and diagonals (X, Y, Z) --> [[J_beta_X1, J_beta_X2, ...], [J_beta_Y1, J_beta_Y2, ...], [J_beta_Z1, J_beta_Z2, ...]]
-    g_hats = [[], [], []]  # Normalized g coefficients
-    J_hats = [[], [], []]  # Normalized J coefficients
-    components = ["X", "Y", "Z"]
-
-    # Normalization for state preparation
-    for i in range(3):
-        for j in range(len(spin_glass_J["X"])):
-            J_hats[i].append([])
-
-    for i in range(3):
-        s_sum = 0
-        dimension = components[i]
-
-        for j in range(len(spin_glass_g[dimension])):
-            s_sum += abs(spin_glass_g[dimension][j]) ** 2
-
-        g_betas.append(s_sum)
-
-    for i in range(3):
-        dimension = components[i]
-
-        for j in range(len(spin_glass_J[dimension])):
-            s_sum = 0
-
-            for k in range(len(spin_glass_J[dimension][j])):
-                s_sum += abs(spin_glass_J[dimension][j][k]) ** 2
-
-            J_betas[i].append(s_sum)
-
-    for i in range(3):
-        dimension = components[i]
-
-        for j in range(len(spin_glass_g[dimension])):
-            new_g = spin_glass_g[dimension][j] / (g_betas[i] ** 0.5)
-            g_hats[i].append(new_g)
-
-    for i in range(3):
-        dimension = components[i]
-
-        for j in range(len(spin_glass_J[dimension])):
-            for k in range(len(spin_glass_J[dimension][j])):
-                new_J = spin_glass_J[dimension][j][k] / ((J_betas[i][j]) ** 0.5)
-                J_hats[i][j].append(new_J)
-
-    final_betas = []
-
-    for i in range(3):
-        final_betas.append(g_betas[i])
-
-        for j in range(len(J_betas[i])):
-            final_betas.append(J_betas[i][j])
-
-    final_betas = np.sqrt(np.array(final_betas))
-    final_betas = final_betas / np.linalg.norm(final_betas)
-
     ref_state = np.zeros(2 ** (5 * L), dtype=complex)
     zero_n = np.array([1] + [0] * (2**L - 1))
 
-    def _add_ref_state_kron_term(ref_state, coeff, eye_3L, eye_power, *right_factors):
-        r"""Add one weighted tensor-product branch to the spin-glass reference state.
-
-        Selects the ``|2**eye_power>`` basis state of the 3L-qubit selector
-        register, tensors together the supplied right-hand state factors, and
-        accumulates the resulting branch into ``ref_state`` scaled by ``coeff``.
-        """
+    def _ref_state_kron_term(coeff, selector_index, *right_factors):
+        """Build one weighted tensor-product branch of the reference state."""
         right_state = right_factors[0]
 
         for factor in right_factors[1:]:
             right_state = np.kron(right_state, factor)
 
-        ref_state += coeff * np.kron(
-            eye_3L[2**eye_power],
-            right_state,
+        selector_state = np.zeros(2 ** (3 * L))
+        selector_state[2**selector_index] = 1
+        return coeff * np.kron(selector_state, right_state)
+
+    for i in range(L):
+        ket = np.zeros(2**L)
+        ket[2 ** (L - i - 1)] = 1
+
+        double_ket = np.zeros(2 ** (2 * L))
+        double_ket[2 ** (L - i - 1) + 2 ** (2 * L - i - 1)] = 1
+
+        ref_state += (
+            _ref_state_kron_term(g[0, i], 3 * L - 1, ket, zero_n)
+            + _ref_state_kron_term(g[1, i], 2 * L - 1, double_ket)
+            + _ref_state_kron_term(g[2, i], L - 1, zero_n, ket)
         )
 
-        return ref_state
+    for distance in range(1, L):
+        for i in range(L - distance):
+            ket = np.zeros(2**L)
+            ket[2 ** (L - i - 1) + 2 ** (L - i - distance - 1)] = 1
 
-    eye_3L = np.eye(2 ** (3 * L))
+            double_ket = np.zeros(2 ** (2 * L))
+            double_ket[
+                2 ** (L - i - 1) + 2 ** (L - i - distance - 1) + 2 ** (2 * L - i - 1) + 2 ** (2 * L - i - distance - 1)
+            ] = 1
 
-    for k in range(L):
-        for i in range(0, L - k):
-            # g terms
-            if k == 0:
-                ket = np.zeros(2**L)
-                ket[2 ** (L - i - 1)] = 1
-
-                # gx
-                ref_state = _add_ref_state_kron_term(
-                    ref_state,
-                    g[0, i],
-                    eye_3L,
-                    3 * L - 1,
-                    ket,
-                    zero_n,
-                )
-
-                # gz
-                ref_state = _add_ref_state_kron_term(
-                    ref_state,
-                    g[2, i],
-                    eye_3L,
-                    L - 1,
-                    zero_n,
-                    ket,
-                )
-
-                double_ket = np.zeros(2 ** (2 * L))
-                double_ket[2 ** (L - i - 1) + 2 ** (2 * L - i - 1)] = 1
-
-                # gy
-                ref_state = _add_ref_state_kron_term(
-                    ref_state,
-                    g[1, i],
-                    eye_3L,
-                    2 * L - 1,
-                    double_ket,
-                )
-
-            # J terms
-            else:
-                ket = np.zeros(2**L)
-                ket[2 ** (L - i - 1) + 2 ** (L - i - k - 1)] = 1
-
-                # Jx
-                ref_state = _add_ref_state_kron_term(
-                    ref_state,
-                    J[0, i, i + k],
-                    eye_3L,
-                    3 * L - k - 1,
-                    ket,
-                    zero_n,
-                )
-
-                # Jz
-                ref_state = _add_ref_state_kron_term(
-                    ref_state,
-                    J[2, i, i + k],
-                    eye_3L,
-                    L - k - 1,
-                    zero_n,
-                    ket,
-                )
-
-                double_ket = np.zeros(2 ** (2 * L))
-                double_ket[
-                    2 ** (L - i - 1) + 2 ** (L - i - k - 1) + 2 ** (2 * L - i - 1) + 2 ** (2 * L - i - k - 1)
-                ] = 1
-
-                # Jy
-                ref_state = _add_ref_state_kron_term(
-                    ref_state,
-                    J[1, i, i + k],
-                    eye_3L,
-                    2 * L - k - 1,
-                    double_ket,
-                )
+            ref_state += (
+                _ref_state_kron_term(J[0, i, i + distance], 3 * L - distance - 1, ket, zero_n)
+                + _ref_state_kron_term(J[1, i, i + distance], 2 * L - distance - 1, double_ket)
+                + _ref_state_kron_term(J[2, i, i + distance], L - distance - 1, zero_n, ket)
+            )
 
     ref_state = ref_state / np.linalg.norm(ref_state)
 
@@ -459,42 +433,20 @@ def test_foqcs_lcu_spin_glass_prep():
     assert np.allclose(statev, ref_state, atol=1e-06), "States differ"
 
 
+###########################################################################################################
+#### Block encoding application tests ####################################################################
+###########################################################################################################
 def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
     r"""Verifies Heisenberg model block encoding `.apply`.
     Tests it against the manually constructed statevector from definition
     """
     # Initialize variables + their values
     L = 4
-    g, J = _generate_heisenberg_coeff()
-    _g, _J, norm = _preprocess_heisenberg_coeff(g, J, L)
-
-    # Construct dictionary input expected by foqcs_prep_heisenberg()
-    heis_g = {"X": _g[0], "Y": _g[1], "Z": _g[2]}
-    heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
-
-    # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-    prep_r = partial(
-        foqcs_prep_heisenberg,
-        L=L,
-        g=heis_g,
-        J=heis_J,
-    )
-    prep_l = partial(foqcs_prep_heisenberg, L=L, g=heis_g, J=heis_J, conjugate=True)
-
-    be = BlockEncoding.from_foqcs_lcu_prep(prep_r=prep_r, prep_l=prep_l, num_q_ops=L, norm=norm**2)
-
-    qv = QuantumVariable(4)
+    g, J, heis_g, heis_J, norm = _heisenberg_prep_data(L)
+    be = _make_foqcs_block_encoding(foqcs_prep_heisenberg, L, heis_g, heis_J, norm**2)
 
     psi = _prep_psi(L)
-
-    qv.init_state(psi, method="qswitch")
-
-    def main(BE):
-        operand = qv
-        ancillas = BE.apply(operand)
-        return operand, ancillas
-
-    operand, ancillas = main(be)
+    operand, ancillas = _apply_once(be, L, psi)
 
     qc = operand.qs.compile()
     sv = qc.statevector_array()
@@ -510,176 +462,34 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep():
 
 
 def test_block_encoding_from_foqcs_lcu_spin_glass_prep():
-    r"""Verifies spin-glass model block encoding `.apply`.
-    Tests it against the manually constructed statevector from definition.
-    """
+    r"""Verifies spin-glass model block encoding `.apply`."""
     L = 3
+    phys_g, phys_J, prep_g, prep_J, alpha = _spin_glass_prep_data()
+    be = _make_foqcs_block_encoding(foqcs_prep_spin_glass, L, prep_g, prep_J, alpha)
 
-    # Physical Hamiltonian coefficients.
-    # Keep these real if you want a Hermitian reference Hamiltonian.
-    g = {
-        "X": np.array([0.31, -0.47, 0.22], dtype=complex),
-        "Y": np.array([-0.18, 0.29, 0.41], dtype=complex),
-        "Z": np.array([0.52, -0.13, -0.36], dtype=complex),
-    }
-
-    # J[axis][k - 1][i] couples sites i and i + k.
-    J = {
-        "X": [
-            np.array([0.17, -0.24], dtype=complex),  # distance 1: (0,1), (1,2)
-            np.array([0.33], dtype=complex),  # distance 2: (0,2)
-        ],
-        "Y": [
-            np.array([-0.21, 0.15], dtype=complex),
-            np.array([-0.28], dtype=complex),
-        ],
-        "Z": [
-            np.array([0.39, -0.11], dtype=complex),
-            np.array([0.26], dtype=complex),
-        ],
-    }
-
-    # Normalize the physical coefficients, same style as the Heisenberg test.
-    # This is not strictly necessary, but keeps amplitudes well-conditioned.
-    phys_norm = np.linalg.norm(_flatten_spin_glass_coeffs(g, J))
-    for axis in ["X", "Y", "Z"]:
-        g[axis] = g[axis] / phys_norm
-        J[axis] = [diag / phys_norm for diag in J[axis]]
-
-    # Physical Hamiltonian coefficients.
-    phys_g = g
-    phys_J = J
-
-    # PREP coefficients.
-    #
-    # SELECT convention:
-    #   X branch  -> X
-    #   Z branch  -> Z
-    #   Y branch  -> iY
-    #   YY branch -> -YY
-    #
-    # Therefore:
-    #   local Y needs sqrt(-i * coeff)
-    #   YY needs sqrt(-coeff)
-    prep_g = {
-        "X": np.sqrt(phys_g["X"]),
-        "Y": np.sqrt(-1j * phys_g["Y"]),
-        "Z": np.sqrt(phys_g["Z"]),
-    }
-
-    prep_J = {
-        "X": [np.sqrt(diag) for diag in phys_J["X"]],
-        "Y": [np.sqrt(-diag) for diag in phys_J["Y"]],
-        "Z": [np.sqrt(diag) for diag in phys_J["Z"]],
-    }
-
-    alpha = np.linalg.norm(_flatten_spin_glass_coeffs(prep_g, prep_J)) ** 2
-
-    prep_r = partial(
-        foqcs_prep_spin_glass,
-        L=L,
-        g=prep_g,
-        J=prep_J,
-    )
-
-    prep_l = partial(
-        foqcs_prep_spin_glass,
-        L=L,
-        g=prep_g,
-        J=prep_J,
-        conjugate=True,
-    )
-
-    be = BlockEncoding.from_foqcs_lcu_prep(
-        prep_r=prep_r,
-        prep_l=prep_l,
-        num_q_ops=L,
-        norm=alpha,
-    )
-
-    qv = QuantumVariable(L)
     psi = _prep_psi(L)
-    qv.init_state(psi, method="qswitch")
-
-    def main(BE):
-        operand = qv
-        ancillas = BE.apply(operand)
-        return operand, ancillas
-
-    operand, ancillas = main(be)
-
-    qc = operand.qs.compile()
-    sv = qc.statevector_array()
-
-    # Take out the resulting operands with zero ancillas amplitude.
+    operand, ancillas = _apply_once(be, L, psi)
+    sv = operand.qs.compile().statevector_array()
     res_ops = _pick_ops_with_anc_all_zero(sv, ancillas, L)
 
     H = _spin_glass_from_def(L, phys_g, phys_J) / alpha
-    ref_state = H @ psi
-
-    assert np.allclose(res_ops, ref_state, atol=1e-5)
+    assert np.allclose(res_ops, H @ psi, atol=1e-5)
 
 
 def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
-    r"""Verifies Heisenberg model block encoding `.apply_rus` (under the jasp environment).
-    Tests it against the `.apply` produced statevector.
-    """
-    # Initialize variables + their values
+    r"""Verifies Heisenberg `.apply_rus` against manual post-selection."""
     L = 4
-    g, J = _generate_heisenberg_coeff()
-    _g, _J, norm = _preprocess_heisenberg_coeff(g, J, L)
-
-    # Construct dictionary input expected by foqcs_prep_heisenberg()
-    heis_g = {"X": _g[0], "Y": _g[1], "Z": _g[2]}
-    heis_J = {"X": _J[0], "Y": _J[1], "Z": _J[2]}
-
-    # Create partial PREP_R and PREP_L^dagger functions to be used by FOQCS-LCU
-    prep_r = partial(
-        foqcs_prep_heisenberg,
-        L=L,
-        g=heis_g,
-        J=heis_J,
-    )
-    prep_l = partial(foqcs_prep_heisenberg, L=L, g=heis_g, J=heis_J, conjugate=True)
-
-    be = BlockEncoding.from_foqcs_lcu_prep(prep_r=prep_r, prep_l=prep_l, num_q_ops=L, norm=norm**2)
-
+    _, _, heis_g, heis_J, norm = _heisenberg_prep_data(L)
+    be = _make_foqcs_block_encoding(foqcs_prep_heisenberg, L, heis_g, heis_J, norm**2)
     psi = _prep_psi(L)
 
-    def operand_prep(psi):
-        qv = QuantumVariable(4)
-        qv.init_state(psi, method="qswitch")
-        return qv
-
-    qv_manual = operand_prep(psi)
-
-    def main_apply(BE):
-        operand = qv_manual
-        ancillas = BE.apply(operand)
-        return operand, ancillas
-
-    @terminal_sampling
-    def main_apply_rus(BE):
-        return BE.apply_rus(operand_prep)(psi)
-
-    # Do the measurement manually
-    operand, ancillas = main_apply(be)
-
-    res_dict = multi_measurement([operand] + ancillas)
-    # Filtering only zero ancillae entries
-    zero_anc = "0" * len(ancillas[0])
-    filtered = {key: value for key, value in res_dict.items() if key[1] == zero_anc}
-    success_prob = sum(filtered.values())
-    filtered_conditional = {
-        int(operand_bits[::-1], 2): prob / success_prob for (operand_bits, anc_bits), prob in filtered.items()
-    }
-
-    # Do the measurement using RUS
-    result_rus = main_apply_rus(be)
+    operand, ancillas = _apply_once(be, L, psi)
+    manual = _post_selection(multi_measurement([operand] + ancillas))
+    rus = _sample_rus(be, psi, L)
 
     assert np.allclose(
-        [filtered_conditional[k] for k in sorted(filtered_conditional)],
-        [result_rus[k] for k in sorted(result_rus)],
+        [manual[key] for key in sorted(manual)],
+        [rus[key] for key in sorted(rus)],
         atol=1e-4,
     )
 
@@ -690,119 +500,23 @@ def test_block_encoding_from_operator_spin_glass_jasp():
     """
     L = 3
 
-    g = {
-        "X": np.array([0.31, -0.47, 0.22], dtype=complex),
-        "Y": np.array([-0.18, 0.29, 0.41], dtype=complex),
-        "Z": np.array([0.52, -0.13, -0.36], dtype=complex),
-    }
-
-    # J[axis][k - 1][i] couples sites i and i + k.
-    J = {
-        "X": [
-            np.array([0.17, -0.24], dtype=complex),
-            np.array([0.33], dtype=complex),
-        ],
-        "Y": [
-            np.array([-0.21, 0.15], dtype=complex),
-            np.array([-0.28], dtype=complex),
-        ],
-        "Z": [
-            np.array([0.39, -0.11], dtype=complex),
-            np.array([0.26], dtype=complex),
-        ],
-    }
-
-    # Normalize physical coefficients. This is not required mathematically,
-    # but it keeps the sampled probabilities well-conditioned.
+    g, J = _spin_glass_coefficients()
     phys_norm = np.linalg.norm(_flatten_spin_glass_coeffs(g, J))
-
-    for axis in ["X", "Y", "Z"]:
-        g[axis] = g[axis] / phys_norm
-        J[axis] = [diag / phys_norm for diag in J[axis]]
-
-    # Build the Qrisp operator.
-    #
-    # This uses the same site convention as _spin_glass_from_def:
-    #   g_axis[i] acts on site L - 1 - i
-    #   J_axis[k - 1][i] acts on sites L - 1 - i and L - 1 - (i + k)
-    terms = []
-
-    pauli = {
-        "X": X,
-        "Y": Y,
-        "Z": Z,
-    }
-
-    for axis in ["X", "Y", "Z"]:
-        P = pauli[axis]
-
-        for i in range(L):
-            site = L - 1 - i
-            terms.append(g[axis][i] * P(site))
-
-        for k in range(1, L):
-            for i in range(L - k):
-                site_0 = L - 1 - i
-                site_1 = L - 1 - (i + k)
-
-                terms.append(J[axis][k - 1][i] * P(site_0) * P(site_1))
-
-    O = sum(terms[1:], terms[0])
-
+    g = {axis: values / phys_norm for axis, values in g.items()}
+    J = {axis: [values / phys_norm for values in diagonals] for axis, diagonals in J.items()}
+    O = _spin_glass_operator(L, g, J)
     be = BlockEncoding.from_foqcs_lcu_operator(O)
 
     psi = _prep_psi(L)
 
-    def operand_prep(psi):
-        qv = QuantumVariable(L)
-        qv.init_state(psi, method="qswitch")
-        return qv
-
-    qv_manual = operand_prep(psi)
-
-    def main_apply(BE):
-        operand = qv_manual
-        ancillas = BE.apply(operand)
-        return operand, ancillas
-
-    @terminal_sampling
-    def main_apply_rus(BE):
-        return BE.apply_rus(operand_prep)(psi)
-
-    def measurement_key_to_int(x):
-        if isinstance(x, str):
-            return int(x[::-1], 2)
-        return x
-
-    def is_zero_measurement(x):
-        if isinstance(x, str):
-            return set(x) <= {"0"}
-        return x == 0
-
-    # Manual post-selection version.
-    operand, ancillas = main_apply(be)
-    res_dict = multi_measurement([operand] + ancillas)
-
-    filtered = {
-        key: value for key, value in res_dict.items() if all(is_zero_measurement(anc_res) for anc_res in key[1:])
-    }
-
-    success_prob = sum(filtered.values())
-
-    assert success_prob > 0
-
-    filtered_conditional = {measurement_key_to_int(key[0]): prob / success_prob for key, prob in filtered.items()}
-
-    # RUS version.
-    result_rus = main_apply_rus(be)
-
-    result_rus_int = {measurement_key_to_int(k): v for k, v in result_rus.items()}
-
-    keys = sorted(set(filtered_conditional) | set(result_rus_int))
+    operand, ancillas = _apply_once(be, L, psi)
+    filtered_conditional = _post_selection(multi_measurement([operand] + ancillas))
+    result_rus = _sample_rus(be, psi, L)
+    keys = sorted(set(filtered_conditional) | set(result_rus))
 
     assert np.allclose(
         [filtered_conditional.get(k, 0) for k in keys],
-        [result_rus_int.get(k, 0) for k in keys],
+        [result_rus.get(k, 0) for k in keys],
         atol=1e-3,
     )
 
@@ -849,8 +563,6 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_operator(O):
     Tests it against the manually constructed statevector from the analyzed
     Heisenberg coefficients.
     """
-    from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import foqcs_analyze_operator_heisenberg
-
     aresult = foqcs_analyze_operator_heisenberg(O)
 
     L = aresult["L"]
@@ -859,13 +571,9 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_operator(O):
 
     be = BlockEncoding.from_foqcs_lcu_operator(O)
 
-    qv = QuantumVariable(L)
     psi = _prep_psi(L)
-    qv.init_state(psi, method="qswitch")
-
-    ancillas = be.apply(qv)
-
-    qc = qv.qs.compile()
+    operand, ancillas = _apply_once(be, L, psi)
+    qc = operand.qs.compile()
     sv = qc.statevector_array()
 
     # Take out the resulting operands with zero ancillas amplitude.
@@ -915,42 +623,17 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator(O):
     Tests it against the manually constructed statevector from the analyzed
     spin-glass coefficients.
     """
-    from qrisp.block_encodings.constructors.foqcs_lcu.foqcs_analysis import foqcs_analyze_operator_spin_glass
-
-    def _J_matrix_to_diag_list(J, L):
-        """Convert full matrix J into diagonal-list form:
-
-          `J_diag[p][k - 1][i]` couples `i` and `i + k`.
-
-        This is the format expected by `_spin_glass_from_def` and
-        `foqcs_prep_spin_glass`.
-        """
-        return {
-            p: [
-                np.array(
-                    [J[p][i, i + k] for i in range(L - k)],
-                    dtype=complex,
-                )
-                for k in range(1, L)
-            ]
-            for p in ("X", "Y", "Z")
-        }
-
     aresult = foqcs_analyze_operator_spin_glass(O)
 
     L = aresult["L"]
     g = aresult["g"]
-    J_diag = _J_matrix_to_diag_list(aresult["J"], L)
+    J_diag = _spin_glass_matrix_to_diag_list(aresult["J"], L)
 
     be = BlockEncoding.from_foqcs_lcu_operator(O)
 
-    qv = QuantumVariable(L)
     psi = _prep_psi(L)
-    qv.init_state(psi, method="qswitch")
-
-    ancillas = be.apply(qv)
-
-    qc = qv.qs.compile()
+    operand, ancillas = _apply_once(be, L, psi)
+    qc = operand.qs.compile()
     sv = qc.statevector_array()
 
     # Take out the resulting operands with zero ancillas amplitude.
@@ -963,6 +646,9 @@ def test_block_encoding_from_foqcs_lcu_spin_glass_operator(O):
     assert np.allclose(res_ops, ref_state, atol=1e-5)
 
 
+###########################################################################################################
+#### Custom PREP and validation tests #####################################################################
+###########################################################################################################
 def test_foqcs_lcu_custom_prep_from_prep():
     r"""Tests the usage of custom PREP function with `from_foqcs_lcu_prep`."""
     from collections.abc import Sequence
@@ -1041,6 +727,9 @@ def test_foqcs_lcu_custom_prep_n_anc_fail():
     assert f"at least {L * 2}, but received {n_anc_custom_prep}." in str(exc_info.value)
 
 
+###########################################################################################################
+#### Resource and control tests ###########################################################################
+###########################################################################################################
 def test_foqcs_lcu_resources():
     r"""Validates that `.resources` can be executed for FOQCS-LCU Block Encoding.
     Spin-glass model is taken as benchmark.
@@ -1104,7 +793,7 @@ def test_block_encoding_foqcs_lcu_is_controllable():
 
 
 ###########################################################################################################
-#### Transformations tests ################################################################################
+#### Block encoding transformations ######################################################################
 ###########################################################################################################
 
 
@@ -1113,14 +802,6 @@ def _compare_results(res_dict_1, res_dict_2, n):
         val_1 = res_dict_1.get(k, 0)
         val_2 = res_dict_2.get(k, 0)
         assert np.isclose(val_1, val_2, atol=1e-6), f"Mismatch at state |{k}>: {val_1} vs {val_2}"
-
-
-def _post_selection(res_dict):
-    # Post-selection on ancillas being in |0> state
-    filtered_dict = {k[0]: p for k, p in res_dict.items() if all(x == 0 for x in k[1:])}
-    success_prob = sum(filtered_dict.values())
-    filtered_dict = {k: p / success_prob for k, p in filtered_dict.items()}
-    return filtered_dict
 
 
 @pytest.mark.parametrize(
@@ -1171,22 +852,16 @@ def test_foqcs_lcu_chebyshev(H1, H2, rescaled):
     BE_add_T2 = BE1 + BE_cheb_T2
     BE_add_T3 = BE1 + BE_cheb_T3
 
-    @terminal_sampling
-    def main(BE):
-        operand = QuantumVariable(n)
-        ancillas = BE.apply(operand)
-        return operand, *ancillas
-
-    res_be_t1 = _post_selection(main(BE_T1))
-    res_be_add_t1 = _post_selection(main(BE_add_T1))
+    res_be_t1 = _post_selection(_sample_block_encoding(BE_T1, n))
+    res_be_add_t1 = _post_selection(_sample_block_encoding(BE_add_T1, n))
     _compare_results(res_be_t1, res_be_add_t1, n)
 
-    res_be_t2 = _post_selection(main(BE_T2))
-    res_be_add_t2 = _post_selection(main(BE_add_T2))
+    res_be_t2 = _post_selection(_sample_block_encoding(BE_T2, n))
+    res_be_add_t2 = _post_selection(_sample_block_encoding(BE_add_T2, n))
     _compare_results(res_be_t2, res_be_add_t2, n)
 
-    res_be_t3 = _post_selection(main(BE_T3))
-    res_be_add_t3 = _post_selection(main(BE_add_T3))
+    res_be_t3 = _post_selection(_sample_block_encoding(BE_T3, n))
+    res_be_add_t3 = _post_selection(_sample_block_encoding(BE_add_T3, n))
     _compare_results(res_be_t3, res_be_add_t3, n)
 
 
@@ -1226,14 +901,8 @@ def test_foqcs_lcu_poly(H1, H2, poly):
     # Apply polynomial to BlockEncoding BE1 and add BE2
     BE_poly = BE1.poly(poly) + BE2
 
-    @terminal_sampling
-    def main(BE):
-        operand = QuantumVariable(n)
-        ancillas = BE.apply(operand)
-        return operand, *ancillas
-
-    res_be3 = _post_selection(main(BE3))
-    res_be_poly = _post_selection(main(BE_poly))
+    res_be3 = _post_selection(_sample_block_encoding(BE3, n))
+    res_be_poly = _post_selection(_sample_block_encoding(BE_poly, n))
 
     _compare_results(res_be3, res_be_poly, n)
 
@@ -1325,14 +994,11 @@ def test_foqcs_lcu_sim():
     res_ref = _post_selection(main(BE_ref))
     res_foqcs = _post_selection(main(BE_foqcs))
 
-    # Make sure the test is not accidentally trivial.
-    # The |1> state of qubit 0 should receive some population from X(0).
-    # assert any(v > 1e-8 for k, v in res_ref.items() if k != 0)
     _compare_results(res_ref, res_foqcs, L)
 
 
 ###########################################################################################################
-#### Arithmetic / composition tests #######################################################################
+#### Arithmetic and composition tests #####################################################################
 ###########################################################################################################
 # Addition
 @pytest.mark.parametrize(
@@ -1354,14 +1020,8 @@ def test_block_encoding_foqcs_lcu_addition(H1, H2):
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    @terminal_sampling
-    def main(BE):
-        operand = QuantumVariable(n)
-        ancillas = BE.apply(operand)
-        return operand, *ancillas
-
-    res_be3 = _post_selection(main(BE3))
-    res_be_add = _post_selection(main(BE_addition))
+    res_be3 = _post_selection(_sample_block_encoding(BE3, n))
+    res_be_add = _post_selection(_sample_block_encoding(BE_addition, n))
     _compare_results(res_be3, res_be_add, n)
 
 
@@ -1385,18 +1045,9 @@ def test_block_encoding_foqcs_lcu_subtraction(H1, H2):
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    @terminal_sampling
-    def main(BE):
-        operand = QuantumVariable(n)
-        ancillas = BE.apply(operand)
-        return operand, *ancillas
-
-    res_be3 = _post_selection(main(BE3))
-    res_be_sub = _post_selection(main(BE_subtraction))
+    res_be3 = _post_selection(_sample_block_encoding(BE3, n))
+    res_be_sub = _post_selection(_sample_block_encoding(BE_subtraction, n))
     _compare_results(res_be3, res_be_sub, n)
-
-
-# @ (__matmul__)
 
 
 # The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
@@ -1420,14 +1071,8 @@ def test_block_encoding_foqcs_lcu_multiplication(H1, H2):
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    @terminal_sampling
-    def main(BE):
-        operand = QuantumVariable(n)
-        ancillas = BE.apply(operand)
-        return operand, *ancillas
-
-    res_be3 = _post_selection(main(BE3))
-    res_be_mul = _post_selection(main(BE_multiplication))
+    res_be3 = _post_selection(_sample_block_encoding(BE3, n))
+    res_be_mul = _post_selection(_sample_block_encoding(BE_multiplication, n))
     _compare_results(res_be3, res_be_mul, n)
 
 
@@ -1455,15 +1100,9 @@ def test_block_encoding_foqcs_lcu_scalar_multiplication(H1, H2, scalar):
 
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
-    @terminal_sampling
-    def main(BE):
-        operand = QuantumVariable(n)
-        ancillas = BE.apply(operand)
-        return operand, *ancillas
-
-    res_target = _post_selection(main(BE_target))
-    res_left = _post_selection(main(BE_left))
-    res_right = _post_selection(main(BE_right))
+    res_target = _post_selection(_sample_block_encoding(BE_target, n))
+    res_left = _post_selection(_sample_block_encoding(BE_left, n))
+    res_right = _post_selection(_sample_block_encoding(BE_right, n))
     _compare_results(res_target, res_left, n)
     _compare_results(res_target, res_right, n)
 
@@ -1531,14 +1170,8 @@ def test_block_encoding_foqcs_lcu_negation(H1, H2):
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
     # n = H1.find_minimal_qubit_amount()
 
-    @terminal_sampling
-    def main(BE):
-        operand = QuantumVariable(n)
-        ancillas = BE.apply(operand)
-        return operand, *ancillas
-
-    res_be2 = _post_selection(main(BE2))
-    res_be_neg = _post_selection(main(BE_neg))
+    res_be2 = _post_selection(_sample_block_encoding(BE2, n))
+    res_be_neg = _post_selection(_sample_block_encoding(BE_neg, n))
     _compare_results(res_be2, res_be_neg, n)
 
 
