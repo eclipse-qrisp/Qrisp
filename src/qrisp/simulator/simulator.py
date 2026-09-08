@@ -16,6 +16,7 @@
 
 """Simulation entry points: shot-based sampling, statevector, single-shot, and incremental circuit execution."""
 
+import random
 import shutil
 import sys
 import threading
@@ -25,11 +26,12 @@ from numba import njit
 from tqdm import tqdm
 
 from qrisp.circuit import QuantumCircuit, fast_append
-from qrisp.simulator.circuit_preprocessing import (
-    circuit_preprocessor,
-    count_measurements_and_treat_alloc,
-    group_qc,
-    insert_multiverse_measurements,
+from qrisp.simulator.preprocessing.circuit_preprocessing import _circuit_preprocessor
+from qrisp.simulator.preprocessing.circuit_reordering import _reorder_circuit
+from qrisp.simulator.preprocessing.gate_grouping import _group_qc
+from qrisp.simulator.preprocessing.measurement_handling import (
+    _count_measurements_and_treat_alloc,
+    _insert_multiverse_measurements,
 )
 from qrisp.simulator.quantum_state import QuantumState
 
@@ -70,7 +72,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
 
         # Count the amount of measurements (we can stop the simulation after all
         # measurements are performed)
-        measurement_amount = count_measurements_and_treat_alloc(qc, insert_reset=insert_reset)
+        measurement_amount = _count_measurements_and_treat_alloc(qc, insert_reset=insert_reset)
 
         if measurement_amount == 0:
             progress_bar.close()
@@ -78,7 +80,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
             return {"": 1.0}
 
         # Apply circuit preprocessing more
-        qc = circuit_preprocessor(qc)
+        qc = _circuit_preprocessor(qc)
 
         measurement_counter = 0
 
@@ -99,9 +101,9 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
         mes_list = []
 
         # if len(qc.qubits) < 30 or True:
-        # qc, mes_list = extract_measurements(qc)
+        # qc, mes_list = _extract_measurements(qc)
 
-        qc, new_mes_list = insert_multiverse_measurements(qc)
+        qc, new_mes_list = _insert_multiverse_measurements(qc)
 
         mes_list = mes_list + new_mes_list
 
@@ -247,13 +249,13 @@ def statevector_sim(qc):
 
         # Count the amount of measurements (we can stop the simulation after all
         # measurements are performed)
-        measurement_amount = count_measurements_and_treat_alloc(qc, insert_reset=False)
+        measurement_amount = _count_measurements_and_treat_alloc(qc, insert_reset=False)
 
         if measurement_amount != 0:
             raise Exception("Tried to determine the statevector of a circuit containing a measurement")
 
         # Apply circuit preprocessing more
-        qc = group_qc(qc)
+        qc = _group_qc(qc)
 
         if len(qc.data) == 0:
             res = np.zeros(2 ** len(qc.qubits), dtype=np.complex64)
@@ -308,13 +310,11 @@ def single_shot_sim(qc, quantum_state=None):
         # We convert the circuit which is given with portable objects to a qrisp circuit
 
         # Treat allocation gates (ie. remove them)
-        count_measurements_and_treat_alloc(qc, insert_reset=True)
+        _count_measurements_and_treat_alloc(qc, insert_reset=True)
 
-        from qrisp.simulator import reorder_circuit
+        qc = _group_qc(qc)
 
-        qc = group_qc(qc)
-
-        qc = reorder_circuit(qc, ["measure", "reset", "disentangle"])
+        qc = _reorder_circuit(qc, ["measure", "reset", "disentangle"])
 
         if quantum_state is None:
             # Create quantum state object.
@@ -400,6 +400,46 @@ def single_shot_sim(qc, quantum_state=None):
 
 
 def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_dic):
+    """Apply a buffered circuit chunk onto an existing quantum state.
+
+    This function is used by the Jasp evaluation pipeline (see
+    :class:`~qrisp.jasp.evaluation_tools.buffered_quantum_state.BufferedQuantumState`)
+    to incrementally advance a quantum state as gates are appended during
+    the interpretation of a jaxpr. Unlike :func:`run` or
+    :func:`single_shot_sim`, it does not run the full
+    :func:`~qrisp.simulator.preprocessing.circuit_preprocessing._circuit_preprocessor`
+    pipeline: it only removes allocation gates
+    (:func:`~qrisp.simulator.preprocessing.measurement_handling._count_measurements_and_treat_alloc`)
+    and applies gate grouping
+    (:func:`~qrisp.simulator.preprocessing.gate_grouping._group_qc`), since the
+    incoming circuit is already a short, measurement-terminated chunk rather
+    than a full, statically-known circuit.
+
+    Instructions are applied one by one: ``reset`` and ``disentangle``
+    instructions are handled explicitly (splitting/collapsing the state
+    branch), while all other (unitary) operations are applied via
+    ``quantum_state.apply_operation``.
+
+    Parameters
+    ----------
+    qc : QuantumCircuit
+        The buffered circuit chunk to apply.
+    quantum_state : QuantumState
+        The quantum state to advance. Consumed by this function; the
+        returned quantum state should be used afterwards instead.
+    deallocated_qubits : list
+        List that qubits deallocated via ``qb_dealloc`` instructions are
+        appended to, in place.
+    qubit_to_index_dic : dict
+        Maps qubits appearing in ``qc`` to their integer index within
+        ``quantum_state``.
+
+    Returns
+    -------
+    QuantumState
+        The quantum state after applying all instructions in ``qc``.
+
+    """
     if len(qc.data) == 0:
         return quantum_state
 
@@ -437,10 +477,8 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
         # We convert the circuit which is given with portable objects to a qrisp circuit
 
         # Treat allocation gates (ie. remove them)
-        count_measurements_and_treat_alloc(qc, insert_reset=True)
-        qc = group_qc(qc)
-
-        import random
+        _count_measurements_and_treat_alloc(qc, insert_reset=True)
+        qc = _group_qc(qc)
 
         # Main loop - this loop successively executes operations onto the impure
         # quantum state object
@@ -451,10 +489,7 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
         # for i in range(len(qc.qubits)):
         #     qubit_to_index_dic[qc.qubits[i]] = i
 
-        for i in range(len(qc.data)):
-            # Set alias for the instruction of this operation
-            instr = qc.data[i]
-
+        for instr in qc.data:
             progress_bar.update(1)
 
             # Gather the indices of the qubits from the circuits (i.e. integers instead
