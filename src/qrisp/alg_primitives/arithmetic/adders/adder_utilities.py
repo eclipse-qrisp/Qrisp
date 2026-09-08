@@ -16,19 +16,116 @@
 
 """Shared helpers for all the Qrisp adder implementations."""
 
+import jax.numpy as jnp
+import numpy as np
+
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable
-from qrisp.jasp import DynamicQubitArray
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode
+from qrisp.qtypes import QuantumBool
 
 
-def _is_quantum_register(obj):
-    """Return True if ``obj`` is a quantum register.
+def _extract_bit(a_int, digit_index):
+    """Extract one bit from a classical scalar as a JAX boolean.
 
-    A quantum register is a QuantumVariable (or subclass thereof), a
-    DynamicQubitArray or a list of Qubits.
+    Automatically detects BigInteger values by checking for a ``get_bit`` method.
+
+    Parameters
+    ----------
+    a_int : int, jnp.ndarray scalar, or BigInteger
+        Classical value whose bit is queried.
+    digit_index : int
+        Zero-based bit index to read (little-endian convention).
+
+    Examples
+    --------
+    >>> bool(_extract_bit(0b1010, 1))
+    True
+    >>> bool(_extract_bit(0b1010, 0))
+    False
+
     """
-    if isinstance(obj, (QuantumVariable, DynamicQubitArray)):
-        return True
-    if isinstance(obj, list):
-        return all(isinstance(qb, Qubit) for qb in obj)
-    return False
+    # BigInteger (and other big-int wrappers) expose get_bit
+    if hasattr(a_int, "get_bit"):
+        return jnp.bool_(a_int.get_bit(digit_index))
+    return jnp.bool_((a_int >> digit_index) & 1)
+
+
+def _validate_adder_inputs(a, b):
+    """Validate that ``(a, b)`` is a supported adder input pair.
+
+    Supported combinations are classical-quantum (classical ``a``, quantum
+    ``b``) and quantum-quantum (quantum ``a``, quantum ``b``).
+
+    Returns
+    -------
+    a_is_quantum : bool
+        Whether ``a`` is a quantum register.
+    b_is_quantum : bool
+        Whether ``b`` is a quantum register.
+
+    Raises
+    ------
+    ValueError
+        If the pair is not classical-quantum or quantum-quantum.
+
+    """
+    b_is_quantum = isinstance(b, (QuantumVariable, DynamicQubitArray)) or (
+        isinstance(b, list) and len(b) > 0 and all(isinstance(qb, Qubit) for qb in b)
+    )
+    # Empty list is valid for a (treated as a zero-size quantum register).
+    a_is_quantum = isinstance(a, (QuantumVariable, DynamicQubitArray)) or (
+        isinstance(a, list) and all(isinstance(qb, Qubit) for qb in a)
+    )
+
+    is_valid_classical = isinstance(a, (int, np.integer, str)) or (
+        check_for_tracing_mode()
+        and (
+            hasattr(a, "get_bit")
+            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
+        )
+    )
+    if not (b_is_quantum and (a_is_quantum or is_valid_classical)):
+        raise ValueError(
+            "The adder expects inputs to be either classical-quantum "
+            "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
+        )
+    return a_is_quantum, b_is_quantum
+
+
+def _resolve_c_in(c_in):
+    """Resolve the carry-in qubit.
+
+    The carry-in may be passed as a QuantumBool or a bare Qubit. This helper
+    normalizes it to a Qubit, raising a TypeError for any other type in static
+    mode.
+    """
+    if c_in is None:
+        return None
+
+    if isinstance(c_in, QuantumBool):
+        return c_in[0]
+
+    if not check_for_tracing_mode() and not isinstance(c_in, Qubit):
+        raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
+
+    return c_in
+
+
+def _resolve_c_out(c_out):
+    """Resolve the carry-out qubit.
+
+    The carry-out may be passed as a QuantumBool or a bare Qubit. This helper
+    normalizes it to a Qubit, raising a TypeError for any other type in static
+    mode.
+    """
+    if c_out is None:
+        return None
+
+    if isinstance(c_out, QuantumBool):
+        return c_out[0]
+
+    if not check_for_tracing_mode() and not isinstance(c_out, Qubit):
+        raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
+
+    return c_out

@@ -317,6 +317,9 @@ Development
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
+* Consolidated all adder helpers
+  (`PR #853 <https://github.com/eclipse-qrisp/Qrisp/pull/853>`_).
+
 Dependency Upgrades
 -------------------
 

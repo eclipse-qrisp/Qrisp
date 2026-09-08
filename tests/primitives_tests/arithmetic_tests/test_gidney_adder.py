@@ -667,7 +667,7 @@ def test_gidney_adder_additional_edge_cases(desc, a_spec, a_val, b_bits, b_val, 
 )
 def test_gidney_adder_invalid_inputs_raise_value_error(mode, validation_case, should_raise):
     """Validation should reject invalid pairs and accept list-based quantum b targets."""
-    expected_msg = "gidney_adder expects inputs"
+    expected_msg = "The adder expects inputs"
     if mode == "static":
         b = QuantumFloat(4)
         b[:] = 0
