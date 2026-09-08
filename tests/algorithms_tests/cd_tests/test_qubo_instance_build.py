@@ -68,7 +68,11 @@ def test_create_lcd_instance_H_prob_and_nc_agp_match_naive_build():
         -2 * (h[i] * Y(i) + sum([J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i)])) for i in range(N)
     ]
 
-    _, _, H_prob, A_lam, _, _ = create_LCD_instance(Q, agp_type="nc", uniform_AGP_coeffs=False)
+    _, _, H_prob, A_lam, agp_coeffs, _ = create_LCD_instance(Q, agp_type="nc", uniform_AGP_coeffs=False)
+    assert np.asarray(agp_coeffs(0.5)).shape == (N,)
+
+    _, _, _, _, uniform_agp_coeffs, _ = create_LCD_instance(Q, agp_type="nc", uniform_AGP_coeffs=True)
+    assert np.asarray(uniform_agp_coeffs(0.5)).shape == (N,)
 
     assert H_prob.terms_dict.keys() == H_prob_naive.terms_dict.keys()
     for term, coeff in H_prob_naive.terms_dict.items():
