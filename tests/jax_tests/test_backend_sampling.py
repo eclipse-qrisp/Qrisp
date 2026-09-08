@@ -15,12 +15,25 @@
 ********************************************************************************
 """
 
+import jax
 import jax.numpy as jnp
-import numpy as np
 import pytest
 
-from qrisp import *
-from qrisp.jasp import *
+from qrisp import (
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    control,
+    cx,
+    h,
+    invert,
+    mcx,
+    measure,
+    rx,
+    ry,
+    x,
+)
+from qrisp.jasp import backend_sampler, jaspify, q_cond, sample
 
 # ===========================================================================
 # Helpers
@@ -57,7 +70,7 @@ def test_single_return_hadamard():
 
     res = main(1)
     assert res.shape == (200,)
-    assert {float(v) for v in res[:100]} == {0.0, 1.0}
+    assert {float(v) for v in res} == {0.0, 1.0}
 
 
 def test_single_return_uniform_superposition():
@@ -75,7 +88,7 @@ def test_single_return_uniform_superposition():
     res = main()
     assert res.shape == (500,)
     vals = {int(v) for v in res}
-    assert len(vals) >= 6, f"expected ≥6 values from 0-7, got {len(vals)}"
+    assert len(vals) >= 6
 
 
 def test_multi_return_cat_state():
@@ -116,7 +129,7 @@ def test_single_return_boolean():
 
     res = main()
     assert res.shape == (200,)
-    assert {bool(v) for v in res[:100]} == {True, False}
+    assert {bool(v) for v in res} == {True, False}
 
 
 def test_triple_return():
@@ -165,8 +178,8 @@ def test_postproc_arithmetic():
 
     res = main()
     assert res.shape == (300,)
-    assert all(int(v) % 2 == 1 for v in res[:200])
-    assert {int(v) for v in res[:200]} == {1, 3, 5, 7}
+    assert all(int(v) % 2 == 1 for v in res)
+    assert {int(v) for v in res} == {1, 3, 5, 7}
 
 
 def test_postproc_multi_step():
@@ -188,7 +201,7 @@ def test_postproc_multi_step():
 
     res = main()
     assert res.shape == (300,)
-    assert all(int(v) % 2 == 0 for v in res[:200])
+    assert all(int(v) % 2 == 0 for v in res)
 
 
 def test_postproc_jax_array():
@@ -211,8 +224,8 @@ def test_postproc_jax_array():
 
     res = main()
     assert res.shape == (200,)
-    vals = {int(v) for v in res[:100]}
-    assert all(0 <= v <= 2 for v in vals), f"values in [0,2], got {vals}"
+    vals = {int(v) for v in res}
+    assert all(0 <= v <= 2 for v in vals)
 
 
 def test_postproc_tuple_return():
@@ -279,7 +292,7 @@ def test_ghz_state():
 
     res = main()
     assert res.shape == (300,)
-    assert {int(v) for v in res[:200]} == {0, 15}
+    assert {int(v) for v in res} == {0, 15}
 
 
 def test_controlled_operation():
@@ -322,7 +335,7 @@ def test_multi_controlled_x():
 
     res = main()
     assert res.shape == (200,)
-    assert all(bool(v) for v in res[:100])
+    assert all(bool(v) for v in res)
 
 
 def test_inversion_environment():
@@ -362,7 +375,7 @@ def test_dynamic_kernel_arg():
 
     res = main(4)
     assert res.shape == (150,)
-    assert {float(v) for v in res[:80]} == {0.0, 1.0}
+    assert {float(v) for v in res} == {0.0, 1.0}
 
 
 def test_large_qubit_count():
@@ -408,7 +421,11 @@ def test_multiple_sample_calls():
 
 
 def test_zero_shots():
-    """Zero shots should raise"""
+    """shots=0 is rejected while tracing.
+
+    sample() requires a static shot count, so the check in sample() covers
+    every case and the error surfaces before any circuit is built.
+    """
 
     def kernel():
         qf = QuantumFloat(4)
@@ -419,10 +436,8 @@ def test_zero_shots():
     def main():
         return sample(kernel, shots=0)()
 
-    try:
+    with pytest.raises(ValueError, match="at least one shot is required"):
         main()
-    except Exception:
-        pass  # expected
 
 
 # ===========================================================================
@@ -448,7 +463,7 @@ def test_custom_backend():
 
     res = main()
     assert res.shape == (50,)
-    vals = {float(v) for v in res[:50]}
+    vals = {float(v) for v in res}
     assert 0.0 in vals and 1.0 in vals
 
 
@@ -536,7 +551,7 @@ def test_compare_with_jaspify():
     for k in bc:
         if k in jc:
             ratio = bc[k] / max(1, jc[k])
-            assert 0.4 < ratio < 1.6, f"count ratio for {k}: {ratio:.2f}"
+            assert 0.4 < ratio < 1.6
 
 
 # ===========================================================================
@@ -595,11 +610,8 @@ def test_raises_without_sample():
         h(qf[0])
         return measure(qf)
 
-    try:
+    with pytest.raises(RuntimeError):
         no_sample()
-        assert False, "should have raised RuntimeError"
-    except RuntimeError:
-        pass
 
 
 def test_raises_on_realtime_feedback():
@@ -631,6 +643,105 @@ def test_raises_on_realtime_feedback():
         return sample(kernel, shots=10)()
 
     with pytest.raises(RuntimeError, match="real-time feedback"):
+        main()
+
+
+# ===========================================================================
+# Callback execution semantics
+# ===========================================================================
+#
+# The interception wraps the backend call in ``jax.experimental.io_callback``
+# rather than ``jax.pure_callback``, because submitting a backend job and
+# shuffling the returned counts is an effect, not a pure function of the
+# arguments.  These tests pin the two properties that follow from that
+# choice: the backend runs exactly once per logical sample() call, and it
+# still runs when the sampled result never reaches the output (a
+# ``pure_callback`` would be dropped by dead-code elimination here).
+
+
+class _CountingBackend:
+    """Delegating backend that records how often ``run`` was called."""
+
+    def __init__(self, backend):
+        self.backend = backend
+        self.run_count = 0
+
+    def run(self, qc, shots=None):
+        self.run_count += 1
+        return self.backend.run(qc, shots=shots)
+
+
+def test_backend_runs_once_per_sample_call():
+    """One backend execution per sample() call — no replay, no duplication."""
+    counting = _CountingBackend(_get_backend())
+
+    def kernel():
+        qf = QuantumFloat(2)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=counting)
+    def one():
+        return sample(kernel, shots=20)()
+
+    res = one()
+    assert res.shape == (20,)
+    assert counting.run_count == 1
+
+    @backend_sampler(backend=counting)
+    def two():
+        return sample(kernel, shots=20)(), sample(kernel, shots=20)()
+
+    two()
+    assert counting.run_count == 3
+
+
+def test_backend_runs_when_result_is_discarded():
+    """The backend job fires even if the sampled result is unused.
+
+    ``io_callback`` guarantees execution; a ``pure_callback`` whose
+    outputs feed nothing would be eliminated before the backend is ever
+    reached.
+    """
+    counting = _CountingBackend(_get_backend())
+
+    def kernel():
+        qf = QuantumFloat(2)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=counting)
+    def main():
+        sample(kernel, shots=15)()
+        return jnp.float64(1.0)
+
+    assert float(main()) == 1.0
+    assert counting.run_count == 1
+
+
+def test_raise_inside_callback_propagates():
+    """A backend that raises surfaces the error to the caller.
+
+    Errors raised while the callback runs -- an invalid shot count, a
+    real-time-feedback kernel, a backend that rejects the circuit -- must
+    reach the caller.  ``pure_callback`` documents raising inside the
+    callback as undefined behaviour; ``io_callback`` does not.
+    """
+
+    class _FailingBackend:
+        def run(self, qc, shots=None):
+            raise ValueError("backend refused the circuit")
+
+    def kernel():
+        qf = QuantumFloat(2)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_FailingBackend())
+    def main():
+        return sample(kernel, shots=10)()
+
+    with pytest.raises(ValueError, match="backend refused the circuit"):
         main()
 
 
@@ -799,3 +910,64 @@ def test_switch_around_sample():
     for i in range(3):
         res = main(i)
         assert res.shape == (20,)
+
+
+# ===========================================================================
+# Captured-value tests
+#
+# The loop counter is located structurally, from the sampling loop's own
+# condition. An earlier implementation inferred it from avals, which broke
+# once JAX prepended a captured closure value whose aval collided with the
+# accumulator's or with the counter's.
+# ===========================================================================
+
+
+def test_captured_array_matching_accumulator_shape():
+    """A captured array shaped like the accumulator must not be mistaken for it."""
+
+    @backend_sampler(backend=_get_backend())
+    def main(k):
+        captured = jnp.zeros((4,), dtype=jnp.float64) + k
+
+        def kernel():
+            qf = QuantumFloat(2)
+            h(qf[0])
+            return measure(qf) + captured[0]
+
+        return sample(kernel, shots=4)()
+
+    result = main(2.0)
+
+    assert result.shape == (4,)
+    assert {float(value) for value in result} <= {2.0, 3.0}
+
+
+def test_captured_int_scalar_does_not_shadow_loop_index():
+    """A captured int scalar must not be mistaken for the loop counter.
+
+    Selecting it would silently make every iteration read the same shot,
+    so this asserts the shots actually vary rather than just that the call
+    succeeds.
+    """
+
+    def kernel_factory(extra):
+        def kernel():
+            qf = QuantumFloat(3)
+            h(qf[0])
+            h(qf[1])
+            h(qf[2])
+            return measure(qf) + extra
+
+        return kernel
+
+    @backend_sampler(backend=_get_backend())
+    def with_capture(k):
+        captured_idx = jnp.int64(0) + k
+        return sample(kernel_factory(captured_idx * 0), shots=50)()
+
+    result = with_capture(0)
+
+    assert result.shape == (50,)
+    # A uniform superposition over 3 qubits: collapsing to a single repeated
+    # shot is the failure mode this guards against.
+    assert len(set(float(value) for value in result)) > 1
