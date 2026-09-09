@@ -146,7 +146,7 @@ class DCQOProblem:
 
     """
 
-    def __init__(  # noqa: PLR0913 -- public, keyword-callable API shape
+    def __init__(  # noqa: PLR0913, PLR0917 -- public, keyword-callable API shape
         self,
         Q,
         H_init,
@@ -426,7 +426,7 @@ class DCQOProblem:
 
         return compiled_qc
 
-    def optimization_routine(  # noqa: PLR0913 -- public, keyword-callable API shape
+    def optimization_routine(  # noqa: PLR0913, PLR0917 -- public, keyword-callable API shape
         self,
         qarg,
         N_opt,
@@ -583,7 +583,7 @@ class DCQOProblem:
         cost = res @ self.Q @ res
         return cost
 
-    def run(  # noqa: PLR0913 -- public, keyword-callable API shape
+    def run(  # noqa: PLR0913, PLR0917 -- public, keyword-callable API shape
         self,
         qarg,
         N_steps,

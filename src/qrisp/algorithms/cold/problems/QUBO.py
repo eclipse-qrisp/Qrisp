@@ -16,13 +16,14 @@
 
 """Provides helper functions to build and solve QUBO problems using COLD/LCD counterdiabatic driving."""
 
+import itertools
+
 import numpy as np
 import sympy as sp
-import itertools
 
 from qrisp.algorithms.cold import DCQOProblem, solve_alpha
 from qrisp.core import QuantumVariable
-from qrisp.operators.qubit import X, Y, Z, QubitOperator
+from qrisp.operators.qubit import QubitOperator, X, Y, Z
 
 
 def create_COLD_instance(Q, uniform_AGP_coeffs):
