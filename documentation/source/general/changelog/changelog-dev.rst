@@ -72,7 +72,15 @@ Improvements
   QUBO Hamiltonians (``create_COLD_instance``, ``create_LCD_instance``) in a
   single pass instead of via Python's built-in ``sum()``, which no longer
   costs :math:`\mathcal{O}(N^4)` for a dense :math:`N`-qubit QUBO.
-  
+
+- Improved the simulator's circuit preprocessing: circuit reordering is
+  faster, and gate grouping for circuits with 63+ qubits now stays on the
+  fast Numba-jitted path (via chunked qubit bitmasks) instead of falling
+  back to a slower, non-jitted implementation. All functions and classes
+  used for simulator preprocessing are strictly internal and marked with a
+  leading underscore.
+  (`PR #704 <https://github.com/eclipse-qrisp/Qrisp/pull/704>`_)
+
 - Added type hints across :class:`~qrisp.QuantumFloat`, fixed stale
   docstring examples, and sped up ``significant()``, ``init_from()``, and
   ``encode(..., rounding=True)`` (now O(1))
