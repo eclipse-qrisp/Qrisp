@@ -42,6 +42,8 @@ def test_vqe_heisenberg():
 
 def test_jasp_vqe_heisenberg():
 
+    np.random.seed(10)  # Deterministic for reproducible test results
+
     @jaspify(terminal_sampling=True)
     def main():
         # Create a graph
