@@ -14,21 +14,27 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Implements a faster trotterization path for "Ising-type" Hamiltonians
-(only identity,single-qubit Pauli, and two-qubit Z*Z terms)"""
+"""Implements a faster trotterization path for "Ising-type" Hamiltonians.
+
+Only identity, single-qubit Pauli, and two-qubit Z*Z terms are supported.
+"""
 
 import jax.numpy as jnp
 
 from qrisp import IterationEnvironment, gphase, invert, merge, rx, ry, rz, rzz
 from qrisp.jasp import check_for_tracing_mode, jrange
 
+_TWO_QUBIT_TERM_SIZE = 2
+_SECOND_ORDER = 2
+
 
 def is_flat_ising_operator(H):
     r"""
-    Check whether a QubitOperator contains only identity, single-qubit
-    X/Y/Z, or two-qubit Z*Z terms -- i.e. whether it can be simulated with
-    :func:`fast_trotterization`'s native-gate fast path instead of the
-    general ``QubitOperator.trotterization()``.
+    Check whether a QubitOperator contains only identity, Pauli, or Z*Z terms.
+
+    I.e. whether it can be simulated with :func:`fast_trotterization`'s
+    native-gate fast path instead of the general
+    ``QubitOperator.trotterization()``.
 
     Parameters
     ----------
@@ -50,7 +56,7 @@ def is_flat_ising_operator(H):
         elif n == 1:
             if next(iter(factor_dict.values())) not in ("X", "Y", "Z"):
                 return False
-        elif n == 2:
+        elif n == _TWO_QUBIT_TERM_SIZE:
             if set(factor_dict.values()) != {"Z"}:
                 return False
         else:
@@ -88,7 +94,7 @@ def _flat_trotterization(H, order=1, forward_evolution=True):
             for i in jrange(iter * steps):
                 if order == 1:
                     trotter_step(qarg, t, steps)
-                elif order == 2:
+                elif order == _SECOND_ORDER:
                     trotter_step(qarg, t, steps * 2)
                     with invert():
                         trotter_step(qarg, -t, steps * 2)
@@ -97,7 +103,7 @@ def _flat_trotterization(H, order=1, forward_evolution=True):
             with IterationEnvironment(qarg.qs, iter * steps):
                 if order == 1:
                     trotter_step(qarg, t, steps)
-                elif order == 2:
+                elif order == _SECOND_ORDER:
                     trotter_step(qarg, t, steps * 2)
                     with invert():
                         trotter_step(qarg, -t, steps * 2)
@@ -107,11 +113,11 @@ def _flat_trotterization(H, order=1, forward_evolution=True):
 
 def fast_trotterization(H, order=1, method="commuting_qw", forward_evolution=True):
     r"""
-    Drop-in replacement for :meth:`QubitOperator.trotterization
-    <qrisp.operators.qubit.QubitOperator.trotterization>` that emits native
-    ``rx``/``ry``/``rz``/``rzz`` gates directly -- with no per-term
-    ``QuantumEnvironment`` and therefore no extra QuantumSession merging --
-    whenever ``H`` is an "Ising-type" operator (see
+    Drop-in replacement for :meth:`QubitOperator.trotterization <qrisp.operators.qubit.QubitOperator.trotterization>`.
+
+    Emits native ``rx``/``ry``/``rz``/``rzz`` gates directly -- with no
+    per-term ``QuantumEnvironment`` and therefore no extra QuantumSession
+    merging -- whenever ``H`` is an "Ising-type" operator (see
     :func:`is_flat_ising_operator`). For any other operator (containing
     ladder operators, projectors, 3+-qubit terms, or non-Z 2-qubit terms),
     this transparently falls back to ``H.trotterization(...)``, so it is
