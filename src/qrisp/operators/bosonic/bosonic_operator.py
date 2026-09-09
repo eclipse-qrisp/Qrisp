@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,6 +14,7 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
+
 """
 
 from typing import Self
@@ -20,9 +22,9 @@ from typing import Self
 import numpy as np
 import sympy as sp
 
+from qrisp import QuantumVariable, x
 from qrisp.operators import Hamiltonian
-from qrisp.operators.bosonic.bosonic_term import BosonicTerm
-from qrisp.operators.hamiltonian_tools import group_up_iterable
+from qrisp.operators.bosonic.bosonic_term import BosonicTerm, gray_code, one_hot, standard_binary
 from qrisp.operators.qubit import QubitOperator
 
 threshold = 1e-9
@@ -33,14 +35,16 @@ threshold = 1e-9
 
 
 class BosonicOperator(Hamiltonian):
-    r"""This class provides an efficient implementation of bosonic ladder term operators, i.e.,
-    operators of the form
+    r"""An efficient implementation of bosonic ladder term operators.
+
+    The class represents operators of the form
 
     .. math::
-        
-        O=\sum\limits_{j}\alpha_jO_j 
-            
-    where each term $O_j$ is a product of bosonic raising $a_i^{\dagger}$ and lowering $a_i$ operators acting on the $i$ th bosonic mode.
+
+        O=\sum\limits_{j}\alpha_jO_j
+
+    where each term $O_j$ is a product of bosonic raising $a_i^{\dagger}$ and lowering $a_i$ operators
+    acting on the $i$ th bosonic mode.
 
     The ladder operators satisfy the commutation relations
 
@@ -49,27 +53,49 @@ class BosonicOperator(Hamiltonian):
         [a_i,a_j^{\dagger}] &= a_ia_j^{\dagger}-a_j^{\dagger}a_i = \delta_{ij}\\
         [a_i^{\dagger},a_j^{\dagger}] &= [a_i,a_j] = 0
 
-    In contrast to fermions, which can be represented by a two-dimensional Fock space, the bosonic Fock space is infinite-dimensional and needs to be truncated for representation on a quantum computer.
-    Furthermore, there are several possibilities to encode the single Fock states in qubit states. Three such encodings are supported:
+    In contrast to fermions, which can be represented by a two-dimensional Fock space,
+    the bosonic Fock space is infinite-dimensional and needs to be truncated for representation on a quantum computer.
+    Furthermore, there are several possibilities to encode the single Fock states in qubit states.
+    Three such encodings are supported:
 
-    - A one-hot encoding requires as many qubits as Fock states are represented. It is thus the most inefficient in terms of qubits, but typically leads to the smallest number of gates in Hamiltonian simulation.
-    - A standard binary encoding needs only $\log_2 n$ qubits to represent $n$ Fock states. E.g. when representing 8 Fock states, the qubit states $|000\rangle, |001\rangle, |010\rangle, \dots$ are mapped to the Fock states $|0\rangle, |1\rangle, |2\rangle, \dots$.
-    - A Gray code encoding works very similar to standard binary encoding, with the only difference that the qubit states are ordered differently such that subsequent states always differ in only one qubit. This is particularly efficient for the representation of ladder operators, which possess only one non-zero off-diagonal. Hence, gate count is typically slightly reduced compared to the standard binary encoding.
+    - A one-hot encoding requires as many qubits as Fock states are represented.
+      It is thus the most inefficient in terms of qubits,
+      but typically leads to the smallest number of gates in Hamiltonian simulation.
+    - A standard binary encoding needs only $\log_2 n$ qubits to represent $n$ Fock states.
+      E.g. when representing 8 Fock states, the qubit states $|000\rangle, |001\rangle, |010\rangle, \dots$
+      are mapped to the Fock states $|0\rangle, |1\rangle, |2\rangle, \dots$.
+    - A Gray code encoding works very similar to standard binary encoding,
+      with the only difference that the qubit states are ordered differently,
+      such that subsequent states always differ in only one qubit.
+      This is particularly efficient for the representation of ladder operators,
+      which possess only one non-zero off-diagonal.
+      Hence, gate count is typically slightly reduced compared to the standard binary encoding.
 
-    Details on these three encodings and their respective advantages and disadvantages can be found in https://www.nature.com/articles/s41534-020-0278-0.
+    Details on these three encodings and their respective advantages and disadvantages
+    can be found in https://www.nature.com/articles/s41534-020-0278-0.
 
-    The representation of bosonic ladder operators by finite matrices comes with the particular problem that it is impossible to get the correct bosonic commutation relations with finite matrices, as for a finite matrix $a$ we have $\mathrm{Tr}(aa^\dagger-a^\dagger a) = 0 \neq \mathrm{Tr}(\mathbb{1})$.
-    As a consequence, there is an ambiguity in the representation of bosonic operators, because applying the Fock space truncation before or after the application of a commutation relation can lead to different results.
-    Here, this ambiguity is removed by truncating the normal-ordered version (with all creators moved to the left) of an operator.
+    The representation of bosonic ladder operators by finite matrices comes with the particular problem
+    that it is impossible to get the correct bosonic commutation relations with finite matrices,
+    as for a finite matrix $a$ we have $\mathrm{Tr}(aa^\dagger-a^\dagger a) = 0 \neq \mathrm{Tr}(\mathbb{1})$.
+    As a consequence, there is an ambiguity in the representation of bosonic operators,
+    because applying the Fock space truncation before or after the application of a commutation relation
+    can lead to different results.
+    Here, this ambiguity is removed by truncating the normal-ordered version
+    (with all creators moved to the left) of an operator.
 
-    Both the truncation and the encoding need not to be specified until the point where a ``BosonicOperator`` is converted to a ``QubitOperator``. The latter becomes necessary internally also if its expectation value, ground state energy, sparse matrix representation or trotterized version are computed.
+    Both the truncation and the encoding need not to be specified until the point
+    where a ``BosonicOperator`` is converted to a ``QubitOperator``.
+    The latter becomes necessary internally also if its expectation value, ground state energy,
+    sparse matrix representation or trotterized version are computed.
     Until this point, a purely abstract representation of the operator is stored internally.
 
-    For convenience, the module contains also a function ``prepare_bosonic_fock_state`` that creates a qubit state representing a bosonic Fock state with a specific truncation and in a specific encoding.
+    For convenience, the module contains also a function ``prepare_bosonic_fock_state``,
+    which creates a qubit state representing a bosonic Fock state with a specific truncation and in a specific encoding.
 
     Examples
     --------
-    A ladder term operator can be specified conveniently in terms of ``a_b`` (lowering, i.e., annihilation), ``c_b`` (raising, i.e., creation) operators:
+    A ladder term operator can be specified conveniently
+    in terms of ``a_b`` (lowering, i.e., annihilation), ``c_b`` (raising, i.e., creation) operators:
 
     ::
 
@@ -89,7 +115,8 @@ class BosonicOperator(Hamiltonian):
         O = c_b(0)*a_b(0)
 
         print(O.to_qubit_operator(truncation=3, binary_encoding="one_hot").to_pauli())
-        # yields 0.375 + 0.375*Z(0) + 0.125*Z(0)*Z(1) - 0.375*Z(0)*Z(1)*Z(2) - 0.125*Z(0)*Z(2) + 0.125*Z(1) - 0.375*Z(1)*Z(2) - 0.125*Z(2)
+        # yields 0.375 + 0.375*Z(0) + 0.125*Z(0)*Z(1) - 0.375*Z(0)*Z(1)*Z(2)
+        # - 0.125*Z(0)*Z(2) + 0.125*Z(1) - 0.375*Z(1)*Z(2) - 0.125*Z(2)
 
         print(O.to_qubit_operator(truncation=8, binary_encoding="standard_binary").to_pauli())
         # yields 3.5 - 2.0*Z(0) - 1.0*Z(1) - 0.5*Z(2)
@@ -97,7 +124,9 @@ class BosonicOperator(Hamiltonian):
         print(O.to_qubit_operator(truncation=8, binary_encoding="gray_code").to_pauli())
         # yields 3.5 - 2.0*Z(0) - 1.0*Z(0)*Z(1) - 0.5*Z(0)*Z(1)*Z(2)
 
-    Create a bosonic Fock state $|3\rangle$ and compute the expectation value of the number operator for that state (it is important that the encoding and truncation are chosen the same for both the state preparation function and the expectation value method!):
+    Create a bosonic Fock state $|3\rangle$ and compute the expectation value of the number operator for that state
+    (it is important that the encoding and truncation are chosen the same
+    for both the state preparation function and the expectation value method!):
 
     ::
 
@@ -111,14 +140,21 @@ class BosonicOperator(Hamiltonian):
     """
 
     def __init__(self, terms_dict: dict = {}):
+        """Initialize from term list.
 
+        Parameters
+        ----------
+        terms_dict : dict
+            A dictionary containing the terms with which to initialize.
+
+        """
         self.terms_dict = dict(terms_dict)
 
     def reduce(self, assume_hermitian: bool = False):
-        """Applies the bosonic commutation laws to bring the operator into
-        a standard form. This can reduce the amount of terms because several
-        terms might be the permuted version of each other and therefore their
-        coefficients add up.
+        """Apply the bosonic commutation laws to bring the operator into a standard form.
+
+        This can reduce the amount of terms because several terms might be the permuted
+        version of each other and therefore their coefficients add up.
 
         This function can reduce the amount of terms even further if the user
         can guarantee that the operator will be hermitized. In this case more
@@ -183,10 +219,11 @@ class BosonicOperator(Hamiltonian):
         return BosonicOperator(new_terms_dict)
 
     def len(self):
+        """Return the number of terms."""
         return len(self.terms_dict)
 
     def coeffs(self):
-        """Returns the coefficients of the operator.
+        """Return the coefficients of the operator.
 
         Returns
         -------
@@ -213,12 +250,12 @@ class BosonicOperator(Hamiltonian):
         return f"${sp.latex(expr)}$"
 
     def __str__(self):
-        # Convert the sympy expression to a string and return it
+        """Convert the sympy expression to a string."""
         expr = self.to_expr()
         return str(expr)
 
     def to_expr(self):
-        """Returns a SymPy expression representing the operator.
+        """Return a SymPy expression representing the operator.
 
         Returns
         -------
@@ -236,7 +273,7 @@ class BosonicOperator(Hamiltonian):
     #
 
     def dagger(self):
-        r"""Returns the daggered/adjoint version of self.
+        r"""Return the daggered/adjoint version of self.
 
         Returns
         -------
@@ -262,7 +299,7 @@ class BosonicOperator(Hamiltonian):
         return BosonicOperator(terms_dict)
 
     def hermitize(self):
-        r"""Returns the hermitized version of self.
+        r"""Return the hermitized version of self.
 
         Returns
         -------
@@ -285,6 +322,7 @@ class BosonicOperator(Hamiltonian):
         return 0.5 * (self + self.dagger())
 
     def __eq__(self, other: Self):
+        """Check the equality of two operators."""
         reduced_self = self.reduce()
         reduced_other = other.reduce()
 
@@ -305,11 +343,16 @@ class BosonicOperator(Hamiltonian):
 
         return True
 
+    def __hash__(self):
+        """Return a hash value of the operator."""
+        return hash(frozenset([(k, v) for k, v in (self.terms_dict.items())]))
+
     def __neg__(self) -> Self:
+        """Return the negative of an operator."""
         return -1 * self
 
     def __add__(self, other: int | float | complex | Self) -> Self:
-        """Returns the sum of the operator self and other.
+        """Return the sum of the operator self and other.
 
         Parameters
         ----------
@@ -343,7 +386,7 @@ class BosonicOperator(Hamiltonian):
         return result
 
     def __sub__(self, other: int | float | complex | Self) -> Self:
-        """Returns the difference of the operator self and other.
+        """Return the difference of the operator self and other.
 
         Parameters
         ----------
@@ -377,7 +420,7 @@ class BosonicOperator(Hamiltonian):
         return result
 
     def __rsub__(self, other: int | float | complex | Self) -> Self:
-        """Returns the difference of the operator other and self.
+        """Return the difference of the operator other and self.
 
         Parameters
         ----------
@@ -411,7 +454,7 @@ class BosonicOperator(Hamiltonian):
         return result
 
     def __mul__(self, other: int | float | complex | Self) -> Self:
-        """Returns the product of the operator self and other.
+        """Return the product of the operator self and other.
 
         Parameters
         ----------
@@ -443,7 +486,7 @@ class BosonicOperator(Hamiltonian):
     __rmul__ = __mul__
 
     def __pow__(self, exp: int) -> Self:
-        """Returns the operator self exponentiated by int.
+        """Return the operator self exponentiated by int.
 
         Parameters
         ----------
@@ -470,7 +513,7 @@ class BosonicOperator(Hamiltonian):
     #
 
     def __iadd__(self, other: int | float | complex | Self) -> Self:
-        """Adds other to the operator self.
+        """Add other to the operator self.
 
         Parameters
         ----------
@@ -492,7 +535,7 @@ class BosonicOperator(Hamiltonian):
         return self
 
     def __isub__(self, other: int | float | complex | Self) -> Self:
-        """Substracts other from the operator self.
+        """Substract other from the operator self.
 
         Parameters
         ----------
@@ -513,7 +556,7 @@ class BosonicOperator(Hamiltonian):
         return self
 
     def __imul__(self, other: int | float | complex | Self) -> Self:
-        """Multiplys other to the operator self.
+        """Multiply other to the operator self.
 
         Parameters
         ----------
@@ -540,7 +583,7 @@ class BosonicOperator(Hamiltonian):
     #
 
     def apply_threshold(self, threshold: float):
-        """Removes all ladder_term terms with coefficient absolute value below the specified threshold.
+        """Remove all ladder_term terms with coefficient absolute value below the specified threshold.
 
         Parameters
         ----------
@@ -556,7 +599,7 @@ class BosonicOperator(Hamiltonian):
             del self.terms_dict[ladder_term]
 
     def to_sparse_matrix(self, truncation: int = 8, binary_encoding: str = "gray_code"):
-        """Returns a matrix representing the operator.
+        """Return a matrix representing the operator.
 
         Returns
         -------
@@ -564,13 +607,14 @@ class BosonicOperator(Hamiltonian):
             A sparse matrix representing the operator.
         truncation: How many bosonic occupation numbers to take into account.
         binary_encoding : string, optional
-            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code", "standard_binary" and "one_hot".
+            How to embed the bosonic terms into a QubitOperator.
+            Possible values are "gray_code", "standard_binary" and "one_hot".
 
         """
         return self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding).to_sparse_matrix()
 
     def ground_state_energy(self, truncation: int = 8):
-        """Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
+        """Calculate the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
 
         Returns
         -------
@@ -581,15 +625,21 @@ class BosonicOperator(Hamiltonian):
         return self.to_qubit_operator(truncation=truncation).ground_state_energy()
 
     def to_qubit_operator(self, truncation: int = 8, binary_encoding: str = "gray_code"):
-        """Transforms the BosonicOperator to a :ref:`QubitOperator`.
-        To that end, the bosonic Fock space is truncated to ``truncation`` states. These states are encoded in qubit states by one of three methods, a one-hot, standard binary or Gray code representation. See the general documentation of :ref:`BosonicOperator` and https://www.nature.com/articles/s41534-020-0278-0 for more details.
+        """Transform the BosonicOperator to a :ref:`QubitOperator`.
+
+        To that end, the bosonic Fock space is truncated to ``truncation`` states.
+        These states are encoded in qubit states by one of three methods, a one-hot, standard binary
+        or Gray code representation.
+        See the general documentation of :ref:`BosonicOperator` and https://www.nature.com/articles/s41534-020-0278-0
+        for more details.
 
         Parameters
         ----------
         truncation : int, optional
             How many bosonic occupation numbers to take into account
         binary_encoding : str, optional
-            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code", "standard_binary" and "one_hot".
+            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code",
+            "standard_binary" and "one_hot".
 
         Returns
         -------
@@ -607,7 +657,8 @@ class BosonicOperator(Hamiltonian):
             O = c_b(0)*a_b(0)
 
             print(O.to_qubit_operator(truncation=3, binary_encoding="one_hot").to_pauli())
-            # yields 0.375 + 0.375*Z(0) + 0.125*Z(0)*Z(1) - 0.375*Z(0)*Z(1)*Z(2) - 0.125*Z(0)*Z(2) + 0.125*Z(1) - 0.375*Z(1)*Z(2) - 0.125*Z(2)
+            # yields 0.375 + 0.375*Z(0) + 0.125*Z(0)*Z(1) - 0.375*Z(0)*Z(1)*Z(2)
+            # - 0.125*Z(0)*Z(2) + 0.125*Z(1) - 0.375*Z(1)*Z(2) - 0.125*Z(2)
 
             print(O.to_qubit_operator(truncation=8, binary_encoding="standard_binary").to_pauli())
             # yields 3.5 - 2.0*Z(0) - 1.0*Z(1) - 0.5*Z(2)
@@ -627,7 +678,10 @@ class BosonicOperator(Hamiltonian):
     def expectation_value(
         self, state_prep: callable, truncation: int = 8, binary_encoding: str = "gray_code", **measurement_kwargs
     ):
-        r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
+        r"""Return the expectation value of the operator.
+
+        This function allows to estimate the expectation value of a Hamiltonian for a state that is specified
+        by a preparation procedure.
         This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
 
         Note that this method measures the **hermitized** version of the operator:
@@ -643,12 +697,16 @@ class BosonicOperator(Hamiltonian):
             A function returning a QuantumVariable.
             The expectation of the Hamiltonian for the state of this QuantumVariable will be measured.
             The state preparation function can only take classical values as arguments.
-            This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
-        truncation: How many bosonic occupation numbers to take into account.
+            This is because a quantum value would need to be copied for each sampling iteration,
+            which is prohibited by the no-cloning theorem.
+        truncation : int
+            How many bosonic occupation numbers to take into account.
         binary_encoding : string, optional
-            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code", "standard_binary" and "one_hot".
+            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code",
+            "standard_binary" and "one_hot".
         measurement_kwargs : dict, optional
-            The keyword arguments of :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
+            The keyword arguments of
+            :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
 
         Returns
         -------
@@ -658,7 +716,9 @@ class BosonicOperator(Hamiltonian):
 
         Examples
         --------
-        Create a bosonic Fock state $|3\rangle$ and compute the expectation value of the number operator for that state (it is important that the encoding and truncation are chosen the same for both the state preparation function and the expectation value method!):
+        Create a bosonic Fock state $|3\rangle$ and compute the expectation value of the number operator for that state
+        (it is important that the encoding and truncation are chosen the same
+        for both the state preparation function and the expectation value method!):
 
         ::
 
@@ -666,7 +726,11 @@ class BosonicOperator(Hamiltonian):
 
             O = c_b(0)*a_b(0)
 
-            O.expectation_value(prepare_bosonic_fock_state, truncation=8, binary_encoding="gray_code")(3, 8, "gray_code")
+            O.expectation_value(
+                    prepare_bosonic_fock_state,
+                    truncation=8,
+                    binary_encoding="gray_code"
+                )(3, 8, "gray_code")
             # yields 2.9999999999999996
 
         """
@@ -678,19 +742,26 @@ class BosonicOperator(Hamiltonian):
     #
 
     def trotterization(self, truncation: int = 8, binary_encoding: str = "gray_code", forward_evolution: bool = True):
-        r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
+        r"""Return a function for performing Hamiltonian simulation.
+
+        I.e. this method returns a function that approximately implements
+        the unitary operator $U(t) = e^{-itH}$ via Trotterization.
 
         Parameters
         ----------
         truncation : int, optional
             How many bosonic occupation numbers to take into account
         binary_encoding : str, optional
-            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code", "standard_binary" and "one_hot".
+            How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code",
+            "standard_binary" and "one_hot".
+        forward_evolution : bool, optional
+            If true, evolve forwards in time, else backwards.
 
         Returns
         -------
         callable
-            A function that takes a quantum variable qv and a time t as arguments and applies an evolution of exp(-itH) to qv, with H being the `BosonicOperator` instance itself.
+            A function that takes a quantum variable qv and a time t as arguments and applies an evolution
+            of exp(-itH) to qv, with H being the `BosonicOperator` instance itself.
 
         Examples
         --------
@@ -711,30 +782,49 @@ class BosonicOperator(Hamiltonian):
         qubit_operator = self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding)
         return qubit_operator.trotterization(forward_evolution=forward_evolution)
 
-    def group_up(self, denominator: callable):
-        term_groups = group_up_iterable(list(self.terms_dict.keys()), denominator)
-        if len(term_groups) == 0:
-            return [self]
-        groups = []
-        for term_group in term_groups:
-            O = BosonicOperator({term: self.terms_dict[term] for term in term_group})
-            groups.append(O)
-
-        return groups
-
 
 def get_bosonic_encoding_qubit_number(truncation, binary_encoding):
+    """Return the number of qubits a particular bosonic encoding consumes.
+
+    Parameters
+    ----------
+    truncation : int
+       How many bosonic occupation numbers to take into account.
+    binary_encoding : str, optional
+        How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code",
+        "standard_binary" and "one_hot".
+
+    Returns
+    -------
+    int
+        The number of qubits.
+
+    """
     if binary_encoding != "one_hot":
         return int(np.ceil(np.log2(truncation)))
     else:
         return truncation
 
 
-from qrisp.operators.bosonic.bosonic_term import gray_code, standard_binary, one_hot
-from qrisp import QuantumVariable, x
-
-
 def prepare_bosonic_fock_state(n: int, truncation: int = 8, binary_encoding: str = "gray_code"):
+    """Return a QuantumVariable with a bosonic Fock state prepared on it.
+
+    Parameters
+    ----------
+    n : int
+       The occupation number of the Fock state.
+    truncation : int, optional
+       How many bosonic occupation numbers to take into account.
+    binary_encoding : str, optional
+        How to embed the bosonic terms into a QubitOperator. Possible values are "gray_code",
+        "standard_binary" and "one_hot".
+
+    Returns
+    -------
+    QuantumVariable
+        A QuantumVariable with the Fock state prepared on it.
+
+    """
     if not 0 <= n < truncation:
         raise ValueError("n must be between 0 an truncation-1")
 

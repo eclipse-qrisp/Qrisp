@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,6 +14,7 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
+
 """
 
 #
@@ -27,18 +29,24 @@ from sympy import Symbol
 
 
 class a_(Symbol):
+    """Latex representation of annihilator."""
+
     __slots__ = ("ladder", "index")
 
     def __new__(cls, index: int):
+        """Return representation of annihilator."""
         obj = Symbol.__new__(cls, "%s%s" % ("a", index), commutative=False, hermitian=True)
         obj.index = index
         return obj
 
 
 class c_(Symbol):
+    """Latex representation of creator."""
+
     __slots__ = ("ladder", "index")
 
     def __new__(cls, index: int):
+        """Return representation of creator."""
         obj = Symbol.__new__(cls, "%s%s" % ("c", index), commutative=False, hermitian=True)
         obj.index = index
         return obj

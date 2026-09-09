@@ -1,4 +1,5 @@
 """********************************************************************************
+
 * Copyright (c) 2024 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
@@ -13,28 +14,42 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
+
 """
 
 #
 # BosonicTerm
 #
-import numpy as np
 import warnings
+from itertools import product
 from typing import Self
 
+import numpy as np
+
 from qrisp.operators.bosonic.visualization import a_, c_
-from qrisp.operators.qubit import A, C, Z, P0, P1
+from qrisp.operators.qubit import P0, P1, A, C
 
 
 class BosonicTerm:
-    r"""This class implements single bosonic terms, which are the constituents of `BosonicOperators`.
-    Such terms are internally represented by a list of 2-tuples, which store the modes onto which the ladder operators act and whether they are creation or annihilation operators.
-    For details on the conversion of bosonic operators to qubit operators and examples, see the documentation of the `BosonicOperator` class.
+    r"""Implementation of single bosonic terms, which are the constituents of `BosonicOperators`.
+
+    Such terms are internally represented by a list of 2-tuples, which store the modes
+    onto which the ladder operators act and whether they are creation or annihilation operators.
+    For details on the conversion of bosonic operators to qubit operators and examples,
+    see the documentation of the `BosonicOperator` class.
 
     """
 
     def __init__(self, ladder_list=[]):
+        """Create bosonic term from ladder list.
 
+        Parameters
+        ----------
+        ladder_list : list
+            list of (int, bool) tuples containing the index of a ladder operator
+            and whether it is a creator.
+
+        """
         self.ladder_list = ladder_list
 
         # Compute the hash value such that
@@ -49,15 +64,19 @@ class BosonicTerm:
         self.hash_value = hash(tuple(index_list + [is_creator_hash]))
 
     def __hash__(self):
+        """Return hash value."""
         return self.hash_value
 
     def __eq__(self, other: Self):
+        """Check if two terms are identical."""
         return self.hash_value == other.hash_value
 
     def copy(self):
+        """Copy term."""
         return BosonicTerm(self.ladder_list.copy())
 
     def dagger(self):
+        """Return daggered version of term."""
         return BosonicTerm([(index, not is_creator) for index, is_creator in self.ladder_list[::-1]])
 
     #
@@ -65,15 +84,16 @@ class BosonicTerm:
     #
 
     def __str__(self):
-        # Convert the sympy expression to a string and return it
+        """Convert the sympy expression to a string and return it."""
         expr = self.to_expr()
         return str(expr)
 
     def __repr__(self):
+        """Convert the sympy expression to a string and return it."""
         return str(self)
 
     def to_expr(self):
-        """Returns a SymPy expression representing the BosonicTerm.
+        """Return a SymPy expression representing the BosonicTerm.
 
         Returns
         -------
@@ -99,11 +119,12 @@ class BosonicTerm:
     #
 
     def __mul__(self, other: Self):
+        """Multiply two terms"""
         result_ladder_list = other.ladder_list + self.ladder_list
         return BosonicTerm(result_ladder_list)
 
     def sort(self):
-        # Sort ladder operators (ladder operator semantics are order independent)
+        """Sort ladder operators (ladder operator semantics are order independent)"""
         sorting_list = [-index for index, is_creator in self.ladder_list]
         perm = np.argsort(sorting_list, kind="stable")
         ladder_list = [self.ladder_list[i] for i in perm]
@@ -111,36 +132,45 @@ class BosonicTerm:
         return BosonicTerm(ladder_list)
 
     def to_qubit_term(self, truncation: int = 8, binary_encoding: str = "gray_code"):
-        """Maps a bosonic term to a qubit term.
+        """Map a bosonic term to a qubit term.
+
         Since bosonic operators act on an infinite-dimensional space, a truncation to a finite
         number of bosonic occupation numbers is necessary (provided by the "truncation" argument).
         For their embedding into qubits, an arbitrary binary encoding can be chosen,
         but the Gray encoding appears tailor-made for the structure of ladder operators.
         Apart from the Gray encoding, a standard binary and a one-hot encoding are provided.
-        https://www.nature.com/articles/s41534-020-0278-0 contains more details on their respective advantages and disadvantages.
+        https://www.nature.com/articles/s41534-020-0278-0 contains more details
+        on their respective advantages and disadvantages.
 
         Parameters
         ----------
         truncation: int, optional
             The number of bosonic occupation numbers one wants to describe.
-            Note that 0 also counts as an occupation number, so occupation numbers from 0 to truncation-1 are represented.
+            Note that 0 also counts as an occupation number, so occupation numbers
+            from 0 to truncation-1 are represented.
         binary_encoding: str, optional
-            How to embed the bosonic matrix into qubits. Possible values are "gray_code", "standard_binary" and "one_hot". Default is "gray_code".
+            How to embed the bosonic matrix into qubits. Possible values are "gray_code",
+            "standard_binary" and "one_hot". Default is "gray_code".
 
         Returns
         -------
         QubitOperator
-            The qubit operator representation of the term. Depending on the binary_encoding, the size of the qubit operator is either equal to `truncation` ("one_hot" encoding) or to `int(np.ceil(np.log2(truncation)))` ("gray_code" and "standard_binary" encoding).
+            The qubit operator representation of the term.
+            Depending on the binary_encoding, the size of the qubit operator is either equal to
+            `truncation` ("one_hot" encoding) or to
+            `int(np.ceil(np.log2(truncation)))` ("gray_code" and "standard_binary" encoding).
 
         """
         if not np.isclose(np.log2(truncation) % 1, 0) and binary_encoding != "one_hot":
             warnings.warn("truncation is not a power of 2, could be chosen larger with same amount of qubits.")
-        if binary_encoding == "gray_code":
-            encoder = gray_code
-        elif binary_encoding == "standard_binary":
-            encoder = standard_binary
-        elif binary_encoding == "one_hot":
-            encoder = one_hot
+
+        encoder_map = {
+            "gray_code": gray_code,
+            "standard_binary": standard_binary,
+            "one_hot": one_hot,
+        }
+        if binary_encoding in encoder_map:
+            encoder = encoder_map[binary_encoding]
         else:
             raise Exception(f"Don't know binary encoding type {binary_encoding}")
 
@@ -148,10 +178,7 @@ class BosonicTerm:
 
         indices_present = set([x[0] for x in self.ladder_list])
 
-        if binary_encoding != "one_hot":
-            n_qubits = int(np.ceil(np.log2(truncation)))
-        else:
-            n_qubits = truncation
+        n_qubits = int(np.ceil(np.log2(truncation))) if binary_encoding != "one_hot" else truncation
 
         binary_rep = encoder(n_qubits)
 
@@ -164,9 +191,12 @@ class BosonicTerm:
             # bring term into matrix form
             M = np.identity(
                 truncation + k
-            )  # by temporarily increasing the matrix size to truncation+k we avoid ambiguities due to intermediate running out of truncated space (corresponds to normal ordering the operator before truncation)
-            for l in ladder_ops:
-                if l:
+            )  # by temporarily increasing the matrix size to truncation+k we avoid ambiguities
+            # due to intermediate running out of truncated space
+            # (corresponds to normal ordering the operator before truncation)
+
+            for lad in ladder_ops:
+                if lad:
                     M = c_matrix(truncation + k) @ M
                 else:
                     M = a_matrix(truncation + k) @ M
@@ -189,18 +219,18 @@ class BosonicTerm:
         return res
 
 
-# Bosonic annihilation operator in matrix representation
 def a_matrix(N: int):
+    """Bosonic annihilation operator in matrix representation"""
     return np.diag(np.sqrt(np.arange(1, N)), k=1).astype(complex)
 
 
-# Bosonic creation operator in matrix representation
 def c_matrix(N: int):
+    """Bosonic creation operator in matrix representation"""
     return np.diag(np.sqrt(np.arange(1, N)), k=-1).astype(complex)
 
 
-# Return the Gray code
 def gray_code(n: int):
+    """Return the Gray code"""
     code = []
     for i in range(n):
         temp = []
@@ -216,16 +246,14 @@ def gray_code(n: int):
     return np.transpose(np.asarray(code)).tolist()
 
 
-from itertools import product
-
-
 def standard_binary(n: int):
+    """Return the standard binary representation"""
     # product returns tuples like (0, 1, 0), so we convert them to lists
     return [list(bits) for bits in product((0, 1), repeat=n)]
 
 
-# Return one-hot encoding
 def one_hot(n: int):
+    """Return the one-hot representation"""
     code = []
     for i in range(n):
         code.append(i * [0] + [1] + (n - i - 1) * [0])
