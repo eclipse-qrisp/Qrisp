@@ -61,6 +61,17 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
+- **Faster COLD/LCD circuit compilation and Hamiltonian construction**
+  :meth:`compile_U_cold <qrisp.cold.DCQOProblem.compile_U_cold>` and
+  :meth:`~qrisp.cold.DCQOProblem.run` no longer recompute Trotter term
+  grouping on every timestep, and Ising-type Hamiltonians (identity,
+  single-qubit Pauli, or :math:`Z \otimes Z` terms only — the case for every
+  built-in QUBO Hamiltonian) are now Trotterized via a new native-gate fast
+  path (``fast_trotterization``), falling back automatically for any other
+  operator. Separately, a new ``QubitOperator.sum`` classmethod builds large
+  QUBO Hamiltonians (``create_COLD_instance``, ``create_LCD_instance``) in a
+  single pass instead of via Python's built-in ``sum()``, which no longer
+  costs :math:`\mathcal{O}(N^4)` for a dense :math:`N`-qubit QUBO.
 
 - Improved the simulator's circuit preprocessing: circuit reordering is
   faster, and gate grouping for circuits with 63+ qubits now stays on the
@@ -178,6 +189,11 @@ Bug Fixes
   by an import-hoisting cleanup, which broke ``ruff format --check`` on
   ``main`` right after merge.
 
+* Fixed two AGP coefficient shape bugs in ``create_LCD_instance`` with
+  ``agp_type="nc"``: the ``uniform`` and non-uniform coefficient builders
+  each wrapped their result one list level too deep, handing a whole
+  per-qubit array where a single coefficient was expected.
+  
 * Fixed a bug where :class:`~qrisp.QuantumFloat` add/sub with different
   exponents silently produced a ``jax.Array`` exponent instead of a plain
   ``int`` outside tracing, crashing later negative ``2**exponent`` calls

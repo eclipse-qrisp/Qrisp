@@ -249,6 +249,38 @@ class QubitOperator(Hamiltonian):
     # Arithmetic
     #
 
+    @classmethod
+    def sum(cls, operators):
+        """Efficiently sums many QubitOperators.
+
+        Equivalent to Python's built-in ``sum(operators)``, but performs a
+        single accumulation pass over all terms instead of folding pairwise
+        with :meth:`__add__`, which copies the entire running result on every
+        addition. For an iterable contributing $M$ total terms, ``sum()``
+        costs $O(M^2)$ while this costs $O(M)$ -- relevant when building
+        Hamiltonians as a sum over $O(N^2)$ terms (e.g. dense QUBO couplings).
+
+        Parameters
+        ----------
+        operators : iterable of :ref:`QubitOperator`
+            The operators to sum.
+
+        Returns
+        -------
+        result : QubitOperator
+            The sum of all given operators.
+
+        """
+        res_terms_dict = {}
+        for op in operators:
+            for term, coeff in op.terms_dict.items():
+                new_coeff = res_terms_dict.get(term, 0) + coeff
+                if abs(new_coeff) < threshold:
+                    res_terms_dict.pop(term, None)
+                else:
+                    res_terms_dict[term] = new_coeff
+        return cls(res_terms_dict)
+
     def __pow__(self, e):
         res = 1
         for i in range(e):
@@ -1815,14 +1847,26 @@ class QubitOperator(Hamiltonian):
         commuting_groups = O.group_up(lambda a, b: a.commute_pauli(b))
 
         if method == "commuting_qw":
+            com_qw_cache = []
+            for com_group in commuting_groups:
+                qw_groups = com_group.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
+                com_qw_cache.append(qw_groups)
+
+            # Lazy cache: this level's structural result can only be obtained via a
+            # real qarg (change_of_basis's internal qubit-count check requires one
+            # outside tracing mode), so populate it on first real invocation.
+            intersect_cache = {}
 
             def trotter_step(qarg, t, steps):
-                for com_group in commuting_groups:
-                    qw_groups = com_group.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
+                for qw_groups in com_qw_cache:
                     for qw_group in qw_groups:
                         with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
-                            intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
-                            for intersect_group in intersect_groups:
+                            key = id(qw_group)
+                            cached = intersect_cache.get(key)
+                            if cached is None:
+                                cached = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
+                                intersect_cache[key] = cached
+                            for intersect_group in cached:
                                 for term, coeff in intersect_group.terms_dict.items():
                                     coeff = jnp.real(coeff)
                                     term.simulate(
@@ -1831,14 +1875,23 @@ class QubitOperator(Hamiltonian):
                                     )
 
         if method == "commuting":
+            com_qw_cache = []
+            for com_group in commuting_groups:
+                qw_groups = com_group.group_up(lambda a, b: a.ladders_agree(b))
+                com_qw_cache.append((com_group, qw_groups))
+
+            intersect_cache = {}
 
             def trotter_step(qarg, t, steps):
-                for com_group in commuting_groups:
-                    qw_groups = com_group.group_up(lambda a, b: a.ladders_agree(b))
+                for com_group, qw_groups in com_qw_cache:
                     for qw_group in qw_groups:
                         with conjugate(com_group.change_of_basis)(qarg, method="commuting") as diagonal_operator:
-                            intersect_groups = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
-                            for intersect_group in intersect_groups:
+                            key = id(com_group)
+                            cached = intersect_cache.get(key)
+                            if cached is None:
+                                cached = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
+                                intersect_cache[key] = cached
+                            for intersect_group in cached:
                                 for term, coeff in intersect_group.terms_dict.items():
                                     coeff = jnp.real(coeff)
                                     term.simulate(
