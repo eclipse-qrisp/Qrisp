@@ -565,7 +565,7 @@ class DCQOProblem:
         CRAB=False,
         optimizer="COBYQA",
         objective="agp_coeff_magnitude",
-        bounds=(),
+        bounds=(-2, 2),
         options={},
         mes_kwargs={},
         precision=0.01,
