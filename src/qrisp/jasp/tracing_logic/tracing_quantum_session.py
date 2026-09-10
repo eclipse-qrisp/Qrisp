@@ -239,7 +239,7 @@ class TracingQuantumSession:
         qv.qs = self
 
         QuantumVariable.live_qvs.append(weakref.ref(qv))
-        qv.creation_time = int(QuantumVariable.creation_counter[0])
+        qv.creation_time = QuantumVariable.creation_counter
         QuantumVariable.creation_counter += 1
 
     def request_qubits(self, amount: int | Tracer) -> DynamicQubitArray:

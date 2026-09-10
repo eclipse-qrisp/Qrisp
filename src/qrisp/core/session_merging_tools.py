@@ -231,8 +231,8 @@ def resolve_naming_collisions(qs_0, qs_1):
             qv_1_index = qs_names_1.index(qv_name)
             qv_1 = (qs_1.qv_list + qs_1.deleted_qv_list)[qv_1_index]
 
-            if qv_1.user_given_name:
-                if qv_0.user_given_name:
+            if qv_1.is_fixed_name:
+                if qv_0.is_fixed_name:
                     raise Exception(
                         f"Tried to merge QuantumSession containing identically named QuantumVariables {qv_1.name}"
                     )
@@ -240,7 +240,7 @@ def resolve_naming_collisions(qs_0, qs_1):
                 qv_0, qv_1 = qv_1, qv_0
 
             elif qv_0.creation_time > qv_1.creation_time:
-                if not qv_1.user_given_name:
+                if not qv_1.is_fixed_name:
                     qv_0, qv_1 = qv_1, qv_0
 
             proposed_new_name = qv_1.name + "_1"
