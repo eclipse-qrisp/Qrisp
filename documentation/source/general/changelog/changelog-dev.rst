@@ -187,6 +187,13 @@ Bug Fixes
   constants, by passing the constants to ``eval_jaxpr``
   (`PR #750 <https://github.com/eclipse-qrisp/Qrisp/pull/750>`_).
 
+* Fixed :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>`'s COLD method
+  with ``objective="exp_value"``, which could be dramatically slower and
+  converge to worse results than in qrisp 0.8: an unused exponential-size
+  cost table was built on every call, the fast statevector path used the
+  wrong cost function, and the optimization-pulse ansatz divided by zero for
+  scheduling functions with vanishing derivative at the domain endpoints.
+
 Compatibility
 -------------
 
