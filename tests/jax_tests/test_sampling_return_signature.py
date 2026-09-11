@@ -26,13 +26,13 @@ Case                         JIT     Terminal  Non-JIT     Backend
 ============================ ======= ========= ============ ======
 scalar (quantum)               ✓        ✓          ✓          ✓
 scalar (classical)             ✓        ✗¹         —          ✓
-scalar bool/int dtype          ✓        —          —          —
+scalar bool/int dtype          ✓        ✓          —          —
 flat tuple                     ✓        ✓          ✓          ✓
 nested tuple                   ✓        —          —          —
 flat list                      ✓        —          —          ✓
 nested list                    ✓        —          —          —
 dict                           ✓        —          —          —
-mixed bool/float dtype         ✓        —          —          —
+mixed bool/float dtype         ✓        ✓          —          —
 array-valued leaf              ✓        —          —          —
 post_processor (struct-pres)   ✓        ✓          —          ✓
 post_processor (struct-change) ✓        ✓          —          —
@@ -130,6 +130,22 @@ class TestScalarReturns:
             return qb
 
         @jaspify
+        def main():
+            return sample(kernel, shots=SHOTS)()
+
+        res = main()
+        assert res.shape == (SHOTS,)
+        assert res.dtype == bool
+
+    def test_scalar_quantum_bool_dtype_terminal(self):
+        """Terminal sampling agrees with the JIT path on a bare QuantumBool."""
+
+        def kernel():
+            qb = QuantumBool()
+            h(qb)
+            return qb
+
+        @jaspify(terminal_sampling=True)
         def main():
             return sample(kernel, shots=SHOTS)()
 
@@ -519,6 +535,31 @@ class TestDtypePreservation:
         res = main()
         assert res[0].dtype == jnp.float64
         assert res[1].dtype == bool
+
+    def test_bool_float_mixed_terminal(self):
+        """Terminal sampling gives one dtype per output, like the JIT path.
+
+        The values of a shot belong together, so the correlation between the
+        two outputs is asserted alongside the dtypes.
+        """
+
+        def kernel():
+            qf = QuantumFloat(4)
+            qb = QuantumBool()
+            h(qf[0])
+            cx(qf[0], qb[0])  # qb is True exactly when qf is odd
+            return qf, qb
+
+        @jaspify(terminal_sampling=True)
+        def main():
+            return sample(kernel, shots=SHOTS)()
+
+        res = main()
+        assert res[0].dtype == jnp.float64
+        assert res[1].dtype == bool
+        assert res[0].shape == (SHOTS,)
+        assert res[1].shape == (SHOTS,)
+        assert np.all((np.asarray(res[0]).astype(int) % 2 == 1) == np.asarray(res[1]))
 
     def test_mixed_in_dict_jit(self):
         def kernel():
