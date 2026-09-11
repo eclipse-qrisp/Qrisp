@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any
 import jax
 import jax.numpy as jnp
 import numpy as np
+from jax.errors import TracerArrayConversionError
 from jax.tree_util import register_pytree_node_class
 from jax.typing import ArrayLike
 
@@ -43,6 +44,7 @@ from qrisp.jasp import (
     jrange,
     num_qubits,
     q_switch,
+    qache,
 )
 from qrisp.jasp import (
     check_for_tracing_mode as is_tracing,
@@ -1656,6 +1658,51 @@ def _canonicalize_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     )
 
 
+def _is_reusable_unitary(block_encoding: BlockEncoding) -> bool:
+    """Return whether ``block_encoding.unitary`` yields the same object on every access.
+
+    A plain BlockEncoding stores its unitary in a field, so it is always reusable.
+    A LinearCombinationBlockEncoding derives its unitary and only caches it when the
+    derivation captured no JAX tracer. Reusing a child unitary that is rebuilt on
+    every access would hand every enclosing ``q_switch`` a fresh Python closure,
+    which is exactly what this module's caching exists to avoid.
+
+    The child's ``unitary`` must have been accessed before this is called, so that
+    a cacheable child has had the chance to populate its cache.
+    """
+    if isinstance(block_encoding, LinearCombinationBlockEncoding):
+        return "_cached_unitary" in block_encoding.__dict__
+    return True
+
+
+def _make_lcu_branch(
+    child_unitary: Callable[..., None],
+    layout: _AncillaLayout,
+    name: str,
+) -> Callable[..., None]:
+    """Build one SELECT branch applying ``child_unitary`` to views into the workspace.
+
+    The shared workspace is taken as the branch's first operand rather than being
+    captured from the enclosing scope, so the branch can be built once, ahead of
+    any tracing, and reused for every invocation of the LCU unitary.
+    """
+
+    def branch(shared_ancilla, *operands):
+        child_unitary(*layout.construct_views(shared_ancilla), *operands)
+
+    branch.__name__ = name
+    # Caching the branch body is what keeps the repeated tracing of q_switch cheap:
+    # the tree-based q_switch traces every branch several times (for the loop body,
+    # for both arms of its final conditional) and custom_control/custom_inversion
+    # speculatively trace the controlled and inverted variants on top of that. With
+    # a qached body all but the first of those become pjit cache hits.
+    return qache(branch)
+
+
+def _identity_lcu_branch(shared_ancilla, *operands) -> None:
+    """Pad the SELECT to a power of two; selected only for zero-amplitude indices."""
+
+
 @register_pytree_node_class
 class LinearCombinationBlockEncoding(BlockEncoding):
     """A block encoding represented by an immutable tuple of LCU terms."""
@@ -1697,6 +1744,16 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         coefficient uses the child's ancillas directly and applies the required
         phase for a negative coefficient.
 
+        Everything derived from the terms — the unitary, its SELECT branches, the
+        ancilla layouts and templates, the coefficients and the normalization — is
+        built once and cached, and derived quantities that are known at build time
+        are kept as NumPy values rather than JAX arrays. Both are required for the
+        compilation cost to stay proportional to the size of the expression: Jasp's
+        caches are keyed on object identity, and ``prepare`` selects its algorithm
+        by whether its amplitude vector converts to NumPy. Derived values that
+        capture a JAX tracer are not cached, since reusing them in a later trace
+        would leak the tracer.
+
         """
         terms = _canonicalize_lcu_terms(terms)
         if len(terms) == 0:
@@ -1721,86 +1778,179 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         """The immutable weighted child block encodings."""
         return self._terms
 
+    #
+    # Derived state
+    #
+    # Everything below is derived from the authoritative terms. It is cached on
+    # first access, because rebuilding it would produce fresh Python objects every
+    # time, and Jasp's caches (qache, and hence jax.jit) are keyed on object
+    # identity. Without the cache, every enclosing q_switch re-traces the whole
+    # subtree from scratch, and nested linear combinations multiply that cost once
+    # per nesting level.
+    #
+    # A derived value is only cached when it is independent of any JAX trace.
+    # Values that capture tracers must be rebuilt per trace: a tracer leaked into
+    # a later trace raises a JAX leak error.
+    #
+
+    @property
+    def _lcu_selector_size(self) -> int:
+        """Return the number of qubits addressing the SELECT branches."""
+        return (len(self.terms) - 1).bit_length()
+
+    @property
+    def _lcu_layouts(self) -> tuple[_AncillaLayout, ...]:
+        """Return the packing of every child's ancillas into the shared workspace."""
+        cached = self.__dict__.get("_cached_layouts")
+        if cached is not None:
+            return cached
+
+        layouts = tuple(
+            _AncillaLayout.from_templates(block_encoding._anc_templates) for _, block_encoding in self.terms
+        )
+        if all(layout.has_static_sizes for layout in layouts):
+            object.__setattr__(self, "_cached_layouts", layouts)
+        return layouts
+
+    @property
+    def _lcu_coefficients(self) -> ArrayLike:
+        r"""Return $\alpha_i c_i$ for every term, i.e. the LCU coefficients of the child unitaries.
+
+        The result is a concrete NumPy array whenever the coefficients and the child
+        normalizations are known at build time. Staying out of ``jnp`` here is not a
+        micro-optimization: inside a JAX trace even ``jnp.abs`` of a compile-time
+        constant returns a tracer, and :func:`qrisp.prepare` dispatches on whether its
+        amplitude vector converts to NumPy. A traced amplitude vector silently
+        downgrades the state preparation from the single-gate ``prepare_qiskit`` path
+        to the fully symbolic ``prepare_qswitch`` path, which costs orders of magnitude
+        more equations and is applied twice (PREP and its inverse).
+
+        The coefficients are genuinely traced when the block encoding crossed a jit
+        boundary as a pytree, in which case the symbolic path is the correct one.
+        """
+        cached = self.__dict__.get("_cached_coefficients")
+        if cached is not None:
+            return cached
+
+        try:
+            coefficients = np.array(
+                [
+                    np.asarray(coefficient) * np.asarray(block_encoding.alpha)
+                    for coefficient, block_encoding in self.terms
+                ],
+                dtype=complex,
+            )
+        except TracerArrayConversionError:
+            return jnp.array(
+                [coefficient * block_encoding.alpha for coefficient, block_encoding in self.terms],
+                dtype=complex,
+            )
+
+        object.__setattr__(self, "_cached_coefficients", coefficients)
+        return coefficients
+
+    @property
+    def _lcu_amplitudes(self) -> ArrayLike:
+        """Return the PREP amplitudes, padded to the selector dimension."""
+        coefficients = self._lcu_coefficients
+        xp = np if isinstance(coefficients, np.ndarray) else jnp
+
+        padded = xp.pad(coefficients, (0, (1 << self._lcu_selector_size) - len(self.terms)))
+        return xp.sqrt(padded / xp.sum(xp.abs(padded)))
+
     @property
     def alpha(self) -> ArrayLike:
         """Return the normalization derived from the weighted child encodings."""
-        return sum(
-            (jnp.abs(coefficient * block_encoding.alpha) for coefficient, block_encoding in self.terms),
-            jnp.array(0),
-        )
+        coefficients = self._lcu_coefficients
+        xp = np if isinstance(coefficients, np.ndarray) else jnp
+        return xp.sum(xp.abs(coefficients))
 
     @property
     def _anc_templates(self) -> list[QuantumVariableTemplate]:
-        if len(self.terms) == 1:
-            return list(self.terms[0][1]._anc_templates)
+        cached = self.__dict__.get("_cached_anc_templates")
+        if cached is not None:
+            return list(cached)
 
-        selector_size = (len(self.terms) - 1).bit_length()
-        term_layouts = [
-            _AncillaLayout.from_templates(block_encoding._anc_templates) for _, block_encoding in self.terms
-        ]
-        shared_anc_size = _maximum_layout_size(term_layouts)
-        return [
-            QuantumFloat(selector_size).template(),
-            QuantumVariable(shared_anc_size).template(),
-        ]
+        if len(self.terms) == 1:
+            templates = tuple(self.terms[0][1]._anc_templates)
+            object.__setattr__(self, "_cached_anc_templates", templates)
+            return list(templates)
+
+        layouts = self._lcu_layouts
+        templates = (
+            QuantumFloat(self._lcu_selector_size).template(),
+            QuantumVariable(_maximum_layout_size(layouts)).template(),
+        )
+        if all(layout.has_static_sizes for layout in layouts):
+            object.__setattr__(self, "_cached_anc_templates", templates)
+        return list(templates)
 
     @property
     def unitary(self) -> Callable[..., None]:
-        """Return the PREP-SELECT-PREP unitary derived from the terms."""
+        """Return the PREP-SELECT-PREP unitary derived from the terms.
+
+        The returned callable is built once and cached, and so are the SELECT
+        branches it dispatches to. Both matter for compilation cost: ``q_switch``
+        traces each branch several times per call, and re-deriving the branches on
+        every invocation would make each of those a full-price trace instead of a
+        cache hit.
+        """
+        cached = self.__dict__.get("_cached_unitary")
+        if cached is not None:
+            return cached
+
         if len(self.terms) == 1:
             coefficient, block_encoding = self.terms[0]
+            child_unitary = block_encoding.unitary
 
             def unitary(*args):
-                block_encoding.unitary(*args)
+                child_unitary(*args)
                 with control(coefficient < 0):
                     gphase(np.pi, args[0][0])
 
+            if not isinstance(coefficient, jax.core.Tracer) and _is_reusable_unitary(block_encoding):
+                object.__setattr__(self, "_cached_unitary", unitary)
             return unitary
 
-        term_layouts = [
-            _AncillaLayout.from_templates(block_encoding._anc_templates) for _, block_encoding in self.terms
+        layouts = self._lcu_layouts
+        child_unitaries = [block_encoding.unitary for _, block_encoding in self.terms]
+
+        branches = [
+            _make_lcu_branch(child_unitary, layout, f"lcu_branch_{term_index}")
+            for term_index, (child_unitary, layout) in enumerate(zip(child_unitaries, layouts))
         ]
-        selector_size = (len(self.terms) - 1).bit_length()
+        # Padding to the full selector dimension also keeps the branch count even,
+        # which q_switch relies on: it appends an identity branch to an odd list,
+        # and must not be allowed to grow this cached one.
+        branches += [_identity_lcu_branch] * ((1 << self._lcu_selector_size) - len(branches))
+
+        # PREP acts on real amplitudes whenever the linear combination has no
+        # negative or complex coefficient, which lets the uncomputation be expressed
+        # as a conjugation instead of a separately traced inverse.
+        has_real_amplitudes = all(_is_non_negative_real(coefficient) for coefficient, _ in self.terms)
 
         def unitary(*args):
             selector = args[0]
             shared_ancilla = args[1]
-            branches = []
-
-            for term_index, (_, block_encoding) in enumerate(self.terms):
-                child_ancillas = term_layouts[term_index].construct_views(shared_ancilla)
-
-                def branch(
-                    *branch_args,
-                    block_encoding=block_encoding,
-                    child_ancillas=child_ancillas,
-                ):
-                    block_encoding.unitary(*child_ancillas, *branch_args)
-
-                branches.append(branch)
-
-            def identity_branch(*unused_args):
-                pass
-
-            branches.extend([identity_branch] * ((1 << selector_size) - len(branches)))
             operands = args[2:]
-            coefficients = jnp.array(
-                [coefficient * block_encoding.alpha for coefficient, block_encoding in self.terms],
-                dtype=complex,
-            )
-            coefficients = jnp.pad(coefficients, (0, (1 << selector_size) - len(self.terms)))
-            alpha = jnp.sum(jnp.abs(coefficients))
-            amplitudes = jnp.sqrt(coefficients / alpha)
 
-            if all(_is_non_negative_real(coefficient) for coefficient, _ in self.terms):
-                with conjugate(prepare)(selector, jnp.abs(amplitudes)):
-                    q_switch(selector, branches, *operands)
+            amplitudes = self._lcu_amplitudes
+            xp = np if isinstance(amplitudes, np.ndarray) else jnp
+
+            if has_real_amplitudes:
+                with conjugate(prepare)(selector, xp.abs(amplitudes)):
+                    q_switch(selector, branches, shared_ancilla, *operands)
             else:
                 prepare(selector, amplitudes)
-                q_switch(selector, branches, *operands)
+                q_switch(selector, branches, shared_ancilla, *operands)
                 with invert():
-                    prepare(selector, jnp.conjugate(amplitudes))
+                    prepare(selector, xp.conjugate(amplitudes))
 
+        cacheable = all(layout.has_static_sizes for layout in layouts) and all(
+            _is_reusable_unitary(block_encoding) for _, block_encoding in self.terms
+        )
+        if cacheable:
+            object.__setattr__(self, "_cached_unitary", unitary)
         return unitary
 
     @property
