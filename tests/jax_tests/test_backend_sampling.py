@@ -971,3 +971,128 @@ def test_captured_int_scalar_does_not_shadow_loop_index():
     # A uniform superposition over 3 qubits: collapsing to a single repeated
     # shot is the failure mode this guards against.
     assert len(set(float(value) for value in result)) > 1
+
+
+# ===========================================================================
+# Pytree returns
+# ===========================================================================
+#
+# Two separate restorations are exercised here.  A kernel returning a
+# container is rebuilt inside ``sample()`` and has to survive being
+# flattened across the io_callback boundary.  A decorated function
+# returning a container is rebuilt from the traced output tree in
+# ``_make_backend_sampler_wrapper``.
+# ===========================================================================
+
+
+def test_kernel_returns_dict():
+    """A dict-returning kernel keeps its keys and per-leaf dtypes."""
+
+    def kernel():
+        qf = QuantumFloat(3)
+        qb = QuantumBool()
+        h(qf[0])
+        h(qb)
+        return {"f": measure(qf), "b": measure(qb)}
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return sample(kernel, shots=50)()
+
+    res = main()
+    assert isinstance(res, dict)
+    assert set(res) == {"f", "b"}
+    assert res["f"].shape == (50,)
+    assert res["b"].shape == (50,)
+    assert res["f"].dtype == jnp.float64
+    assert res["b"].dtype == bool
+
+
+def test_kernel_returns_nested_container():
+    """A kernel may nest containers; the structure round-trips."""
+
+    def kernel():
+        qf = QuantumFloat(3)
+        qb = QuantumBool()
+        h(qf[0])
+        h(qb)
+        return [(measure(qf),), {"flag": measure(qb)}]
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return sample(kernel, shots=50)()
+
+    res = main()
+    assert isinstance(res, list)
+    assert isinstance(res[0], tuple)
+    assert res[0][0].shape == (50,)
+    assert isinstance(res[1], dict)
+    assert res[1]["flag"].shape == (50,)
+    assert res[1]["flag"].dtype == bool
+
+
+def test_decorated_function_returns_dict():
+    """The decorated function's own return structure is restored."""
+
+    def kernel_a():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        return measure(qf)
+
+    def kernel_b():
+        qf = QuantumFloat(3)
+        x(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return {"a": sample(kernel_a, shots=50)(), "b": sample(kernel_b, shots=50)()}
+
+    res = main()
+    assert isinstance(res, dict)
+    assert set(res) == {"a", "b"}
+    assert res["a"].shape == (50,)
+    assert res["b"].shape == (50,)
+    # kernel_b sets the lowest bit, so every shot is odd.  Without the
+    # top-level restoration the two samples could not be told apart.
+    assert all(int(value) % 2 == 1 for value in res["b"])
+
+
+def test_decorated_function_returns_nested_list():
+    """A nested top-level return is restored, not silently flattened."""
+
+    def kernel():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        first = sample(kernel, shots=50)()
+        second = sample(kernel, shots=50)()
+        return [first, (second,)]
+
+    res = main()
+    assert isinstance(res, list)
+    assert len(res) == 2
+    assert res[0].shape == (50,)
+    assert isinstance(res[1], tuple)
+    assert res[1][0].shape == (50,)
+
+
+def test_decorated_function_returns_single_element_container():
+    """A one-element top-level container is preserved, not unwrapped."""
+
+    def kernel():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return {"only": sample(kernel, shots=50)()}
+
+    res = main()
+    assert isinstance(res, dict)
+    assert set(res) == {"only"}
+    assert res["only"].shape == (50,)

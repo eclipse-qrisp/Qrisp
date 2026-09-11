@@ -457,15 +457,16 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
 
         # The result may now be a nested pytree (tuple/list of arrays)
         # from the post-loop restructuring in sampling_eval_function.
-        # Flatten to a plain tuple so that pure_callback (which expects
+        # Flatten to a plain tuple so that the io_callback (which expects
         # a flat sequence when given multiple result shapes) can consume it.
         # (list is registered as a pytree node in sampling.py, so
         # tree_leaves recurses into lists as well as tuples.)
+        #
+        # A lone output arrives here already unpacked by eval_jaxpr, so
+        # *result* is a bare array in that case rather than a one-element
+        # container -- nothing to flatten.
         if isinstance(result, (tuple, list)):
-            flat = jax.tree_util.tree_leaves(result)
-            if len(flat) == 1:
-                return flat[0]
-            return tuple(flat)
+            return tuple(jax.tree_util.tree_leaves(result))
         return result
 
     return backend_sampling_fn
