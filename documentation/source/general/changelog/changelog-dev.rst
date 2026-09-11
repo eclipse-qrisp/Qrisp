@@ -194,6 +194,12 @@ Bug Fixes
   wrong cost function, and the optimization-pulse ansatz divided by zero for
   scheduling functions with vanishing derivative at the domain endpoints.
 
+* :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>`'s COLD method now
+  raises a clear ``ValueError`` for ``N_opt < 1`` or the default ``N_opt=None``,
+  instead of failing deep inside ``range()`` or SciPy with confusing,
+  inconsistent error messages
+  (`#877 <https://github.com/eclipse-qrisp/Qrisp/issues/877>`_).
+
 Compatibility
 -------------
 

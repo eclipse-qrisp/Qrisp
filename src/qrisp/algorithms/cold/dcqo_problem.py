@@ -648,6 +648,9 @@ class DCQOProblem:
 
         # Run COLD routine
         if method == "COLD":
+            if N_opt is None or N_opt < 1:
+                raise ValueError(f"N_opt must be a positive integer for the COLD method (received {N_opt!r}).")
+
             qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
             # If we optimize the Hamiltonian expectation value,

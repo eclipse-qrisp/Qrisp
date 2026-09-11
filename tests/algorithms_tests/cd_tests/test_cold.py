@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+import pytest
 import sympy as sp
 
 from qrisp import QuantumVariable
@@ -312,3 +313,16 @@ def test_cold_g_deriv_stays_finite_for_smooth_schedule():
 
     assert np.all(np.isfinite(problem.g_deriv))
     assert np.max(np.abs(problem.g_deriv)) < 1e10
+
+
+@pytest.mark.parametrize("n_opt", [None, 0, -1])
+def test_cold_rejects_invalid_n_opt(n_opt):
+    # method="COLD" needs at least one control-pulse parameter; N_opt's default (None)
+    # and 0 used to fail deep inside range()/scipy with confusing, inconsistent errors
+    # instead of explaining the actual constraint (issue #877).
+    Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
+    problem_args = {"method": "COLD", "uniform": True}
+    run_args = {"N_steps": 10, "T": 5, "CRAB": False, "objective": "exp_value", "bounds": (-2, 2), "N_opt": n_opt}
+
+    with pytest.raises(ValueError, match="N_opt must be a positive integer"):
+        solve_QUBO(Q, problem_args, run_args)
