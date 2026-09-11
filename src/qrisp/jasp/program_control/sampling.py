@@ -332,15 +332,14 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 flat_values = tree_leaves(decoded_values)
 
                 if not return_amount:
-                    leaf_dtypes = []
-                    leaf_shapes = []
-                    for v in flat_values:
-                        try:
-                            leaf_dtypes.append(v.dtype)
-                            leaf_shapes.append(v.shape)
-                        except AttributeError:
-                            leaf_dtypes.append(None)
-                            leaf_shapes.append(())
+                    # A leaf may be a raw Python scalar rather than a JAX
+                    # array -- a literal returned by a post_processor, say --
+                    # and then carries no dtype or shape of its own.
+                    # ``asarray`` supplies both, so an int literal stays
+                    # integral and a complex one stays complex.
+                    leaves = [jnp.asarray(v) for v in flat_values]
+                    leaf_dtypes = [leaf.dtype for leaf in leaves]
+                    leaf_shapes = [leaf.shape for leaf in leaves]
                     return_amount.append((struct, leaf_dtypes, leaf_shapes))
 
                 if not isinstance(acc, tuple):
@@ -355,9 +354,8 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             # ----------------------------------------------------------
             if not isinstance(acc, tuple):
                 if not return_amount:
-                    leaf_dtype = getattr(decoded_values, "dtype", None)
-                    leaf_shape = getattr(decoded_values, "shape", ())
-                    return_amount.append((struct, [leaf_dtype], [leaf_shape]))
+                    leaf = jnp.asarray(decoded_values)
+                    return_amount.append((struct, [leaf.dtype], [leaf.shape]))
                 raise _MultiReturnDetected()
 
             # Second pass: acc is a 1-tuple of typed accumulators

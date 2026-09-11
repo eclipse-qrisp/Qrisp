@@ -26,6 +26,7 @@ Case                         JIT     Terminal  Non-JIT     Backend
 scalar (quantum)               ✓        ✓          ✓          ✓
 scalar (classical)             ✓        ✗¹         —          ✓
 scalar bool/int dtype          ✓        ✓          —          —
+python literal leaf            ✓        —          —          —
 flat tuple                     ✓        ✓          ✓          ✓
 nested tuple                   ✓        —          —          —
 flat list                      ✓        —          —          ✓
@@ -675,6 +676,44 @@ class TestArrayValuedLeaves:
 
 class TestPostProcessor:
     """Post-processor transforms values per-shot."""
+
+    def test_python_literal_leaf_keeps_dtype_jit(self):
+        """A post_processor may return a raw Python literal as a leaf.
+
+        Such a leaf has no dtype of its own, so the dtype has to be derived
+        from the value: an int literal stays integral and a complex one
+        keeps its imaginary part.
+        """
+
+        def kernel():
+            qf = QuantumFloat(3)
+            h(qf[0])
+            return measure(qf)
+
+        @jaspify
+        def bare_int():
+            return sample(kernel, shots=SHOTS, post_processor=lambda x: 7)()
+
+        @jaspify
+        def in_tuple():
+            return sample(kernel, shots=SHOTS, post_processor=lambda x: (x, 7))()
+
+        @jaspify
+        def bare_complex():
+            return sample(kernel, shots=SHOTS, post_processor=lambda x: 1 + 2j)()
+
+        res = bare_int()
+        assert jnp.issubdtype(res.dtype, jnp.integer)
+        assert jnp.all(res == 7)
+
+        res = in_tuple()
+        assert res[0].dtype == jnp.float64
+        assert jnp.issubdtype(res[1].dtype, jnp.integer)
+        assert jnp.all(res[1] == 7)
+
+        res = bare_complex()
+        assert jnp.issubdtype(res.dtype, jnp.complexfloating)
+        assert jnp.all(res == 1 + 2j)
 
     def test_structure_preserving_jit(self):
         def kernel():

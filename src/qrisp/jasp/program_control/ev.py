@@ -251,15 +251,14 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
                 flat_values = tree_leaves(decoded_values)
 
                 if not return_amount:
-                    leaf_dtypes = []
-                    leaf_shapes = []
-                    for v in flat_values:
-                        try:
-                            leaf_dtypes.append(v.dtype)
-                            leaf_shapes.append(v.shape)
-                        except AttributeError:
-                            leaf_dtypes.append(None)
-                            leaf_shapes.append(())
+                    # A leaf may be a raw Python scalar rather than a JAX
+                    # array -- a literal returned by a post_processor, say --
+                    # and then carries no dtype or shape of its own.
+                    # ``asarray`` supplies both, so an int literal stays
+                    # integral and a complex one stays complex.
+                    leaves = [jnp.asarray(v) for v in flat_values]
+                    leaf_dtypes = [leaf.dtype for leaf in leaves]
+                    leaf_shapes = [leaf.shape for leaf in leaves]
                     return_amount.append((struct, leaf_dtypes, leaf_shapes))
 
                 if not isinstance(acc, tuple):
@@ -268,22 +267,18 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
                 return tuple(a + v for a, v in zip(acc, flat_values))
 
             # ----------------------------------------------------------
-            # Single leaf (scalar or array — not a container).
-            # True scalars take the fast path; arrays with shape need a
-            # shaped accumulator, captured via _MultiReturnDetected.
+            # Single leaf (scalar or array — not a container).  A real
+            # scalar can go straight into the float accumulator.  Arrays
+            # need a shaped one, and complex values a complex one, both
+            # captured via _MultiReturnDetected.
             # ----------------------------------------------------------
             if not isinstance(acc, tuple):
-                try:
-                    leaf_shape = decoded_values.shape
-                except AttributeError:
-                    leaf_shape = ()
-                if leaf_shape == ():
-                    return acc + jnp.array(decoded_values)  # true scalar
+                leaf = jnp.asarray(decoded_values)
+                if leaf.shape == () and not jnp.issubdtype(leaf.dtype, jnp.complexfloating):
+                    return acc + leaf
 
-                # Non-scalar leaf array — capture shape and retry
                 if not return_amount:
-                    leaf_dtype = getattr(decoded_values, "dtype", None)
-                    return_amount.append((struct, [leaf_dtype], [leaf_shape]))
+                    return_amount.append((struct, [leaf.dtype], [leaf.shape]))
                 raise _MultiReturnDetected()
 
             # Second pass: acc is a 1-tuple of shaped accumulators

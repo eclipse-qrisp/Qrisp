@@ -351,6 +351,44 @@ class TestArrayValuedLeaves:
 
 
 class TestPostProcessor:
+    def test_python_literal_leaf_jit(self):
+        """A post_processor may return a raw Python literal as a leaf.
+
+        The mean of a real literal is floating point like any other
+        expectation value, but a complex literal has to keep its imaginary
+        part rather than be summed into a float accumulator.
+        """
+
+        def kernel():
+            qf = QuantumFloat(3)
+            h(qf[0])
+            return measure(qf)
+
+        @jaspify
+        def bare_int():
+            return expectation_value(kernel, shots=SHOTS, post_processor=lambda x: 7)()
+
+        @jaspify
+        def bare_complex():
+            return expectation_value(kernel, shots=SHOTS, post_processor=lambda x: 1 + 2j)()
+
+        @jaspify
+        def in_tuple_complex():
+            return expectation_value(kernel, shots=SHOTS, post_processor=lambda x: (x, 1 + 2j))()
+
+        res = bare_int()
+        assert res.dtype == jnp.float64
+        assert abs(float(res) - 7) < 1e-6
+
+        res = bare_complex()
+        assert jnp.issubdtype(res.dtype, jnp.complexfloating)
+        assert abs(complex(res) - (1 + 2j)) < 1e-6
+
+        res = in_tuple_complex()
+        assert res[0].dtype == jnp.float64
+        assert jnp.issubdtype(res[1].dtype, jnp.complexfloating)
+        assert abs(complex(res[1]) - (1 + 2j)) < 1e-6
+
     def test_structure_preserving_jit(self):
         def kernel():
             a = QuantumFloat(4)
