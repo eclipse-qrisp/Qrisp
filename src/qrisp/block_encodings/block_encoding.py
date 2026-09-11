@@ -16,7 +16,19 @@
 
 """Assembles the BlockEncoding class by attaching its constructor and transformation methods."""
 
-from .block_encoding_base import BlockEncoding, LinearCombinationBlockEncoding
+from .block_encoding_base import BlockEncoding
+from .block_encoding_combination import (
+    LinearCombinationBlockEncoding,
+    apply_add,
+    apply_kron,
+    apply_matmul,
+    apply_mul,
+    apply_neg,
+    apply_radd,
+    apply_sub,
+    build_from_lcu_terms,
+    build_linear_combination,
+)
 from .constructors import (
     build_from_array,
     build_from_eye,
@@ -35,6 +47,20 @@ BlockEncoding.from_foqcs_lcu_prep = classmethod(build_from_foqcs_lcu_prep)
 BlockEncoding.from_foqcs_lcu_operator = classmethod(build_from_foqcs_lcu_operator)
 BlockEncoding.from_operator = classmethod(build_from_operator)
 BlockEncoding.from_projector = classmethod(build_from_projector)
+
+BlockEncoding.linear_combination = classmethod(build_linear_combination)
+BlockEncoding._from_lcu_terms = classmethod(build_from_lcu_terms)
+
+# Special methods are looked up on the type, so assigning them here is equivalent
+# to defining them in the class body.
+BlockEncoding.__add__ = apply_add
+BlockEncoding.__radd__ = apply_radd
+BlockEncoding.__sub__ = apply_sub
+BlockEncoding.__mul__ = apply_mul
+BlockEncoding.__rmul__ = apply_mul
+BlockEncoding.__matmul__ = apply_matmul
+BlockEncoding.__neg__ = apply_neg
+BlockEncoding.kron = apply_kron
 
 BlockEncoding.inv = apply_inv
 BlockEncoding.poly = apply_poly
