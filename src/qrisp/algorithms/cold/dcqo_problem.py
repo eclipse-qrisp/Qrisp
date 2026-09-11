@@ -565,7 +565,7 @@ class DCQOProblem:
         CRAB=False,
         optimizer="COBYQA",
         objective="agp_coeff_magnitude",
-        bounds=(),
+        bounds=(-2, 2),
         options={},
         mes_kwargs={},
         precision=0.01,
@@ -587,21 +587,19 @@ class DCQOProblem:
             Evolution time for the simulation.
         method : str
             Method to solve the QUBO with. Either ``LCD`` or ``COLD``.
-        N_opt : int
+        N_opt : int, optional
             Number of optimization parameters in ``H_control``.
-        CRAB : bool
+        CRAB : bool, optional
             If ``True``, the CRAB optimization method is being used. The default is ``False``.
         optimizer : str, optional
             Specifies the `SciPy optimization routine <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`_.
-            We set the default to ``Powell``.
-        options : dict
-            A dictionary of solver options.
-        objective : str
+            We set the default to ``COBYQA``.
+        objective : str, obtional
             The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``). Default is ``agp_coeff_magnitude``.
-        bounds : tuple
+        bounds : tuple, optional
             The parameter bounds for the optimizer. Default is (-2, 2).
-        options : dict
-            Additional options for the Scipy solver.
+        options : dict, optional
+            A dictionary of additional options for the Scipy solver.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
         precision : float, optional
