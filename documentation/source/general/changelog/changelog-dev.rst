@@ -69,6 +69,10 @@ Improvements
   re-traced the whole subtree, and nested linear combinations multiplied that
   cost once per nesting level.
 
+  Products cache their derived state the same way, and share one traced step
+  between repeated occurrences of the same factor, so an expression such as
+  ``H.dagger() @ P @ H`` traces ``H`` once rather than twice.
+
 - :class:`~qrisp.interface.QiskitJob` and :class:`~qrisp.interface.AQTJob`
   now skip the live provider query and return the cached status once a job
   is done, cancelled, or errored. The :class:`~qrisp.interface.Job` base
