@@ -18,6 +18,7 @@
 
 import jax
 import jax.numpy as jnp
+from jax.tree_util import tree_leaves, tree_structure, tree_unflatten
 
 from qrisp.jasp.tracing_logic import quantum_kernel
 
@@ -99,7 +100,14 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     Returns
     -------
     callable
-        A function returning a Jax array containing the expectation value.
+        A function returning the expectation value.  For a kernel returning a
+        single value the result is a scalar ``jax.Array``.  For a kernel
+        returning a container (``tuple``, ``list``, ``dict``, or nested
+        combinations thereof) the container structure is preserved and every
+        leaf is replaced by its mean.  Since an expectation value is a mean,
+        each leaf is floating point regardless of the kernel's own dtype
+        (complex leaves stay complex) -- unlike :func:`~qrisp.jasp.sample`,
+        which preserves the native dtype of every leaf.
 
     Examples
     --------
@@ -188,6 +196,8 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     if post_processor is None:
 
         def identity(*args):
+            if len(args) == 1:
+                return args[0]
             return args
 
         post_processor = identity
@@ -207,6 +217,92 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         # Marker: allows backend_sampler to locate the shot count in the
         # traced Jaxpr without fragile position-based extraction.
         _backend_shots_marker(shots)
+
+        # -----------------------------------------------------------------
+        # Typed pytree accumulator strategy (mirrors sampling.py)
+        # -----------------------------------------------------------------
+        # The sampling kernel may return a single value or a pytree
+        # container (tuple, list, dict).  Instead of squeezing everything
+        # into one flat accumulator array (which forces a common dtype),
+        # we build a tuple of typed running-sum accumulators — one per
+        # leaf, each with the leaf's native shape and dtype.  The pytree
+        # structure is captured on the first iteration; _MultiReturnDetected
+        # restarts the loop with the correctly-shaped accumulators.
+        # After the loop each accumulator is divided by *shots* and the
+        # pytree is reconstructed via tree_unflatten.
+
+        def _update_acc(acc, decoded_values, return_amount):
+            """Add *decoded_values* into *acc* (running sum).
+
+            For pytree containers captures structure/dtypes/shapes on the
+            first iteration, raises _MultiReturnDetected if *acc* is still a
+            plain 1D array, and adds each leaf into its typed accumulator.
+            Scalar returns take the fast path ``acc + jnp.array(value)``.
+            """
+            struct = tree_structure(decoded_values)
+            if struct.num_nodes > 1:  # pytree container
+                if not isinstance(decoded_values, (tuple, list, dict)):
+                    raise TypeError(
+                        f"Unsupported return type {type(decoded_values).__name__!r}. "
+                        f"expectation_value() supports tuple, list, and dict "
+                        f"containers.  Convert the return value to one of these "
+                        f"types."
+                    )
+                flat_values = tree_leaves(decoded_values)
+
+                if not return_amount:
+                    # A leaf may be a raw Python scalar rather than a JAX
+                    # array -- a literal returned by a post_processor, say --
+                    # and then carries no dtype or shape of its own.
+                    # ``asarray`` supplies both, so an int literal stays
+                    # integral and a complex one stays complex.
+                    leaves = [jnp.asarray(v) for v in flat_values]
+                    leaf_dtypes = [leaf.dtype for leaf in leaves]
+                    leaf_shapes = [leaf.shape for leaf in leaves]
+                    return_amount.append((struct, leaf_dtypes, leaf_shapes))
+
+                if not isinstance(acc, tuple):
+                    raise _MultiReturnDetected()
+
+                return tuple(a + v for a, v in zip(acc, flat_values))
+
+            # ----------------------------------------------------------
+            # Single leaf (scalar or array — not a container).  A real
+            # scalar can go straight into the float accumulator.  Arrays
+            # need a shaped one, and complex values a complex one, both
+            # captured via _MultiReturnDetected.
+            # ----------------------------------------------------------
+            if not isinstance(acc, tuple):
+                leaf = jnp.asarray(decoded_values)
+                if leaf.shape == () and not jnp.issubdtype(leaf.dtype, jnp.complexfloating):
+                    return acc + leaf
+
+                if not return_amount:
+                    return_amount.append((struct, [leaf.dtype], [leaf.shape]))
+                raise _MultiReturnDetected()
+
+            # Second pass: acc is a 1-tuple of shaped accumulators
+            return tuple(a + v for a, v in zip(acc, [decoded_values]))
+
+        def _make_init_acc(leaf_dtypes, leaf_shapes):
+            """Build a tuple of zero-valued accumulators, one per leaf.
+
+            Each accumulator has the same shape as its leaf (running sum,
+            not per-shot storage).
+
+            An expectation value is a mean, so accumulators are floating
+            point regardless of the leaf's own dtype.  Complex leaves are
+            the exception and keep theirs, since casting them to float
+            would drop the imaginary part.
+            """
+
+            def acc_dtype(dt):
+                if dt is not None and jnp.issubdtype(dt, jnp.complexfloating):
+                    return dt
+                # None selects JAX's default float dtype.
+                return None
+
+            return tuple(jnp.zeros(shape, dtype=acc_dtype(dt)) for dt, shape in zip(leaf_dtypes, leaf_shapes))
 
         # We now construct a loop to evaluate the expectation value via adding
         # the decoded and postprocessed measurement result into an accumulator.
@@ -272,39 +368,53 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
                 # Pure classical — just apply post-processing directly.
                 decoded_values = post_processor(*classical_tuple)
 
-            if isinstance(decoded_values, tuple) and len(decoded_values) != 1:
-                # Save the return amount (for more details check the comment of the)
-                # initialization command of return_amount
-                return_amount.append(len(decoded_values))
-                if acc.shape[0] == 1:
-                    raise _MultiReturnDetected()
-
-            # Turn into jax array and add to the accumulator
-            meas_res = jnp.array(decoded_values)
-            acc += meas_res
+            # Update the accumulator (handles scalar / pytree returns).
+            if _use_pytree_acc:
+                acc = _update_acc(acc, decoded_values, return_amount)
+            else:
+                # Legacy flat-array path (dict_sampling_eval_function)
+                if isinstance(decoded_values, tuple) and len(decoded_values) != 1:
+                    return_amount.append(len(decoded_values))
+                    if acc.shape[0] == 1:
+                        raise _MultiReturnDetected()
+                meas_res = jnp.array(decoded_values)
+                acc += meas_res
 
             # Return the updated accumulator for the next loop iteration.
             return (acc, *args[1:])
 
-        # This list captures the amount of return values. The strategy here is
-        # to initially assume only one QuantumVariable is returned, which is then
-        # added to the expectation value accumulator. If more than one is returned,
-        # the amount is saved in this list and an exception is raised, which
-        # subsequently causes another call but this time with the correct accumulator
-        # dimension.
+        # On the first iteration the pytree structure and leaf dtypes/shapes
+        # of the return values are captured.  _MultiReturnDetected triggers a retry
+        # with a tuple of typed accumulators.  After the loop each
+        # accumulator is divided by *shots* and the pytree is reconstructed.
 
         return_amount = []
 
         try:
-            # loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jax.lax.broadcast(0., (1,)), *args))
             loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(1), *args))
             return loop_res[0][0] / shots
         except _MultiReturnDetected:
-            loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(return_amount), *args))
-            return loop_res[0] / shots
+            if _use_pytree_acc:
+                struct, leaf_dtypes, leaf_shapes = return_amount[0]
+                init_acc = _make_init_acc(leaf_dtypes, leaf_shapes)
+                loop_res = jax.lax.fori_loop(
+                    0,
+                    shots,
+                    sampling_body_func,
+                    (init_acc, *args),
+                )
+                acc_tuple = loop_res[0]
+                means = tuple(a / shots for a in acc_tuple)
+                return tree_unflatten(struct, means)
+            else:
+                loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(return_amount), *args))
+                return loop_res[0] / shots
 
     if return_dict:
         expectation_value_eval_function.__name__ = "dict_sampling_eval_function"
+        _use_pytree_acc = False  # keep legacy flat-array format
+    else:
+        _use_pytree_acc = True
 
     def return_function(*args):
         return jax.jit(expectation_value_eval_function)(*args, shots=shots)

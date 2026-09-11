@@ -18,6 +18,7 @@
 
 import jax
 import jax.numpy as jnp
+from jax.tree_util import tree_leaves, tree_structure, tree_unflatten
 
 from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
@@ -121,8 +122,13 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     Returns
     -------
     callable
-        A classical, Jax traceable function returning a jax array containing
-        the measurement results of each shot.
+        A classical, Jax traceable function.  The result mirrors the
+        structure of the kernel's return value, with every leaf replaced by
+        an array of shape ``(shots, *leaf_shape)`` that keeps the leaf's
+        native dtype.  A scalar leaf therefore gives a 1D array of length
+        ``shots``, and a ``(3,)`` leaf gives a ``(shots, 3)`` array.
+        Containers (``tuple``, ``list``, ``dict``, and nested combinations
+        thereof) are preserved — e.g. ``{'a': bool_array, 'b': float_array}``.
 
     Examples
     --------
@@ -166,20 +172,13 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
         print(main(3))
 
-        # Yields e.g.
-        # [[3. 3.]
-        #  [0. 0.]
-        #  [0. 0.]
-        #  [3. 3.]
-        #  [0. 0.]
-        #  [0. 0.]
-        #  [3. 3.]
-        #  [3. 3.]
-        #  [0. 0.]
-        #  [0. 0.]]
+        # Yields e.g. (a tuple of two 1D arrays)
+        # (Array([3., 0., 0., 3., 0., 0., 3., 3., 0., 0.], dtype=float64),
+        #  Array([3., 0., 0., 3., 0., 0., 3., 3., 0., 0.], dtype=float64))
         #
-        # Each row is either [0, 0] or [3, 3] with 50% probability each.
-        # The exact order of rows is random and varies between runs.
+        # Both arrays agree entry by entry: every shot gives either 0 or 3
+        # with 50% probability each. The exact order of the entries is random
+        # and varies between runs.
 
     To demonstrate the post processing feature, we write a simple post
     processing function:
@@ -224,11 +223,9 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             return sample(mixed_kernel, shots=20)()
 
         print(main())
-        # Yields e.g.:
-        # [[0. 0.]
-        #  [0. 0.]
-        #  [1. 0.]
-        #  ...]
+        # Yields e.g. (a tuple of two 1D arrays):
+        # (Array([0., 0., 1., ...], dtype=float64),
+        #  Array([0., 0., 0., ...], dtype=float64))
 
     .. note::
 
@@ -277,6 +274,103 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         # Marker: allows backend_sampler to locate the shot count in the
         # traced Jaxpr without fragile position-based extraction.
         _backend_shots_marker(tracerized_shots)
+
+        # -----------------------------------------------------------------
+        # Typed pytree accumulator strategy
+        # -----------------------------------------------------------------
+        # The user's sampling kernel may return a single value or any
+        # JAX-supported pytree container — flat tuple, nested tuple,
+        # list, dict, or combinations thereof (e.g.
+        # ``{'x': (a, b), 'y': c}``).  We want the final result to mirror
+        # that structure, with each leaf replaced by a 1D JAX array of
+        # length *shots* preserving the leaf's native dtype.
+        #
+        # To avoid forcing all return values into a single flat 2D
+        # accumulator (which would coerce everything to float64), we
+        # build a **tuple of typed 1D accumulators** — one per leaf.
+        # The pytree structure is captured on the first iteration via
+        # ``tree_structure`` / ``tree_leaves`` and stored in
+        # ``return_amount``.  An ``_MultiReturnDetected`` then restarts the loop
+        # with the correctly-shaped accumulator tuple.
+        #
+        # On every iteration each leaf accumulator is updated
+        # independently with the corresponding decoded value, so
+        # ``bool`` stays ``bool``, ``int`` stays ``int``, etc.
+        # After the loop ``tree_unflatten`` rebuilds the original
+        # nested shape from the accumulator tuple — no post-hoc
+        # slicing or dtype casting needed.
+        #
+        # The two tiny helpers below encapsulate this logic so that
+        # the main loop body stays focused on quantum operations.
+        # -----------------------------------------------------------------
+
+        def _update_acc(acc, i, decoded_values, return_amount):
+            """Update *acc* at index *i* with *decoded_values*.
+
+            For pytree containers (``tuple``, ``list``, ``dict``) this
+            captures the structure and per-leaf dtypes/shapes on the first
+            iteration, raises :class:`_MultiReturnDetected` if *acc* is still a
+            plain 1D array, and updates a tuple of typed per-leaf
+            accumulators.  Each leaf accumulator has shape
+            ``(shots, *leaf_shape)`` so that array-valued leaves (e.g. a
+            ``(3,)`` array inside a tuple) naturally become
+            ``(shots, 3)`` in the result.
+            User-defined pytree types are rejected with a clear error.
+
+            A single, non-container return is the same mechanism with one
+            leaf: it too gets a typed accumulator, and differs from an
+            array leaf only in having an empty leaf shape.
+            """
+            struct = tree_structure(decoded_values)
+            if struct.num_nodes > 1:  # pytree container
+                if not isinstance(decoded_values, (tuple, list, dict)):
+                    raise TypeError(
+                        f"Unsupported return type {type(decoded_values).__name__!r}. "
+                        f"sample() supports tuple, list, and dict containers. "
+                        f"Convert the return value to one of these types."
+                    )
+                flat_values = tree_leaves(decoded_values)
+
+                if not return_amount:
+                    # A leaf may be a raw Python scalar rather than a JAX
+                    # array -- a literal returned by a post_processor, say --
+                    # and then carries no dtype or shape of its own.
+                    # ``asarray`` supplies both, so an int literal stays
+                    # integral and a complex one stays complex.
+                    leaves = [jnp.asarray(v) for v in flat_values]
+                    leaf_dtypes = [leaf.dtype for leaf in leaves]
+                    leaf_shapes = [leaf.shape for leaf in leaves]
+                    return_amount.append((struct, leaf_dtypes, leaf_shapes))
+
+                if not isinstance(acc, tuple):
+                    raise _MultiReturnDetected()
+
+                return tuple(a.at[i].set(v) for a, v in zip(acc, flat_values))
+
+            # ----------------------------------------------------------
+            # Single leaf (scalar or array — not a container).  Both need
+            # a typed accumulator, so both capture dtype/shape and retry;
+            # a scalar is just the empty-shape case.
+            # ----------------------------------------------------------
+            if not isinstance(acc, tuple):
+                if not return_amount:
+                    leaf = jnp.asarray(decoded_values)
+                    return_amount.append((struct, [leaf.dtype], [leaf.shape]))
+                raise _MultiReturnDetected()
+
+            # Second pass: acc is a 1-tuple of typed accumulators
+            return tuple(a.at[i].set(v) for a, v in zip(acc, [decoded_values]))
+
+        def _make_init_acc(shots, leaf_dtypes, leaf_shapes):
+            """Build a tuple of typed zero-arrays, one per leaf.
+
+            Each accumulator has shape ``(shots, *leaf_shape)`` so that
+            array-valued leaves are stacked along the leading dimension.
+            """
+            return tuple(
+                jnp.zeros((shots,) + shape, dtype=dt) if dt is not None else jnp.zeros((shots,) + shape)
+                for dt, shape in zip(leaf_dtypes, leaf_shapes)
+            )
 
         # We now construct a loop to collect the samples by
         # inserting the postprocessed measurement result into an array.
@@ -331,13 +425,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
                         full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
 
-                        result = post_processor(*full)
-
-                        if isinstance(result, tuple):
-                            return_amount.append(len(result))
-                            if len(acc.shape) == 1:
-                                raise _MultiReturnDetected()
-                        return result
+                        return post_processor(*full)
 
                     sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
                 else:
@@ -345,13 +433,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                     def sampling_helper_2(*meas_ints):
                         decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        result = post_processor(*decoded_q)
-
-                        if isinstance(result, tuple):
-                            return_amount.append(len(result))
-                            if len(acc.shape) == 1:
-                                raise _MultiReturnDetected()
-                        return result
+                        return post_processor(*decoded_q)
 
                     sampling_helper_2 = jax.jit(sampling_helper_2)
 
@@ -362,25 +444,19 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 # No quantum returns — pure classical.  No measurement or
                 # decoding needed; just apply post-processing directly.
                 # ----------------------------------------------------------
-                result = post_processor(*classical_tuple)
+                decoded_values = post_processor(*classical_tuple)
 
-                if isinstance(result, tuple):
-                    return_amount.append(len(result))
-                    if len(acc.shape) == 1:
-                        raise _MultiReturnDetected()
-                decoded_values = result
-
-            # Insert into the accumulating array
-            acc = acc.at[i].set(decoded_values)
+            # Update the accumulator (handles scalar / tuple / list /
+            # nested returns transparently via typed per-leaf arrays).
+            acc = _update_acc(acc, i, decoded_values, return_amount)
 
             return (acc, *args[1:])
 
-        # This list captures the amount of return values. The strategy here is
-        # to initially assume only one QuantumVariable is returned, which is then
-        # added to the expectation value accumulator. If more than one is returned,
-        # the amount is saved in this list and an exception is raised, which
-        # subsequently causes another call but this time with the correct accumulator
-        # dimension.
+        # On the first iteration the pytree structure and leaf dtypes of
+        # the return values are captured.  _MultiReturnDetected triggers a retry
+        # with a tuple of typed 1D accumulators.  After the loop the
+        # accumulator tuple is reconstructed into the original nested
+        # shape via tree_unflatten.
 
         return_amount = []
 
@@ -388,13 +464,15 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
             return loop_res[0]
         except _MultiReturnDetected:
+            struct, leaf_dtypes, leaf_shapes = return_amount[0]
+            init_acc = _make_init_acc(shots, leaf_dtypes, leaf_shapes)
             loop_res = jax.lax.fori_loop(
                 0,
                 tracerized_shots,
                 sampling_body_func,
-                (jnp.zeros((shots, return_amount[0])), *args),
+                (init_acc, *args),
             )
-            return loop_res[0]
+            return tree_unflatten(struct, loop_res[0])
 
     from qrisp.jasp import terminal_sampling
 
