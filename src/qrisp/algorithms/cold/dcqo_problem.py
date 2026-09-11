@@ -181,9 +181,15 @@ class DCQOProblem:
         """
         # Sympy symbols for t and T
         t_sym, T_sym = sp.symbols("t T", real=True)
-        # Array for t values
+        # Array for t values. Midpoint rule: each Trotter step represents the interval
+        # [(s)*dt, (s+1)*dt], so t_list never touches t=0 or t=T exactly. This matters
+        # for COLD, where g_deriv = 1/lamdot below is only finite where lamdot != 0;
+        # lam_func's like the smooth "soft start/stop" schedule have lamdot = 0 exactly
+        # at the domain endpoints, so sampling the endpoints (as a left/right Riemann
+        # rule would) hits that singularity. The midpoint rule is also second-order
+        # accurate for the Trotterization itself, vs. first-order for an endpoint rule.
         dt = T / N_steps
-        t_list = np.linspace(dt, T, N_steps)
+        t_list = (np.arange(N_steps) + 0.5) * dt
 
         # Sympy functions for lam and lamdot
         lam_func = sp.lambdify((t_sym, T_sym), self.lam_func(), "numpy")
@@ -328,9 +334,9 @@ class DCQOProblem:
         # Compute time-function lamda(t, T) and the derivative lamdot(t, T)
         self._precompute_timegrid(N_steps, T, "COLD")
 
-        # Precompute opt pulses
+        # Precompute opt pulses. Must match the midpoint grid used in _precompute_timegrid.
         dt = T / N_steps
-        t_list = np.linspace(dt, T, int(N_steps))
+        t_list = (np.arange(int(N_steps)) + 0.5) * dt
         sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB)
         beta = opt_params
 
@@ -456,13 +462,26 @@ class DCQOProblem:
         """
         # Different objective functions: exp_value, agp coeffs magnitude, agp coeffs amplitude
 
-        # Precompute costs for statevector method
-        n_qubits = len(qarg)
-        num_states = 1 << n_qubits
-        bit_indices = np.arange(n_qubits - 1, -1, -1, dtype=np.uint64)
-        state_indices = np.arange(num_states, dtype=np.uint64)
-        basis = ((state_indices[:, None] >> bit_indices) & 1).astype(np.int8)
-        costs = np.einsum("bi,ij,bj->b", basis, self.Q, basis)
+        # Precompute costs for the statevector fallback path of objective_exp. This is
+        # exponential in n_qubits, so only build it when it can actually be used.
+        # costs[b] must equal <x_b| H_prob |x_b> for computational basis state x_b, so
+        # it is derived from H_prob's own (diagonal, Z-only) terms rather than from Q:
+        # H_prob is caller-supplied and not guaranteed to relate to Q via any fixed
+        # h/J convention.
+        if objective == "exp_value" and exp_value_backend is None:
+            n_qubits = len(qarg)
+            num_states = 1 << n_qubits
+            bit_indices = np.arange(n_qubits - 1, -1, -1, dtype=np.uint64)
+            state_indices = np.arange(num_states, dtype=np.uint64)
+            basis = ((state_indices[:, None] >> bit_indices) & 1).astype(np.int8)
+            z = 1 - 2 * basis
+            costs = np.zeros(num_states)
+            for term, coeff in self.H_prob.terms_dict.items():
+                indices = list(term.factor_dict.keys())
+                if indices:
+                    costs += coeff * np.prod(z[:, indices], axis=1)
+                else:
+                    costs += coeff
 
         # Expectation value of the QUBO Hamiltonian
         def objective_exp(params, CRAB):
@@ -500,8 +519,9 @@ class DCQOProblem:
         # Magnitude of the AGP coefficients (coeffs are treated as uniform for simplification)
         # (sum of absolute values for each timestep)
         def objective_mag(params, CRAB):
-            # Precompute opt pulses to be multiplied with opt params
-            t_list = np.linspace(T / N_steps, T, int(N_steps))
+            # Precompute opt pulses to be multiplied with opt params.
+            # Must match the midpoint grid used in _precompute_timegrid.
+            t_list = (np.arange(int(N_steps)) + 0.5) * (T / N_steps)
             sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
             magnitude = 0
 
@@ -628,6 +648,9 @@ class DCQOProblem:
 
         # Run COLD routine
         if method == "COLD":
+            if N_opt is None or N_opt < 1:
+                raise ValueError(f"N_opt must be a positive integer for the COLD method (received {N_opt!r}).")
+
             qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
             # If we optimize the Hamiltonian expectation value,
