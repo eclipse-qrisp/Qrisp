@@ -24,11 +24,13 @@ New Features
   value is a mean, so every leaf comes back floating point (complex leaves
   stay complex).  User-defined JAX pytree types raise a descriptive
   ``TypeError``.
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_)
 
   **Breaking change:** Multi-value returns are now tuples of arrays instead
   of a single 2D array.  Code that indexed ``res[:, i]`` must use
   ``res[i]``.  The same applies to ``expectation_value()`` which now returns
   a tuple of scalars for multi-value kernels.
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_)
 
 - **sample() and expectation_value() now accept arbitrary return values**
   Sampling kernels (the functions passed to :func:`~qrisp.jasp.sample` and

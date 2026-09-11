@@ -122,11 +122,13 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     Returns
     -------
     callable
-        A classical, Jax traceable function.  For a kernel returning a single
-        value the result is a 1D ``jax.Array`` of length ``shots``.  For a
-        kernel returning a container (``tuple``, ``list``, ``dict``, or nested
-        combinations thereof) each leaf is replaced by a 1D array preserving
-        its native dtype — e.g. ``{'a': bool_array, 'b': float_array}``.
+        A classical, Jax traceable function.  The result mirrors the
+        structure of the kernel's return value, with every leaf replaced by
+        an array of shape ``(shots, *leaf_shape)`` that keeps the leaf's
+        native dtype.  A scalar leaf therefore gives a 1D array of length
+        ``shots``, and a ``(3,)`` leaf gives a ``(shots, 3)`` array.
+        Containers (``tuple``, ``list``, ``dict``, and nested combinations
+        thereof) are preserved — e.g. ``{'a': bool_array, 'b': float_array}``.
 
     Examples
     --------
