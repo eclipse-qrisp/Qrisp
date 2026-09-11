@@ -255,3 +255,110 @@ def test_montgomery_find_order():
 
     assert check_dict_equality(dict_norm_gidney, dict_jasp_gidney)
     assert check_dict_equality(dict_jasp_gidney, dict_bim_gidney)
+
+
+def test_egcd_bezout_identity():
+    """`egcd` must return the gcd and Bézout coefficients satisfying a*x + b*y = gcd(a, b)."""
+    import math
+
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import egcd
+
+    for a, b in [(35, 15), (240, 46), (17, 5), (100, 1)]:
+        g, x, y = egcd(a, b)
+        g, x, y = int(g), int(x), int(y)
+        assert g == math.gcd(a, b)
+        assert a * x + b * y == g
+
+
+def test_bi_pow2mod_matches_python_pow():
+    """`bi_pow2mod` must compute 2**exp mod m as a BigInteger, matching Python's pow."""
+    from qrisp import BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import bi_pow2mod
+
+    for exp, mod in [(10, 97), (0, 97), (1, 3), (37, 1009)]:
+        mod_bi = BigInteger.create_static(mod, 4)
+        result = bi_pow2mod(exp, mod_bi)
+        assert result() == pow(2, exp, mod)
+
+
+def test_pow2_mod_n_traced_matches_python_pow():
+    """`pow2_mod_N` must compute 2**exp mod N under jax.jit tracing, matching Python's pow."""
+    import jax
+
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import pow2_mod_N
+
+    traced = jax.jit(pow2_mod_N)
+    for exp, mod in [(10, 97), (0, 97), (37, 1009)]:
+        assert int(traced(exp, mod)) == pow(2, exp, mod)
+
+
+def test_montgomery_encoder_decoder_mixed_bigint_roundtrip():
+    """`montgomery_encoder`/`montgomery_decoder` round-trip a BigInteger with plain-int args."""
+    from qrisp import BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+        montgomery_decoder,
+        montgomery_encoder,
+    )
+
+    radix, modulus, x = 1024, 97, 42
+    x_bi = BigInteger.create(x, 4)
+    encoded = montgomery_encoder(x_bi, radix, modulus)
+    assert isinstance(encoded, BigInteger)
+    assert encoded() == (x * radix) % modulus
+    decoded = montgomery_decoder(encoded, radix, modulus)
+    assert isinstance(decoded, BigInteger)
+    assert decoded() == x
+
+
+def test_montgomery_encoder_rejects_mismatched_bigint_widths():
+    """`montgomery_encoder` must reject BigIntegers with different limb widths, not silently return a wrong result."""
+    import pytest
+
+    from qrisp import BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_encoder
+
+    with pytest.raises(ValueError):
+        montgomery_encoder(BigInteger.create(42, 4), BigInteger.create(1024, 8), 97)
+
+
+def test_new_montgomery_decoder_positive_and_negative_shift():
+    """`new_montgomery_decoder` must decode both positive (inverse) and non-positive shifts."""
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+        new_montgomery_decoder,
+    )
+
+    modulus, x, m = 97, 55, 10
+    encoded = (pow(2, m, modulus) * x) % modulus
+    assert new_montgomery_decoder(encoded, m, modulus) == x
+    # Non-positive shift decodes with 2**abs(m) mod N instead of its inverse
+    assert new_montgomery_decoder(x, -3, modulus) == (x * pow(2, 3, modulus)) % modulus
+
+
+def test_qq_montgomery_multiply_modulus():
+    """`qq_montgomery_multiply_modulus` must compute the montgomery product of two QuantumModuli."""
+    from qrisp import QuantumModulus, gidney_adder, multi_measurement
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+        qq_montgomery_multiply_modulus,
+    )
+
+    qx = QuantumModulus(97, inpl_adder=gidney_adder)
+    qy = QuantumModulus(97, inpl_adder=gidney_adder)
+    qx[:] = 12
+    qy[:] = 7
+    res = qq_montgomery_multiply_modulus(qx, qy)
+    assert multi_measurement([qx, qy, res]) == {(12, 7, 84): 1.0}
+
+
+def test_cq_montgomery_mat_multiply():
+    """`QuantumArray @ np.ndarray` must work for a standard numpy integer matrix."""
+    import numpy as np
+
+    from qrisp import QuantumArray, QuantumModulus, gidney_adder, multi_measurement
+
+    modulus = 7
+    a_array = QuantumArray(qtype=QuantumModulus(modulus, inpl_adder=gidney_adder), shape=(2, 2))
+    a_array[:] = np.array([[1, 2], [3, 4]])
+    b_array = np.array([[1, 2], [3, 4]])
+    r_array = a_array @ b_array
+    (outcome,) = list(multi_measurement([r_array]).keys())
+    assert outcome[0].tolist() == [[0, 3], [1, 1]]
