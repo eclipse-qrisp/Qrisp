@@ -286,12 +286,7 @@ class TestResultDtype:
             return expectation_value(kernel, shots=SHOTS)()
 
         res = main()
-        # An expectation value is a mean, so every leaf comes back floating
-        # point -- the QuantumBool leaf must not be accumulated in its native
-        # dtype.  ``bool + bool`` is logical OR in JAX, so a boolean
-        # accumulator saturates at True on the first hit and the mean would
-        # come out as ~1/shots instead of ~0.5.  Asserting the value, not just
-        # the dtype, is what catches that.
+        # An expectation value is a mean, so both leaves are floating point.
         assert res[0].dtype == jnp.float64
         assert res[1].dtype == jnp.float64
         assert abs(float(res[0]) - 0.5) < 0.2

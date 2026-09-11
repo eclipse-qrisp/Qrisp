@@ -26,6 +26,7 @@ Case                         JIT     Terminal  Non-JIT     Backend
 ============================ ======= ========= ============ ======
 scalar (quantum)               ✓        ✓          ✓          ✓
 scalar (classical)             ✓        ✗¹         —          ✓
+scalar bool/int dtype          ✓        —          —          —
 flat tuple                     ✓        ✓          ✓          ✓
 nested tuple                   ✓        —          —          —
 flat list                      ✓        —          —          ✓
@@ -120,6 +121,22 @@ class TestScalarReturns:
         assert res.shape == (SHOTS,)
         assert res.dtype == jnp.float64
 
+    def test_scalar_quantum_bool_dtype_jit(self):
+        """A bare QuantumBool keeps its dtype, just as it does inside a tuple."""
+
+        def kernel():
+            qb = QuantumBool()
+            h(qb)
+            return qb
+
+        @jaspify
+        def main():
+            return sample(kernel, shots=SHOTS)()
+
+        res = main()
+        assert res.shape == (SHOTS,)
+        assert res.dtype == bool
+
     def test_scalar_quantum_terminal(self):
         def kernel():
             qf = QuantumFloat(4)
@@ -160,6 +177,22 @@ class TestScalarReturns:
         res = main()
         assert res.shape == (SHOTS,)
         assert len(jnp.unique(res)) >= 2  # superposition → variation
+
+    def test_scalar_classical_int_dtype_jit(self):
+        """A bare integer measurement stays integral (see the bool case)."""
+
+        def kernel():
+            qf = QuantumFloat(4)
+            h(qf[0])
+            return measure(qf.reg)
+
+        @jaspify(terminal_sampling=False)
+        def main():
+            return sample(kernel, shots=SHOTS)()
+
+        res = main()
+        assert res.shape == (SHOTS,)
+        assert jnp.issubdtype(res.dtype, jnp.integer)
 
     def test_scalar_classical_terminal_rejected(self):
         def kernel():

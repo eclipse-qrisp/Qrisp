@@ -295,17 +295,10 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
             Each accumulator has the same shape as its leaf (running sum,
             not per-shot storage).
 
-            An expectation value is a mean, so the accumulator is floating
-            point no matter what dtype the leaf itself has.  Summing in the
-            native dtype would be wrong: ``bool + bool`` is logical OR in
-            JAX, so a boolean accumulator saturates at ``True`` instead of
-            counting the hits, and narrow integer leaves can overflow.
-            Complex leaves are the one exception -- they keep their dtype,
-            since casting them to float would drop the imaginary part.
-
-            This is deliberately unlike :func:`~qrisp.jasp.sample`, which
-            stores each shot with ``.at[i].set`` and so does preserve the
-            leaf's native dtype.
+            An expectation value is a mean, so accumulators are floating
+            point regardless of the leaf's own dtype.  Complex leaves are
+            the exception and keep theirs, since casting them to float
+            would drop the imaginary part.
             """
 
             def acc_dtype(dt):

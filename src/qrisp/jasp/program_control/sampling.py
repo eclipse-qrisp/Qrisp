@@ -314,7 +314,10 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             ``(3,)`` array inside a tuple) naturally become
             ``(shots, 3)`` in the result.
             User-defined pytree types are rejected with a clear error.
-            Scalar returns take the fast path ``acc.at[i].set(value)``.
+
+            A single, non-container return is the same mechanism with one
+            leaf: it too gets a typed accumulator, and differs from an
+            array leaf only in having an empty leaf shape.
             """
             struct = tree_structure(decoded_values)
             if struct.num_nodes > 1:  # pytree container
@@ -344,25 +347,18 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 return tuple(a.at[i].set(v) for a, v in zip(acc, flat_values))
 
             # ----------------------------------------------------------
-            # Single leaf (scalar or array — not a container).
-            # True scalars take the fast path; arrays with shape need a
-            # shaped accumulator, captured via _MultiReturnDetected.
+            # Single leaf (scalar or array — not a container).  Both need
+            # a typed accumulator, so both capture dtype/shape and retry;
+            # a scalar is just the empty-shape case.
             # ----------------------------------------------------------
             if not isinstance(acc, tuple):
-                try:
-                    leaf_shape = decoded_values.shape
-                except AttributeError:
-                    leaf_shape = ()
-                if leaf_shape == ():
-                    return acc.at[i].set(decoded_values)  # true scalar
-
-                # Non-scalar leaf array — capture shape and retry
                 if not return_amount:
                     leaf_dtype = getattr(decoded_values, "dtype", None)
+                    leaf_shape = getattr(decoded_values, "shape", ())
                     return_amount.append((struct, [leaf_dtype], [leaf_shape]))
                 raise _MultiReturnDetected()
 
-            # Second pass: acc is a 1-tuple of shaped accumulators
+            # Second pass: acc is a 1-tuple of typed accumulators
             return tuple(a.at[i].set(v) for a, v in zip(acc, [decoded_values]))
 
         def _make_init_acc(shots, leaf_dtypes, leaf_shapes):
