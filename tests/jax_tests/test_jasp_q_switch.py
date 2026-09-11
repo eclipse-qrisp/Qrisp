@@ -397,3 +397,65 @@ def test_jasp_q_switch_tree_list_control():
                     assert r == 0
                 else:
                     assert r == index_val
+
+
+def test_jasp_q_switch_odd_branch_count_with_multiple_operands():
+    """An odd branch list must still work in Jasp when several operands are passed.
+
+    The tree pads an odd list with an identity branch, and that branch is invoked
+    with every operand, so it has to accept them.
+    """
+    from qrisp import QuantumFloat, jaspify, measure, q_switch, x
+
+    @jaspify
+    def main(index_value):
+
+        def f0(a, b):
+            x(a[0])
+
+        def f1(a, b):
+            x(b[0])
+
+        def f2(a, b):
+            x(a[1])
+
+        first = QuantumFloat(3)
+        second = QuantumFloat(3)
+        index = QuantumFloat(2)
+        index[:] = index_value
+
+        q_switch(index, [f0, f1, f2], first, second, method="tree")
+
+        return measure(first), measure(second)
+
+    assert main(0) == (1.0, 0.0)
+    assert main(1) == (0.0, 1.0)
+    assert main(2) == (2.0, 0.0)
+
+
+def test_jasp_q_switch_does_not_mutate_the_branch_list():
+    """The odd-length padding branch must not be appended to the caller's list."""
+    from qrisp import QuantumFloat, jaspify, measure, q_switch
+
+    def f0(x):
+        x += 1
+
+    def f1(x):
+        x += 2
+
+    def f2(x):
+        x += 3
+
+    branches = [f0, f1, f2]
+    expected = list(branches)
+
+    @jaspify
+    def main():
+        operand = QuantumFloat(4)
+        index = QuantumFloat(2)
+        q_switch(index, branches, operand, method="tree")
+        return measure(operand)
+
+    main()
+
+    assert branches == expected

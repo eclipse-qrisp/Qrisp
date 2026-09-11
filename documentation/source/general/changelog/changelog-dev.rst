@@ -107,6 +107,12 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed two issues in :func:`q_switch <qrisp.q_switch>` affecting branch lists of
+  odd length. The padding branch the ``"tree"`` method appends now accepts every
+  operand, so an odd branch list no longer raises a ``TypeError`` in Jasp mode
+  when more than one operand is passed, and the padding is appended to a copy
+  rather than to the caller's list.
+
 * Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
   Unitary matrices are now computed in ``complex128`` precision, removing the
   spurious ~1e-7 off-diagonal entries that previously appeared where a

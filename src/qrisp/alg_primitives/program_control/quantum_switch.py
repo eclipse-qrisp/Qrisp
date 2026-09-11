@@ -341,11 +341,14 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
         # List mode
         elif isinstance(branches, list):
             if len(branches) % 2 != 0:
-
-                def identity(_):
+                # The tree walks leaves in pairs, so an odd list gets one padding
+                # branch. It takes *args because branches are invoked with every
+                # operand, and it is appended to a copy because `branches` belongs
+                # to the caller.
+                def identity(*args):
                     pass
 
-                branches.append(identity)
+                branches = [*branches, identity]
 
             if check_for_tracing_mode():
 
