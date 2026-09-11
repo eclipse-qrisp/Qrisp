@@ -17,10 +17,13 @@ New Features
   ``(array_a, array_b, array_c)`` — a tuple of three 1D arrays — instead of
   a single flat ``(shots, 3)`` array.  Nested tuples, lists, and dicts are
   preserved (e.g. ``[ (a,b), c ]`` → ``[ (array_a, array_b), array_c ]``).
-  Each leaf retains its native dtype (``bool`` stays ``bool``, ``int`` stays
-  ``int``) and array-valued leaves naturally stack along the leading
-  dimension (``(3,)`` → ``(shots, 3)``).  User-defined JAX pytree types
-  raise a descriptive ``TypeError``.
+  In ``sample()`` each leaf retains its native dtype (``bool`` stays
+  ``bool``, ``int`` stays ``int``) and array-valued leaves naturally stack
+  along the leading dimension (``(3,)`` → ``(shots, 3)``).
+  ``expectation_value()`` does not preserve leaf dtypes: an expectation
+  value is a mean, so every leaf comes back floating point (complex leaves
+  stay complex).  User-defined JAX pytree types raise a descriptive
+  ``TypeError``.
 
   **Breaking change:** Multi-value returns are now tuples of arrays instead
   of a single 2D array.  Code that indexed ``res[:, i]`` must use

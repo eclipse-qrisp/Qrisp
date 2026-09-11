@@ -100,7 +100,14 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     Returns
     -------
     callable
-        A function returning a Jax array containing the expectation value.
+        A function returning the expectation value.  For a kernel returning a
+        single value the result is a scalar ``jax.Array``.  For a kernel
+        returning a container (``tuple``, ``list``, ``dict``, or nested
+        combinations thereof) the container structure is preserved and every
+        leaf is replaced by its mean.  Since an expectation value is a mean,
+        each leaf is floating point regardless of the kernel's own dtype
+        (complex leaves stay complex) -- unlike :func:`~qrisp.jasp.sample`,
+        which preserves the native dtype of every leaf.
 
     Examples
     --------
@@ -283,15 +290,31 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
             return tuple(a + v for a, v in zip(acc, [decoded_values]))
 
         def _make_init_acc(leaf_dtypes, leaf_shapes):
-            """Build a tuple of typed zero-arrays, one per leaf.
+            """Build a tuple of zero-valued accumulators, one per leaf.
 
             Each accumulator has the same shape as its leaf (running sum,
             not per-shot storage).
+
+            An expectation value is a mean, so the accumulator is floating
+            point no matter what dtype the leaf itself has.  Summing in the
+            native dtype would be wrong: ``bool + bool`` is logical OR in
+            JAX, so a boolean accumulator saturates at ``True`` instead of
+            counting the hits, and narrow integer leaves can overflow.
+            Complex leaves are the one exception -- they keep their dtype,
+            since casting them to float would drop the imaginary part.
+
+            This is deliberately unlike :func:`~qrisp.jasp.sample`, which
+            stores each shot with ``.at[i].set`` and so does preserve the
+            leaf's native dtype.
             """
-            return tuple(
-                jnp.zeros(shape, dtype=dt) if dt is not None else jnp.zeros(shape)
-                for dt, shape in zip(leaf_dtypes, leaf_shapes)
-            )
+
+            def acc_dtype(dt):
+                if dt is not None and jnp.issubdtype(dt, jnp.complexfloating):
+                    return dt
+                # None selects JAX's default float dtype.
+                return None
+
+            return tuple(jnp.zeros(shape, dtype=acc_dtype(dt)) for dt, shape in zip(leaf_dtypes, leaf_shapes))
 
         # We now construct a loop to evaluate the expectation value via adding
         # the decoded and postprocessed measurement result into an accumulator.

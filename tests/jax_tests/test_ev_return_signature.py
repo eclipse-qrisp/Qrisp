@@ -268,11 +268,11 @@ class TestNestedReturns:
 
 
 # =============================================================================
-# 4. Dtype preservation
+# 4. Result dtype (expectation values are always floating point)
 # =============================================================================
 
 
-class TestDtypePreservation:
+class TestResultDtype:
     def test_bool_in_flat_tuple_jit(self):
         def kernel():
             qf = QuantumFloat(4)
@@ -286,8 +286,16 @@ class TestDtypePreservation:
             return expectation_value(kernel, shots=SHOTS)()
 
         res = main()
+        # An expectation value is a mean, so every leaf comes back floating
+        # point -- the QuantumBool leaf must not be accumulated in its native
+        # dtype.  ``bool + bool`` is logical OR in JAX, so a boolean
+        # accumulator saturates at True on the first hit and the mean would
+        # come out as ~1/shots instead of ~0.5.  Asserting the value, not just
+        # the dtype, is what catches that.
         assert res[0].dtype == jnp.float64
-        assert res[1].dtype in (jnp.int64, jnp.float64)  # bool promotes under sum
+        assert res[1].dtype == jnp.float64
+        assert abs(float(res[0]) - 0.5) < 0.2
+        assert abs(float(res[1]) - 0.5) < 0.2
 
 
 # =============================================================================
