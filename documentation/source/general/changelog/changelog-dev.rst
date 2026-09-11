@@ -49,6 +49,14 @@ New Features
 Improvements
 ------------
 
+- **Cheaper tracing for** :func:`q_switch <qrisp.q_switch>`
+  The ``"tree"`` method resolves conditionals whose predicate is already known at
+  trace time instead of tracing both arms and discarding one. The emitted circuit
+  is unchanged; the traced program is roughly half the size and compiles about
+  twice as fast for larger switches (2807 to 1308 equations and 1.71 s to 0.77 s
+  for 16 branches). Predicates that genuinely depend on run-time values, such as a
+  ``branch_amount`` that is itself traced, still go through ``q_cond``.
+
 - :class:`~qrisp.interface.QiskitJob` and :class:`~qrisp.interface.AQTJob`
   now skip the live provider query and return the cached status once a job
   is done, cancelled, or errored. The :class:`~qrisp.interface.Job` base

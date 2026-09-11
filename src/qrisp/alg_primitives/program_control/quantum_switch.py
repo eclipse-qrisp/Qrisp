@@ -18,6 +18,7 @@
 
 import warnings
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -198,13 +199,31 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
         enable[0].flip()
         enable.delete()
 
-    # Uses balanced binaray trees https://arxiv.org/pdf/2407.17966v1
+    # Uses balanced binary trees https://arxiv.org/pdf/2407.17966v1
     elif method == "tree":
         # Jasp mode
+        #
+        # The tree walk is driven by the index width n = index.size, and in Jasp a
+        # QuantumVariable's size is always a tracer -- even for a literally sized
+        # QuantumFloat(3). The loops over n therefore have to be jrange, and the
+        # depths they derive are traced values. Replacing them with a plain range
+        # raises TracerIntegerConversionError.
+        #
+        # Many predicates are nonetheless plain Python values: the depth guards in
+        # the statically unrolled parts of the walk, the leaf selection when the
+        # index is known, and branch_amount whenever the caller passed an int. For
+        # those, q_cond would trace both arms and discard one. x_cond below picks
+        # the arm directly instead, which is what the non-traced definition further
+        # down already does, and falls back to q_cond for genuinely traced
+        # predicates -- including a traced branch_amount.
         if check_for_tracing_mode():
             xrange = jrange
             x_fori_loop = q_fori_loop
-            x_cond = q_cond
+
+            def x_cond(pred, true_fun, false_fun, *operands):
+                if isinstance(pred, jax.core.Tracer):
+                    return q_cond(pred, true_fun, false_fun, *operands)
+                return true_fun(*operands) if pred else false_fun(*operands)
 
             def bitwise_count_diff(a, b):
                 return jnp.int32(jnp.bitwise_count(jnp.bitwise_xor(a, b)))
