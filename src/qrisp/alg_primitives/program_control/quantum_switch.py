@@ -44,6 +44,373 @@ def _invert_inpl_function(func):
 
     return inverted_func
 
+def _normalize_branches(index, branches, branch_amount, method, inv):
+    """Resolve the branch representation shared by every compile method.
+
+    Returns the branches (inverted if requested), the number of branches, whether
+    ``branches`` is a function rather than a list, and the range helper to iterate
+    branch indices with. A function is enumerated over the full index range unless
+    the caller caps it with ``branch_amount``; a list carries its own length.
+
+    Raises
+    ------
+    TypeError
+        If ``branches`` is neither a list nor a callable, or if ``branch_amount``
+        is combined with a list under the ``"sequential"`` method.
+
+    """
+    if is_function_mode := callable(branches):
+        if branch_amount is None:
+            index_size = len(index) if isinstance(index, list) else index.size
+            branch_amount = 2**index_size
+        xrange = jrange if check_for_tracing_mode() else range
+        if inv:
+            branches = _invert_inpl_function(branches)
+
+    elif isinstance(branches, list):
+        if branch_amount is None:
+            branch_amount = len(branches)
+        elif method == "sequential":
+            raise TypeError(
+                "Argument 'branch_amount' must be None when using the 'sequential' method and a list as a 'branches'"
+            )
+        if inv:
+            branches = [_invert_inpl_function(func) for func in branches]
+
+        xrange = range
+
+    else:
+        raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
+
+    return branches, branch_amount, is_function_mode, xrange
+
+
+def _q_switch_sequential(index, branches, operands, branch_amount, is_function_mode, xrange, ctrl):
+    """Apply each branch under its own comparison against the index.
+
+    Costs one comparison per branch, so the circuit grows linearly, but it traces
+    each branch exactly once.
+    """
+    control_qbl = QuantumBool()
+
+    for i in xrange(branch_amount):
+        with conjugate(mcx)(index, control_qbl, ctrl_state=i):
+            with control(control_qbl):
+                if ctrl is None:
+                    if is_function_mode:
+                        branches(i, *operands)
+                    else:
+                        branches[i](*operands)
+                elif is_function_mode:
+                    with control(ctrl):
+                        branches(i, *operands)
+                else:
+                    with control(ctrl):
+                        branches[i](*operands)
+
+    control_qbl.delete()
+
+
+def _q_switch_parallel(index, branches, operands, branch_amount, is_function_mode, ctrl):
+    """Apply every branch to its own copy of the operand, demultiplexed by the index.
+
+    Exponentially faster than the alternatives at the cost of one operand copy per
+    branch. Not available in tracing mode.
+    """
+    if check_for_tracing_mode():
+        raise NotImplementedError(
+            "Compile method 'parallel' for switch-case structure not available in tracing mode."
+        )
+
+    if isinstance(index, list):
+        raise NotImplementedError(
+            "Compile method 'parallel' for switch-case structure not available when 'index' is a list of qubits."
+        )
+
+    if len(operands) > 1:
+        raise NotImplementedError(
+            "Compile method 'parallel' for switch-case structure not available when more then one 'operands' are provided."
+        )
+
+    # Idea: Use demux function to move operand and enabling bool into QuantumArray
+    # to execute the branches in parallel.
+
+    # This QuantumArray acts as an addressable QRAM via the demux function
+
+    if branch_amount != 2**index.size:
+        warnings.warn(
+            "Warning: Additional qubit overhead because branch amount is smaller than index QuantumVariable!"
+        )
+
+    enable = QuantumArray(qtype=QuantumBool(), shape=(2**index.size,))
+    enable[0].flip()
+
+    qa = QuantumArray(qtype=operands[0], shape=((2**index.size,)))
+
+    with conjugate(demux)(operands[0], index, qa, parallelize_qc=True):
+        with conjugate(demux)(enable[0], index, enable, parallelize_qc=True):
+            for i in range(branch_amount):
+                with control(enable[i]):
+                    if ctrl is None:
+                        if is_function_mode:
+                            branches(i, qa[i])
+                        else:
+                            branches[i](qa[i])
+                    elif is_function_mode:
+                        with control(ctrl):
+                            branches(i, qa[i])
+                    else:
+                        with control(ctrl):
+                            branches[i](qa[i])
+
+    qa.delete()
+
+    enable[0].flip()
+    enable.delete()
+
+
+
+def _q_switch_tree(index, branches, operands, branch_amount, is_function_mode, ctrl):
+    """Apply the branches by walking a balanced binary tree over the index.
+
+    Uses balanced binary trees, https://arxiv.org/pdf/2407.17966v1. An ancilla per
+    index qubit tracks the path to the current leaf, and the walk moves between
+    adjacent leaves rather than re-deriving each path from scratch, which keeps the
+    gate count far below the linear scan of the sequential method.
+    """
+    # Jasp mode
+    #
+    # The tree walk is driven by the index width n = index.size, and in Jasp a
+    # QuantumVariable's size is always a tracer -- even for a literally sized
+    # QuantumFloat(3). The loops over n therefore have to be jrange, and the
+    # depths they derive are traced values. Replacing them with a plain range
+    # raises TracerIntegerConversionError.
+    #
+    # Many predicates are nonetheless plain Python values: the depth guards in
+    # the statically unrolled parts of the walk, the leaf selection when the
+    # index is known, and branch_amount whenever the caller passed an int. For
+    # those, q_cond would trace both arms and discard one. x_cond below picks
+    # the arm directly instead, which is what the non-traced definition further
+    # down already does, and falls back to q_cond for genuinely traced
+    # predicates -- including a traced branch_amount.
+    if check_for_tracing_mode():
+        xrange = jrange
+        x_fori_loop = q_fori_loop
+
+        def x_cond(pred, true_fun, false_fun, *operands):
+            if isinstance(pred, jax.core.Tracer):
+                return q_cond(pred, true_fun, false_fun, *operands)
+            return true_fun(*operands) if pred else false_fun(*operands)
+
+        def bitwise_count_diff(a, b):
+            return jnp.int32(jnp.bitwise_count(jnp.bitwise_xor(a, b)))
+
+    # Normal mode
+    else:
+        xrange = range
+
+        def x_fori_loop(lower, upper, body_fun, init_val):
+            val = init_val
+            for i in range(lower, upper):
+                val = body_fun(i, val)
+            return val
+
+        def x_cond(pred, true_fun, false_fun, *operands):
+            if pred:
+                return true_fun(*operands)
+            return false_fun(*operands)
+
+        def bitwise_count_diff(a, b):
+            return np.int32(np.bitwise_count(np.bitwise_xor(a, b)))
+
+    n = len(index) if isinstance(index, list) else index.size
+
+    # The gate calls below are wrapped so that the lambdas handed to x_cond
+    # never close over a name that a surrounding scope rebinds.
+    def nor_x(t):
+        x(t)
+
+    def nor_cx(c, t):
+        cx(c, t)
+
+    def nor_mcx(c, t):
+        mcx(c, t)
+
+    def toggle_from_parent(anc, target, parent):
+        """Flip ``anc[target]`` conditioned on its parent node ``anc[parent]``.
+
+        ``parent == -1`` means ``target`` is the root of the tree and has no
+        parent, so the flip is unconditional -- or conditioned on ``ctrl``
+        alone when the whole switch is controlled.
+        """
+        if ctrl is None:
+            at_root = lambda: nor_x(anc[target])  # noqa: E731
+        else:
+            at_root = lambda: nor_cx(ctrl, anc[target])  # noqa: E731
+
+        x_cond(parent == -1, at_root, lambda: nor_cx(anc[parent], anc[target]))
+
+    def toggle_from_parent_and_index(anc, index_qubit, target, parent):
+        """Flip ``anc[target]`` conditioned on ``anc[parent]`` and ``index_qubit``.
+
+        As above, ``parent == -1`` means there is no parent node to condition on.
+        """
+        if ctrl is None:
+            at_root = lambda: nor_cx(index_qubit, anc[target])  # noqa: E731
+        else:
+            at_root = lambda: nor_mcx([index_qubit, ctrl], anc[target])  # noqa: E731
+
+        x_cond(
+            parent == -1,
+            at_root,
+            lambda: nor_mcx([index_qubit, anc[parent]], anc[target]),
+        )
+
+    def bounce(d: int, anc, ca, oper):
+        # Cross to the sibling subtree: retarget the node one level up, then
+        # descend again on the index qubit for this depth.
+        toggle_from_parent(anc, d - 1, d - 2)
+
+        with control(anc[d - 1]):
+            x(anc[d])
+
+        toggle_from_parent_and_index(anc, ca[n - 1 - d], d, d - 2)
+
+    def down(d: int, anc, ca, oper):
+        # Descend into the zero child: the surrounding x gates flip the index
+        # qubit so that the toggle triggers on it being 0 rather than 1.
+        x(ca[n - 1 - d])
+        toggle_from_parent_and_index(anc, ca[n - 1 - d], d, d - 1)
+        x(ca[n - 1 - d])
+
+    def up(d: int, anc, ca, oper):
+        # Ascend out of the one child; the inverse of the toggle in down,
+        # without the surrounding index flips.
+        toggle_from_parent_and_index(anc, ca[n - 1 - d], d, d - 1)
+
+    # Function mode
+    if is_function_mode:
+
+        def leaf(d: int, anc, ca, i, oper):
+            with control(anc[d]):
+                branches(i, *oper)
+
+            # Move from the even leaf to its odd sibling.
+            toggle_from_parent(anc, d, d - 1)
+
+            with control(anc[d]):
+                branches(i + 1, *oper)
+
+        def last_leaf(d: int, anc, ca, i, oper):
+            with control(anc[d]):
+                branches(i, *oper)
+
+    # List mode
+    elif isinstance(branches, list):
+        if len(branches) % 2 != 0:
+            # The tree walks leaves in pairs, so an odd list gets one padding
+            # branch. It takes *args because branches are invoked with every
+            # operand, and it is appended to a copy because `branches` belongs
+            # to the caller.
+            def identity(*args):
+                pass
+
+            branches = [*branches, identity]
+
+        if check_for_tracing_mode():
+
+            def leaf(d: int, anc, ca, i, oper):
+                def apply_leaf(A, B):
+                    with control(anc[d]):
+                        A(*oper)
+
+                    # Move from the even leaf to its odd sibling.
+                    toggle_from_parent(anc, d, d - 1)
+
+                    with control(anc[d]):
+                        B(*oper)
+
+                for j in range(0, len(branches), 2):
+                    x_cond(
+                        j == i,
+                        apply_leaf,
+                        lambda a, b: None,
+                        branches[j],
+                        branches[j + 1],
+                    )
+
+        else:
+
+            def leaf(d: int, anc, ca, i, oper):
+                with control(anc[d]):
+                    branches[i](*oper)
+
+                # Move from the even leaf to its odd sibling.
+                toggle_from_parent(anc, d, d - 1)
+
+                with control(anc[d]):
+                    branches[i + 1](*oper)
+
+        def last_leaf(d: int, anc, ca, i, oper):
+            def apply(f):
+                with control(anc[d]):
+                    f(*oper)
+
+            for j in range(0, len(branches)):
+                x_cond(j == i, apply, lambda x: None, branches[j])
+
+    else:
+        raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
+
+    def body_fun(pos, val):
+        anc, ca, oper = val
+
+        # Apply leaf
+        leaf(n - 1, anc, ca, 2 * pos, oper)
+
+        # Jump to next leaf
+        q = bitwise_count_diff(pos, pos + 1)
+        for j in xrange(0, q - 1):
+            up(n - j - 1, anc, ca, oper)
+        bounce(n - q, anc, ca, oper)
+        for j in xrange(0, q - 1):
+            down(n - (q - 1) + j, anc, ca, oper)
+
+        return anc, ca, oper
+
+    # One ancilla per index qubit, tracking the path to the current leaf.
+    anc = QuantumVariable(n)
+
+    # Descend to the first leaf
+    for j in xrange(0, n):
+        down(j, anc, index, operands)
+
+    # Walk the leaves, jumping from each to the next
+    _, _, _ = x_fori_loop(0, -(-branch_amount // 2) - 1, body_fun, (anc, index, operands))
+
+    # Perform the last leaf
+    x_cond(
+        branch_amount % 2 == 0,
+        lambda: leaf(n - 1, anc, index, branch_amount - 2, operands),
+        lambda: last_leaf(n - 1, anc, index, branch_amount - 1, operands),
+    )
+
+    # Go back from last node
+    diff = 2**n - branch_amount
+    for j in xrange(0, n):
+        up(n - j - 1, anc, index, operands)
+
+        def bf():
+            toggle_from_parent(anc, n - j - 1, n - j - 2)
+
+        # The walk stopped short of the full 2**n leaves, so the levels where
+        # that shortfall has a set bit need one extra retarget on the way out.
+        x_cond((diff >> j) & 1, lambda: bf(), lambda: None)
+
+    anc.delete()
+
+
+
 
 # Switch implementation for quantum index
 def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None):
@@ -102,408 +469,18 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
         # (3.0, 3.0): 0.12499999441206447}
 
     """
-    if is_function_mode := callable(branches):
-        if branch_amount is None:
-            index_size = len(index) if isinstance(index, list) else index.size
-            branch_amount = 2**index_size
-        xrange = jrange if check_for_tracing_mode() else range
-        if inv:
-            branches = _invert_inpl_function(branches)
-
-    elif isinstance(branches, list):
-        if branch_amount is None:
-            branch_amount = len(branches)
-        elif method == "sequential":
-            raise TypeError(
-                "Argument 'branch_amount' must be None when using the 'sequential' method and a list as a 'branches'"
-            )
-        if inv:
-            branches = [_invert_inpl_function(func) for func in branches]
-
-        xrange = range
-
-    else:
-        raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
+    branches, branch_amount, is_function_mode, xrange = _normalize_branches(
+        index, branches, branch_amount, method, inv
+    )
 
     method = "tree" if method == "auto" else method
 
     if method == "sequential":
-        control_qbl = QuantumBool()
-
-        for i in xrange(branch_amount):
-            with conjugate(mcx)(index, control_qbl, ctrl_state=i):
-                with control(control_qbl):
-                    if ctrl is None:
-                        if is_function_mode:
-                            branches(i, *operands)
-                        else:
-                            branches[i](*operands)
-                    elif is_function_mode:
-                        with control(ctrl):
-                            branches(i, *operands)
-                    else:
-                        with control(ctrl):
-                            branches[i](*operands)
-
-        control_qbl.delete()
-
+        _q_switch_sequential(index, branches, operands, branch_amount, is_function_mode, xrange, ctrl)
     elif method == "parallel":
-        if check_for_tracing_mode():
-            raise NotImplementedError(
-                f"Compile method {method} for switch-case structure not available in tracing mode."
-            )
-
-        if isinstance(index, list):
-            raise NotImplementedError(
-                "Compile method 'parallel' for switch-case structure not available when 'index' is a list of qubits."
-            )
-
-        if len(operands) > 1:
-            raise NotImplementedError(
-                "Compile method 'parallel' for switch-case structure not available when more then one 'operands' are provided."
-            )
-
-        # Idea: Use demux function to move operand and enabling bool into QuantumArray
-        # to execute indexs in parallel.
-
-        # This QuantumArray acts as an addressable QRAM via the demux function
-
-        if branch_amount != 2**index.size:
-            warnings.warn(
-                "Warning: Additional qubit overhead because branch amount is smaller than index QuantumVariable!"
-            )
-
-        enable = QuantumArray(qtype=QuantumBool(), shape=(2**index.size,))
-        enable[0].flip()
-
-        qa = QuantumArray(qtype=operands[0], shape=((2**index.size,)))
-
-        with conjugate(demux)(operands[0], index, qa, parallelize_qc=True):
-            with conjugate(demux)(enable[0], index, enable, parallelize_qc=True):
-                for i in range(branch_amount):
-                    with control(enable[i]):
-                        if ctrl is None:
-                            if is_function_mode:
-                                branches(i, qa[i])
-                            else:
-                                branches[i](qa[i])
-                        elif is_function_mode:
-                            with control(ctrl):
-                                branches(i, qa[i])
-                        else:
-                            with control(ctrl):
-                                branches[i](qa[i])
-
-        qa.delete()
-
-        enable[0].flip()
-        enable.delete()
-
-    # Uses balanced binary trees https://arxiv.org/pdf/2407.17966v1
+        _q_switch_parallel(index, branches, operands, branch_amount, is_function_mode, ctrl)
     elif method == "tree":
-        # Jasp mode
-        #
-        # The tree walk is driven by the index width n = index.size, and in Jasp a
-        # QuantumVariable's size is always a tracer -- even for a literally sized
-        # QuantumFloat(3). The loops over n therefore have to be jrange, and the
-        # depths they derive are traced values. Replacing them with a plain range
-        # raises TracerIntegerConversionError.
-        #
-        # Many predicates are nonetheless plain Python values: the depth guards in
-        # the statically unrolled parts of the walk, the leaf selection when the
-        # index is known, and branch_amount whenever the caller passed an int. For
-        # those, q_cond would trace both arms and discard one. x_cond below picks
-        # the arm directly instead, which is what the non-traced definition further
-        # down already does, and falls back to q_cond for genuinely traced
-        # predicates -- including a traced branch_amount.
-        if check_for_tracing_mode():
-            xrange = jrange
-            x_fori_loop = q_fori_loop
-
-            def x_cond(pred, true_fun, false_fun, *operands):
-                if isinstance(pred, jax.core.Tracer):
-                    return q_cond(pred, true_fun, false_fun, *operands)
-                return true_fun(*operands) if pred else false_fun(*operands)
-
-            def bitwise_count_diff(a, b):
-                return jnp.int32(jnp.bitwise_count(jnp.bitwise_xor(a, b)))
-
-        # Normal mode
-        else:
-            xrange = range
-
-            def x_fori_loop(lower, upper, body_fun, init_val):
-                val = init_val
-                for i in range(lower, upper):
-                    val = body_fun(i, val)
-                return val
-
-            def x_cond(pred, true_fun, false_fun, *operands):
-                if pred:
-                    return true_fun(*operands)
-                return false_fun(*operands)
-
-            def bitwise_count_diff(a, b):
-                return np.int32(np.bitwise_count(np.bitwise_xor(a, b)))
-
-        n = len(index) if isinstance(index, list) else index.size
-
-        def nor_x(t):
-            x(t)
-
-        def nor_cx(c, t):
-            cx(c, t)
-
-        def nor_mcx(c, t):
-            mcx(c, t)
-
-        def bounce(d: int, anc, ca, oper):
-            # with control(anc[d - 2]):
-            #    x(anc[d-1])
-            if ctrl is None:
-                x_cond(
-                    d - 2 == -1,
-                    lambda: nor_x(anc[d - 1]),
-                    lambda: nor_cx(anc[d - 2], anc[d - 1]),
-                )
-            else:
-                x_cond(
-                    d - 2 == -1,
-                    lambda: nor_cx(ctrl, anc[d - 1]),
-                    lambda: nor_cx(anc[d - 2], anc[d - 1]),
-                )
-
-            with control(anc[d - 1]):
-                x(anc[d])
-
-            # with control(anc[d - 2]):
-            #    with control(ca[n - 1 - d]):
-            #        x(anc[d])
-            if ctrl is None:
-                x_cond(
-                    d - 2 == -1,
-                    lambda: nor_cx(ca[n - 1 - d], anc[d]),
-                    lambda: nor_mcx([ca[n - 1 - d], anc[d - 2]], anc[d]),
-                )
-            else:
-                x_cond(
-                    d - 2 == -1,
-                    lambda: nor_mcx([ca[n - 1 - d], ctrl], anc[d]),
-                    lambda: nor_mcx([ca[n - 1 - d], anc[d - 2]], anc[d]),
-                )
-
-        def down(d: int, anc, ca, oper):
-            x(ca[n - 1 - d])
-            # with control(anc[d-1]):
-            #    with control(ca[n - 1 - d]):
-            #        x(anc[d])
-            if ctrl is None:
-                x_cond(
-                    d - 1 == -1,
-                    lambda: nor_cx(ca[n - 1 - d], anc[d]),
-                    lambda: nor_mcx([ca[n - 1 - d], anc[d - 1]], anc[d]),
-                )
-            else:
-                x_cond(
-                    d - 1 == -1,
-                    lambda: nor_mcx([ca[n - 1 - d], ctrl], anc[d]),
-                    lambda: nor_mcx([ca[n - 1 - d], anc[d - 1]], anc[d]),
-                )
-            x(ca[n - 1 - d])
-
-        def up(d: int, anc, ca, oper):
-            # with control(anc[d-1]):
-            #    with control(ca[n - 1 - d]):
-            #        x(anc[d])
-            if ctrl is None:
-                x_cond(
-                    d - 1 == -1,
-                    lambda: nor_cx(ca[n - 1 - d], anc[d]),
-                    lambda: nor_mcx([ca[n - 1 - d], anc[d - 1]], anc[d]),
-                )
-            else:
-                x_cond(
-                    d - 1 == -1,
-                    lambda: nor_mcx([ca[n - 1 - d], ctrl], anc[d]),
-                    lambda: nor_mcx([ca[n - 1 - d], anc[d - 1]], anc[d]),
-                )
-
-        # Function mode
-        if is_function_mode:
-
-            def leaf(d: int, anc, ca, i, oper):
-                with control(anc[d]):
-                    branches(i, *oper)
-
-                # with control(anc[d-1]):
-                #    x(anc[d])
-                if ctrl is None:
-                    x_cond(
-                        d - 1 == -1,
-                        lambda: nor_x(anc[d]),
-                        lambda: nor_cx(anc[d - 1], anc[d]),
-                    )
-                else:
-                    x_cond(
-                        d - 1 == -1,
-                        lambda: nor_cx(ctrl, anc[d]),
-                        lambda: nor_cx(anc[d - 1], anc[d]),
-                    )
-
-                with control(anc[d]):
-                    branches(i + 1, *oper)
-
-            def last_leaf(d: int, anc, ca, i, oper):
-                with control(anc[d]):
-                    branches(i, *oper)
-
-        # List mode
-        elif isinstance(branches, list):
-            if len(branches) % 2 != 0:
-                # The tree walks leaves in pairs, so an odd list gets one padding
-                # branch. It takes *args because branches are invoked with every
-                # operand, and it is appended to a copy because `branches` belongs
-                # to the caller.
-                def identity(*args):
-                    pass
-
-                branches = [*branches, identity]
-
-            if check_for_tracing_mode():
-
-                def leaf(d: int, anc, ca, i, oper):
-                    def apply_leaf(A, B):
-                        with control(anc[d]):
-                            A(*oper)
-
-                        # with control(anc[d-1]):
-                        #    x(anc[d])
-                        if ctrl is None:
-                            x_cond(
-                                d - 1 == -1,
-                                lambda: nor_x(anc[d]),
-                                lambda: nor_cx(anc[d - 1], anc[d]),
-                            )
-                        else:
-                            x_cond(
-                                d - 1 == -1,
-                                lambda: nor_cx(ctrl, anc[d]),
-                                lambda: nor_cx(anc[d - 1], anc[d]),
-                            )
-
-                        with control(anc[d]):
-                            B(*oper)
-
-                    for j in range(0, len(branches), 2):
-                        x_cond(
-                            j == i,
-                            apply_leaf,
-                            lambda a, b: None,
-                            branches[j],
-                            branches[j + 1],
-                        )
-
-            else:
-
-                def leaf(d: int, anc, ca, i, oper):
-                    with control(anc[d]):
-                        branches[i](*oper)
-
-                    # with control(anc[d-1]):
-                    #    x(anc[d])
-                    if ctrl is None:
-                        x_cond(
-                            d - 1 == -1,
-                            lambda: nor_x(anc[d]),
-                            lambda: nor_cx(anc[d - 1], anc[d]),
-                        )
-                    else:
-                        x_cond(
-                            d - 1 == -1,
-                            lambda: nor_cx(ctrl, anc[d]),
-                            lambda: nor_cx(anc[d - 1], anc[d]),
-                        )
-
-                    with control(anc[d]):
-                        branches[i + 1](*oper)
-
-            def last_leaf(d: int, anc, ca, i, oper):
-                def apply(f):
-                    with control(anc[d]):
-                        f(*oper)
-
-                for j in range(0, len(branches)):
-                    x_cond(j == i, apply, lambda x: None, branches[j])
-
-        else:
-            raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
-
-        def body_fun(pos, val):
-            anc, ca, oper = val
-
-            # Apply leaf
-            leaf(n - 1, anc, ca, 2 * pos, oper)
-
-            # Jump to next leaf
-            q = bitwise_count_diff(pos, pos + 1)
-            for j in xrange(0, q - 1):
-                up(n - j - 1, anc, ca, oper)
-            bounce(n - q, anc, ca, oper)
-            for j in xrange(0, q - 1):
-                down(n - (q - 1) + j, anc, ca, oper)
-
-            return anc, ca, oper
-
-        anc = QuantumVariable(n)
-        # x(anc[0])
-
-        # Go to first node
-        for j in xrange(0, n):
-            down(j, anc, index, operands)
-
-        # Perform leafs and jumps
-
-        _, _, _ = x_fori_loop(0, -(-branch_amount // 2) - 1, body_fun, (anc, index, operands))
-
-        # Perfrom last leaf
-        x_cond(
-            branch_amount % 2 == 0,
-            lambda: leaf(n - 1, anc, index, branch_amount - 2, operands),
-            lambda: last_leaf(n - 1, anc, index, branch_amount - 1, operands),
-        )
-
-        # Go back from last node
-        diff = 2**n - branch_amount
-        for j in xrange(0, n):
-            up(n - j - 1, anc, index, operands)
-
-            def bf():
-                # with control(anc[n-j-2]):
-                #    x(anc[n - j-1])
-                # return None
-                if ctrl is None:
-                    x_cond(
-                        n - j - 2 == -1,
-                        lambda: nor_x(anc[n - j - 1]),
-                        lambda: nor_cx(anc[n - j - 2], anc[n - j - 1]),
-                    )
-                else:
-                    x_cond(
-                        n - j - 2 == -1,
-                        lambda: nor_cx(ctrl, anc[n - j - 1]),
-                        lambda: nor_cx(anc[n - j - 2], anc[n - j - 1]),
-                    )
-
-            # The x_cond applies:
-            # if (diff >> j) & 1:
-            #    with control(anc[n-j-1]):
-            #        x(anc[n - j])
-            x_cond((diff >> j) & 1, lambda: bf(), lambda: None)
-
-        # x(anc[0])
-
-        anc.delete()
-
+        _q_switch_tree(index, branches, operands, branch_amount, is_function_mode, ctrl)
     else:
         raise Exception(f"Don't know compile method {method} for switch-case structure.")
 
