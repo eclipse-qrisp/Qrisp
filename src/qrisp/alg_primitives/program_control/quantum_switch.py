@@ -17,12 +17,14 @@
 """Implements the classical-mode backend for q_switch, dispatching branches by a quantum index."""
 
 import warnings
+from collections.abc import Callable, Iterable
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 
 from qrisp.alg_primitives import demux
+from qrisp.circuit import Qubit
 from qrisp.core import QuantumArray, QuantumVariable, cx, mcx, x
 from qrisp.environments import (
     conjugate,
@@ -34,6 +36,14 @@ from qrisp.environments import (
 from qrisp.jasp import check_for_tracing_mode, jrange, q_cond, q_fori_loop
 from qrisp.qtypes import QuantumBool
 
+# A branch_amount may be a traced value: q_switch supports a caller passing one
+# that is only known at run time, in which case the tree method routes the
+# predicates that depend on it through q_cond.
+_BranchAmount = int | jax.core.Tracer
+_Branches = list[Callable] | Callable
+_Index = QuantumVariable | list[Qubit]
+_Range = Callable[..., Iterable[int]]
+
 
 def _invert_inpl_function(func):
     """Helper function to invert in-place functions."""
@@ -44,7 +54,14 @@ def _invert_inpl_function(func):
 
     return inverted_func
 
-def _normalize_branches(index, branches, branch_amount, method, inv):
+
+def _normalize_branches(
+    index: _Index,
+    branches: _Branches,
+    branch_amount: _BranchAmount | None,
+    method: str,
+    inv: bool,
+) -> tuple[_Branches, _BranchAmount, bool, _Range]:
     """Resolve the branch representation shared by every compile method.
 
     Returns the branches (inverted if requested), the number of branches, whether
@@ -85,7 +102,15 @@ def _normalize_branches(index, branches, branch_amount, method, inv):
     return branches, branch_amount, is_function_mode, xrange
 
 
-def _q_switch_sequential(index, branches, operands, branch_amount, is_function_mode, xrange, ctrl):
+def _q_switch_sequential(
+    index: _Index,
+    branches: _Branches,
+    operands: tuple[QuantumVariable, ...],
+    branch_amount: _BranchAmount,
+    is_function_mode: bool,
+    xrange: _Range,
+    ctrl: Qubit | None,
+) -> None:
     """Apply each branch under its own comparison against the index.
 
     Costs one comparison per branch, so the circuit grows linearly, but it traces
@@ -111,16 +136,21 @@ def _q_switch_sequential(index, branches, operands, branch_amount, is_function_m
     control_qbl.delete()
 
 
-def _q_switch_parallel(index, branches, operands, branch_amount, is_function_mode, ctrl):
+def _q_switch_parallel(
+    index: _Index,
+    branches: _Branches,
+    operands: tuple[QuantumVariable, ...],
+    branch_amount: _BranchAmount,
+    is_function_mode: bool,
+    ctrl: Qubit | None,
+) -> None:
     """Apply every branch to its own copy of the operand, demultiplexed by the index.
 
     Exponentially faster than the alternatives at the cost of one operand copy per
     branch. Not available in tracing mode.
     """
     if check_for_tracing_mode():
-        raise NotImplementedError(
-            "Compile method 'parallel' for switch-case structure not available in tracing mode."
-        )
+        raise NotImplementedError("Compile method 'parallel' for switch-case structure not available in tracing mode.")
 
     if isinstance(index, list):
         raise NotImplementedError(
@@ -138,9 +168,7 @@ def _q_switch_parallel(index, branches, operands, branch_amount, is_function_mod
     # This QuantumArray acts as an addressable QRAM via the demux function
 
     if branch_amount != 2**index.size:
-        warnings.warn(
-            "Warning: Additional qubit overhead because branch amount is smaller than index QuantumVariable!"
-        )
+        warnings.warn("Warning: Additional qubit overhead because branch amount is smaller than index QuantumVariable!")
 
     enable = QuantumArray(qtype=QuantumBool(), shape=(2**index.size,))
     enable[0].flip()
@@ -169,8 +197,14 @@ def _q_switch_parallel(index, branches, operands, branch_amount, is_function_mod
     enable.delete()
 
 
-
-def _q_switch_tree(index, branches, operands, branch_amount, is_function_mode, ctrl):
+def _q_switch_tree(
+    index: _Index,
+    branches: _Branches,
+    operands: tuple[QuantumVariable, ...],
+    branch_amount: _BranchAmount,
+    is_function_mode: bool,
+    ctrl: Qubit | None,
+) -> None:
     """Apply the branches by walking a balanced binary tree over the index.
 
     Uses balanced binary trees, https://arxiv.org/pdf/2407.17966v1. An ancilla per
@@ -244,9 +278,14 @@ def _q_switch_tree(index, branches, operands, branch_amount, is_function_mode, c
         alone when the whole switch is controlled.
         """
         if ctrl is None:
-            at_root = lambda: nor_x(anc[target])  # noqa: E731
+
+            def at_root():
+                nor_x(anc[target])
+
         else:
-            at_root = lambda: nor_cx(ctrl, anc[target])  # noqa: E731
+
+            def at_root():
+                nor_cx(ctrl, anc[target])
 
         x_cond(parent == -1, at_root, lambda: nor_cx(anc[parent], anc[target]))
 
@@ -256,9 +295,14 @@ def _q_switch_tree(index, branches, operands, branch_amount, is_function_mode, c
         As above, ``parent == -1`` means there is no parent node to condition on.
         """
         if ctrl is None:
-            at_root = lambda: nor_cx(index_qubit, anc[target])  # noqa: E731
+
+            def at_root():
+                nor_cx(index_qubit, anc[target])
+
         else:
-            at_root = lambda: nor_mcx([index_qubit, ctrl], anc[target])  # noqa: E731
+
+            def at_root():
+                nor_mcx([index_qubit, ctrl], anc[target])
 
         x_cond(
             parent == -1,
@@ -410,8 +454,6 @@ def _q_switch_tree(index, branches, operands, branch_amount, is_function_mode, c
     anc.delete()
 
 
-
-
 # Switch implementation for quantum index
 def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None):
     r"""Executes a switch - case statement distinguishing between given in-place functions.
@@ -469,9 +511,7 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
         # (3.0, 3.0): 0.12499999441206447}
 
     """
-    branches, branch_amount, is_function_mode, xrange = _normalize_branches(
-        index, branches, branch_amount, method, inv
-    )
+    branches, branch_amount, is_function_mode, xrange = _normalize_branches(index, branches, branch_amount, method, inv)
 
     method = "tree" if method == "auto" else method
 
