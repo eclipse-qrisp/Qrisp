@@ -25,12 +25,12 @@ computed. The numerical behaviour is covered by test_block_encoding_arithmetic.p
 
 Two regressions are guarded:
 
-1. ``q_switch`` traces every branch several times per call (once for its loop body
-   and once for each arm of its final conditional), and custom_control /
-   custom_inversion speculatively trace the controlled and inverted variants on
-   top of that. If the SELECT branches are rebuilt on every invocation of the LCU
-   unitary, none of those repeats hit Jasp's identity-keyed caches, and the cost
-   multiplies once per level of nested linear combinations.
+1. ``q_switch`` traces every branch more than once per call while unrolling its
+   walk, and custom_control / custom_inversion speculatively trace the controlled
+   and inverted variants on top of that. If the SELECT branches are rebuilt on
+   every invocation of the LCU unitary, none of those repeats hit Jasp's
+   identity-keyed caches, and the cost multiplies once per level of nested linear
+   combinations.
 
 2. ``prepare`` dispatches on whether its amplitude vector converts to NumPy. Since
    a ``jnp`` operation inside a trace returns a tracer even for compile-time
@@ -121,9 +121,9 @@ def test_nested_linear_combinations_do_not_amplify_tracing():
 
     Before the SELECT branches were hoisted and cached, every nesting level
     multiplied the number of traces of the whole subtree by the number of times
-    ``q_switch`` traces a branch, giving 12, 144 and 1728 traces for depths 1, 2
-    and 3. The exact constant is an implementation detail of ``q_switch``; what
-    must hold is that it stays constant in the nesting depth.
+    ``q_switch`` traces a branch, so the cost grew exponentially in the nesting
+    depth. How often ``q_switch`` traces a branch is an implementation detail of
+    ``q_switch``; what must hold is that it stays constant in the nesting depth.
     """
     trace_counts = [_count_child_traces(depth) for depth in (1, 2, 3)]
 
@@ -186,7 +186,7 @@ def test_concrete_coefficients_stay_concrete_during_tracing():
 
 def test_prepare_uses_the_concrete_state_preparation(monkeypatch):
     """PREP and its inverse must both take the concrete ``prepare_qiskit`` path."""
-    import qrisp.alg_primitives.state_preparation.prepare_func as prepare_func
+    from qrisp.alg_primitives.state_preparation import prepare_func
 
     methods = []
 

@@ -119,6 +119,7 @@ def build_linear_combination(
 
     return cls._from_lcu_terms(terms)
 
+
 def build_from_lcu_terms(cls, terms: Sequence[_LCUTerm]) -> BlockEncoding:
     """Build a linear-combination block encoding from weighted terms."""
     terms = _canonicalize_lcu_terms(terms)
@@ -129,6 +130,7 @@ def build_from_lcu_terms(cls, terms: Sequence[_LCUTerm]) -> BlockEncoding:
         if isinstance(coefficient, (int, float, complex, np.number)) and coefficient == 1:
             return block_encoding
     return LinearCombinationBlockEncoding(terms)
+
 
 def apply_add(self, other: BlockEncoding) -> BlockEncoding:
     r"""Returns a BlockEncoding of the sum of two operators.
@@ -196,6 +198,7 @@ def apply_add(self, other: BlockEncoding) -> BlockEncoding:
 
     return type(self)._from_lcu_terms(self._get_lcu_terms() + other._get_lcu_terms())
 
+
 def apply_sub(self, other: BlockEncoding) -> BlockEncoding:
     r"""Returns a BlockEncoding of the difference between two operators.
 
@@ -262,6 +265,7 @@ def apply_sub(self, other: BlockEncoding) -> BlockEncoding:
 
     other_terms = tuple((-coefficient, block_encoding) for coefficient, block_encoding in other._get_lcu_terms())
     return type(self)._from_lcu_terms(self._get_lcu_terms() + other_terms)
+
 
 def apply_mul(self, other: "ArrayLike") -> BlockEncoding:
     r"""Returns a BlockEncoding of the scaled operator.
@@ -335,6 +339,7 @@ def apply_mul(self, other: "ArrayLike") -> BlockEncoding:
 
     return NotImplemented
 
+
 def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:
     r"""Returns a BlockEncoding of the product of two operators.
 
@@ -400,11 +405,13 @@ def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:
 
     return ProductBlockEncoding(self._get_product_factors() + other._get_product_factors())
 
+
 def apply_radd(self, other: Any) -> BlockEncoding | NotImplementedType:
     """Support adding a BlockEncoding to the start value used by sum()."""
     if other == 0:
         return self
     return NotImplemented
+
 
 def apply_kron(self, other: BlockEncoding) -> BlockEncoding:
     r"""Returns a BlockEncoding of the Kronecker product (tensor product) of two operators.
@@ -524,6 +531,7 @@ def apply_kron(self, other: BlockEncoding) -> BlockEncoding:
         num_ops=self.num_ops + other.num_ops,
         is_hermitian=self.is_hermitian and other.is_hermitian,
     )
+
 
 def apply_neg(self) -> BlockEncoding:
     r"""Returns a BlockEncoding of the negated operator.
@@ -656,14 +664,14 @@ def _make_lcu_branch(
 
     branch.__name__ = name
     # Caching the branch body is what keeps the repeated tracing of q_switch cheap:
-    # the tree-based q_switch traces every branch several times (for the loop body,
-    # for both arms of its final conditional) and custom_control/custom_inversion
-    # speculatively trace the controlled and inverted variants on top of that. With
-    # a qached body all but the first of those become pjit cache hits.
+    # the tree-based q_switch traces every branch more than once while unrolling its
+    # walk, and custom_control/custom_inversion speculatively trace the controlled
+    # and inverted variants on top of that. With a qached body all but the first of
+    # those become pjit cache hits.
     return qache(branch)
 
 
-def _identity_lcu_branch(shared_ancilla, *operands) -> None:
+def _identity_lcu_branch(shared_ancilla: QuantumVariable, *operands: QuantumVariable) -> None:
     """Pad the SELECT to a power of two; selected only for zero-amplitude indices."""
 
 
@@ -962,9 +970,9 @@ class LinearCombinationBlockEncoding(BlockEncoding):
             _make_lcu_branch(child_unitary, layout, f"lcu_branch_{term_index}")
             for term_index, (child_unitary, layout) in enumerate(zip(child_unitaries, layouts))
         ]
-        # Padding to the full selector dimension also keeps the branch count even,
-        # which q_switch relies on: it appends an identity branch to an odd list,
-        # and must not be allowed to grow this cached one.
+        # Padding to the full selector dimension covers the selector states that no
+        # term addresses. Those states carry zero amplitude, so the branch chosen
+        # for them never contributes; it only has to leave the operands untouched.
         branches += [_identity_lcu_branch] * ((1 << self._lcu_selector_size) - len(branches))
 
         # PREP acts on real amplitudes whenever the linear combination has no
