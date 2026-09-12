@@ -30,7 +30,7 @@ from jax.typing import ArrayLike
 
 from qrisp.alg_primitives.reflection import reflection
 from qrisp.core import QuantumVariable
-from qrisp.core.gate_application_functions import gphase, h, measure, reset, ry, x, z
+from qrisp.core.gate_application_functions import h, measure, reset, x
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import (
     RUS,
@@ -1034,555 +1034,36 @@ class BlockEncoding:
     # Arithmetic
     #
 
-    def __add__(self, other: BlockEncoding) -> BlockEncoding:
-        r"""Returns a BlockEncoding of the sum of two operators.
-
-        This method implements the linear combination $A + B$ via the LCU
-        (Linear Combination of Unitaries) framework, where $A$ and $B$ are
-        the operators encoded by the respective instances.
-
-        Parameters
-        ----------
-        other : BlockEncoding
-            The BlockEncoding instance to be added.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding instance representing the operator sum.
-
-        Notes
-        -----
-        - Can only be used when both BlockEncodings have the same operand structure.
-        - The ``+`` operator should be used sparingly, primarily to combine a few block encodings.
-          For larger-scale polynomial transformations,
-          Quantum Signal Processing (QSP) is the superior method.
-
-        Examples
-        --------
-        Define two block-encodings and add them.
-
-        ::
-
-            from qrisp import *
-            from qrisp.block_encodings import BlockEncoding
-            from qrisp.operators import X, Y, Z
-
-            H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
-            H2 = Z(0)*Z(1) + X(2)
-            H3 = H1 + H2
-
-            BE1 = BlockEncoding.from_operator(H1)
-            BE2 = BlockEncoding.from_operator(H2)
-            BE3 = BlockEncoding.from_operator(H3)
-
-            BE_add = BE1 + BE2
-
-            def operand_prep():
-                qv = QuantumFloat(3)
-                return qv
-
-            @terminal_sampling
-            def main(BE):
-                qv = BE.apply_rus(operand_prep)()
-                return qv
-
-            res_be3 = main(BE3)
-            res_be_add = main(BE_add)
-            print("Result from BE of H1 + H2: ", res_be3)
-            print("Result from BE1 + BE2: ", res_be_add)
-            # Result from BE of H1 + H2:  {0: 0.37878788804466035, 4: 0.37878788804466035, 3: 0.24242422391067933}
-            # Result from BE1 + BE2:  {0: 0.37878789933341894, 4: 0.37878789933341894, 3: 0.24242420133316217}
-
-        """
-        if not isinstance(other, BlockEncoding):
-            return NotImplemented
-
-        alpha = self.alpha
-        beta = other.alpha
-        m = len(self._anc_templates)
-        n = len(other._anc_templates)
-
-        def prep(qb, arr):
-            theta = 2 * jnp.arctan(arr[1] / arr[0])
-            ry(theta, qb)
-
-        def new_unitary(*args):
-            self_ancs = args[1 : 1 + m]
-            other_ancs = args[1 + m : 1 + m + n]
-            operands = args[1 + m + n :]
-
-            with conjugate(prep)(
-                args[0],
-                jnp.sqrt(jnp.array([alpha, beta]) / (alpha + beta)),
-            ):
-                with control(args[0], ctrl_state=0):
-                    self.unitary(*self_ancs, *operands)
-
-                with control(args[0], ctrl_state=1):
-                    other.unitary(*other_ancs, *operands)
-
-        new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
-        new_alpha = alpha + beta
-        return BlockEncoding(
-            new_alpha,
-            new_anc_templates,
-            new_unitary,
-            num_ops=self.num_ops,
-            is_hermitian=self.is_hermitian and other.is_hermitian,
-        )
-
-    def __sub__(self, other: BlockEncoding) -> BlockEncoding:
-        r"""Returns a BlockEncoding of the difference between two operators.
-
-        This method implements the subtraction $A - B$ using a linear combination
-        of unitaries (LCU), where $A$ is the operator encoded by this instance
-        and $B$ is the operator encoded by 'other'.
-
-        Parameters
-        ----------
-        other : BlockEncoding
-            The BlockEncoding instance to be subtracted.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding representing the operator difference.
-
-        Notes
-        -----
-        - Can only be used when both BlockEncodings have the same operand structure.
-        - The ``-`` operator should be used sparingly, primarily to combine a few block encodings.
-          For larger-scale polynomial transformations,
-          Quantum Signal Processing (QSP) is the superior method.
-
-        Examples
-        --------
-        Define two block-encodings and subtract them.
-
-        ::
-
-            from qrisp import *
-            from qrisp.block_encodings import BlockEncoding
-            from qrisp.operators import X, Y, Z
-
-            H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
-            H2 = Z(0)*Z(1) + X(2)
-            H3 = H1 - H2
-
-            BE1 = BlockEncoding.from_operator(H1)
-            BE2 = BlockEncoding.from_operator(H2)
-            BE3 = BlockEncoding.from_operator(H3)
-
-            BE_sub = BE1 - BE2
-
-            def operand_prep():
-                qv = QuantumFloat(3)
-                return qv
-
-            @terminal_sampling
-            def main(BE):
-                qv = BE.apply_rus(operand_prep)()
-                return qv
-
-            res_be3 = main(BE3)
-            res_be_sub = main(BE_sub)
-            print("Result from BE of H1 - H2: ", res_be3)
-            print("Result from BE1 - BE2: ", res_be_sub)
-            # Result from BE of H1 - H2:  {0: 0.37878788804466035, 4: 0.37878788804466035, 3: 0.24242422391067933}
-            # Result from BE1 - BE2:  {0: 0.37878789933341894, 4: 0.37878789933341894, 3: 0.24242420133316217}
-
-        """
-        if not isinstance(other, BlockEncoding):
-            return NotImplemented
-
-        alpha = self.alpha
-        beta = other.alpha
-        m = len(self._anc_templates)
-        n = len(other._anc_templates)
-
-        def prep(qb, arr):
-            theta = 2 * jnp.arctan(arr[1] / arr[0])
-            ry(theta, qb)
-
-        def new_unitary(*args):
-            self_ancs = args[1 : 1 + m]
-            other_ancs = args[1 + m : 1 + m + n]
-            operands = args[1 + m + n :]
-
-            with conjugate(prep)(
-                args[0],
-                jnp.sqrt(jnp.array([alpha, beta]) / (alpha + beta)),
-            ):
-                z(args[0])  # Apply Z gate to flip the sign for subtraction
-
-                with control(args[0], ctrl_state=0):
-                    self.unitary(*self_ancs, *operands)
-
-                with control(args[0], ctrl_state=1):
-                    other.unitary(*other_ancs, *operands)
-
-        new_anc_templates = [QuantumBool().template()] + self._anc_templates + other._anc_templates
-        new_alpha = alpha + beta
-        return BlockEncoding(
-            new_alpha,
-            new_anc_templates,
-            new_unitary,
-            num_ops=self.num_ops,
-            is_hermitian=self.is_hermitian and other.is_hermitian,
-        )
-
-    def __mul__(self, other: "ArrayLike") -> BlockEncoding:
-        r"""Returns a BlockEncoding of the scaled operator.
-
-        This method implements the scalar multiplication $c \cdot A$, where $A$
-        is the operator encoded by this instance and $c$ is the
-        provided scalar.
-
-        Parameters
-        ----------
-        other : ArrayLike
-            The scalar scaling factor (coefficient) to apply. Can be a Python float,
-            a JAX/NumPy scalar, or a 0-dimensional array.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding instance representing the scaled operator.
-
-        Notes
-        -----
-        - Multiplying by a scalar $c$ results in a new BlockEncoding of $cA$ by updating $\alpha \rightarrow c\alpha$.
-
-        Examples
-        --------
-        Define two block-encodings and implement their scaled sum as a new block encoding.
-
-        ::
-
-            from qrisp import *
-            from qrisp.block_encodings import BlockEncoding
-            from qrisp.operators import X, Y, Z
-
-            # Commuting operators H1 and H2
-            H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
-            H2 = Z(0)*Z(1) + X(2)
-            H3 = 2*H1 + H2
-
-            BE1 = BlockEncoding.from_operator(H1)
-            BE2 = BlockEncoding.from_operator(H2)
-            BE3 = BlockEncoding.from_operator(H3)
-
-            BE_mul = 2*BE1 + BE2
-            BE_mul_r = BE1*2 + BE2
-
-            def operand_prep():
-                qv = QuantumFloat(3)
-                return qv
-
-            @terminal_sampling
-            def main(BE):
-                qv = BE.apply_rus(operand_prep)()
-                return qv
-
-            res_be3 = main(BE3)
-            res_be_mul = main(BE_mul)
-            res_be_mul_r = main(BE_mul_r)
-
-            print("Result from BE of 2 * H1 + H2: ", res_be3)
-            print("Result from 2 * BE1 + BE2: ", res_be_mul)
-            print("Result from BE1 * 2 + BE2: ", res_be_mul_r)
-            # Result from BE of 2 * H1 + H2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
-            # Result from 2 * BE1 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
-            # Result from BE1 * 2 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
-
-        """
-
-        if isinstance(other, ArrayLike):
-
-            def new_unitary(*args):
-                self.unitary(*args)
-                with control(other < 0):
-                    gphase(np.pi, args[0][0])
-
-            return BlockEncoding(
-                self.alpha * jnp.abs(other),
-                self._anc_templates,
-                new_unitary,
-                num_ops=self.num_ops,
-                is_hermitian=self.is_hermitian,
-            )
-
-        return NotImplemented
-
-    def __matmul__(self, other: "BlockEncoding") -> BlockEncoding:
-        r"""Returns a BlockEncoding of the product of two operators.
-
-        This method implements the operator product $A \cdot B$ by composing
-        two BlockEncodings, where $A$ and $B$ are the operators encoded by the respective instances.
-
-        Parameters
-        ----------
-        other : BlockEncoding
-            The BlockEncoding instance to be multiplied.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding representing the operator product.
-
-        Notes
-        -----
-        - Can only be used when both BlockEncodings have the same operand structure.
-        - The ``@`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
-        - The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
-
-        Examples
-        --------
-        Define two block-encodings and multiply them.
-
-        ::
-
-            from qrisp import *
-            from qrisp.block_encodings import BlockEncoding
-            from qrisp.operators import X, Y, Z
-
-            # Commuting operators H1 and H2
-            H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
-            H2 = Z(0)*Z(1) + X(2)
-            H3 = H1 * H2
-
-            BE1 = BlockEncoding.from_operator(H1)
-            BE2 = BlockEncoding.from_operator(H2)
-            BE3 = BlockEncoding.from_operator(H3)
-
-            BE_mul = BE1 @ BE2
-
-            def operand_prep():
-                qv = QuantumFloat(3)
-                return qv
-
-            @terminal_sampling
-            def main(BE):
-                qv = BE.apply_rus(operand_prep)()
-                return qv
-
-            res_be3 = main(BE3)
-            res_be_mul = main(BE_mul)
-            print("Result from BE of H1 * H2: ", res_be3)
-            print("Result from BE1 @ BE2: ", res_be_mul)
-            # Result from BE of H1 * H2:  {3.0: 0.5, 7.0: 0.5}
-            # Result from BE1 @ BE2:  {3.0: 0.5, 7.0: 0.5}
-
-        """
-        if not isinstance(other, BlockEncoding):
-            return NotImplemented
-
-        m = len(self._anc_templates)
-        n = len(other._anc_templates)
-
-        def new_unitary(*args):
-            other_args = args[m : m + n] + args[m + n :]
-            other.unitary(*other_args)
-            self_args = args[:m] + args[m + n :]
-            self.unitary(*self_args)
-
-        new_anc_templates = self._anc_templates + other._anc_templates
-        new_alpha = self.alpha * other.alpha
-        return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops)
-
-    __radd__ = __add__
-    __rmul__ = __mul__
-
-    def kron(self, other: BlockEncoding) -> BlockEncoding:
-        r"""Returns a BlockEncoding of the Kronecker product (tensor product) of two operators.
-
-        This method implements the operator $A \otimes B$, where $A$ and $B$ are
-        the operators encoded by the respective instances. Following the
-        construction in Chapter 10.2 in `Dalzell et al. <https://arxiv.org/abs/2310.03011>`_,
-        the resulting BlockEncoding is formed by the tensor product of the underlying unitaries, $U_A \otimes U_B$.
-
-        Parameters
-        ----------
-        other : BlockEncoding
-            The BlockEncoding instance to be tensored.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding representing the tensor product $A \otimes B$.
-
-        Notes
-        -----
-        - **Normalization**: The normalization factors ($\alpha$) are combined multiplicatively.
-        - The ``kron`` operator maps the operands of self to the first set of operands and the operands of other to the remaining operands in a single unified unitary.
-        - The ``kron`` operator should be used sparingly, primarily to combine a few block encodings.
-        - A more qubit-efficient implementation of the Kronecker product can be found in `this paper <https://arxiv.org/pdf/2509.15779>`_ and will be implemented in future updates.
-
-        Examples
-        --------
-        **Example 1:**
-
-        Define two block-encodings and perform their Kronecker product.
-
-        ::
-
-            from qrisp import *
-            from qrisp.block_encodings import BlockEncoding
-            from qrisp.operators import X, Y, Z
-
-            H1 = X(0)*X(1) + 0.2*Y(0)*Y(1)
-            H2 = Z(0)*Z(1) + X(2)
-
-            BE1 = BlockEncoding.from_operator(H1)
-            BE2 = BlockEncoding.from_operator(H2)
-
-            BE_composed = BE1.kron(BE2)
-
-            n1 = H1.find_minimal_qubit_amount()
-            n2 = H2.find_minimal_qubit_amount()
-
-            def operand_prep():
-                qv1 = QuantumVariable(n1)
-                qv2 = QuantumVariable(n2)
-                return qv1, qv2
-
-            @terminal_sampling
-            def main(BE):
-                return BE.apply_rus(operand_prep)()
-
-            result = main(BE_composed)
-            print("Result from BE1.kron(BE2): ", result)
-
-        **Example 2:**
-
-        Perform multiple Kronecker products of block-encodings in sequence.
-
-        ::
-
-            from qrisp import *
-            from qrisp.operators import X, Y, Z
-
-            H1 = X(0)*X(1)
-            H2 = Z(0)*Z(1)
-            H3 = Y(0)*Y(1)
-
-            BE1 = BlockEncoding.from_operator(H1)
-            BE2 = BlockEncoding.from_operator(H2)
-            BE3 = BlockEncoding.from_operator(H3)
-
-            # Compose BE1 with the composition of BE2 and BE3
-            BE_composed = BE1.kron(BE2.kron(BE3))
-
-            n1 = H1.find_minimal_qubit_amount()
-            n2 = H2.find_minimal_qubit_amount()
-            n3 = H3.find_minimal_qubit_amount()
-
-            def operand_prep():
-                qv1 = QuantumVariable(n1)
-                qv2 = QuantumVariable(n2)
-                qv3 = QuantumVariable(n3)
-                return qv1, qv2, qv3
-
-            @terminal_sampling
-            def main(BE):
-                return BE.apply_rus(operand_prep)()
-
-            result = main(BE_composed)
-            print("Result from BE1.kron(BE2.kron(BE3)): ", result)
-
-        """
-        m = len(self._anc_templates)
-        n = len(other._anc_templates)
-
-        def new_unitary(*args):
-            self_ancs = args[:m]
-            other_ancs = args[m : m + n]
-            operands = args[m + n :]
-
-            self.unitary(*self_ancs, *operands[: self.num_ops])
-            other.unitary(*other_ancs, *operands[self.num_ops :])
-
-        new_anc_templates = self._anc_templates + other._anc_templates
-        new_alpha = self.alpha * other.alpha
-        return BlockEncoding(
-            new_alpha,
-            new_anc_templates,
-            new_unitary,
-            num_ops=self.num_ops + other.num_ops,
-            is_hermitian=self.is_hermitian and other.is_hermitian,
-        )
-
-    def __neg__(self) -> BlockEncoding:
-        r"""Returns a BlockEncoding of the negated operator.
-
-        This method implements the transformation $A \to -A$ by scaling the
-        encoded operator by $-1$.
-
-        Returns
-        -------
-        BlockEncoding
-            A new BlockEncoding instance representing the operator $-A$.
-
-        Examples
-        --------
-        Define a block-encoding and negate it.
-
-        ::
-
-            from qrisp import *
-            from qrisp.block_encodings import BlockEncoding
-            from qrisp.operators import X, Y, Z
-
-            H1 = X(0)*X(1) - 0.2*Y(0)*Y(1)
-            H2 = 0.2*Y(0)*Y(1) - X(0)*X(1)
-
-            BE1 = BlockEncoding.from_operator(H1)
-            BE2 = BlockEncoding.from_operator(H2)
-            BE3 = -BE1
-
-            def operand_prep():
-                qv = QuantumFloat(3)
-                return qv
-
-            @terminal_sampling
-            def main(BE):
-                qv = BE.apply_rus(operand_prep)()
-                return qv
-
-            res_be2 = main(BE2)
-            res_be_neg = main(BE3)
-
-            print("Result from BE of H2 = - H1: ", res_be2)
-            print("Result from - BE1: ", res_be_neg)
-            # Result from BE of H2 = - H1:  {3.0: 1.0}
-            # Result from - BE1:  {3.0: 1.0}
-
-        """
-
-        def new_unitary(*args):
-            self.unitary(*args)
-            gphase(np.pi, args[0][0])
-
-        return BlockEncoding(
-            self.alpha,
-            self._anc_templates,
-            new_unitary,
-            num_ops=self.num_ops,
-            is_hermitian=self.is_hermitian,
-        )
+    def _get_lcu_terms(self) -> _LCUTerms:
+        return ((1, self),)
 
     # ------------------------------------------------------------------
     # The methods below are attached to this class after its definition, in
     # block_encoding.py: each one is implemented in its own module under
-    # constructors/ or transformations/, and each of those modules needs to
-    # import BlockEncoding itself, so importing them here at runtime would
-    # be circular. Re-declaring them under TYPE_CHECKING (never executed at
-    # runtime) makes them visible to type checkers as ordinary members of
-    # this class, without changing any runtime behaviour or reintroducing
-    # that circular import.
+    # constructors/ or transformations/, or in block_encoding_combination.py,
+    # and each of those modules needs to import BlockEncoding itself, so
+    # importing them here at runtime would be circular. Re-declaring them
+    # under TYPE_CHECKING (never executed at runtime) makes them visible to
+    # type checkers as ordinary members of this class, without changing any
+    # runtime behaviour or reintroducing that circular import.
+    #
+    # The arithmetic operators live in block_encoding_combination.py because
+    # they construct the composite encodings defined there, which in turn
+    # subclass this class. Keeping them there is what makes that dependency
+    # run one way only.
     # ------------------------------------------------------------------
     if TYPE_CHECKING:
+        from .block_encoding_combination import (
+            apply_add,
+            apply_kron,
+            apply_matmul,
+            apply_mul,
+            apply_neg,
+            apply_radd,
+            apply_sub,
+            build_from_lcu_terms,
+            build_linear_combination,
+        )
         from .constructors import (
             build_from_array,
             build_from_eye,
@@ -1613,3 +1094,19 @@ class BlockEncoding:
         pseudo_inv = apply_pseudo_inv
         sim = apply_sim
         svt = apply_svt
+
+        linear_combination = classmethod(build_linear_combination)
+        _from_lcu_terms = classmethod(build_from_lcu_terms)
+
+        __add__ = apply_add
+        __radd__ = apply_radd
+        __sub__ = apply_sub
+        __mul__ = apply_mul
+        __rmul__ = apply_mul
+        __matmul__ = apply_matmul
+        __neg__ = apply_neg
+        kron = apply_kron
+
+
+_LCUTerm = tuple[ArrayLike, BlockEncoding]
+_LCUTerms = tuple[_LCUTerm, ...]
