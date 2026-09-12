@@ -36,6 +36,7 @@ import numpy as np
 import pytest
 
 from qrisp import QuantumFloat, QuantumVariable, make_jaspr, terminal_sampling, x
+from qrisp.jasp import count_ops, depth, num_qubits
 from qrisp.block_encodings import BlockEncoding, ProductBlockEncoding
 from qrisp.operators import X, Y, Z
 
@@ -247,3 +248,52 @@ def test_product_of_linear_combinations_is_numerically_unchanged():
 
     for state in range(2):
         assert np.isclose(composite_result.get(state, 0), reference_result.get(state, 0))
+
+
+#
+# Cached state must not outlive the trace that built it
+#
+
+
+@pytest.mark.parametrize("strategy", STRATEGIES)
+@pytest.mark.parametrize(
+    "name, build",
+    [
+        ("two factors", lambda: [BlockEncoding.from_eye(0), BlockEncoding.from_eye(1)]),
+        ("single factor", lambda: [BlockEncoding.from_eye(1)]),
+        (
+            "factors with ancillas",
+            lambda: [
+                BlockEncoding(1, [QuantumFloat(2)], lambda a, o: x(o[0])),
+                BlockEncoding(1, [QuantumFloat(1)], lambda a, o: x(o[1])),
+            ],
+        ),
+        (
+            "factors that are sums",
+            lambda: [
+                BlockEncoding(1, [], lambda o: x(o[0])) + BlockEncoding(1, [], lambda o: x(o[1])),
+                BlockEncoding(1, [], lambda o: x(o[1])) + BlockEncoding(1, [], lambda o: x(o[0])),
+            ],
+        ),
+    ],
+)
+def test_product_survives_reuse_across_transformations(name, build, strategy):
+    """A cached template or unitary must not carry a tracer out of its own trace.
+
+    Ancilla templates record their register size, and in Jasp that size is a tracer,
+    so a template or a closure over a layout first built inside a trace cannot be
+    cached. Caching them made a second transformation over the same product fail
+    with UnexpectedTracerError.
+    """
+    product = ProductBlockEncoding(build(), strategy=strategy)
+
+    def circuit():
+        operand = QuantumFloat(4)
+        product.apply(operand)
+        return operand
+
+    make_jaspr(circuit)()
+    count_ops(meas_behavior="0")(circuit)()
+    depth(meas_behavior="0")(circuit)()
+    num_qubits(meas_behavior="0")(circuit)()
+    make_jaspr(circuit)()

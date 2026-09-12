@@ -122,6 +122,15 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed an ``UnexpectedTracerError`` raised when the same block encoding built
+  from ``+``, ``-`` or ``@`` was used under two different JAX transformations, for
+  instance traced with :func:`make_jaspr <qrisp.make_jaspr>` and then profiled with
+  :func:`count_ops <qrisp.count_ops>`. Ancilla templates record the size of the
+  register they construct, and reading that size off a variable inside a Jasp trace
+  yields a tracer. Composite block encodings now record the statically known size
+  instead, so their templates no longer belong to the trace that built them, and a
+  template that does is not cached.
+
 * Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
   Unitary matrices are now computed in ``complex128`` precision, removing the
   spurious ~1e-7 off-diagonal entries that previously appeared where a

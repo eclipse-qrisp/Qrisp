@@ -614,6 +614,31 @@ def _canonicalize_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     )
 
 
+def _template_of_size(quantum_variable: QuantumVariable, size: Any) -> QuantumVariableTemplate:
+    """Return a template for ``quantum_variable`` that records ``size`` statically.
+
+    A template records the size of the register it constructs, and it reads that
+    size off the variable, which inside a Jasp trace is a tracer. A template built
+    that way cannot be reused outside the trace that produced it: handing it to a
+    later transformation raises an UnexpectedTracerError. Whenever the size is
+    already known as a plain int, recording that int instead keeps the template
+    independent of any trace, and therefore cacheable.
+    """
+    template = quantum_variable.template()
+    if isinstance(size, int):
+        template.qv_size = size
+    return template
+
+
+def _is_trace_independent(templates: Sequence[QuantumVariableTemplate]) -> bool:
+    """Return whether ancilla templates can be reused outside the trace that built them.
+
+    Templates whose size is a tracer belong to the trace that built them and must
+    not be cached; see :func:`_template_of_size`.
+    """
+    return all(not isinstance(template.qv_size, jax.core.Tracer) for template in templates)
+
+
 def _make_lcu_branch(
     child_unitary: Callable[..., None],
     layout: _AncillaLayout,
@@ -888,15 +913,18 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
         if len(self.terms) == 1:
             templates = tuple(self.terms[0][1]._anc_templates)
-            object.__setattr__(self, "_cached_anc_templates", templates)
+            if _is_trace_independent(templates):
+                object.__setattr__(self, "_cached_anc_templates", templates)
             return list(templates)
 
         layouts = self._lcu_layouts
+        selector_size = self._lcu_selector_size
+        workspace_size = _maximum_layout_size(layouts)
         templates = (
-            QuantumFloat(self._lcu_selector_size).template(),
-            QuantumVariable(_maximum_layout_size(layouts)).template(),
+            _template_of_size(QuantumFloat(selector_size), selector_size),
+            _template_of_size(QuantumVariable(workspace_size), workspace_size),
         )
-        if all(layout.has_static_sizes for layout in layouts):
+        if _is_trace_independent(templates):
             object.__setattr__(self, "_cached_anc_templates", templates)
         return list(templates)
 
@@ -1118,18 +1146,21 @@ class ProductBlockEncoding(BlockEncoding):
         if self.strategy == "qubit_efficient":
             if len(self.factors) == 1:
                 templates = tuple(self.factors[0]._anc_templates)
+                cacheable = _is_trace_independent(templates)
             elif all(factor.num_ancs == 0 for factor in self.factors):
                 templates = ()
             else:
                 layouts = self._product_layouts
                 shift_size = (len(self.factors) - 1).bit_length()
+                workspace_size = _maximum_layout_size(layouts)
                 templates = (
-                    QuantumFloat(shift_size).template(),
-                    QuantumVariable(_maximum_layout_size(layouts)).template(),
+                    _template_of_size(QuantumFloat(shift_size), shift_size),
+                    _template_of_size(QuantumVariable(workspace_size), workspace_size),
                 )
-                cacheable = all(layout.has_static_sizes for layout in layouts)
+                cacheable = _is_trace_independent(templates)
         else:
             templates = tuple(template for factor in self.factors for template in factor._anc_templates)
+            cacheable = _is_trace_independent(templates)
 
         if cacheable:
             object.__setattr__(self, "_cached_anc_templates", templates)
@@ -1144,7 +1175,12 @@ class ProductBlockEncoding(BlockEncoding):
 
         unitary = self._build_unitary_qubit_efficient() if self.strategy == "qubit_efficient" else self._build_unitary_separate()
 
-        if all(factor._has_reusable_unitary for factor in self.factors):
+        # The closure captures the factor layouts, so those have to be free of
+        # traced sizes too, not just the factor unitaries it dispatches to.
+        cacheable = all(factor._has_reusable_unitary for factor in self.factors) and all(
+            layout.has_static_sizes for layout in self._product_layouts
+        )
+        if cacheable:
             object.__setattr__(self, "_cached_unitary", unitary)
         return unitary
 

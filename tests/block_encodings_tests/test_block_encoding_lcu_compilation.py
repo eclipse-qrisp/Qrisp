@@ -43,6 +43,7 @@ import numpy as np
 import pytest
 
 from qrisp import QuantumFloat, QuantumVariable, make_jaspr, terminal_sampling, x
+from qrisp.jasp import count_ops, depth, num_qubits
 from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding
 from qrisp.operators import X, Y, Z
 
@@ -277,3 +278,57 @@ def test_nested_linear_combination_is_numerically_unchanged(H1, H2, H3):
 
     for state in range(2**qubit_amount):
         assert np.isclose(nested_result.get(state, 0), reference_result.get(state, 0))
+
+
+#
+# Cached state must not outlive the trace that built it
+#
+
+
+def _reuse_across_transformations(encoding, operand_size=4):
+    """Apply one encoding under several JAX transformations, reusing the same object.
+
+    Anything the encoding cached during the first trace is handed to the later ones.
+    A cached value holding a tracer from the first trace raises UnexpectedTracerError
+    here, which is what makes this the shape that catches the regression.
+    """
+
+    def circuit():
+        operand = QuantumFloat(operand_size)
+        encoding.apply(operand)
+        return operand
+
+    make_jaspr(circuit)()
+    count_ops(meas_behavior="0")(circuit)()
+    depth(meas_behavior="0")(circuit)()
+    num_qubits(meas_behavior="0")(circuit)()
+    make_jaspr(circuit)()
+
+
+def _first():
+    return BlockEncoding(1, [], lambda operand: x(operand[0]))
+
+
+def _second():
+    return BlockEncoding(1, [], lambda operand: x(operand[1]))
+
+
+@pytest.mark.parametrize(
+    "name, build",
+    [
+        ("two terms", lambda: _first() + _second()),
+        ("three terms", lambda: _first() + _second() + _first()),
+        ("scaled", lambda: 2.5 * (_first() + _second())),
+        ("difference", lambda: _first() - _second()),
+        ("terms with ancillas", lambda: BlockEncoding(1, [QuantumFloat(2)], lambda a, o: x(o[0])) + _second()),
+        ("sum of products", lambda: (_first() @ _second()) + (_second() @ _first())),
+    ],
+)
+def test_linear_combination_survives_reuse_across_transformations(name, build):
+    """A cached template must never carry a tracer out of the trace that built it.
+
+    Ancilla templates record their register size, and in Jasp that size is a tracer,
+    so a template first built inside a trace cannot be cached. Caching it made the
+    second transformation fail with UnexpectedTracerError.
+    """
+    _reuse_across_transformations(build())
