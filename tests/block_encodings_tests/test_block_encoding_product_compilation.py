@@ -36,8 +36,8 @@ import numpy as np
 import pytest
 
 from qrisp import QuantumFloat, QuantumVariable, make_jaspr, terminal_sampling, x
-from qrisp.jasp import count_ops, depth, num_qubits
 from qrisp.block_encodings import BlockEncoding, ProductBlockEncoding
+from qrisp.jasp import count_ops, depth, num_qubits
 from qrisp.operators import X, Y, Z
 
 STRATEGIES = ["qubit_efficient", "separate"]

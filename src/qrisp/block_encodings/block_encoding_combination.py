@@ -1181,7 +1181,11 @@ class ProductBlockEncoding(BlockEncoding):
         if cached is not None:
             return cached
 
-        unitary = self._build_unitary_qubit_efficient() if self.strategy == "qubit_efficient" else self._build_unitary_separate()
+        unitary = (
+            self._build_unitary_qubit_efficient()
+            if self.strategy == "qubit_efficient"
+            else self._build_unitary_separate()
+        )
 
         # The closure captures the factor layouts, so those have to be free of
         # traced sizes too, not just the factor unitaries it dispatches to.
