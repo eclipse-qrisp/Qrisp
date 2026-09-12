@@ -60,7 +60,9 @@ class _AncillaLayout:
     total_size: Any
 
     @classmethod
-    def from_templates(cls, templates: list[QuantumVariableTemplate] | tuple[QuantumVariableTemplate, ...]):
+    def from_templates(
+        cls, templates: list[QuantumVariableTemplate] | tuple[QuantumVariableTemplate, ...]
+    ) -> _AncillaLayout:
         """Create a layout from an ordered collection of ancilla templates."""
         templates = tuple(templates)
         sizes = tuple(template.qv_size for template in templates)
@@ -88,7 +90,7 @@ class _AncillaLayout:
         return views
 
 
-def _maximum_layout_size(layouts: list[_AncillaLayout] | tuple[_AncillaLayout, ...]):
+def _maximum_layout_size(layouts: list[_AncillaLayout] | tuple[_AncillaLayout, ...]) -> Any:
     """Return the largest total workspace size across the supplied layouts.
 
     The result is a plain Python int whenever every layout has static sizes, so
