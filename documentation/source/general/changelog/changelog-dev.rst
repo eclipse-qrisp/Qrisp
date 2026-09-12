@@ -49,6 +49,14 @@ New Features
 Improvements
 ------------
 
+- **Cheaper tracing for** :func:`q_switch <qrisp.q_switch>`
+  The ``"tree"`` method resolves conditionals whose predicate is already known at
+  trace time instead of tracing both arms and discarding one. The emitted circuit
+  is unchanged; the traced program is roughly half the size and compiles about
+  twice as fast for larger switches (2807 to 1308 equations and 1.71 s to 0.77 s
+  for 16 branches). Predicates that genuinely depend on run-time values, such as a
+  ``branch_amount`` that is itself traced, still go through ``q_cond``.
+
 - :class:`~qrisp.interface.QiskitJob` and :class:`~qrisp.interface.AQTJob`
   now skip the live provider query and return the cached status once a job
   is done, cancelled, or errored. The :class:`~qrisp.interface.Job` base
@@ -106,6 +114,12 @@ Other New Features
 
 Bug Fixes
 ---------
+
+* Fixed two issues in :func:`q_switch <qrisp.q_switch>` affecting branch lists of
+  odd length. The padding branch the ``"tree"`` method appends now accepts every
+  operand, so an odd branch list no longer raises a ``TypeError`` in Jasp mode
+  when more than one operand is passed, and the padding is appended to a copy
+  rather than to the caller's list.
 
 * Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
   Unitary matrices are now computed in ``complex128`` precision, removing the

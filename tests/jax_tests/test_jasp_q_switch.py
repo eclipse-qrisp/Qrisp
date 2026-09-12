@@ -397,3 +397,135 @@ def test_jasp_q_switch_tree_list_control():
                     assert r == 0
                 else:
                     assert r == index_val
+
+
+def test_jasp_q_switch_odd_branch_count_with_multiple_operands():
+    """An odd branch list must still work in Jasp when several operands are passed.
+
+    The tree pads an odd list with an identity branch, and that branch is invoked
+    with every operand, so it has to accept them.
+    """
+    from qrisp import QuantumFloat, jaspify, measure, q_switch, x
+
+    @jaspify
+    def main(index_value):
+
+        def f0(a, b):
+            x(a[0])
+
+        def f1(a, b):
+            x(b[0])
+
+        def f2(a, b):
+            x(a[1])
+
+        first = QuantumFloat(3)
+        second = QuantumFloat(3)
+        index = QuantumFloat(2)
+        index[:] = index_value
+
+        q_switch(index, [f0, f1, f2], first, second, method="tree")
+
+        return measure(first), measure(second)
+
+    assert main(0) == (1.0, 0.0)
+    assert main(1) == (0.0, 1.0)
+    assert main(2) == (2.0, 0.0)
+
+
+def test_jasp_q_switch_does_not_mutate_the_branch_list():
+    """The odd-length padding branch must not be appended to the caller's list."""
+    from qrisp import QuantumFloat, jaspify, measure, q_switch
+
+    def f0(x):
+        x += 1
+
+    def f1(x):
+        x += 2
+
+    def f2(x):
+        x += 3
+
+    branches = [f0, f1, f2]
+    expected = list(branches)
+
+    @jaspify
+    def main():
+        operand = QuantumFloat(4)
+        index = QuantumFloat(2)
+        q_switch(index, branches, operand, method="tree")
+        return measure(operand)
+
+    main()
+
+    assert branches == expected
+
+
+def test_jasp_q_switch_traced_branch_amount_matches_static():
+    """A branch_amount that is only known at run time must behave like a static one.
+
+    Every consumer of branch_amount inside the tree and sequential methods is
+    tracer-tolerant, and the tree method's x_cond falls back to q_cond for traced
+    predicates. This pins that behaviour down, since resolving those predicates
+    eagerly would silently change the result.
+    """
+    from qrisp import QuantumFloat, jaspify, measure, q_switch
+
+    def run(method, num_branches, index_value, traced):
+
+        @jaspify
+        def main(amount):
+
+            def branches(i, operand):
+                operand += i + 1
+
+            operand = QuantumFloat(5)
+            index = QuantumFloat(2)
+            index[:] = index_value
+            q_switch(
+                index,
+                branches,
+                operand,
+                branch_amount=amount if traced else num_branches,
+                method=method,
+            )
+            return measure(operand)
+
+        return main(num_branches)
+
+    for method in ("tree", "sequential"):
+        for num_branches in (2, 3, 4):
+            for index_value in range(num_branches):
+                static_result = run(method, num_branches, index_value, traced=False)
+                traced_result = run(method, num_branches, index_value, traced=True)
+                assert static_result == traced_result == index_value + 1
+
+
+def test_jasp_q_switch_tree_traces_each_branch_a_bounded_number_of_times():
+    """The tree method must not re-trace branches once per statically-known case.
+
+    Most predicates driving the walk are plain Python values, and tracing both arms
+    of those multiplied the cost of every branch body. The exact constant depends on
+    custom_control and custom_inversion building their variants, so this asserts a
+    bound rather than an exact count, and that the bound does not grow with the
+    number of branches.
+    """
+    from qrisp import QuantumFloat, make_jaspr, q_switch, x
+
+    def traces_per_branch(num_branches):
+        executions = []
+
+        def circuit():
+            operand = QuantumFloat(5)
+            index = QuantumFloat(max(1, (num_branches - 1).bit_length()))
+            branches = [(lambda operand, i=i: (executions.append(i), x(operand[0]))[1]) for i in range(num_branches)]
+            q_switch(index, branches, operand, method="tree")
+            return operand
+
+        make_jaspr(circuit)()
+        return len(executions) / num_branches
+
+    counts = [traces_per_branch(n) for n in (2, 4, 8)]
+
+    assert all(count <= 8 for count in counts), f"branch bodies traced too often: {counts}"
+    assert counts[-1] <= counts[0], f"tracing cost per branch grows with branch count: {counts}"
