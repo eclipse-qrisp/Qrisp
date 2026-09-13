@@ -160,7 +160,7 @@ def test_product_nested_in_linear_combination_does_not_amplify_tracing():
         trace_counts.append(len(executions))
 
     assert len(set(trace_counts)) == 1, f"tracing cost grows with nesting depth: {trace_counts}"
-    assert trace_counts[0] <= 2, f"innermost factor traced {trace_counts[0]} times"
+    assert trace_counts[0] == 1, f"innermost factor traced {trace_counts[0]} times"
 
 
 def test_shared_factor_is_traced_once_across_products():

@@ -128,11 +128,15 @@ def test_nested_linear_combinations_do_not_amplify_tracing():
     trace_counts = [_count_child_traces(depth) for depth in (1, 2, 3)]
 
     assert len(set(trace_counts)) == 1, f"tracing cost grows with nesting depth: {trace_counts}"
-    assert trace_counts[0] <= 2, f"child traced {trace_counts[0]} times for a single linear combination"
+    assert trace_counts[0] == 1, f"child traced {trace_counts[0]} times for a single linear combination"
 
 
-def test_repeated_use_of_a_linear_combination_traces_the_child_once():
-    """Applying the same linear combination twice must not trace its children twice."""
+def _count_child_traces_per_application(application_count):
+    """Apply one linear combination ``application_count`` times to the same operand.
+
+    Returns how often the Python body of one of its terms was executed while
+    tracing, which must not depend on how often the combination was applied.
+    """
     executions = []
 
     def counted(operand):
@@ -143,13 +147,25 @@ def test_repeated_use_of_a_linear_combination_traces_the_child_once():
 
     def circuit():
         operand = QuantumFloat(3)
-        encoding.apply(operand)
-        encoding.apply(operand)
+        for _ in range(application_count):
+            encoding.apply(operand)
         return operand
 
     make_jaspr(circuit)()
+    return len(executions)
 
-    assert len(executions) <= 2
+
+def test_repeated_use_of_a_linear_combination_traces_the_child_once():
+    """Applying the same linear combination repeatedly must not re-trace its terms.
+
+    The cached unitary and SELECT branches are what make the second application a
+    cache hit, so the cost has to stay flat in the number of applications rather
+    than merely bounded.
+    """
+    trace_counts = [_count_child_traces_per_application(count) for count in (1, 2, 3)]
+
+    assert len(set(trace_counts)) == 1, f"tracing cost grows with the number of applications: {trace_counts}"
+    assert trace_counts[0] == 1, f"child traced {trace_counts[0]} times for a single application"
 
 
 #
