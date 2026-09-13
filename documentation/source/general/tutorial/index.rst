@@ -385,6 +385,8 @@ So, take these concepts, experiment, and start building the future of quantum co
    :hidden:
    
    tutorial.ipynb
+   Jasp.ipynb
+   RunQrisp.ipynb
    Shor.ipynb
    TSP.ipynb
    QAOAtutorial/index
@@ -392,7 +394,6 @@ So, take these concepts, experiment, and start building the future of quantum co
    CD.ipynb
    Sudoku.ipynb
    QMCItutorial.ipynb
-   Jasp.ipynb
    JaspQAOAtutorial.ipynb
    FT_compilation.ipynb
    BigInteger.ipynb
@@ -400,4 +401,3 @@ So, take these concepts, experiment, and start building the future of quantum co
    BE_tutorial/index
    GQSP_filtering.ipynb
    HHL.ipynb
-   RunQrisp.ipynb
