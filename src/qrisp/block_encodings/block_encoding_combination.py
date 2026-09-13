@@ -650,7 +650,7 @@ def _is_trace_independent(templates: Sequence[QuantumVariableTemplate]) -> bool:
 def _make_lcu_branch(
     child_unitary: Callable[..., None],
     layout: _AncillaLayout,
-    name: str,
+    term_index: int,
 ) -> Callable[..., None]:
     """Build one SELECT branch applying ``child_unitary`` to views into the workspace.
 
@@ -662,7 +662,10 @@ def _make_lcu_branch(
     def branch(shared_ancilla, *operands):
         child_unitary(*layout.construct_views(shared_ancilla), *operands)
 
-    branch.__name__ = name
+    # qache carries this name onto the jit equation it emits, so the traced program
+    # names the term each branch came from instead of repeating "branch". It plays
+    # no part in the caching, which is keyed on the branch object itself.
+    branch.__name__ = f"lcu_branch_{term_index}"
     # Caching the branch body is what keeps the repeated tracing of q_switch cheap:
     # the tree-based q_switch traces every branch more than once while unrolling its
     # walk, and custom_control/custom_inversion speculatively trace the controlled
@@ -675,7 +678,7 @@ def _identity_lcu_branch(shared_ancilla: QuantumVariable, *operands: QuantumVari
     """Pad the SELECT to a power of two; selected only for zero-amplitude indices."""
 
 
-def _make_product_step(child_unitary: Callable[..., None], name: str) -> Callable[..., None]:
+def _make_product_step(child_unitary: Callable[..., None], factor_index: int) -> Callable[..., None]:
     """Build one product step applying ``child_unitary`` to the ancillas it is handed.
 
     Used by the separate strategy, where every factor owns its ancillas and simply
@@ -685,14 +688,14 @@ def _make_product_step(child_unitary: Callable[..., None], name: str) -> Callabl
     def step(*args):
         child_unitary(*args)
 
-    step.__name__ = name
+    step.__name__ = f"product_step_{factor_index}"
     return qache(step)
 
 
 def _make_product_workspace_step(
     child_unitary: Callable[..., None],
     layout: _AncillaLayout,
-    name: str,
+    factor_index: int,
 ) -> Callable[..., None]:
     """Build one product step applying ``child_unitary`` to views into the workspace.
 
@@ -704,14 +707,13 @@ def _make_product_workspace_step(
     def step(shared_workspace, *operands):
         child_unitary(*layout.construct_views(shared_workspace), *operands)
 
-    step.__name__ = name
+    step.__name__ = f"product_step_{factor_index}"
     return qache(step)
 
 
 def _build_product_steps(
     factors: _ProductFactors,
     layouts: tuple[_AncillaLayout, ...] | None,
-    name_prefix: str,
 ) -> tuple[Callable[..., None], ...]:
     """Build one qached step per factor, sharing the step between repeated factors.
 
@@ -730,7 +732,6 @@ def _build_product_steps(
     for index, factor in enumerate(factors):
         child_unitary = factor.unitary
         layout = layouts[index] if layouts is not None else None
-        name = f"{name_prefix}_{index}"
 
         try:
             key = hash((child_unitary, layout)), child_unitary, layout
@@ -740,9 +741,9 @@ def _build_product_steps(
         step = steps_by_key.get(key) if key is not None else None
         if step is None:
             step = (
-                _make_product_step(child_unitary, name)
+                _make_product_step(child_unitary, index)
                 if layout is None
-                else _make_product_workspace_step(child_unitary, layout, name)
+                else _make_product_workspace_step(child_unitary, layout, index)
             )
             if key is not None:
                 steps_by_key[key] = step
@@ -967,7 +968,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         child_unitaries = [block_encoding.unitary for _, block_encoding in self.terms]
 
         branches = [
-            _make_lcu_branch(child_unitary, layout, f"lcu_branch_{term_index}")
+            _make_lcu_branch(child_unitary, layout, term_index)
             for term_index, (child_unitary, layout) in enumerate(zip(child_unitaries, layouts))
         ]
         # Padding to the full selector dimension covers the selector states that no
@@ -1205,7 +1206,7 @@ class ProductBlockEncoding(BlockEncoding):
         """Build the unitary that composes factors with separate ancillas."""
         factor_ancilla_counts = tuple(factor.num_ancs for factor in self.factors)
         total_ancillas = sum(factor_ancilla_counts)
-        steps = _build_product_steps(self.factors, None, "product_step")
+        steps = _build_product_steps(self.factors, None)
 
         def unitary(*args):
             operands = args[total_ancillas:]
@@ -1224,7 +1225,7 @@ class ProductBlockEncoding(BlockEncoding):
         """Build the unitary using one shared workspace and a shift register."""
         if len(self.factors) == 1 or all(factor.num_ancs == 0 for factor in self.factors):
             num_ancs = self.num_ancs
-            steps = _build_product_steps(self.factors, None, "product_step")
+            steps = _build_product_steps(self.factors, None)
 
             def unitary(*args):
                 operands = args[num_ancs:]
@@ -1235,7 +1236,7 @@ class ProductBlockEncoding(BlockEncoding):
             return unitary
 
         factor_layouts = self._product_layouts
-        workspace_steps = _build_product_steps(self.factors, factor_layouts, "product_step")
+        workspace_steps = _build_product_steps(self.factors, factor_layouts)
 
         def unitary(*args):
             shift_register = args[0]
