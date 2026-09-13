@@ -62,7 +62,13 @@ def _is_non_negative_real(value: Any) -> bool:
     return bool(np.all(np.isreal(value)) and np.all(np.real(value) >= 0))
 
 
-def build_linear_combination(
+# The functions below are written as methods but defined at module level, and
+# block_encoding.py attaches them to BlockEncoding. pydocstyle only exempts a
+# receiver argument for functions written inside a class body, so it reports the
+# self and cls of each one as an undocumented parameter; the noqa markers below
+# suppress that. Sphinx renders them as bound methods, so the receiver never
+# reaches the reader and documenting it would only add noise.
+def build_linear_combination(  # noqa: D417
     cls,
     block_encodings: list[BlockEncoding],
     coefficients: "ArrayLike | None" = None,
@@ -126,7 +132,7 @@ def build_from_lcu_terms(cls, terms: Sequence[_LCUTerm]) -> BlockEncoding:
     return LinearCombinationBlockEncoding(terms)
 
 
-def apply_add(self, other: BlockEncoding) -> BlockEncoding:
+def apply_add(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
     r"""Returns a BlockEncoding of the sum of two operators.
 
     This method implements the addition $A + B$ via the LCU
@@ -193,7 +199,7 @@ def apply_add(self, other: BlockEncoding) -> BlockEncoding:
     return type(self)._from_lcu_terms(self._get_lcu_terms() + other._get_lcu_terms())
 
 
-def apply_sub(self, other: BlockEncoding) -> BlockEncoding:
+def apply_sub(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
     r"""Returns a BlockEncoding of the difference between two operators.
 
     This method implements the subtraction $A - B$ via the LCU
@@ -261,7 +267,7 @@ def apply_sub(self, other: BlockEncoding) -> BlockEncoding:
     return type(self)._from_lcu_terms(self._get_lcu_terms() + other_terms)
 
 
-def apply_mul(self, other: "ArrayLike") -> BlockEncoding:
+def apply_mul(self, other: "ArrayLike") -> BlockEncoding:  # noqa: D417
     r"""Returns a BlockEncoding of the scaled operator.
 
     This method implements the scalar multiplication $c \cdot A$, where $A$
@@ -326,7 +332,6 @@ def apply_mul(self, other: "ArrayLike") -> BlockEncoding:
         # Result from BE1 * 2 + BE2:  {3.0: 0.5614033770142979, 0.0: 0.21929831149285103, 4.0: 0.21929831149285103}
 
     """
-
     if isinstance(other, ArrayLike):
         terms = [(other * coefficient, block_encoding) for coefficient, block_encoding in self._get_lcu_terms()]
         return type(self)._from_lcu_terms(terms)
@@ -334,7 +339,7 @@ def apply_mul(self, other: "ArrayLike") -> BlockEncoding:
     return NotImplemented
 
 
-def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:
+def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
     r"""Returns a BlockEncoding of the product of two operators.
 
     This method implements the operator product $A \cdot B$ by composing
@@ -353,7 +358,9 @@ def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:
     Notes
     -----
     - Can only be used when both BlockEncodings have the same operand structure.
-    - The ``@`` operator should be used sparingly, primarily to combine a few block encodings. For larger-scale polynomial transformations, Quantum Signal Processing (QSP) is the superior method.
+    - The ``@`` operator should be used sparingly, primarily to combine a few block encodings.
+      For larger-scale polynomial transformations,
+      Quantum Signal Processing (QSP) is the superior method.
     - The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
 
     Examples
@@ -418,7 +425,7 @@ def apply_radd(self, other: Any) -> BlockEncoding | NotImplementedType:
     return NotImplemented
 
 
-def apply_kron(self, other: BlockEncoding) -> BlockEncoding:
+def apply_kron(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
     r"""Returns a BlockEncoding of the Kronecker product (tensor product) of two operators.
 
     This method implements the operator $A \otimes B$, where $A$ and $B$ are
@@ -439,9 +446,11 @@ def apply_kron(self, other: BlockEncoding) -> BlockEncoding:
     Notes
     -----
     - **Normalization**: The normalization factors ($\alpha$) are combined multiplicatively.
-    - The ``kron`` operator maps the operands of self to the first set of operands and the operands of other to the remaining operands in a single unified unitary.
+    - The ``kron`` operator maps the operands of self to the first set of operands and the
+      operands of other to the remaining operands in a single unified unitary.
     - The ``kron`` operator should be used sparingly, primarily to combine a few block encodings.
-    - A more qubit-efficient implementation of the Kronecker product can be found in `this paper <https://arxiv.org/pdf/2509.15779>`_ and will be implemented in future updates.
+    - A more qubit-efficient implementation of the Kronecker product can be found in
+      `this paper <https://arxiv.org/pdf/2509.15779>`_ and will be implemented in future updates.
 
     Examples
     --------
