@@ -647,31 +647,6 @@ def _is_trace_independent(templates: Sequence[QuantumVariableTemplate]) -> bool:
     return all(not isinstance(template.qv_size, jax.core.Tracer) for template in templates)
 
 
-def _template_of_size(quantum_variable: QuantumVariable, size: Any) -> QuantumVariableTemplate:
-    """Return a template for ``quantum_variable`` that records ``size`` statically.
-
-    A template records the size of the register it constructs, and it reads that
-    size off the variable, which inside a Jasp trace is a tracer. A template built
-    that way cannot be reused outside the trace that produced it: handing it to a
-    later transformation raises an UnexpectedTracerError. Whenever the size is
-    already known as a plain int, recording that int instead keeps the template
-    independent of any trace, and therefore cacheable.
-    """
-    template = quantum_variable.template()
-    if isinstance(size, int):
-        template.qv_size = size
-    return template
-
-
-def _is_trace_independent(templates: Sequence[QuantumVariableTemplate]) -> bool:
-    """Return whether ancilla templates can be reused outside the trace that built them.
-
-    Templates whose size is a tracer belong to the trace that built them and must
-    not be cached; see :func:`_template_of_size`.
-    """
-    return all(not isinstance(template.qv_size, jax.core.Tracer) for template in templates)
-
-
 def _make_lcu_branch(
     child_unitary: Callable[..., None],
     layout: _AncillaLayout,
