@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import jax
 import jax.numpy as jnp
@@ -1037,6 +1037,22 @@ class BlockEncoding:
     def _get_lcu_terms(self) -> _LCUTerms:
         return ((1, self),)
 
+    def _get_product_factors(self) -> _ProductFactors:
+        return (self,)
+
+    @property
+    def _has_reusable_unitary(self) -> bool:
+        """Return whether ``unitary`` yields the same object on every access.
+
+        A plain block encoding stores its unitary in a field, so it always does.
+        The composite encodings in block_encoding_combination.py derive theirs, and
+        override this to report whether that derivation could be cached. Handing a
+        freshly built closure to an enclosing composite would defeat the caches
+        Jasp keys on object identity, so a composite consults this before caching
+        a unitary that captured one of its children's.
+        """
+        return True
+
     # ------------------------------------------------------------------
     # The methods below are attached to this class after its definition, in
     # block_encoding.py: each one is implemented in its own module under
@@ -1110,3 +1126,5 @@ class BlockEncoding:
 
 _LCUTerm = tuple[ArrayLike, BlockEncoding]
 _LCUTerms = tuple[_LCUTerm, ...]
+_ProductFactors = tuple[BlockEncoding, ...]
+_ProductStrategy = Literal["separate", "qubit_efficient"]

@@ -45,13 +45,19 @@ from jax.typing import ArrayLike
 
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.ancilla_layout import _AncillaLayout, _maximum_layout_size
-from qrisp.block_encodings.block_encoding_base import BlockEncoding, _LCUTerm, _LCUTerms
-from qrisp.core import QuantumVariable
+from qrisp.block_encodings.block_encoding_base import (
+    BlockEncoding,
+    _LCUTerm,
+    _LCUTerms,
+    _ProductFactors,
+    _ProductStrategy,
+)
+from qrisp.core import QuantumVariable, mcx
 from qrisp.core.gate_application_functions import gphase
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import q_switch, qache
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
-from qrisp.qtypes import QuantumFloat
+from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
 def _is_non_negative_real(value: Any) -> bool:
@@ -397,18 +403,7 @@ def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:
     if not isinstance(other, BlockEncoding):
         return NotImplemented
 
-    m = len(self._anc_templates)
-    n = len(other._anc_templates)
-
-    def new_unitary(*args):
-        other_args = args[m : m + n] + args[m + n :]
-        other.unitary(*other_args)
-        self_args = args[:m] + args[m + n :]
-        self.unitary(*self_args)
-
-    new_anc_templates = self._anc_templates + other._anc_templates
-    new_alpha = self.alpha * other.alpha
-    return BlockEncoding(new_alpha, new_anc_templates, new_unitary, num_ops=self.num_ops)
+    return ProductBlockEncoding(self._get_product_factors() + other._get_product_factors())
 
 
 def apply_radd(self, other: Any) -> BlockEncoding | NotImplementedType:
@@ -627,27 +622,35 @@ def _canonicalize_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     )
 
 
-def _is_reusable_unitary(block_encoding: BlockEncoding) -> bool:
-    """Return whether ``block_encoding.unitary`` yields the same object on every access.
+def _template_of_size(quantum_variable: QuantumVariable, size: Any) -> QuantumVariableTemplate:
+    """Return a template for ``quantum_variable`` that records ``size`` statically.
 
-    A plain BlockEncoding stores its unitary in a field, so it is always reusable.
-    A LinearCombinationBlockEncoding derives its unitary and only caches it when the
-    derivation captured no JAX tracer. Reusing a child unitary that is rebuilt on
-    every access would hand every enclosing ``q_switch`` a fresh Python closure,
-    which is exactly what this module's caching exists to avoid.
-
-    The child's ``unitary`` must have been accessed before this is called, so that
-    a cacheable child has had the chance to populate its cache.
+    A template records the size of the register it constructs, and it reads that
+    size off the variable, which inside a Jasp trace is a tracer. A template built
+    that way cannot be reused outside the trace that produced it: handing it to a
+    later transformation raises an UnexpectedTracerError. Whenever the size is
+    already known as a plain int, recording that int instead keeps the template
+    independent of any trace, and therefore cacheable.
     """
-    if isinstance(block_encoding, LinearCombinationBlockEncoding):
-        return "_cached_unitary" in block_encoding.__dict__
-    return True
+    template = quantum_variable.template()
+    if isinstance(size, int):
+        template.qv_size = size
+    return template
+
+
+def _is_trace_independent(templates: Sequence[QuantumVariableTemplate]) -> bool:
+    """Return whether ancilla templates can be reused outside the trace that built them.
+
+    Templates whose size is a tracer belong to the trace that built them and must
+    not be cached; see :func:`_template_of_size`.
+    """
+    return all(not isinstance(template.qv_size, jax.core.Tracer) for template in templates)
 
 
 def _make_lcu_branch(
     child_unitary: Callable[..., None],
     layout: _AncillaLayout,
-    name: str,
+    term_index: int,
 ) -> Callable[..., None]:
     """Build one SELECT branch applying ``child_unitary`` to views into the workspace.
 
@@ -659,7 +662,10 @@ def _make_lcu_branch(
     def branch(shared_ancilla, *operands):
         child_unitary(*layout.construct_views(shared_ancilla), *operands)
 
-    branch.__name__ = name
+    # qache carries this name onto the jit equation it emits, so the traced program
+    # names the term each branch came from instead of repeating "branch". It plays
+    # no part in the caching, which is keyed on the branch object itself.
+    branch.__name__ = f"lcu_branch_{term_index}"
     # Caching the branch body is what keeps the repeated tracing of q_switch cheap:
     # the tree-based q_switch traces every branch more than once while unrolling its
     # walk, and custom_control/custom_inversion speculatively trace the controlled
@@ -670,6 +676,80 @@ def _make_lcu_branch(
 
 def _identity_lcu_branch(shared_ancilla: QuantumVariable, *operands: QuantumVariable) -> None:
     """Pad the SELECT to a power of two; selected only for zero-amplitude indices."""
+
+
+def _make_product_step(child_unitary: Callable[..., None], factor_index: int) -> Callable[..., None]:
+    """Build one product step applying ``child_unitary`` to the ancillas it is handed.
+
+    Used by the separate strategy, where every factor owns its ancillas and simply
+    receives them from the product's argument list.
+    """
+
+    def step(*args):
+        child_unitary(*args)
+
+    step.__name__ = f"product_step_{factor_index}"
+    return qache(step)
+
+
+def _make_product_workspace_step(
+    child_unitary: Callable[..., None],
+    layout: _AncillaLayout,
+    factor_index: int,
+) -> Callable[..., None]:
+    """Build one product step applying ``child_unitary`` to views into the workspace.
+
+    As for the LCU branches, the shared workspace is taken as the step's first
+    operand rather than captured from the enclosing scope, so the step can be built
+    once, ahead of any tracing, and reused for every invocation of the unitary.
+    """
+
+    def step(shared_workspace, *operands):
+        child_unitary(*layout.construct_views(shared_workspace), *operands)
+
+    step.__name__ = f"product_step_{factor_index}"
+    return qache(step)
+
+
+def _build_product_steps(
+    factors: _ProductFactors,
+    layouts: tuple[_AncillaLayout, ...] | None,
+) -> tuple[Callable[..., None], ...]:
+    """Build one qached step per factor, sharing the step between repeated factors.
+
+    A factor may appear more than once in a product -- ``H.dagger() @ P @ H`` is the
+    common case -- and the repeated occurrences apply the same unitary to the same
+    ancillas. Giving them one step rather than one per position means the factor is
+    traced once instead of once per occurrence.
+
+    Steps are shared only when the key is hashable, which requires the factor to
+    expose a stable unitary and the layout to have statically known sizes. A factor
+    that rebuilds its unitary per access cannot be shared, and must not be.
+    """
+    steps: list[Callable[..., None]] = []
+    steps_by_key: dict[Any, Callable[..., None]] = {}
+
+    for index, factor in enumerate(factors):
+        child_unitary = factor.unitary
+        layout = layouts[index] if layouts is not None else None
+
+        try:
+            key = hash((child_unitary, layout)), child_unitary, layout
+        except TypeError:
+            key = None
+
+        step = steps_by_key.get(key) if key is not None else None
+        if step is None:
+            step = (
+                _make_product_step(child_unitary, index)
+                if layout is None
+                else _make_product_workspace_step(child_unitary, layout, index)
+            )
+            if key is not None:
+                steps_by_key[key] = step
+        steps.append(step)
+
+    return tuple(steps)
 
 
 @register_pytree_node_class
@@ -842,15 +922,18 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
         if len(self.terms) == 1:
             templates = tuple(self.terms[0][1]._anc_templates)
-            object.__setattr__(self, "_cached_anc_templates", templates)
+            if _is_trace_independent(templates):
+                object.__setattr__(self, "_cached_anc_templates", templates)
             return list(templates)
 
         layouts = self._lcu_layouts
+        selector_size = self._lcu_selector_size
+        workspace_size = _maximum_layout_size(layouts)
         templates = (
-            QuantumFloat(self._lcu_selector_size).template(),
-            QuantumVariable(_maximum_layout_size(layouts)).template(),
+            _template_of_size(QuantumFloat(selector_size), selector_size),
+            _template_of_size(QuantumVariable(workspace_size), workspace_size),
         )
-        if all(layout.has_static_sizes for layout in layouts):
+        if _is_trace_independent(templates):
             object.__setattr__(self, "_cached_anc_templates", templates)
         return list(templates)
 
@@ -877,7 +960,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
                 with control(coefficient < 0):
                     gphase(np.pi, args[0][0])
 
-            if not isinstance(coefficient, jax.core.Tracer) and _is_reusable_unitary(block_encoding):
+            if not isinstance(coefficient, jax.core.Tracer) and block_encoding._has_reusable_unitary:
                 object.__setattr__(self, "_cached_unitary", unitary)
             return unitary
 
@@ -885,7 +968,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         child_unitaries = [block_encoding.unitary for _, block_encoding in self.terms]
 
         branches = [
-            _make_lcu_branch(child_unitary, layout, f"lcu_branch_{term_index}")
+            _make_lcu_branch(child_unitary, layout, term_index)
             for term_index, (child_unitary, layout) in enumerate(zip(child_unitaries, layouts))
         ]
         # Padding to the full selector dimension covers the selector states that no
@@ -916,7 +999,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
                     prepare(selector, xp.conjugate(amplitudes))
 
         cacheable = all(layout.has_static_sizes for layout in layouts) and all(
-            _is_reusable_unitary(block_encoding) for _, block_encoding in self.terms
+            block_encoding._has_reusable_unitary for _, block_encoding in self.terms
         )
         if cacheable:
             object.__setattr__(self, "_cached_unitary", unitary)
@@ -940,6 +1023,11 @@ class LinearCombinationBlockEncoding(BlockEncoding):
     def _get_lcu_terms(self) -> _LCUTerms:
         return self.terms
 
+    @property
+    def _has_reusable_unitary(self) -> bool:
+        """Return whether the derived unitary was cached and can therefore be reused."""
+        return "_cached_unitary" in self.__dict__
+
     def tree_flatten(self) -> tuple[tuple[ArrayLike | BlockEncoding, ...], int]:
         """Flatten only the authoritative terms for JAX pytree handling."""
         children = tuple(value for term in self.terms for value in term)
@@ -954,3 +1042,272 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         """Reconstruct a linear combination from flattened terms."""
         terms = tuple((children[index], children[index + 1]) for index in range(0, 2 * aux_data, 2))
         return cls(terms)
+
+
+@register_pytree_node_class
+class ProductBlockEncoding(BlockEncoding):
+    """A block encoding represented by an immutable product of factors.
+
+    Factors are stored in mathematical order. The unitary applies them in
+    reverse order, so ``A @ B`` applies ``B`` before ``A``. By default, the
+    qubit-efficient strategy packs the factor ancillas into one shared
+    workspace and uses a shift register to separate the garbage generated at
+    successive steps. The separate strategy retains distinct ancillas for
+    every factor.
+
+    Parameters
+    ----------
+    factors : Sequence[BlockEncoding]
+        Block-encoding factors in mathematical order.
+    strategy : {"separate", "qubit_efficient"}
+        Unitary implementation strategy. ``"qubit_efficient"`` is the default;
+        it reuses one workspace and records failed factor applications in a
+        shift register. ``"separate"`` uses distinct ancillas for every factor.
+
+    """
+
+    def __init__(
+        self,
+        factors: Sequence[BlockEncoding],
+        strategy: _ProductStrategy = "qubit_efficient",
+    ) -> None:
+        """Initialize a product block encoding with the given factors and strategy."""
+        if strategy not in ("separate", "qubit_efficient"):
+            raise ValueError(f"Unknown product strategy: {strategy}")
+
+        flattened_factors: list[BlockEncoding] = []
+        for factor in factors:
+            if not isinstance(factor, BlockEncoding):
+                raise TypeError(f"Expected every factor to be a BlockEncoding, but got {type(factor).__name__}.")
+            flattened_factors.extend(factor._get_product_factors())
+
+        if len(flattened_factors) == 0:
+            raise ValueError("At least one product factor is required.")
+
+        num_ops = flattened_factors[0].num_ops
+        if any(factor.num_ops != num_ops for factor in flattened_factors):
+            raise ValueError("All product factors must have the same number of operands.")
+
+        self._factors = tuple(flattened_factors)
+        self._strategy = strategy
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Prevent reassignment of the authoritative factor representation."""
+        if name in {"_factors", "_strategy"} and hasattr(self, name):
+            raise AttributeError("Product representation is immutable.")
+        object.__setattr__(self, name, value)
+
+    @property
+    def factors(self) -> _ProductFactors:
+        """The immutable product factors in mathematical order."""
+        return self._factors
+
+    @property
+    def strategy(self) -> _ProductStrategy:
+        """The unitary implementation strategy used by the product."""
+        return self._strategy
+
+    #
+    # Derived state
+    #
+    # As for LinearCombinationBlockEncoding, everything below is derived from the
+    # authoritative factors and cached on first access. A product does not go
+    # through q_switch, so it has no trace amplification of its own, but rebuilding
+    # the unitary hands a fresh closure to every enclosing composite and re-traces
+    # the whole subtree each time the product is applied. Values that capture a JAX
+    # tracer are not cached, since reusing them in a later trace would leak it.
+    #
+
+    @property
+    def alpha(self) -> ArrayLike:
+        """Return the normalization derived from the product factors."""
+        cached = self.__dict__.get("_cached_alpha")
+        if cached is not None:
+            return cached
+
+        alpha = 1
+        for factor in self.factors:
+            alpha = alpha * factor.alpha
+
+        if not isinstance(alpha, jax.core.Tracer):
+            object.__setattr__(self, "_cached_alpha", alpha)
+        return alpha
+
+    @property
+    def _product_layouts(self) -> tuple[_AncillaLayout, ...]:
+        """Return the packing of every factor's ancillas into the shared workspace."""
+        cached = self.__dict__.get("_cached_layouts")
+        if cached is not None:
+            return cached
+
+        layouts = tuple(_AncillaLayout.from_templates(factor._anc_templates) for factor in self.factors)
+        if all(layout.has_static_sizes for layout in layouts):
+            object.__setattr__(self, "_cached_layouts", layouts)
+        return layouts
+
+    @property
+    def _anc_templates(self) -> list[QuantumVariableTemplate]:
+        cached = self.__dict__.get("_cached_anc_templates")
+        if cached is not None:
+            return list(cached)
+
+        cacheable = True
+        if self.strategy == "qubit_efficient":
+            if len(self.factors) == 1:
+                templates = tuple(self.factors[0]._anc_templates)
+                cacheable = _is_trace_independent(templates)
+            elif all(factor.num_ancs == 0 for factor in self.factors):
+                templates = ()
+            else:
+                layouts = self._product_layouts
+                shift_size = (len(self.factors) - 1).bit_length()
+                workspace_size = _maximum_layout_size(layouts)
+                templates = (
+                    _template_of_size(QuantumFloat(shift_size), shift_size),
+                    _template_of_size(QuantumVariable(workspace_size), workspace_size),
+                )
+                cacheable = _is_trace_independent(templates)
+        else:
+            templates = tuple(template for factor in self.factors for template in factor._anc_templates)
+            cacheable = _is_trace_independent(templates)
+
+        if cacheable:
+            object.__setattr__(self, "_cached_anc_templates", templates)
+        return list(templates)
+
+    @property
+    def unitary(self) -> Callable[..., None]:
+        """Return the unitary selected by the product implementation strategy."""
+        cached = self.__dict__.get("_cached_unitary")
+        if cached is not None:
+            return cached
+
+        unitary = (
+            self._build_unitary_qubit_efficient()
+            if self.strategy == "qubit_efficient"
+            else self._build_unitary_separate()
+        )
+
+        # The closure captures the factor layouts, so those have to be free of
+        # traced sizes too, not just the factor unitaries it dispatches to.
+        cacheable = all(factor._has_reusable_unitary for factor in self.factors) and all(
+            layout.has_static_sizes for layout in self._product_layouts
+        )
+        if cacheable:
+            object.__setattr__(self, "_cached_unitary", unitary)
+        return unitary
+
+    @property
+    def _has_reusable_unitary(self) -> bool:
+        """Return whether the derived unitary was cached and can therefore be reused."""
+        return "_cached_unitary" in self.__dict__
+
+    def _build_unitary_separate(self) -> Callable[..., None]:
+        """Build the unitary that composes factors with separate ancillas."""
+        factor_ancilla_counts = tuple(factor.num_ancs for factor in self.factors)
+        total_ancillas = sum(factor_ancilla_counts)
+        steps = _build_product_steps(self.factors, None)
+
+        def unitary(*args):
+            operands = args[total_ancillas:]
+            offset = 0
+            step_args = []
+            for step, num_ancillas in zip(steps, factor_ancilla_counts):
+                step_args.append((step, args[offset : offset + num_ancillas]))
+                offset += num_ancillas
+
+            for step, factor_ancillas in reversed(step_args):
+                step(*factor_ancillas, *operands)
+
+        return unitary
+
+    def _build_unitary_qubit_efficient(self) -> Callable[..., None]:
+        """Build the unitary using one shared workspace and a shift register."""
+        if len(self.factors) == 1 or all(factor.num_ancs == 0 for factor in self.factors):
+            num_ancs = self.num_ancs
+            steps = _build_product_steps(self.factors, None)
+
+            def unitary(*args):
+                operands = args[num_ancs:]
+                factor_ancillas = args[:num_ancs]
+                for step in reversed(steps):
+                    step(*factor_ancillas, *operands)
+
+            return unitary
+
+        factor_layouts = self._product_layouts
+        workspace_steps = _build_product_steps(self.factors, factor_layouts)
+
+        def unitary(*args):
+            shift_register = args[0]
+            shared_workspace = args[1]
+            operands = args[2:]
+            zero_flag = QuantumBool()
+
+            for factor_index in range(len(self.factors)):
+                layout_index = len(self.factors) - 1 - factor_index
+                factor_layout = factor_layouts[layout_index]
+
+                # Only the shift-zero sector carries the still-valid product
+                # branch. Other sectors contain garbage from earlier factors.
+                with conjugate(mcx)(shift_register, zero_flag, ctrl_state=0):
+                    with control(zero_flag):
+                        workspace_steps[layout_index](shared_workspace, *operands)
+
+                if factor_index == len(self.factors) - 1 or len(factor_layout.sizes) == 0:
+                    continue
+
+                # Implement |s, w> -> |s + 1, w> for w != 0 and leave w = 0
+                # fixed on the workspace prefix used by this factor. This
+                # reversible permutation moves newly generated garbage out of
+                # shift zero without modifying its workspace value. The
+                # compute-control-uncompute pattern restores the temporary
+                # predicate qubit after every permutation.
+                active_workspace = shared_workspace.reg[: factor_layout.total_size]
+                with conjugate(mcx)(active_workspace, zero_flag, ctrl_state=0):
+                    with control(zero_flag, ctrl_state=0):
+                        shift_register += 1
+
+            zero_flag.delete()
+
+        return unitary
+
+    @property
+    def num_ops(self) -> int:
+        """Return the common number of operands in the product factors."""
+        return self.factors[0].num_ops
+
+    @property
+    def num_ancs(self) -> int:
+        """Return the number of ancilla variables used by the strategy."""
+        if self.strategy == "qubit_efficient":
+            return len(self._anc_templates)
+        return sum(factor.num_ancs for factor in self.factors)
+
+    @property
+    def is_hermitian(self) -> bool:
+        """Return whether the product is known to have a Hermitian unitary."""
+        return len(self.factors) == 1 and self.factors[0].is_hermitian
+
+    def _get_product_factors(self) -> _ProductFactors:
+        return self.factors
+
+    def dagger(self) -> ProductBlockEncoding:
+        """Return the product dagger with reversed, individually inverted factors."""
+        return ProductBlockEncoding(
+            tuple(factor.dagger() for factor in reversed(self.factors)),
+            strategy=self.strategy,
+        )
+
+    def tree_flatten(self) -> tuple[_ProductFactors, _ProductStrategy]:
+        """Flatten the authoritative product factors for JAX pytree handling."""
+        return self.factors, self.strategy
+
+    @classmethod
+    def tree_unflatten(
+        cls: type[ProductBlockEncoding],
+        aux_data: _ProductStrategy,
+        children: tuple[BlockEncoding, ...],
+    ) -> ProductBlockEncoding:
+        """Reconstruct a product from flattened factors."""
+        return cls(children, strategy=aux_data)
