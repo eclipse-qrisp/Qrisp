@@ -548,7 +548,7 @@ def get_traced_fun(jaxpr):
 
     @jit
     def jitted_fun(*args):
-        return eval_jaxpr(catalyst_jaxpr.jaxpr, [], *args)
+        return eval_jaxpr(catalyst_jaxpr.jaxpr, catalyst_jaxpr.consts, *args)
 
     return jitted_fun
 

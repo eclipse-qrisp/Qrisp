@@ -76,6 +76,15 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
+
+- Improved the simulator's circuit preprocessing: circuit reordering is
+  faster, and gate grouping for circuits with 63+ qubits now stays on the
+  fast Numba-jitted path (via chunked qubit bitmasks) instead of falling
+  back to a slower, non-jitted implementation. All functions and classes
+  used for simulator preprocessing are strictly internal and marked with a
+  leading underscore.
+  (`PR #704 <https://github.com/eclipse-qrisp/Qrisp/pull/704>`_)
+
 - Added type hints across :class:`~qrisp.QuantumFloat`, fixed stale
   docstring examples, and sped up ``significant()``, ``init_from()``, and
   ``encode(..., rounding=True)`` (now O(1))
@@ -189,6 +198,10 @@ Bug Fixes
   ``int`` outside tracing, crashing later negative ``2**exponent`` calls
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+* Fixed a bug where the ``catalyst_interpreter`` failed to compile JAXPRs with
+  constants, by passing the constants to ``eval_jaxpr``
+  (`PR #750 <https://github.com/eclipse-qrisp/Qrisp/pull/750>`_).
+
 Compatibility
 -------------
 
@@ -212,6 +225,10 @@ New Tutorials/ Updated Documentation
   module (control flow, sampling, simulators, optimization tools,
   ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
   (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
+
+- Added a :ref:`Community Day <community_day>` page announcing the first
+  Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
+  link and agenda.
 
 .. Add new tutorials above this line
 
