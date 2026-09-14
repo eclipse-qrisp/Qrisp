@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests for the Thapliyal ripple-carry in-place adder."""
 
 from dataclasses import dataclass
 from typing import Optional
@@ -23,8 +24,10 @@ import pytest
 from qrisp import (
     QuantumBool,
     QuantumFloat,
+    QuantumModulus,
     QuantumVariable,
     control,
+    int_encoder,
     measure,
     thapliyal_adder,
     x,
@@ -189,6 +192,22 @@ def test_thapliyal_adder_static_smoke_b_type_error():
         thapliyal_adder(a, "invalid")
 
 
+def test_thapliyal_adder_static_smoke_b_empty_list_error():
+    """ValueError when b is an empty list[Qubit] (a non-empty register is required)."""
+    a = QuantumFloat(3)
+    a[:] = 1
+    with pytest.raises(ValueError, match="The second argument must be of type QuantumVariable"):
+        thapliyal_adder(a, [])
+
+
+def test_thapliyal_adder_static_smoke_a_invalid_list_error():
+    """ValueError when a is a list containing non-Qubit elements."""
+    b = QuantumFloat(3)
+    b[:] = 1
+    with pytest.raises(ValueError, match="If the first argument is a list, it must contain only Qubits"):
+        thapliyal_adder([1, 0], b)
+
+
 def test_thapliyal_adder_static_smoke_c_out_type_error():
     """TypeError when c_out is neither QuantumBool nor Qubit."""
     a = QuantumFloat(4)
@@ -227,6 +246,135 @@ def test_thapliyal_adder_static_smoke_inputs_unmodified():
     thapliyal_adder(a, b)
     assert a.size == orig_a
     assert b.size == orig_b
+
+
+# ---------------------------------------------------------------------------
+# list[Qubit] compatibility -- a and/or b passed as a raw qubit list rather
+# than a QuantumVariable, exercising _is_quantum_register instead of the
+# QuantumVariable-only checks the adder used before this refactor.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("a_spec", ["quantum", "classical", "list"])
+@pytest.mark.parametrize("b_spec", ["variable", "list"])
+def test_thapliyal_adder_static_list_combinations(a_spec, b_spec):
+    """QuantumVariable and list[Qubit] inputs in all a/b combinations."""
+    b = QuantumFloat(4)
+    b[:] = 3
+    if a_spec == "classical":
+        a_arg = 5
+    else:
+        a = QuantumFloat(4)
+        a[:] = 5
+        a_arg = a[:] if a_spec == "list" else a
+    b_arg = b[:] if b_spec == "list" else b
+
+    thapliyal_adder(a_arg, b_arg)
+
+    assert b.get_measurement() == {8: 1.0}  # 3 + 5
+    if a_spec == "quantum":
+        assert a.get_measurement() == {5: 1.0}
+
+
+def test_thapliyal_adder_static_list_unequal_sizes():
+    """list[Qubit] inputs of unequal size (truncation + extension ancillas)."""
+    a = QuantumFloat(5)
+    a[:] = 20
+    b = QuantumFloat(4)
+    b[:] = 5
+    thapliyal_adder(a[:], b[:])
+    assert b.get_measurement() == {9: 1.0}  # 5 + (20 % 16)
+
+    a = QuantumFloat(3)
+    a[:] = 3
+    b = QuantumFloat(5)
+    b[:] = 7
+    thapliyal_adder(a[:], b[:])
+    assert b.get_measurement() == {10: 1.0}  # 7 + 3
+
+
+@pytest.mark.parametrize("b_is_list", [False, True])
+def test_thapliyal_adder_static_classical_a_larger_than_b(b_is_list):
+    """Classical a wider than the target register wraps modulo 2**len(b)."""
+    b = QuantumFloat(3)
+    b[:] = 5
+    thapliyal_adder(10, b[:] if b_is_list else b)
+    assert b.get_measurement() == {7: 1.0}  # (5 + 10) % 8
+
+
+def test_thapliyal_adder_static_quantum_variable():
+    """Base QuantumVariable registers as a and b (not just QuantumFloat)."""
+    a_val, b_val = 5, 3
+
+    # quantum a + quantum b
+    a = QuantumVariable(4)
+    b = QuantumVariable(4)
+    int_encoder(a, a_val)
+    int_encoder(b, b_val)
+    thapliyal_adder(a, b)
+    assert a.get_measurement() == {"1010": 1.0}  # a = 5 is unchanged
+    assert b.get_measurement() == {"0001": 1.0}  # b = 3 + 5 = 8
+
+    # classical a + quantum b: same result as above via the encoder path
+    b = QuantumVariable(4)
+    int_encoder(b, b_val)
+    thapliyal_adder(a_val, b)
+    assert b.get_measurement() == {"0001": 1.0}
+
+
+def test_thapliyal_adder_static_quantum_modulus():
+    """QuantumModulus registers as a and b (sum stays below the modulus)."""
+    # quantum a + quantum b: 5 + 3 = 8 < 13, so the sum fits without wrap-around
+    a = QuantumModulus(13)
+    b = QuantumModulus(13)
+    a[:] = 5
+    b[:] = 3
+    thapliyal_adder(a, b)
+    assert a.get_measurement() == {5: 1.0}  # a = 5 is unchanged
+    assert b.get_measurement() == {8: 1.0}  # b = 3 + 5 = 8
+
+    # classical a + quantum b: exercises the classical-input path,
+    # the result must be the same as above
+    b = QuantumModulus(13)
+    b[:] = 3
+    thapliyal_adder(5, b)
+    assert b.get_measurement() == {8: 1.0}  # b = 3 + 5 = 8
+
+
+def test_thapliyal_adder_quantum_modulus_multiply():
+    """QuantumModulus with thapliyal_adder as inpl_adder.
+
+    QuantumModulus hands the configured adder a raw ``list[Qubit]`` target (the
+    auxiliary register of the Montgomery multiplication), so this verifies the
+    adder works when the target is passed as a plain qubit list -- the same
+    shape of bug this refactor fixes for thapliyal_adder directly (see
+    test_thapliyal_adder_list_target_dynamic). The modular multiplication
+    5 * 10 mod 13 = 11 is checked both via a static measurement and via
+    @jaspify (thapliyal_adder's Peres/TR rotations rule out the cheaper
+    @boolean_simulation cuccaro_adder's equivalent test uses -- see the
+    @jaspify section docstring below).
+
+    This is significantly more expensive than the other tests in this file:
+    thapliyal_adder's carry-out is a genuinely exposed wire rather than
+    cuccaro_adder's self-restoring one, so every addition inside the
+    multiplication pays an extra scratch-comparator uncompute
+    (_uncompute_thapliyal_carry) when c_out isn't requested, and that cost
+    compounds over Montgomery multiplication's many internal additions.
+    """
+    a = QuantumModulus(13, inpl_adder=thapliyal_adder)
+    a[:] = 5
+    a *= 10
+    a.qs.compile()
+    assert a.get_measurement() == {11: 1.0}  # (5 * 10) % 13
+
+    @jaspify
+    def montgomery_multiply(N, value, factor):
+        qm = QuantumModulus(N, inpl_adder=thapliyal_adder)
+        qm[:] = value
+        qm *= factor
+        return measure(qm)
+
+    assert montgomery_multiply(13, 5, 10) == (5 * 10) % 13
 
 
 # ---------------------------------------------------------------------------
@@ -456,6 +604,59 @@ def _run_basic_cases():
 
 def test_thapliyal_adder_basic_dynamic():
     _run_basic_cases()
+
+
+def _mk_add_list_target():
+    """A and b both passed as A[:]/B[:], i.e. a DynamicQubitArray under tracing."""
+
+    @jaspify
+    def add(N, L, j, k):
+        A = QuantumFloat(N)
+        B = QuantumFloat(L)
+        A[:] = j
+        B[:] = k
+        thapliyal_adder(A[:], B[:])
+        return measure(A), measure(B)
+
+    return add
+
+
+def _run_list_target_cases():
+    add = _mk_add_list_target()
+    for j, k in _JK_CASES:
+        A, B = add(3, 3, j, k)
+        assert A == j
+        assert B == (k + j) % 8
+
+
+def test_thapliyal_adder_list_target_dynamic():
+    """See _mk_add_list_target."""
+    _run_list_target_cases()
+
+
+def _mk_add_classical_wide():
+    """Classical a wider than 2**L, exercising the a % (1 << jlen(b)) truncation."""
+
+    @jaspify
+    def add(L, j, k):
+        B = QuantumFloat(L)
+        B[:] = k
+        thapliyal_adder(j, B)
+        return measure(B)
+
+    return add
+
+
+def _run_classical_wide_cases():
+    add = _mk_add_classical_wide()
+    for j, k in [(10, 5), (17, 3)]:
+        B = add(3, j, k)
+        assert B == (k + j) % 8
+
+
+def test_thapliyal_adder_classical_wide_dynamic():
+    """See _mk_add_classical_wide."""
+    _run_classical_wide_cases()
 
 
 def _run_cin_cases():

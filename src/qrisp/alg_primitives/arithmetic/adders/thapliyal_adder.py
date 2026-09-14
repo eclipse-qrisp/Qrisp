@@ -21,11 +21,12 @@ from contextlib import nullcontext
 import jax.numpy as jnp
 import numpy as np
 
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import _is_quantum_register
 from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, p, rx, x
 from qrisp.environments import conjugate, control, custom_control, invert
-from qrisp.jasp import check_for_tracing_mode, jlen, jrange
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.misc import int_encoder
 from qrisp.qtypes import QuantumBool
 
@@ -282,8 +283,8 @@ def _setup_output_qubit(c_out: QuantumBool | Qubit | None) -> tuple[Qubit, Quant
 
 @custom_control
 def thapliyal_adder(
-    a: int | QuantumVariable | list,
-    b: QuantumVariable | list,
+    a: int | QuantumVariable | DynamicQubitArray | list,
+    b: QuantumVariable | DynamicQubitArray | list,
     c_in: QuantumBool | Qubit | None = None,
     c_out: QuantumBool | Qubit | None = None,
     ctrl: QuantumBool | None = None,
@@ -341,23 +342,29 @@ def thapliyal_adder(
     {9: 1.0}
 
     """
-    # convert the classical input to a quantum input. A raw list[Qubit] counts as
-    # a quantum register (this is how inpl_add drives the adder), so only genuine
-    # classical scalars fall through to the encoder branch below.
-    if not isinstance(a, (QuantumVariable, list)):
-        # create a QuantumFloat of the same size as the other quantum input
-        q_a = b.duplicate()
+    # The second argument is required to be a (non-empty) quantum register
+    if not _is_quantum_register(b) or (isinstance(b, list) and len(b) == 0):
+        raise ValueError(
+            "The second argument must be of type QuantumVariable, DynamicQubitArray or a non-empty list[Qubit]."
+        )
+
+    # A list that does not contain only Qubits is neither a valid quantum register
+    # nor a valid classical input.
+    if isinstance(a, list) and not _is_quantum_register(a):
+        raise ValueError("If the first argument is a list, it must contain only Qubits.")
+
+    if not _is_quantum_register(a):
+        # truncate the classical value modulo 2**len(b) so that values larger than the
+        # target register are handled via modulo addition (as documented above)
+        a = a % (1 << jlen(b))
+
+        # create a quantum variable of the same size as the other quantum input
+        q_a = QuantumVariable(jlen(b))
 
         with conjugate(int_encoder)(q_a, a):
             thapliyal_adder(q_a, b, c_in=c_in, c_out=c_out, ctrl=ctrl)
-
-        # outside the conjugation, q_a is back in the state |0> and the addition has been performed on b
-        # delete the temporary quantum variable created for the classical input
         q_a.delete()
         return
-
-    if not isinstance(b, (QuantumVariable, list)):
-        raise ValueError("The second argument must be of type QuantumVariable.")
 
     # when the inputs are of unequal length, pad the size of the input with the smaller size
     a_qubits, extension_anc_a = _pad_operand_a(a, b)
