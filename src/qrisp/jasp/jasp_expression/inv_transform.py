@@ -126,9 +126,9 @@ def invert_eqn(eqn):
             # one being replaced. Carry it over: dropping it makes a second
             # inversion fall back to inverting the body structurally, which for a
             # custom_inversion user is exactly the derivation that does not apply.
-            # Folding only turns constvars back into invars, so the normalized
-            # jaspr takes the same arguments as the unnormalized one, and the
-            # back-pointer still describes its inverse.
+            # Folding restores the reclassified constvars to invars, so the
+            # normalized Jaspr's signature matches the wrapping equation and
+            # the original Jaspr referenced by the back-pointer.
             preserved_inv_jaspr = inv_jaxpr.inv_jaspr
             inv_jaxpr = Jaspr(normalized)
             inv_jaxpr.inv_jaspr = preserved_inv_jaspr
