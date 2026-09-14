@@ -31,10 +31,9 @@ from qrisp.circuit import (
     QubitAlloc,
     QubitDealloc,
 )
-from qrisp.misc import find_calling_line
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import multi_session_merge
-from qrisp.misc import get_depth_dic
+from qrisp.misc import find_calling_line, get_depth_dic
 
 
 class QuantumVariableNamingError(Exception):
@@ -215,7 +214,8 @@ class QuantumSession(QuantumCircuit):
 
         line = find_calling_line(declaration_stack_level)
         split_line = line.split("=")
-        if len(split_line) < 2 or split_line[1].replace(" ", "")[:7] != "Quantum":
+        minimum_equality_splits = 2
+        if len(split_line) < minimum_equality_splits or split_line[1].replace(" ", "")[:7] != "Quantum":
             return None
         python_var_name = split_line[0].strip()
         valid_name = self._find_valid_name(self._default_name_generator(python_var_name, 0))
