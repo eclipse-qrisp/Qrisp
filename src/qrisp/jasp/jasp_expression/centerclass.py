@@ -1523,8 +1523,12 @@ def make_jaspr(
     return jaspr_creator
 
 
-def check_aval_equivalence(invars_1, invars_2) -> bool:
-    """Return True if every paired invar has the same abstract-value type."""
+def check_aval_equivalence(invars_1: list[Var], invars_2: list[Var]) -> bool:
+    """Return True if both signatures have the same length and every paired
+    invar has the same abstract-value type.
+    """
+    if len(invars_1) != len(invars_2):
+        return False
     return all(type(v1.aval) is type(v2.aval) for v1, v2 in zip(invars_1, invars_2))
 
 

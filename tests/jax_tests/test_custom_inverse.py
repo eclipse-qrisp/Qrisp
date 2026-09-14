@@ -15,7 +15,10 @@
 ********************************************************************************
 """
 
+from collections.abc import Iterator
+
 import jax.numpy as jnp
+from jax.extend.core import Jaxpr, JaxprEqn
 
 from qrisp import *
 from qrisp.alg_primitives.state_preparation import prepare
@@ -302,3 +305,108 @@ def test_double_inversion_of_gidney_mcx_round_trips():
     assert "measure" in gate_names(1), "a single inversion must uncompute via measurement"
     assert "measure" not in forward
     assert gate_names(2) == forward
+
+
+def _walk_jit_eqns(jaxpr: Jaxpr, seen: set[int] | None = None) -> Iterator[JaxprEqn]:
+    """Yield every jit equation reachable from jaxpr, including nested ones."""
+    if seen is None:
+        seen = set()
+    if id(jaxpr) in seen:
+        return
+    seen.add(id(jaxpr))
+
+    for eqn in jaxpr.eqns:
+        if eqn.primitive.name == "jit":
+            yield eqn
+            yield from _walk_jit_eqns(eqn.params["jaxpr"].jaxpr, seen)
+        elif eqn.primitive.name == "while":
+            yield from _walk_jit_eqns(eqn.params["body_jaxpr"].jaxpr, seen)
+            yield from _walk_jit_eqns(eqn.params["cond_jaxpr"].jaxpr, seen)
+        elif eqn.primitive.name == "cond":
+            for branch in eqn.params["branches"]:
+                yield from _walk_jit_eqns(branch.jaxpr, seen)
+
+
+def test_registered_inverse_matches_forward_signature():
+    """The cached custom inverse must be usable as-is at the forward equation.
+
+    custom_inversion traces the inverse with make_jaspr, which leaves closed-over
+    values in constvars/consts, while the forward version goes through qache,
+    i.e. jax.jit, which closure converts them into leading invars. The inverse is
+    brought into that same convention where it is registered, so that applying an
+    inversion is a plain swap of the callee and never has to rewrap (and thereby
+    lose) the Jaspr. This pins that: every registered inverse takes exactly the
+    arguments of the function it inverts and carries no consts of its own.
+
+    prepare with run-time amplitudes is the case that has closed-over values to
+    begin with: its q_switch case functions capture the angle arrays.
+    """
+
+    def main(scale):
+        qv = QuantumFloat(2)
+        weights = jnp.arange(1, 5, dtype=float) * scale
+        prepare(qv, weights / jnp.linalg.norm(weights))
+        return qv
+
+    jaspr = make_jaspr(main)(1.0)
+
+    checked = 0
+    for eqn in _walk_jit_eqns(jaspr.jaxpr):
+        callee = eqn.params["jaxpr"]
+        inv_jaspr = getattr(callee, "inv_jaspr", None)
+        if inv_jaspr is None:
+            continue
+        checked += 1
+
+        assert not inv_jaspr.constvars, "a registered inverse must not carry constvars"
+        assert not inv_jaspr.consts, "a registered inverse must not carry consts"
+        assert check_aval_equivalence(inv_jaspr.invars, callee.invars), (
+            f"registered inverse takes {[var.aval for var in inv_jaspr.invars]}, "
+            f"but the function it inverts takes {[var.aval for var in callee.invars]}"
+        )
+
+    assert checked, "found no custom_inversion function to check"
+
+
+def test_double_inversion_of_prepare_under_control_round_trips():
+    """Two inversions must cancel when they are applied to a controlled equation.
+
+    Controlling an equation swaps in the controlled callee the same way inverting
+    swaps in the inverted one, and neither may rewrap the Jaspr: for a
+    custom_control/custom_inversion function such as q_switch, a rewrap drops both
+    registrations at once. Here the control sits outside both inversions, so the
+    outer inversion is applied to an already controlled equation.
+    """
+    size = 4
+
+    def amplitudes(scale):
+        weights = jnp.arange(1, size + 1, dtype=float) * scale
+        return weights / jnp.linalg.norm(weights)
+
+    @terminal_sampling
+    def main(scale):
+        condition = QuantumBool()
+        condition.flip()
+        qv = QuantumFloat(2)
+        with invert():
+            with control(condition[0]):
+                with invert():
+                    with invert():
+                        prepare(qv, amplitudes(scale))
+        return qv
+
+    @terminal_sampling
+    def reference(scale):
+        qv = QuantumFloat(2)
+        with invert():
+            prepare(qv, amplitudes(scale))
+        return qv
+
+    # The control qubit is held at |1>, so the controlled body acts
+    # unconditionally and the inner pair of inversions cancels, leaving the
+    # single outer inversion.
+    res = main(1.0)
+    expected = reference(1.0)
+
+    for state in range(size):
+        assert abs(expected.get(state, 0) - res.get(state, 0)) < 1e-4, f"{expected} vs {res}"
