@@ -39,10 +39,11 @@ Two regressions are guarded:
 """
 
 import jax
+import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from qrisp import QuantumFloat, QuantumVariable, make_jaspr, terminal_sampling, x
+from qrisp import QuantumBool, QuantumFloat, QuantumVariable, control, invert, make_jaspr, terminal_sampling, x
 from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding
 from qrisp.jasp import count_ops, depth, num_qubits
 from qrisp.operators import X, Y, Z
@@ -332,3 +333,85 @@ def test_linear_combination_survives_reuse_across_transformations(name, build):
     second transformation fail with UnexpectedTracerError.
     """
     _reuse_across_transformations(build())
+
+
+#
+# Traced coefficients survive inversion and control
+#
+
+
+def _flip_qubit(index):
+    """Return a unitary flipping one qubit, chosen by ``index``."""
+
+    def unitary(operand):
+        x(operand[index % 3])
+
+    return unitary
+
+
+def _traced_coefficient_combination(scale, term_count):
+    """Build a linear combination whose coefficients are all JAX tracers.
+
+    Scaling by a traced value is what keeps the coefficients out of NumPy, which is
+    what puts PREP on its symbolic path.
+    """
+    encoding = None
+    for term_index in range(term_count):
+        scaled = jnp.sqrt(scale) * BlockEncoding(1, [], _flip_qubit(term_index))
+        encoding = scaled if encoding is None else encoding + scaled
+    return encoding
+
+
+def _apply_plain(encoding, operand):
+    encoding.apply(operand)
+
+
+def _apply_inverted(encoding, operand):
+    with invert():
+        encoding.apply(operand)
+
+
+def _apply_controlled(encoding, operand):
+    condition = QuantumBool()
+    with control(condition[0]):
+        encoding.apply(operand)
+
+
+def _apply_controlled_inverted(encoding, operand):
+    condition = QuantumBool()
+    with control(condition[0]):
+        with invert():
+            encoding.apply(operand)
+
+
+@pytest.mark.parametrize("term_count", [2, 3, 4])
+@pytest.mark.parametrize(
+    "name, apply_under",
+    [
+        ("plain", _apply_plain),
+        ("inverted", _apply_inverted),
+        ("controlled", _apply_controlled),
+        ("controlled and inverted", _apply_controlled_inverted),
+    ],
+)
+def test_traced_coefficients_survive_inversion_and_control(term_count, name, apply_under):
+    """Inverting or controlling a traced-coefficient combination must still compile.
+
+    Coefficients that are only known at run time cannot be checked for sign, so the
+    unitary takes the general path and writes its un-prep as an explicit inversion
+    of a symbolic PREP. Inverting the whole application then nests a second
+    inversion around that one, and both reach the q_switch PREP is built from.
+
+    That used to raise, because the inverted Jaspr lost the back-pointer recording
+    its own inverse and the walk was re-derived from the loop in the tree method
+    instead. Two terms never failed, since a one qubit selector leaves that loop
+    empty, so the small case is kept here to pin the boundary rather than to
+    reproduce the fault.
+    """
+
+    def circuit(scale):
+        operand = QuantumFloat(3)
+        apply_under(_traced_coefficient_combination(scale, term_count), operand)
+        return operand
+
+    make_jaspr(circuit)(0.5)
