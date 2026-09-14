@@ -122,6 +122,19 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed a failure when a function decorated with
+  :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
+  raised ``Automatic loop inversion is only supported for jrange-based loops``.
+  An inverted Jaspr keeps a back-pointer to the Jaspr it inverts, and the second
+  inversion follows it instead of deriving an inverse. Inverting can reclassify
+  arguments as constants, and folding them back rewrapped the Jaspr without
+  carrying the back-pointer over, so the second inversion fell back to inverting
+  the body, which is the derivation ``custom_inversion`` exists to avoid. This
+  affected, for instance, inverting a :func:`prepare <qrisp.prepare>` whose
+  amplitudes are only known at run time, as produced by a
+  :class:`~qrisp.block_encodings.BlockEncoding` simulation with traced
+  coefficients.
+
 * Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
   Unitary matrices are now computed in ``complex128`` precision, removing the
   spurious ~1e-7 off-diagonal entries that previously appeared where a
@@ -201,6 +214,19 @@ Bug Fixes
 * Fixed a bug where the ``catalyst_interpreter`` failed to compile JAXPRs with
   constants, by passing the constants to ``eval_jaxpr``
   (`PR #750 <https://github.com/eclipse-qrisp/Qrisp/pull/750>`_).
+
+* Fixed :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>`'s COLD method
+  with ``objective="exp_value"``, which could be dramatically slower and
+  converge to worse results than in qrisp 0.8: an unused exponential-size
+  cost table was built on every call, the fast statevector path used the
+  wrong cost function, and the optimization-pulse ansatz divided by zero for
+  scheduling functions with vanishing derivative at the domain endpoints.
+
+* :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>`'s COLD method now
+  raises a clear ``ValueError`` for ``N_opt < 1`` or the default ``N_opt=None``,
+  instead of failing deep inside ``range()`` or SciPy with confusing,
+  inconsistent error messages
+  (`#877 <https://github.com/eclipse-qrisp/Qrisp/issues/877>`_).
 
 Compatibility
 -------------
