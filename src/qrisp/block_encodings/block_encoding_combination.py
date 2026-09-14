@@ -48,7 +48,7 @@ from qrisp.block_encodings.ancilla_layout import _AncillaLayout, _maximum_layout
 from qrisp.block_encodings.block_encoding_base import BlockEncoding, _LCUTerm, _LCUTerms
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import gphase
-from qrisp.environments import conjugate, control, invert
+from qrisp.environments import conjugate, invert
 from qrisp.jasp import q_switch, qache
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumFloat
@@ -593,11 +593,7 @@ def apply_neg(self) -> BlockEncoding:
         # Result from - BE1:  {3.0: 1.0}
 
     """
-
-    terms = tuple(
-        (-coefficient, block_encoding)
-        for coefficient, block_encoding in self._get_lcu_terms()
-    )
+    terms = tuple((-coefficient, block_encoding) for coefficient, block_encoding in self._get_lcu_terms())
     return type(self)._from_lcu_terms(terms)
 
 
@@ -903,10 +899,21 @@ class LinearCombinationBlockEncoding(BlockEncoding):
             coefficient, block_encoding = self.terms[0]
             child_unitary = block_encoding.unitary
 
+            # alpha carries the coefficient's magnitude, so the unitary supplies
+            # coefficient / abs(coefficient): a global phase of arg(coefficient),
+            # of which a negative real coefficient is the arg == pi case.
+            if isinstance(coefficient, jax.core.Tracer):
+                phase = jnp.angle(coefficient)
+                applies_phase = True
+            else:
+                phase = float(np.angle(coefficient))
+                # A coefficient that is real and positive needs no gate at all.
+                applies_phase = phase != 0.0
+
             def unitary(*args):
                 child_unitary(*args)
-                with control(coefficient < 0):
-                    gphase(np.pi, args[0][0])
+                if applies_phase:
+                    gphase(phase, args[0][0])
 
             if not isinstance(coefficient, jax.core.Tracer) and _is_reusable_unitary(block_encoding):
                 object.__setattr__(self, "_cached_unitary", unitary)

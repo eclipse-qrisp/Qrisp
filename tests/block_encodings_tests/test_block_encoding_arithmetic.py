@@ -19,7 +19,19 @@ from jax.tree_util import tree_flatten, tree_unflatten
 import numpy as np
 import pytest
 
-from qrisp import QuantumBool, QuantumFloat, QuantumVariable, jaspify, measure, terminal_sampling, x
+from qrisp import (
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    control,
+    h,
+    jaspify,
+    measure,
+    s_dg,
+    terminal_sampling,
+    x,
+    z,
+)
 from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding
 from qrisp.operators import X, Y, Z
 
@@ -387,3 +399,60 @@ def test_block_encoding_kron(H1, H2):
             val_be_kron = result_be_kron.get((k, l), 0)
             val_be1_be2 = result_be1_be2.get((k, l), 0)
             assert np.isclose(val_be_kron, val_be1_be2)
+
+
+def _control_distribution_after_phase_kickback(coefficient, rotate_to_y_basis):
+    """Read a single-term combination's global phase off a control qubit.
+
+    A global phase is unobservable on its own, so the encoding is applied under a
+    control prepared in |+>. The phase is kicked back onto the control, which then
+    interferes:  (|0> + exp(i*arg)|1>)/sqrt(2). Measuring in the X basis gives
+    cos^2(arg/2), which pins the magnitude; rotating to the Y basis first gives
+    cos^2((arg - pi/2)/2), which separates arg from -arg.
+
+    The child acts as Z on an operand left in |0>, so it leaves the operand alone
+    and the control stays unentangled. Any residual entanglement would wash out the
+    interference and make the measurement meaningless rather than merely wrong.
+    """
+    child = BlockEncoding(1, [], lambda operand: z(operand[0]))
+    encoding = BlockEncoding.linear_combination([child], [coefficient])
+
+    @terminal_sampling
+    def main():
+        control_qbl = QuantumBool()
+        h(control_qbl)
+        operand = QuantumFloat(3)
+        with control(control_qbl[0]):
+            encoding.apply(operand)
+        if rotate_to_y_basis:
+            s_dg(control_qbl[0])
+        h(control_qbl)
+        return control_qbl
+
+    return main()
+
+
+@pytest.mark.parametrize(
+    "coefficient, argument",
+    [
+        (1.0, 0.0),
+        (-1.0, np.pi),
+        (1j, np.pi / 2),
+        (-1j, -np.pi / 2),
+        ((1 + 1j) / np.sqrt(2), np.pi / 4),
+    ],
+)
+def test_single_term_combination_applies_the_coefficient_phase(coefficient, argument):
+    """A one-term linear combination must encode its coefficient's phase.
+
+    alpha carries the coefficient's magnitude, so the unitary has to supply
+    coefficient / abs(coefficient), a global phase of arg(coefficient). A negative
+    real coefficient is the arg == pi case; writing that as a comparison against
+    zero raised a TypeError for a complex coefficient, even though the rest of the
+    LCU construction handles complex coefficients.
+    """
+    x_basis = _control_distribution_after_phase_kickback(coefficient, rotate_to_y_basis=False)
+    y_basis = _control_distribution_after_phase_kickback(coefficient, rotate_to_y_basis=True)
+
+    assert np.isclose(x_basis.get(False, 0), np.cos(argument / 2) ** 2, atol=1e-4)
+    assert np.isclose(y_basis.get(False, 0), np.cos((argument - np.pi / 2) / 2) ** 2, atol=1e-4)
