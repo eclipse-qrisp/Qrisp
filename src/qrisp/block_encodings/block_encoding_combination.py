@@ -54,7 +54,7 @@ from qrisp.block_encodings.block_encoding_base import (
 )
 from qrisp.core import QuantumVariable, mcx
 from qrisp.core.gate_application_functions import gphase
-from qrisp.environments import conjugate, invert
+from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import q_switch, qache
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool, QuantumFloat
