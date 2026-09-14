@@ -181,9 +181,9 @@ class DCQOProblem:
         """
         # Sympy symbols for t and T
         t_sym, T_sym = sp.symbols("t T", real=True)
-        # Array for t values
+        # Midpoint rule: avoids t=0/T exactly, where some lam_funcs have lamdot=0, diverging g_deriv below.
         dt = T / N_steps
-        t_list = np.linspace(dt, T, N_steps)
+        t_list = (np.arange(N_steps) + 0.5) * dt
 
         # Sympy functions for lam and lamdot
         lam_func = sp.lambdify((t_sym, T_sym), self.lam_func(), "numpy")
@@ -328,9 +328,9 @@ class DCQOProblem:
         # Compute time-function lamda(t, T) and the derivative lamdot(t, T)
         self._precompute_timegrid(N_steps, T, "COLD")
 
-        # Precompute opt pulses
+        # Precompute opt pulses. Must match the midpoint grid used in _precompute_timegrid.
         dt = T / N_steps
-        t_list = np.linspace(dt, T, int(N_steps))
+        t_list = (np.arange(int(N_steps)) + 0.5) * dt
         sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(opt_params), CRAB=CRAB)
         beta = opt_params
 
@@ -455,14 +455,29 @@ class DCQOProblem:
 
         """
         # Different objective functions: exp_value, agp coeffs magnitude, agp coeffs amplitude
-
-        # Precompute costs for statevector method
-        n_qubits = len(qarg)
-        num_states = 1 << n_qubits
-        bit_indices = np.arange(n_qubits - 1, -1, -1, dtype=np.uint64)
-        state_indices = np.arange(num_states, dtype=np.uint64)
-        basis = ((state_indices[:, None] >> bit_indices) & 1).astype(np.int8)
-        costs = np.einsum("bi,ij,bj->b", basis, self.Q, basis)
+        if objective == "exp_value" and exp_value_backend is None:
+            n_qubits = len(qarg)
+            num_states = 1 << n_qubits
+            bit_indices = np.arange(n_qubits - 1, -1, -1, dtype=np.uint64)
+            state_indices = np.arange(num_states, dtype=np.uint64)
+            basis = ((state_indices[:, None] >> bit_indices) & 1).astype(np.int8)
+            # Per-factor eigenvalue on computational basis state `basis`, for factor
+            # types that are diagonal in that basis. X, Y and the ladder operators
+            # (C, A) are not diagonal and have no such per-state value, so a term
+            # containing any of them disables the fast path entirely below.
+            diagonal_eigenvalues = {"Z": 1 - 2 * basis, "P0": 1 - basis, "P1": basis}
+            costs = np.zeros(num_states)
+            for term, coeff in self.H_prob.terms_dict.items():
+                term_value = np.ones(num_states)
+                for idx, factor in term.factor_dict.items():
+                    if factor not in diagonal_eigenvalues:
+                        costs = None
+                        break
+                    term_value = term_value * diagonal_eigenvalues[factor][:, idx]
+                else:
+                    costs += coeff * term_value
+                if costs is None:
+                    break
 
         # Expectation value of the QUBO Hamiltonian
         def objective_exp(params, CRAB):
@@ -482,6 +497,8 @@ class DCQOProblem:
             else:
                 # Try statevector first, fallback to measurement
                 try:
+                    if costs is None:
+                        raise ValueError("H_prob has non-diagonal terms; fast path unavailable")
                     bound_qc = qc.bind_parameters(subs_dic)
                     sv = bound_qc.statevector_array()
                     probs = np.abs(sv) ** 2
@@ -500,8 +517,9 @@ class DCQOProblem:
         # Magnitude of the AGP coefficients (coeffs are treated as uniform for simplification)
         # (sum of absolute values for each timestep)
         def objective_mag(params, CRAB):
-            # Precompute opt pulses to be multiplied with opt params
-            t_list = np.linspace(T / N_steps, T, int(N_steps))
+            # Precompute opt pulses to be multiplied with opt params.
+            # Must match the midpoint grid used in _precompute_timegrid.
+            t_list = (np.arange(int(N_steps)) + 0.5) * (T / N_steps)
             sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
             magnitude = 0
 
@@ -628,6 +646,9 @@ class DCQOProblem:
 
         # Run COLD routine
         if method == "COLD":
+            if isinstance(N_opt, (bool, np.bool_)) or not isinstance(N_opt, (int, np.integer)) or N_opt < 1:
+                raise ValueError(f"N_opt must be a positive integer for the COLD method (received {N_opt!r}).")
+
             qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
             # If we optimize the Hamiltonian expectation value,
@@ -661,7 +682,6 @@ class DCQOProblem:
                     cost = cost_temp
 
             # Apply hamiltonian with optimal parameters
-            # Here we do not want the randomized parameters to be included -> CRAB=False in any case
             self.apply_cold_hamiltonian(qarg, N_steps, T, opt_params, CRAB=False)
 
         # Run LCD routine
