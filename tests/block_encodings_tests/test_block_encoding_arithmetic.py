@@ -19,7 +19,19 @@ from jax.tree_util import tree_flatten, tree_unflatten
 import numpy as np
 import pytest
 
-from qrisp import QuantumBool, QuantumFloat, QuantumVariable, jaspify, measure, terminal_sampling, x
+from qrisp import (
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    control,
+    h,
+    jaspify,
+    measure,
+    s_dg,
+    terminal_sampling,
+    x,
+    z,
+)
 from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding, ProductBlockEncoding
 from qrisp.operators import X, Y, Z
 
@@ -521,3 +533,126 @@ def test_block_encoding_kron(H1, H2):
             val_be_kron = result_be_kron.get((k, l), 0)
             val_be1_be2 = result_be1_be2.get((k, l), 0)
             assert np.isclose(val_be_kron, val_be1_be2)
+
+
+def _control_distribution_after_phase_kickback(coefficient, rotate_to_y_basis):
+    """Read a single-term combination's global phase off a control qubit.
+
+    A global phase is unobservable on its own, so the encoding is applied under a
+    control prepared in |+>. The phase is kicked back onto the control, which then
+    interferes:  (|0> + exp(i*arg)|1>)/sqrt(2). Measuring in the X basis gives
+    cos^2(arg/2), which pins the magnitude; rotating to the Y basis first gives
+    cos^2((arg - pi/2)/2), which separates arg from -arg.
+
+    The child acts as Z on an operand left in |0>, so it leaves the operand alone
+    and the control stays unentangled. Any residual entanglement would wash out the
+    interference and make the measurement meaningless rather than merely wrong.
+    """
+    child = BlockEncoding(1, [], lambda operand: z(operand[0]))
+    encoding = BlockEncoding.linear_combination([child], [coefficient])
+
+    @terminal_sampling
+    def main():
+        control_qbl = QuantumBool()
+        h(control_qbl)
+        operand = QuantumFloat(3)
+        with control(control_qbl[0]):
+            encoding.apply(operand)
+        if rotate_to_y_basis:
+            s_dg(control_qbl[0])
+        h(control_qbl)
+        return control_qbl
+
+    return main()
+
+
+@pytest.mark.parametrize(
+    "coefficient, argument",
+    [
+        (1.0, 0.0),
+        (-1.0, np.pi),
+        (1j, np.pi / 2),
+        (-1j, -np.pi / 2),
+        ((1 + 1j) / np.sqrt(2), np.pi / 4),
+    ],
+)
+def test_single_term_combination_applies_the_coefficient_phase(coefficient, argument):
+    """A one-term linear combination must encode its coefficient's phase.
+
+    alpha carries the coefficient's magnitude, so the unitary has to supply
+    coefficient / abs(coefficient), a global phase of arg(coefficient). A negative
+    real coefficient is the arg == pi case; writing that as a comparison against
+    zero raised a TypeError for a complex coefficient, even though the rest of the
+    LCU construction handles complex coefficients.
+    """
+    x_basis = _control_distribution_after_phase_kickback(coefficient, rotate_to_y_basis=False)
+    y_basis = _control_distribution_after_phase_kickback(coefficient, rotate_to_y_basis=True)
+
+    assert np.isclose(x_basis.get(False, 0), np.cos(argument / 2) ** 2, atol=1e-4)
+    assert np.isclose(y_basis.get(False, 0), np.cos((argument - np.pi / 2) / 2) ** 2, atol=1e-4)
+
+
+@pytest.mark.parametrize(
+    "name, build, expected",
+    [
+        ("real coefficients", lambda Z_be, X_be: Z_be + 2.0 * X_be, True),
+        ("negative coefficient", lambda Z_be, X_be: Z_be - X_be, True),
+        ("imaginary coefficient", lambda Z_be, X_be: Z_be + 1j * X_be, False),
+        ("complex coefficient", lambda Z_be, X_be: Z_be + ((1 + 1j) / np.sqrt(2)) * X_be, False),
+        ("single imaginary term", lambda Z_be, X_be: BlockEncoding.linear_combination([Z_be], [1j]), False),
+        ("single negative term", lambda Z_be, X_be: BlockEncoding.linear_combination([Z_be], [-1.0]), True),
+    ],
+)
+def test_linear_combination_reports_hermitian_only_for_real_coefficients(name, build, expected):
+    """A complex coefficient makes a sum of Hermitian operators non-Hermitian.
+
+    ``I + 1j * Z`` is the shortest example. Reporting it as Hermitian is not merely
+    imprecise: qubitization selects the cheaper reflection construction on the
+    strength of this flag, which is only valid for a Hermitian operator.
+    """
+    Z_be = BlockEncoding.from_operator(Z(0))
+    X_be = BlockEncoding.from_operator(X(0))
+
+    assert build(Z_be, X_be).is_hermitian is expected
+
+
+def test_complex_coefficients_reach_the_non_hermitian_qubitization():
+    r"""The flag has to change which construction qubitization builds, not just its value.
+
+    The Hermitian branch reuses the encoding's own ancillas, while the general one
+    adds a control ancilla to build a Hermitian operator out of $(A + A^\dagger)/2$.
+    The extra ancilla is therefore a direct witness of the branch taken.
+    """
+    Z_be = BlockEncoding.from_operator(Z(0))
+    X_be = BlockEncoding.from_operator(X(0))
+
+    real_combination = Z_be + 2.0 * X_be
+    complex_combination = Z_be + 1j * X_be
+
+    assert real_combination.qubitization().num_ancs == real_combination.num_ancs
+    assert complex_combination.qubitization().num_ancs == complex_combination.num_ancs + 1
+
+
+def test_coefficient_reality_survives_the_pytree_boundary():
+    """Passing a combination through a jit boundary must not change the verdict.
+
+    The coefficients become tracers there, so their value is no longer available,
+    but their dtype is, and that is what the check relies on. Were the dtype not
+    preserved, every combination would be reported non-Hermitian under tracing.
+    """
+    Z_be = BlockEncoding.from_operator(Z(0))
+    X_be = BlockEncoding.from_operator(X(0))
+    observed = {}
+
+    @jaspify
+    def main(block_encoding, key):
+        observed[key] = block_encoding.is_hermitian
+        qv = QuantumFloat(1)
+        block_encoding.apply(qv)
+        return measure(qv)
+
+    main(Z_be + 2.0 * X_be, "real")
+    main(Z_be + 1j * X_be, "complex")
+
+    assert observed["real"] is True
+    assert observed["complex"] is False

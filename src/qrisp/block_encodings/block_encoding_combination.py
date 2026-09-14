@@ -54,10 +54,29 @@ from qrisp.block_encodings.block_encoding_base import (
 )
 from qrisp.core import QuantumVariable, mcx
 from qrisp.core.gate_application_functions import gphase
-from qrisp.environments import conjugate, control, invert
+from qrisp.environments import conjugate, invert
 from qrisp.jasp import q_switch, qache
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool, QuantumFloat
+
+
+def _is_real(value: Any) -> bool:
+    """Return whether a value is real, as far as is knowable at build time.
+
+    A traced value has no value yet, but it does have a dtype, and a dtype that is
+    not complex cannot carry an imaginary part. A complex dtype may still hold a
+    real value at run time; reporting that as possibly complex is the safe
+    direction, because the answer selects an implementation statically.
+
+    An array counts as real only if every entry does, matching
+    :func:`_is_non_negative_real`.
+    """
+    if isinstance(value, jax.core.Tracer):
+        return not jnp.issubdtype(value.dtype, jnp.complexfloating)
+    try:
+        return bool(np.all(np.isreal(value)))
+    except Exception:
+        return False
 
 
 def _is_non_negative_real(value: Any) -> bool:
@@ -588,18 +607,8 @@ def apply_neg(self) -> BlockEncoding:
         # Result from - BE1:  {3.0: 1.0}
 
     """
-
-    def new_unitary(*args):
-        self.unitary(*args)
-        gphase(np.pi, args[0][0])
-
-    return BlockEncoding(
-        self.alpha,
-        self._anc_templates,
-        new_unitary,
-        num_ops=self.num_ops,
-        is_hermitian=self.is_hermitian,
-    )
+    terms = tuple((-coefficient, block_encoding) for coefficient, block_encoding in self._get_lcu_terms())
+    return type(self)._from_lcu_terms(terms)
 
 
 def _is_statically_zero(value: Any) -> bool:
@@ -964,10 +973,21 @@ class LinearCombinationBlockEncoding(BlockEncoding):
             coefficient, block_encoding = self.terms[0]
             child_unitary = block_encoding.unitary
 
+            # alpha carries the coefficient's magnitude, so the unitary supplies
+            # coefficient / abs(coefficient): a global phase of arg(coefficient),
+            # of which a negative real coefficient is the arg == pi case.
+            if isinstance(coefficient, jax.core.Tracer):
+                phase = jnp.angle(coefficient)
+                applies_phase = True
+            else:
+                phase = float(np.angle(coefficient))
+                # A coefficient that is real and positive needs no gate at all.
+                applies_phase = phase != 0.0
+
             def unitary(*args):
                 child_unitary(*args)
-                with control(coefficient < 0):
-                    gphase(np.pi, args[0][0])
+                if applies_phase:
+                    gphase(phase, args[0][0])
 
             if not isinstance(coefficient, jax.core.Tracer) and block_encoding._has_reusable_unitary:
                 object.__setattr__(self, "_cached_unitary", unitary)
@@ -1026,8 +1046,17 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
     @property
     def is_hermitian(self) -> bool:
-        """Return whether every child encoding has a Hermitian unitary."""
-        return all(block_encoding.is_hermitian for _, block_encoding in self.terms)
+        """Return whether the encoded operator is known to be Hermitian.
+
+        Hermitian children are not enough: a complex coefficient makes the sum
+        non-Hermitian, as in ``I + 1j * Z``. Given linearly independent Hermitian
+        children the condition is also necessary, but independence is not known
+        here, so a combination may report False while being Hermitian. That is the
+        safe direction, since a caller such as
+        :meth:`~qrisp.block_encodings.BlockEncoding.qubitization` selects a cheaper
+        construction on the strength of this.
+        """
+        return all(_is_real(coefficient) and block_encoding.is_hermitian for coefficient, block_encoding in self.terms)
 
     def _get_lcu_terms(self) -> _LCUTerms:
         return self.terms
