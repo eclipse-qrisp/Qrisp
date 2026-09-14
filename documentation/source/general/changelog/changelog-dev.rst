@@ -61,6 +61,15 @@ Improvements
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
+
+- Improved the simulator's circuit preprocessing: circuit reordering is
+  faster, and gate grouping for circuits with 63+ qubits now stays on the
+  fast Numba-jitted path (via chunked qubit bitmasks) instead of falling
+  back to a slower, non-jitted implementation. All functions and classes
+  used for simulator preprocessing are strictly internal and marked with a
+  leading underscore.
+  (`PR #704 <https://github.com/eclipse-qrisp/Qrisp/pull/704>`_)
+
 - Added type hints across :class:`~qrisp.QuantumFloat`, fixed stale
   docstring examples, and sped up ``significant()``, ``init_from()``, and
   ``encode(..., rounding=True)`` (now O(1))
@@ -107,6 +116,19 @@ Other New Features
 
 Bug Fixes
 ---------
+
+* Fixed a failure when a function decorated with
+  :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
+  raised ``Automatic loop inversion is only supported for jrange-based loops``.
+  An inverted Jaspr keeps a back-pointer to the Jaspr it inverts, and the second
+  inversion follows it instead of deriving an inverse. Inverting can reclassify
+  arguments as constants, and folding them back rewrapped the Jaspr without
+  carrying the back-pointer over, so the second inversion fell back to inverting
+  the body, which is the derivation ``custom_inversion`` exists to avoid. This
+  affected, for instance, inverting a :func:`prepare <qrisp.prepare>` whose
+  amplitudes are only known at run time, as produced by a
+  :class:`~qrisp.block_encodings.BlockEncoding` simulation with traced
+  coefficients.
 
 * Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
   Unitary matrices are now computed in ``complex128`` precision, removing the
@@ -184,6 +206,10 @@ Bug Fixes
   ``int`` outside tracing, crashing later negative ``2**exponent`` calls
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+* Fixed a bug where the ``catalyst_interpreter`` failed to compile JAXPRs with
+  constants, by passing the constants to ``eval_jaxpr``
+  (`PR #750 <https://github.com/eclipse-qrisp/Qrisp/pull/750>`_).
+
 Compatibility
 -------------
 
@@ -207,6 +233,10 @@ New Tutorials/ Updated Documentation
   module (control flow, sampling, simulators, optimization tools,
   ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
   (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
+
+- Added a :ref:`Community Day <community_day>` page announcing the first
+  Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
+  link and agenda.
 
 .. Add new tutorials above this line
 
