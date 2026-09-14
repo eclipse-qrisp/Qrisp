@@ -25,8 +25,7 @@ from qrisp.jasp import jaspify
 
 
 def test_vqe_heisenberg():
-
-    # Create a graph
+    """Check VQE finds the Heisenberg model ground state energy on a 4-cycle graph."""
     G = nx.Graph()
     G.add_edges_from([(0, 1), (1, 2), (2, 3), (0, 3)])
 
@@ -41,10 +40,11 @@ def test_vqe_heisenberg():
 
 
 def test_jasp_vqe_heisenberg():
+    """Check jaspified VQE with SPSA finds the Heisenberg model ground state energy on a 4-cycle graph."""
+    np.random.seed(10)
 
     @jaspify(terminal_sampling=True)
     def main():
-        # Create a graph
         G = nx.Graph()
         G.add_edges_from([(0, 1), (1, 2), (2, 3), (0, 3)])
 
