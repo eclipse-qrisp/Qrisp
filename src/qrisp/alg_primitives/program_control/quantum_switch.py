@@ -18,6 +18,7 @@
 
 import warnings
 from collections.abc import Callable
+from typing import Literal, assert_never, get_args
 
 import jax
 import jax.numpy as jnp
@@ -42,6 +43,11 @@ from qrisp.qtypes import QuantumBool
 _BranchAmount = int | jax.core.Tracer
 _Branches = list[Callable] | Callable
 _Index = QuantumVariable | list[Qubit]
+_Method = Literal["auto", "sequential", "parallel", "tree"]
+# The methods that have an implementation; "auto" is resolved to one of these before dispatch.
+_ResolvedMethod = Literal["sequential", "parallel", "tree"]
+# The same methods as a runtime tuple, derived from ``_Method`` so that the two cannot drift apart.
+_METHODS: tuple[_Method, ...] = get_args(_Method)
 
 
 def _invert_inpl_function(func):
@@ -58,7 +64,7 @@ def _normalize_branches(
     index: _Index,
     branches: _Branches,
     branch_amount: _BranchAmount | None,
-    method: str,
+    method: _Method,
     inv: bool,
 ) -> tuple[_Branches, _BranchAmount, bool]:
     """Resolve the branch representation shared by every compile method.
@@ -98,7 +104,7 @@ def _normalize_branches(
     return branches, branch_amount, is_function_mode
 
 
-def _q_switch_sequential(
+def _q_switch_sequential(  # noqa: PLR0913, PLR0917
     index: _Index,
     branches: _Branches,
     operands: tuple[QuantumVariable, ...],
@@ -137,7 +143,7 @@ def _q_switch_sequential(
     control_qbl.delete()
 
 
-def _q_switch_parallel(
+def _q_switch_parallel(  # noqa: PLR0913, PLR0917
     index: _Index,
     branches: _Branches,
     operands: tuple[QuantumVariable, ...],
@@ -160,7 +166,8 @@ def _q_switch_parallel(
 
     if len(operands) > 1:
         raise NotImplementedError(
-            "Compile method 'parallel' for switch-case structure not available when more then one 'operands' are provided."
+            "Compile method 'parallel' for switch-case structure not available "
+            "when more then one 'operands' are provided."
         )
 
     # Idea: Use demux function to move operand and enabling bool into QuantumArray
@@ -198,7 +205,7 @@ def _q_switch_parallel(
     enable.delete()
 
 
-def _q_switch_tree(
+def _q_switch_tree(  # noqa: PLR0913, PLR0915, PLR0917
     index: _Index,
     branches: _Branches,
     operands: tuple[QuantumVariable, ...],
@@ -450,13 +457,21 @@ def _q_switch_tree(
 
         # The walk stopped short of the full 2**n leaves, so the levels where
         # that shortfall has a set bit need one extra retarget on the way out.
-        x_cond((diff >> j) & 1, lambda: bf(), lambda: None)
+        x_cond((diff >> j) & 1, bf, lambda: None)
 
     anc.delete()
 
 
 # Switch implementation for quantum index
-def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", inv=False, ctrl=None):
+def _q_switch_q(  # noqa: PLR0913
+    index: _Index,
+    branches: _Branches,
+    *operands: QuantumVariable,
+    branch_amount: _BranchAmount | None = None,
+    method: _Method = "auto",
+    inv: bool = False,
+    ctrl: Qubit | None = None,
+) -> None:
     r"""Executes a switch - case statement distinguishing between given in-place functions.
 
     Parameters
@@ -477,6 +492,12 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
         or ``"tree"``. Default is ``"auto"``.
         Method ``"tree"`` uses `balanced binary trees <https://arxiv.org/pdf/2407.17966v1>`_.
         Method ``"parallel"`` is exponentially faster but requires more qubits.
+    inv : bool, optional
+        Whether to apply the inverse of every branch. Supplied by the
+        :func:`custom_inversion <qrisp.custom_inversion>` wrapper. Default is ``False``.
+    ctrl : :ref:`Qubit`, optional
+        Qubit the whole switch is conditioned on. Supplied by the
+        :func:`custom_control <qrisp.custom_control>` wrapper. Default is ``None``.
 
     Examples
     --------
@@ -512,18 +533,23 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
         # (3.0, 3.0): 0.12499999441206447}
 
     """
+    # Checked before _normalize_branches, which keys on ``method`` itself and would
+    # otherwise skip its own checks for a misspelled method.
+    if method not in _METHODS:
+        raise ValueError(f"Unknown `method`: {method!r}. Possible methods are: {', '.join(map(repr, _METHODS))}.")
+
     branches, branch_amount, is_function_mode = _normalize_branches(index, branches, branch_amount, method, inv)
 
-    method = "tree" if method == "auto" else method
+    resolved_method: _ResolvedMethod = "tree" if method == "auto" else method
 
-    if method == "sequential":
+    if resolved_method == "sequential":
         _q_switch_sequential(index, branches, operands, branch_amount, is_function_mode, ctrl)
-    elif method == "parallel":
+    elif resolved_method == "parallel":
         _q_switch_parallel(index, branches, operands, branch_amount, is_function_mode, ctrl)
-    elif method == "tree":
+    elif resolved_method == "tree":
         _q_switch_tree(index, branches, operands, branch_amount, is_function_mode, ctrl)
     else:
-        raise Exception(f"Don't know compile method {method} for switch-case structure.")
+        assert_never(resolved_method)
 
 
 temp = _q_switch_q.__doc__
