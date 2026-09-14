@@ -17,7 +17,7 @@
 """Implements the classical-mode backend for q_switch, dispatching branches by a quantum index."""
 
 import warnings
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 
 import jax
 import jax.numpy as jnp
@@ -42,7 +42,6 @@ from qrisp.qtypes import QuantumBool
 _BranchAmount = int | jax.core.Tracer
 _Branches = list[Callable] | Callable
 _Index = QuantumVariable | list[Qubit]
-_Range = Callable[..., Iterable[int]]
 
 
 def _invert_inpl_function(func):
@@ -61,13 +60,13 @@ def _normalize_branches(
     branch_amount: _BranchAmount | None,
     method: str,
     inv: bool,
-) -> tuple[_Branches, _BranchAmount, bool, _Range]:
+) -> tuple[_Branches, _BranchAmount, bool]:
     """Resolve the branch representation shared by every compile method.
 
-    Returns the branches (inverted if requested), the number of branches, whether
-    ``branches`` is a function rather than a list, and the range helper to iterate
-    branch indices with. A function is enumerated over the full index range unless
-    the caller caps it with ``branch_amount``; a list carries its own length.
+    Returns the branches (inverted if requested), the number of branches, and
+    whether ``branches`` is a function rather than a list. A function is
+    enumerated over the full index range unless the caller caps it with
+    ``branch_amount``; a list carries its own length.
 
     Raises
     ------
@@ -80,7 +79,6 @@ def _normalize_branches(
         if branch_amount is None:
             index_size = len(index) if isinstance(index, list) else index.size
             branch_amount = 2**index_size
-        xrange = jrange if check_for_tracing_mode() else range
         if inv:
             branches = _invert_inpl_function(branches)
 
@@ -94,12 +92,10 @@ def _normalize_branches(
         if inv:
             branches = [_invert_inpl_function(func) for func in branches]
 
-        xrange = range
-
     else:
         raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
 
-    return branches, branch_amount, is_function_mode, xrange
+    return branches, branch_amount, is_function_mode
 
 
 def _q_switch_sequential(
@@ -108,7 +104,6 @@ def _q_switch_sequential(
     operands: tuple[QuantumVariable, ...],
     branch_amount: _BranchAmount,
     is_function_mode: bool,
-    xrange: _Range,
     ctrl: Qubit | None,
 ) -> None:
     """Apply each branch under its own comparison against the index.
@@ -116,6 +111,12 @@ def _q_switch_sequential(
     Costs one comparison per branch, so the circuit grows linearly, but it traces
     each branch exactly once.
     """
+    # In function mode the branch amount defaults to 2**index.size, and in Jasp a
+    # QuantumVariable's size is a tracer, so the loop over the branches has to be
+    # a jrange -- which also keeps the branch traced exactly once. A list always
+    # carries a plain Python length, so range is enough.
+    xrange = jrange if is_function_mode and check_for_tracing_mode() else range
+
     control_qbl = QuantumBool()
 
     for i in xrange(branch_amount):
@@ -511,12 +512,12 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
         # (3.0, 3.0): 0.12499999441206447}
 
     """
-    branches, branch_amount, is_function_mode, xrange = _normalize_branches(index, branches, branch_amount, method, inv)
+    branches, branch_amount, is_function_mode = _normalize_branches(index, branches, branch_amount, method, inv)
 
     method = "tree" if method == "auto" else method
 
     if method == "sequential":
-        _q_switch_sequential(index, branches, operands, branch_amount, is_function_mode, xrange, ctrl)
+        _q_switch_sequential(index, branches, operands, branch_amount, is_function_mode, ctrl)
     elif method == "parallel":
         _q_switch_parallel(index, branches, operands, branch_amount, is_function_mode, ctrl)
     elif method == "tree":
