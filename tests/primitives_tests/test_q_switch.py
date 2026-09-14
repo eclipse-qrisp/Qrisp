@@ -348,3 +348,55 @@ def test_q_switch_function_cutoff():
                 assert res[(i, 0)] == 0.0625 * 2
             else:
                 assert res[(i, i)] == 0.0625 * 2
+
+
+def test_q_switch_does_not_mutate_the_branch_list():
+    """The odd-length padding branch must not be appended to the caller's list."""
+    from qrisp import QuantumFloat, q_switch
+
+    def f0(x):
+        x += 1
+
+    def f1(x):
+        x += 2
+
+    def f2(x):
+        x += 3
+
+    branches = [f0, f1, f2]
+    expected = list(branches)
+
+    for method in ("tree", "sequential"):
+        operand = QuantumFloat(4)
+        index = QuantumFloat(2)
+        q_switch(index, branches, operand, method=method)
+
+        assert branches == expected
+
+
+def test_q_switch_odd_branch_count_with_multiple_operands():
+    """An odd branch list must still work when more than one operand is passed.
+
+    The padding branch is invoked with every operand, so it has to accept them.
+    """
+    from qrisp import QuantumFloat, multi_measurement, q_switch, x
+
+    def f0(a, b):
+        x(a[0])
+
+    def f1(a, b):
+        x(b[0])
+
+    def f2(a, b):
+        x(a[1])
+
+    for index_value in range(3):
+        first = QuantumFloat(3)
+        second = QuantumFloat(3)
+        index = QuantumFloat(2)
+        index[:] = index_value
+
+        q_switch(index, [f0, f1, f2], first, second, method="tree")
+
+        expected = {0: (1, 0), 1: (0, 1), 2: (2, 0)}[index_value]
+        assert multi_measurement([first, second]) == {expected: 1.0}
