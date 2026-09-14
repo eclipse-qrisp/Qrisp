@@ -278,9 +278,8 @@ class DCQOProblem:
 
         The LCD Hamiltonian consists of the system Hamiltonian and the adiabatic gauge potential (AGP).
         ``H_init``, ``H_prob``, ``A_lam``, and (for COLD) ``H_control`` are each
-        Trotterized via :func:`fast_trotterization`, which automatically uses a
-        fast native-gate path for Ising-type Hamiltonians and falls back to
-        :meth:`QubitOperator.trotterization` otherwise.
+        Trotterized, using a fast native-gate path for Ising-type Hamiltonians and
+        falling back to :meth:`QubitOperator.trotterization` otherwise.
 
         Parameters
         ----------
