@@ -456,3 +456,69 @@ def test_single_term_combination_applies_the_coefficient_phase(coefficient, argu
 
     assert np.isclose(x_basis.get(False, 0), np.cos(argument / 2) ** 2, atol=1e-4)
     assert np.isclose(y_basis.get(False, 0), np.cos((argument - np.pi / 2) / 2) ** 2, atol=1e-4)
+
+
+@pytest.mark.parametrize(
+    "name, build, expected",
+    [
+        ("real coefficients", lambda Z_be, X_be: Z_be + 2.0 * X_be, True),
+        ("negative coefficient", lambda Z_be, X_be: Z_be - X_be, True),
+        ("imaginary coefficient", lambda Z_be, X_be: Z_be + 1j * X_be, False),
+        ("complex coefficient", lambda Z_be, X_be: Z_be + ((1 + 1j) / np.sqrt(2)) * X_be, False),
+        ("single imaginary term", lambda Z_be, X_be: BlockEncoding.linear_combination([Z_be], [1j]), False),
+        ("single negative term", lambda Z_be, X_be: BlockEncoding.linear_combination([Z_be], [-1.0]), True),
+    ],
+)
+def test_linear_combination_reports_hermitian_only_for_real_coefficients(name, build, expected):
+    """A complex coefficient makes a sum of Hermitian operators non-Hermitian.
+
+    ``I + 1j * Z`` is the shortest example. Reporting it as Hermitian is not merely
+    imprecise: qubitization selects the cheaper reflection construction on the
+    strength of this flag, which is only valid for a Hermitian operator.
+    """
+    Z_be = BlockEncoding.from_operator(Z(0))
+    X_be = BlockEncoding.from_operator(X(0))
+
+    assert build(Z_be, X_be).is_hermitian is expected
+
+
+def test_complex_coefficients_reach_the_non_hermitian_qubitization():
+    r"""The flag has to change which construction qubitization builds, not just its value.
+
+    The Hermitian branch reuses the encoding's own ancillas, while the general one
+    adds a control ancilla to build a Hermitian operator out of $(A + A^\dagger)/2$.
+    The extra ancilla is therefore a direct witness of the branch taken.
+    """
+    Z_be = BlockEncoding.from_operator(Z(0))
+    X_be = BlockEncoding.from_operator(X(0))
+
+    real_combination = Z_be + 2.0 * X_be
+    complex_combination = Z_be + 1j * X_be
+
+    assert real_combination.qubitization().num_ancs == real_combination.num_ancs
+    assert complex_combination.qubitization().num_ancs == complex_combination.num_ancs + 1
+
+
+def test_coefficient_reality_survives_the_pytree_boundary():
+    """Passing a combination through a jit boundary must not change the verdict.
+
+    The coefficients become tracers there, so their value is no longer available,
+    but their dtype is, and that is what the check relies on. Were the dtype not
+    preserved, every combination would be reported non-Hermitian under tracing.
+    """
+    Z_be = BlockEncoding.from_operator(Z(0))
+    X_be = BlockEncoding.from_operator(X(0))
+    observed = {}
+
+    @jaspify
+    def main(block_encoding, key):
+        observed[key] = block_encoding.is_hermitian
+        qv = QuantumFloat(1)
+        block_encoding.apply(qv)
+        return measure(qv)
+
+    main(Z_be + 2.0 * X_be, "real")
+    main(Z_be + 1j * X_be, "complex")
+
+    assert observed["real"] is True
+    assert observed["complex"] is False

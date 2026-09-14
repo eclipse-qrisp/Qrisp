@@ -54,6 +54,25 @@ from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumFloat
 
 
+def _is_real(value: Any) -> bool:
+    """Return whether a value is real, as far as is knowable at build time.
+
+    A traced value has no value yet, but it does have a dtype, and a dtype that is
+    not complex cannot carry an imaginary part. A complex dtype may still hold a
+    real value at run time; reporting that as possibly complex is the safe
+    direction, because the answer selects an implementation statically.
+
+    An array counts as real only if every entry does, matching
+    :func:`_is_non_negative_real`.
+    """
+    if isinstance(value, jax.core.Tracer):
+        return not jnp.issubdtype(value.dtype, jnp.complexfloating)
+    try:
+        return bool(np.all(np.isreal(value)))
+    except Exception:
+        return False
+
+
 def _is_non_negative_real(value: Any) -> bool:
     try:
         value = np.asarray(value)
@@ -972,8 +991,17 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
     @property
     def is_hermitian(self) -> bool:
-        """Return whether every child encoding has a Hermitian unitary."""
-        return all(block_encoding.is_hermitian for _, block_encoding in self.terms)
+        """Return whether the encoded operator is known to be Hermitian.
+
+        Hermitian children are not enough: a complex coefficient makes the sum
+        non-Hermitian, as in ``I + 1j * Z``. Given linearly independent Hermitian
+        children the condition is also necessary, but independence is not known
+        here, so a combination may report False while being Hermitian. That is the
+        safe direction, since a caller such as
+        :meth:`~qrisp.block_encodings.BlockEncoding.qubitization` selects a cheaper
+        construction on the strength of this.
+        """
+        return all(_is_real(coefficient) and block_encoding.is_hermitian for coefficient, block_encoding in self.terms)
 
     def _get_lcu_terms(self) -> _LCUTerms:
         return self.terms
