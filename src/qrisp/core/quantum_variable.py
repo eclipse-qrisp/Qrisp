@@ -467,7 +467,10 @@ class QuantumVariable:
         return False
 
     def duplicate(self, name: str | None = None, qs=None, init=False, qubits=None):
-        r"""Duplicates the QuantumVariable in the sense that a new QuantumVariable is
+        r"""
+        Duplicate a QuantumVariable.
+
+        Duplicates the QuantumVariable in the sense that a new QuantumVariable is
         created with same type and parameters but initialized in the $\ket{0}$ state.
 
         Parameters
@@ -481,6 +484,9 @@ class QuantumVariable:
         init : bool, optional
             If set to True, the :meth:`init_from <qrisp.QuantumVariable.init_from>`
             method of the result will be called on self. The default is False.
+        qubits: list[Qubit] | DynamicQubitArray, optional
+            Qubits to inialize the duplicated quantum variable from.
+            If not provided ``self.size`` is used for qubits extraction.
 
         Raises
         ------
@@ -919,7 +925,10 @@ class QuantumVariable:
         filename=None,
         precompiled_qc=None,
     ) -> "DecodedMeasurementResult":
-        r"""Method for quick access to the measurement results of the state of the variable.
+        r"""
+        Get the measurement results of the state of the variable.
+
+        Method for quick access to the measurement results of the state of the variable.
         Returns a :class:`~qrisp.interface.DecodedMeasurementResult`, which behaves like
         a dictionary of the type ``{value: p}`` where ``p`` is the measurement probability.
 
@@ -1109,11 +1118,97 @@ class QuantumVariable:
     # Overload equality operator to use python syntax for if environments?
     # Not sure if the possible user confusion is worth it
     def __eq__(self, other):  # pyright: ignore[reportIncompatibleMethodOverride]
+        r"""
+        Compare self with another QuantumVariable or a classical label against equality (==), returning a QuantumBool.
+
+        Parameters
+        ----------
+        other : QuantumVariable
+            A QuantumVariable of the same size, or a classical label of this
+            QuantumVariable's type, to compare self with.
+
+        Returns
+        -------
+        QuantumBool
+            The result of the comparison.
+
+        Raises
+        ------
+        Exception
+            Tried to evaluate the comparison for QuantumVariables of differing size.
+        Exception
+            The classical comparand is not a valid label of this QuantumVariable.
+
+        Examples
+        --------
+        Comparing to another QuantumVariable:
+
+        >>> from qrisp import QuantumChar
+        >>> qch_a = QuantumChar()
+        >>> qch_b = QuantumChar()
+        >>> qch_a[:] = "b"
+        >>> qch_b[:] = "c"
+        >>> print(qch_a == qch_b)
+        {False: 1.0}
+
+        Comparing a QuantumVariable in the $\ket{+}$ state to a classical label. Both
+        outcomes have equal weight, so the result is True and False in equal parts:
+
+        >>> from qrisp import QuantumVariable, h
+        >>> qv = QuantumVariable(1)
+        >>> h(qv[0])
+        >>> print(qv == "0")
+        {False: 0.5, True: 0.5}
+
+        """
         from qrisp.environments import q_eq
 
         return q_eq(self, other)
 
     def __ne__(self, other):  # pyright: ignore[reportIncompatibleMethodOverride]
+        r"""
+        Compare self with another QuantumVariable or a classical label against inequality (!=), returning a QuantumBool.
+
+        Parameters
+        ----------
+        other : QuantumVariable
+            A QuantumVariable of the same size, or a classical label of this
+            QuantumVariable's type, to compare self with.
+
+        Returns
+        -------
+        QuantumBool
+            The result of the comparison.
+
+        Raises
+        ------
+        Exception
+            Tried to evaluate the comparison for QuantumVariables of differing size.
+        Exception
+            The classical comparand is not a valid label of this QuantumVariable.
+
+        Examples
+        --------
+        Comparing to another QuantumVariable:
+
+        >>> from qrisp import QuantumChar
+        >>> qch_a = QuantumChar()
+        >>> qch_b = QuantumChar()
+        >>> qch_a[:] = "b"
+        >>> qch_b[:] = "c"
+        >>> print(qch_a != qch_b)
+        {True: 1.0}
+
+        Comparing a QuantumVariable in the $\ket{+}$ state to a classical label. Both
+        outcomes have equal weight, so the result is True and False in equal parts:
+
+        >>> from qrisp import QuantumVariable, h
+        >>> qv = QuantumVariable(1)
+        >>> h(qv[0])
+        >>> print(qv != "0")
+        {False: 0.5, True: 0.5}
+
+        """
         from qrisp.environments import q_eq
 
         return q_eq(self, other, invert=True)
@@ -1204,8 +1299,10 @@ class QuantumVariable:
         app_phase_function([self], phi)
 
     def uncompute(self, do_it=True, recompute=False):
-        """Method for automatic uncomputation. Uses a generalized form of
-        `this algorithm <https://dl.acm.org/doi/10.1145/3453483.3454040>`_.
+        """Method for automatic uncomputation.
+
+        Uses a generalized form of
+        `this algorithm <https://dl.acm.org/doi/10.1145/3453483.3454040>`_ to perform uncomputation automatically.
 
         For more information check the
         :ref:`uncomputation documentation<uncomputation>`.
@@ -1347,8 +1444,9 @@ class QuantumVariable:
             return self.reg.__iter__()
 
     def init_from(self, other):
-        r"""Method to initiate a QuantumVariable based on the state of another. This method
-        does NOT copy the state. Much rather it performs the operation
+        r"""Initializes a QuantumVariable based on the state of another.
+
+        It does NOT copy the state. Much rather it performs the operation
 
 
         .. math::
