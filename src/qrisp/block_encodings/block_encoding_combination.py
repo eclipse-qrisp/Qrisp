@@ -594,17 +594,11 @@ def apply_neg(self) -> BlockEncoding:
 
     """
 
-    def new_unitary(*args):
-        self.unitary(*args)
-        gphase(np.pi, args[0][0])
-
-    return BlockEncoding(
-        self.alpha,
-        self._anc_templates,
-        new_unitary,
-        num_ops=self.num_ops,
-        is_hermitian=self.is_hermitian,
+    terms = tuple(
+        (-coefficient, block_encoding)
+        for coefficient, block_encoding in self._get_lcu_terms()
     )
+    return type(self)._from_lcu_terms(terms)
 
 
 def _is_statically_zero(value: Any) -> bool:
