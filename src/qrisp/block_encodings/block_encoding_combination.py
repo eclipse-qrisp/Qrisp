@@ -119,6 +119,7 @@ def build_linear_combination(  # noqa: D417
 
 def build_from_lcu_terms(cls, terms: Sequence[_LCUTerm]) -> BlockEncoding:
     """Build a linear-combination block encoding from weighted terms."""
+    terms = _validate_lcu_terms(terms)
     num_ops = terms[0][1].num_ops if terms else 1
     terms = _canonicalize_lcu_terms(terms)
     if len(terms) == 0:
@@ -611,6 +612,26 @@ def _zero_block_encoding(num_ops: int = 1) -> BlockEncoding:
     return BlockEncoding(0, [], lambda *args: None, num_ops=num_ops)
 
 
+def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
+    """Check the terms as supplied, before any are merged or dropped.
+
+    Canonicalization reads each child's normalization and can remove a term
+    outright, so a malformed or mismatched child has to be rejected first. After
+    canonicalization a child that is not a block encoding surfaces as an
+    AttributeError from an unrelated place, and one carrying a zero coefficient
+    disappears without its operand count ever being compared.
+    """
+    terms = tuple(terms)
+    if any(not isinstance(block_encoding, BlockEncoding) for _, block_encoding in terms):
+        raise TypeError("Expected every item to be a BlockEncoding.")
+
+    if terms:
+        num_ops = terms[0][1].num_ops
+        if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):
+            raise ValueError("All block-encodings must have the same number of operands.")
+    return terms
+
+
 def _canonicalize_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     """Merge identity-equal child encodings and remove concrete zero terms."""
     merged_terms: list[_LCUTerm] = []
@@ -753,15 +774,9 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         would leak the tracer.
 
         """
-        terms = _canonicalize_lcu_terms(terms)
+        terms = _canonicalize_lcu_terms(_validate_lcu_terms(terms))
         if len(terms) == 0:
             raise ValueError("Cannot construct a block encoding from an all-zero linear combination.")
-        if any(not isinstance(block_encoding, BlockEncoding) for _, block_encoding in terms):
-            raise TypeError("Expected every item to be a BlockEncoding.")
-
-        num_ops = terms[0][1].num_ops
-        if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):
-            raise ValueError("All block-encodings must have the same number of operands.")
 
         self._terms = terms
 
