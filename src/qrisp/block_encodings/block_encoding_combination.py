@@ -34,7 +34,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from types import NotImplementedType
-from typing import Any
+from typing import Any, ClassVar
 
 import jax
 import jax.numpy as jnp
@@ -599,7 +599,22 @@ def apply_neg(self) -> BlockEncoding:
     return type(self)._from_lcu_terms(terms)
 
 
-def _zero_block_encoding(num_ops: int = 1) -> BlockEncoding:
+@register_pytree_node_class
+class _ZeroBlockEncoding(BlockEncoding):
+    """A block encoding of the zero operator, recognizable after a pytree round trip.
+
+    The zero operator differs from every other encoding in that applying it is
+    refused rather than performed, so that has to stay knowable. Reading it off
+    ``alpha`` only works outside a trace: ``alpha`` is a pytree child, so passing
+    an encoding to a jitted function turns it into a tracer whose value cannot be
+    compared against zero. The type is carried in the pytree structure instead and
+    is reconstructed by ``tree_unflatten``, so it survives that crossing.
+    """
+
+    _is_zero: ClassVar[bool] = True
+
+
+def _zero_block_encoding(num_ops: int = 1) -> _ZeroBlockEncoding:
     """Return a block encoding of the zero operator.
 
     A normalization of zero encodes the zero operator whatever the unitary is, so
@@ -608,8 +623,12 @@ def _zero_block_encoding(num_ops: int = 1) -> BlockEncoding:
     sum absorbs it and a product is annihilated by it. Applying it is rejected in
     :meth:`~qrisp.block_encodings.BlockEncoding.apply`, since no unitary has a zero
     block without at least one ancilla to project onto.
+
+    The no-op unitary is the identity, which is Hermitian. That is a statement
+    about the unitary, as ``is_hermitian`` always is, and not about the zero
+    operator, which is Hermitian as well.
     """
-    return BlockEncoding(0, [], lambda *args: None, num_ops=num_ops)
+    return _ZeroBlockEncoding(0, [], lambda *args: None, num_ops=num_ops, is_hermitian=True)
 
 
 def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
