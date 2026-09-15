@@ -47,6 +47,7 @@ from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.ancilla_layout import _AncillaLayout, _maximum_layout_size
 from qrisp.block_encodings.block_encoding_base import (
     BlockEncoding,
+    _is_statically_zero,
     _LCUTerm,
     _LCUTerms,
     _ProductFactors,
@@ -147,9 +148,13 @@ def build_linear_combination(  # noqa: D417
 
 def build_from_lcu_terms(cls, terms: Sequence[_LCUTerm]) -> BlockEncoding:
     """Build a linear-combination block encoding from weighted terms."""
+    num_ops = terms[0][1].num_ops if terms else 1
     terms = _canonicalize_lcu_terms(terms)
     if len(terms) == 0:
-        raise ValueError("Cannot construct a block encoding from an all-zero linear combination.")
+        # Everything cancelled. The result is the zero operator, which is a block
+        # encoding like any other, so that expressions such as ``A - A + B`` keep
+        # building instead of failing halfway through.
+        return _zero_block_encoding(num_ops)
     if len(terms) == 1:
         coefficient, block_encoding = terms[0]
         if isinstance(coefficient, (int, float, complex, np.number)) and coefficient == 1:
@@ -429,7 +434,13 @@ def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
     if not isinstance(other, BlockEncoding):
         return NotImplemented
 
-    return ProductBlockEncoding(self._get_product_factors() + other._get_product_factors())
+    factors = self._get_product_factors() + other._get_product_factors()
+    # Zero annihilates a product, where a sum absorbs it: if any factor encodes the
+    # zero operator then so does the product, and building the whole chain of
+    # factors for it would be wasted.
+    if any(_is_statically_zero(factor.alpha) for factor in factors):
+        return _zero_block_encoding(self.num_ops)
+    return ProductBlockEncoding(factors)
 
 
 def apply_radd(self, other: Any) -> BlockEncoding | NotImplementedType:
@@ -611,15 +622,17 @@ def apply_neg(self) -> BlockEncoding:
     return type(self)._from_lcu_terms(terms)
 
 
-def _is_statically_zero(value: Any) -> bool:
-    """Return whether ``value`` is a concrete scalar zero."""
-    if isinstance(value, jax.core.Tracer):
-        return False
-    try:
-        value = np.asarray(value)
-    except Exception:
-        return False
-    return value.ndim == 0 and bool(value == 0)
+def _zero_block_encoding(num_ops: int = 1) -> BlockEncoding:
+    """Return a block encoding of the zero operator.
+
+    A normalization of zero encodes the zero operator whatever the unitary is, so
+    the cheapest honest choice is a no-op on no ancillas. It exists so that a fully
+    cancelling combination stays a block encoding and can be combined further; a
+    sum absorbs it and a product is annihilated by it. Applying it is rejected in
+    :meth:`~qrisp.block_encodings.BlockEncoding.apply`, since no unitary has a zero
+    block without at least one ancilla to project onto.
+    """
+    return BlockEncoding(0, [], lambda *args: None, num_ops=num_ops)
 
 
 def _canonicalize_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
@@ -633,10 +646,12 @@ def _canonicalize_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
         else:
             merged_terms.append((coefficient, block_encoding))
 
+    # A term contributes ``coefficient * child.alpha`` to the encoded operator, so
+    # it drops out when either factor is zero, not only the coefficient.
     return tuple(
         (coefficient, block_encoding)
         for coefficient, block_encoding in merged_terms
-        if not _is_statically_zero(coefficient)
+        if not _is_statically_zero(coefficient) and not _is_statically_zero(block_encoding.alpha)
     )
 
 
