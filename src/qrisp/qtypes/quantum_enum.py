@@ -1,28 +1,30 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+"""Quantum enum types for Qrisp."""
 
 from enum import Enum
-from math import log2, ceil
-from typing import Self, Union
+from math import ceil, log2
+from typing import Self
+
 from qrisp.core import QuantumVariable, cp, cx, mcp
 
 
 class QuantumEnum(QuantumVariable):
-    r"""A quantum meta type for auto encoding python enums in a QuantumVariable
+    r"""
+    A quantum meta type for auto encoding python enums in a QuantumVariable
 
     >>> from qrisp import QuantumEnum
     >>> from enum import auto
@@ -50,6 +52,16 @@ class QuantumEnum(QuantumVariable):
     """
 
     def __init__(self, qs=None, name=None):
+        """Initialize a QuantumEnum variable.
+
+        Parameters
+        ----------
+        qs :
+            Optional underlying quantum state.
+        name : str, optional
+            Human-readable name of this QuantumEnum variable.
+
+        """
         super().__init__(self.size, qs=qs, name=name)
 
     class Binary(Enum):
@@ -70,6 +82,10 @@ class QuantumEnum(QuantumVariable):
 
         @staticmethod
         def auto_implement(enum_cls: Self) -> Self:
+            """Adds methods for encoding and decoding to Binary encoded QuantumEnums.
+
+            This method should be called by the `@QuantumEnum.auto(...)` decorator instead of a manual call.
+            """
             if len(enum_cls.__members__) > 0:
                 values = [member.value for member in enum_cls]
 
@@ -89,7 +105,7 @@ class QuantumEnum(QuantumVariable):
                 cls.size = ceil(log2(len(enum_cls.__members__)))
 
                 def encoder(self, value):
-                    if type(value) != enum_cls:
+                    if value is not enum_cls:
                         raise ValueError(f"Can only encode values of type {enum_cls}")
                     return value.value
 
@@ -132,6 +148,10 @@ class QuantumEnum(QuantumVariable):
 
         @staticmethod
         def auto_implement(enum_cls: Self) -> Self:
+            """Adds methods for encoding and decoding to OneHot encoded QuantumEnums.
+
+            This method should be called by the `@QuantumEnum.auto(...)` decorator instead of a manual call.
+            """
             if len(enum_cls.__members__) > 0:
                 values = [member.value for member in enum_cls]
 
@@ -149,7 +169,7 @@ class QuantumEnum(QuantumVariable):
                 cls.size = len(enum_cls.__members__)
 
                 def encoder(self, value):
-                    if type(value) != enum_cls:
+                    if value is not enum_cls:
                         raise ValueError(f"Can only encode values of type {enum_cls}")
                     return value.value
 
@@ -173,6 +193,8 @@ class QuantumEnum(QuantumVariable):
 
             return decorator
 
+
 @staticmethod
 def auto(enum_cls: type[Enum]):
+    """Adds methods for encoding and decoding QuantumEnums."""
     return enum_cls.auto_implement(enum_cls)
