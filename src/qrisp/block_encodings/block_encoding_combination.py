@@ -937,14 +937,15 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         relative phase. That value is read per call rather than captured here: for
         traced coefficients it is a tracer, and this closure outlives the trace that
         builds it, since the unitary holding it is cached. Whether a phase is applied
-        at all is decided here, because a coefficient that is known and non-negative
+        at all is decided here, because a contribution that is known and non-negative
         needs no gate.
         """
         coefficient, block_encoding = self.terms[term_index]
-        if isinstance(coefficient, jax.core.Tracer):
+        effective_coefficient = coefficient * block_encoding.alpha
+        if isinstance(effective_coefficient, jax.core.Tracer):
             applies_phase = True
         else:
-            applies_phase = not _is_non_negative_real(coefficient * block_encoding.alpha)
+            applies_phase = not _is_non_negative_real(effective_coefficient)
 
         def branch(shared_ancilla, *operands):
             child_unitary(*layout.construct_views(shared_ancilla), *operands)
@@ -979,15 +980,13 @@ class LinearCombinationBlockEncoding(BlockEncoding):
             coefficient, block_encoding = self.terms[0]
             child_unitary = block_encoding.unitary
 
-            # alpha carries the coefficient's magnitude, so the unitary supplies
-            # coefficient / abs(coefficient): a global phase of arg(coefficient),
-            # of which a negative real coefficient is the arg == pi case.
-            if isinstance(coefficient, jax.core.Tracer):
-                phase = jnp.angle(coefficient)
+            effective_coefficient = coefficient * block_encoding.alpha
+            if isinstance(effective_coefficient, jax.core.Tracer):
+                phase = jnp.angle(effective_coefficient)
                 applies_phase = True
             else:
-                phase = float(np.angle(coefficient))
-                # A coefficient that is real and positive needs no gate at all.
+                phase = float(np.angle(effective_coefficient))
+                # A contribution that is real and positive needs no gate at all.
                 applies_phase = phase != 0.0
 
             def unitary(*args):
@@ -995,7 +994,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
                 if applies_phase:
                     gphase(phase, args[0][0])
 
-            if not isinstance(coefficient, jax.core.Tracer) and _is_reusable_unitary(block_encoding):
+            if not isinstance(effective_coefficient, jax.core.Tracer) and _is_reusable_unitary(block_encoding):
                 object.__setattr__(self, "_cached_unitary", unitary)
             return unitary
 
