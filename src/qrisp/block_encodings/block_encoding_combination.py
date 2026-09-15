@@ -621,6 +621,12 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     AttributeError from an unrelated place, and one carrying a zero coefficient
     disappears without its operand count ever being compared.
 
+    The shape check reads ``ndim`` instead of testing for a NumPy array, so that a
+    JAX array or a traced one is rejected the same way rather than silently giving
+    the derived amplitudes an extra axis. Objects without ``ndim`` are left alone,
+    which keeps plain scalars and the placeholders JAX builds its argument metadata
+    from out of the check.
+
     A NumPy array coefficient is also detached here. The terms are the
     authoritative representation and everything else is derived from them and
     cached, so a coefficient the caller can still write to would leave those
@@ -632,13 +638,11 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     for coefficient, block_encoding in terms:
         if not isinstance(block_encoding, BlockEncoding):
             raise TypeError("Expected every item to be a BlockEncoding.")
-        detached = coefficient
-        if isinstance(coefficient, np.ndarray):
-            if coefficient.ndim != 0:
-                raise ValueError(
-                    f"Expected every coefficient to be a scalar, but got an array of shape {coefficient.shape}."
-                )
-            detached = coefficient.item()
+        if getattr(coefficient, "ndim", 0) != 0:
+            raise ValueError(
+                f"Expected every coefficient to be a scalar, but got an array of shape {coefficient.shape}."
+            )
+        detached = coefficient.item() if isinstance(coefficient, np.ndarray) else coefficient
         checked.append((detached, block_encoding))
 
     terms = tuple(checked)
