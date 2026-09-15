@@ -191,3 +191,36 @@ def test_loop_carried_array_becomes_pointer():
     _assert_no_tensors(mlir)
     assert "cc.loop" in mlir
     assert "!cc.ptr<!cc.array<f64 x 3>>" in mlir
+
+
+# ---------------------------------------------------------------------------
+# Arrays returned across function boundaries
+# ---------------------------------------------------------------------------
+
+
+def test_array_returned_from_qache_becomes_array_pointer():
+    """An array returned from a @qache function crosses the boundary as a pointer.
+
+    While the pass converted function argument types but not result types, the
+    callee kept its tensor<NxT> result and the caller rebuilt a CC array from it
+    with tensor.extract - operations that CUDA-Q 0.16 can no longer parse, since
+    it no longer registers the upstream tensor dialect.
+    """
+    @qache
+    def make_angles():
+        return jnp.array([0.0, 3.14159265])
+
+    @qache
+    def apply_angle(arr, qv):
+        rz(arr[1], qv[0])
+        return measure(qv[0])
+
+    def main():
+        arr = make_angles()
+        qv = QuantumVariable(1)
+        return apply_angle(arr, qv)
+
+    mlir = _lower(main)
+
+    _assert_no_tensors(mlir)
+    assert "@make_angles() -> (!cc.ptr<!cc.array<f64 x 2>>)" in mlir

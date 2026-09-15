@@ -19,28 +19,32 @@
 # Ranked Tensor → CC Array Lowering
 # ===================================
 #
-# Lowers ranked tensor constants (tensor<NxT>) and their element accesses
-# to CC memory operations (cc.alloca, cc.compute_ptr, cc.load), matching
-# native CUDA-Q output.
+# Lowers rank-1 tensors (tensor<NxT>) and their element accesses to CC memory
+# operations (cc.alloca, cc.compute_ptr, cc.load), matching native CUDA-Q
+# output. A tensor is an immutable value, a CC array is a pointer to storage,
+# so the lowering is a type conversion:
 #
-# Additionally rewrites function signatures and call sites so that rank-1
-# tensor arguments are passed as !cc.ptr<!cc.array<T x N>> pointers,
-# enabling dynamic indexing across function boundaries without copying.
+#     tensor<NxT>  →  !cc.ptr<!cc.array<T x N>>
 #
 # Approach
 # --------
-# 1. Collect signature rewrites – determine which functions have rank-1
-#    tensor arguments that need conversion to CC array pointers.
-# 2. Rewrite function definitions – change tensor<NxT> block args to
-#    !cc.ptr<!cc.array<T x N>>.
-# 3. Process each function body – materialize local tensor constants into
-#    CC arrays (populating an array_map), rewrite tensor access patterns,
-#    and rewrite outgoing calls using the populated array_map so that
-#    already-materialized arrays are passed directly (no redundant copies).
+# 1. Lower tensor operations. Dense tensor constants become a cc.alloca filled
+#    by element stores, and element accesses become cc.compute_ptr + cc.load.
+#    After this stage the only tensor-typed values left are the ones that cross
+#    a boundary: function arguments and results, call results, and the
+#    arguments and results of structured control flow.
+# 2. Convert the remaining tensor types. One TypeConversionPattern rewrites
+#    operation result types and the block arguments of nested regions, and a
+#    second pattern rewrites function signatures. Operand types need no handling
+#    of their own, because an operand's type is the type of the result that
+#    defines it.
+# 3. Lower tensor operations again. Element accesses on values that only became
+#    CC array pointers in stage 2 - a function's array argument, say - can be
+#    lowered once their definition has been converted.
 #
-# Handles both static and dynamic array indexing.
-
-from dataclasses import dataclass
+# Handles both static and dynamic array indexing. Anything this pass cannot
+# express is left in place rather than lowered incorrectly; the pipeline's
+# closing verifier reports what remains.
 
 from xdsl.dialects import arith, tensor
 from xdsl.dialects import func as func_dialect
@@ -57,18 +61,30 @@ from xdsl.dialects.builtin import (
     TensorType,
     i64,
 )
-from xdsl.ir import Attribute, Block, Region, SSAValue
-from xdsl.rewriter import Rewriter
+from xdsl.ir import Attribute, Operation, SSAValue
+from xdsl.pattern_rewriter import (
+    GreedyRewritePatternApplier,
+    PatternRewriter,
+    PatternRewriteWalker,
+    RewritePattern,
+    TypeConversionPattern,
+    attr_type_rewrite_pattern,
+    op_type_rewrite_pattern,
+)
 
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcAllocaOp,
     CcArrayType,
     CcCastOp,
     CcComputePtrOp,
+    CcIfOp,
     CcLoadOp,
     CcLoopOp,
     CcPtrType,
     CcStoreOp,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.safeguard_no_ranked_tensor_linalg import (
+    CudaqUnsupportedArrayOperationError,
 )
 
 # MLIR's sentinel for "dynamic dimension/offset"
@@ -81,363 +97,256 @@ _MLIR_DYNAMIC = -9223372036854775808
 
 
 def _lower_ranked_tensors(module: ModuleOp) -> None:
-    """In-place pass: lower ranked tensor constants + accesses to CC arrays.
+    """In-place pass: lower rank-1 tensor constants and accesses to CC arrays.
 
-    Pipeline:
-    1. Collect which functions need signature changes (tensor<NxT> → ptr)
-    2. Rewrite function definitions (change block arg types)
-    3. Process each function body (materialize + rewrite accesses + rewrite calls)
+    Runs the three stages described at the top of this module: lower tensor
+    operations, convert the tensor types that cross a boundary, then lower the
+    operations that became lowerable as a result.
     """
-    # Step 1: Determine which functions need signature changes.
-    func_rewrites = _collect_signature_rewrites(module)
-
-    # Step 2: Rewrite function definitions (tensor args → ptr args).
-    for op in list(module.body.blocks[0].ops):
-        if isinstance(op, func_dialect.FuncOp) and op.sym_name.data in func_rewrites:
-            _rewrite_func_def(op, func_rewrites[op.sym_name.data])
-
-    # Step 3: Process each function body (materialize + rewrite + calls).
-    for op in list(module.body.blocks[0].ops):
-        if isinstance(op, func_dialect.FuncOp):
-            _process_func(op, func_rewrites)
+    _lower_tensor_operations(module)
+    _convert_tensor_types(module)
+    _lower_tensor_operations(module)
 
 
 # ===================================================================
-# Step 1: Collect signature rewrites
+# Stage 1 and 3: operation lowering
 # ===================================================================
 
 
-def _collect_signature_rewrites(module) -> dict:
-    """Determine which functions have rank-1 tensor args needing ptr conversion."""
-    func_rewrites = {}
-    for op in list(module.body.blocks[0].ops):
-        if not isinstance(op, func_dialect.FuncOp):
-            continue
-        ftype = op.function_type
-        rewrites = []
-        for i, inp_type in enumerate(ftype.inputs):
-            if isinstance(inp_type, TensorType) and len(inp_type.get_shape()) == 1:
-                arr_type = CcArrayType(inp_type.element_type, inp_type.get_shape()[0])
-                rewrites.append((i, inp_type, arr_type, CcPtrType(arr_type)))
-        if rewrites:
-            func_rewrites[op.sym_name.data] = rewrites
-    return func_rewrites
+def _lower_tensor_operations(module: ModuleOp) -> None:
+    """Materialize tensor constants and lower element accesses to CC memory ops."""
+    PatternRewriteWalker(
+        GreedyRewritePatternApplier(
+            [
+                MaterializeDenseArrayConstant(),
+                LowerTensorExtract(),
+                LowerSlicedTensorExtract(),
+            ]
+        ),
+        apply_recursively=False,
+    ).rewrite_module(module)
+
+    # Erasing is a separate walk: an operation only becomes dead once its users
+    # have been rewritten above, and mixing erasure into the walk that creates
+    # the replacements leaves erased operations on xDSL's worklist.
+    PatternRewriteWalker(EraseDeadTensorOp(), apply_recursively=False).rewrite_module(module)
 
 
-# ===================================================================
-# Step 2: Rewrite function definitions
-# ===================================================================
+class MaterializeDenseArrayConstant(RewritePattern):
+    """Replace a dense rank-1 tensor constant with a cc.alloca and element stores."""
 
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.ConstantOp, rewriter: PatternRewriter) -> None:
+        """Materialize a tensor literal into CC array storage."""
+        tensor_type = op.result.type
+        if not _is_rank_1_tensor(tensor_type) or not any(op.result.uses):
+            return
 
-def _rewrite_func_def(func_op, rewrites: list) -> None:
-    """Change tensor args to ptr args in a function definition."""
-    ftype = func_op.function_type
-    new_inputs = list(ftype.inputs)
-    block = func_op.body.blocks[0]
+        values = _dense_values(op)
+        if values is None:
+            return
 
-    for arg_idx, _, _, ptr_type in rewrites:
-        new_inputs[arg_idx] = ptr_type
-        Rewriter.replace_value_with_new_type(block.args[arg_idx], ptr_type)
-
-    func_op.function_type = FunctionType.from_lists(new_inputs, list(ftype.outputs))
-
-
-# ===================================================================
-# Step 3: Process function bodies
-# ===================================================================
-
-
-def _process_func(func_op, func_rewrites: dict) -> None:
-    """Process a function: materialize arrays, rewrite accesses, rewrite calls."""
-    func_array_map: dict[SSAValue, tuple[SSAValue, any]] = {}
-    _process_block_recursive(func_op.body, func_array_map, func_rewrites)
-
-
-def _process_block_recursive(region: Region, array_map: dict, func_rewrites: dict) -> None:
-    """Recursively process all blocks."""
-    for block in region.blocks:
-        _process_block(block, array_map)
-        _rewrite_calls_in_block(block, func_rewrites, array_map)
-        for op in list(block.ops):
-            if isinstance(op, CcLoopOp):
-                _rewrite_cc_loop_tensor_args(op, array_map)
-            for nested_region in op.regions:
-                _process_block_recursive(nested_region, array_map, func_rewrites)
-        # Dead-constant sweep: call/loop-arg rewriting above may have dropped
-        # the last use of a tensor constant that _process_block couldn't erase.
-        _erase_dead_tensor_constants(block)
-
-
-def _erase_dead_tensor_constants(block: Block) -> None:
-    """Erase ranked-1 tensor constants that have no remaining uses."""
-    for op in list(block.ops):
-        if isinstance(op, arith.ConstantOp) and _is_ranked_1_tensor(op.result.type) and not any(op.result.uses):
-            Rewriter.erase_op(op, safe_erase=False)
-
-
-def _process_block(block: Block, array_map: dict) -> None:
-    """Materialize arrays, rewrite accesses."""
-    # Phase 0: Register ptr-typed block arguments.
-    for arg in block.args:
-        if isinstance(arg.type, CcPtrType) and isinstance(arg.type.element_type, CcArrayType):
-            array_map[arg] = (arg, arg.type.element_type.element_type)
-
-    # Phase 1: Materialize ranked tensor constants (only if they have uses).
-    for op in list(block.ops):
-        if isinstance(op, arith.ConstantOp) and _is_ranked_1_tensor(op.result.type):
-            if any(op.result.uses):
-                _materialize_array(op, block, array_map)
-
-    # Phase 2: Rewrite tensor access patterns.
-    for op in list(block.ops):
-        if isinstance(op, tensor.ExtractOp):
-            _rewrite_tensor_extract(op, block, array_map)
-        elif isinstance(op, tensor.ExtractSliceOp):
-            _rewrite_extract_slice_chain(op, block, array_map)
-
-
-# ===================================================================
-# CC Loop tensor arg rewriting
-# ===================================================================
-
-
-@dataclass(frozen=True)
-class _LoopArgRewrite:
-    """Describe the pointer replacement for one loop-carried tensor."""
-
-    pointer: SSAValue
-    pointer_type: CcPtrType
-    element_type: Attribute
-
-
-def _rewrite_cc_loop_tensor_args(loop_op: CcLoopOp, array_map: dict) -> None:
-    """Rewrite tensor<NxT> loop-carried values in a cc.loop to !cc.ptr<!cc.array<T x N>>.
-
-    The key insight: after the function signature rewrite (Step 2), the init
-    operands to the loop may already have been changed to ptr types, but the
-    loop's internal block arguments still have the old tensor types. We detect
-    this by looking at the **while-region block arg types** (which reflect what
-    the loop was originally created with).
-
-    This updates:
-    - The cc.loop's init operands (replace tensor value with ptr from array_map)
-    - Block args in while, body, and step regions
-    - The cc.loop's result types
-    """
-    if not loop_op.while_region.blocks:
-        return
-
-    while_block = loop_op.while_region.blocks[0]
-    rewrites = _collect_loop_arg_rewrites(loop_op, while_block, array_map)
-
-    if not rewrites:
-        return
-
-    _rewrite_loop_operands(loop_op, rewrites)
-    _rewrite_loop_region_args(loop_op, rewrites, array_map)
-    _rewrite_loop_results(loop_op, rewrites, array_map)
-
-
-def _collect_loop_arg_rewrites(
-    loop_op: CcLoopOp,
-    while_block: Block,
-    array_map: dict,
-) -> dict[int, _LoopArgRewrite]:
-    """Collect resolvable tensor loop arguments and their pointer types."""
-    arguments = list(loop_op.arguments)
-    rewrites: dict[int, _LoopArgRewrite] = {}
-    for index, block_arg in enumerate(while_block.args):
-        if not _is_ranked_1_tensor(block_arg.type) or index >= len(arguments):
-            continue
-
-        tensor_type = block_arg.type
         element_type = tensor_type.element_type
-        array_type = CcArrayType(element_type, tensor_type.get_shape()[0])
-        pointer_type = CcPtrType(array_type)
-        pointer = _resolve_array_pointer(arguments[index], array_map)
-        if pointer is not None:
-            rewrites[index] = _LoopArgRewrite(pointer, pointer_type, element_type)
-    return rewrites
+        alloca = CcAllocaOp(CcArrayType(element_type, tensor_type.get_shape()[0]))
+
+        new_ops: list[Operation] = [alloca]
+        for index, value in enumerate(values):
+            scalar = _scalar_constant(value, element_type)
+            pointer = _element_pointer_op(alloca.result, index, element_type)
+            new_ops += [scalar, pointer, CcStoreOp(scalar.result, pointer.results[0])]
+
+        rewriter.replace_matched_op(new_ops, [alloca.result])
 
 
-def _resolve_array_pointer(init_value: SSAValue, array_map: dict) -> SSAValue | None:
-    """Resolve a loop initializer to an existing CC array pointer."""
-    if isinstance(init_value.type, CcPtrType) and isinstance(init_value.type.element_type, CcArrayType):
-        return init_value
+class LowerTensorExtract(RewritePattern):
+    """Rewrite tensor.extract on a CC array pointer to cc.compute_ptr + cc.load."""
 
-    mapped_value = array_map.get(init_value)
-    return mapped_value[0] if mapped_value is not None else None
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
+        """Lower a direct element access."""
+        indices = list(op.indices)
+        if not indices or not _is_array_pointer(op.tensor.type):
+            return
 
-
-def _rewrite_loop_operands(loop_op: CcLoopOp, rewrites: dict[int, _LoopArgRewrite]) -> None:
-    """Replace loop initializers with their resolved CC array pointers."""
-    arguments = list(loop_op.arguments)
-    for index, rewrite in rewrites.items():
-        arguments[index] = rewrite.pointer
-    loop_op.operands = arguments
+        new_ops, loaded = _emit_element_load(op.tensor, indices[0])
+        rewriter.replace_matched_op(new_ops, [loaded])
 
 
-def _rewrite_loop_region_args(
-    loop_op: CcLoopOp,
-    rewrites: dict[int, _LoopArgRewrite],
-    array_map: dict,
-) -> None:
-    """Change loop-region tensor arguments to pointers and register them."""
-    for region in loop_op.regions:
-        if not region.blocks:
-            continue
-        block = region.blocks[0]
-        for index, rewrite in rewrites.items():
-            if index >= len(block.args):
-                continue
-            old_arg = block.args[index]
-            Rewriter.replace_value_with_new_type(old_arg, rewrite.pointer_type)
-            array_map[old_arg] = (old_arg, rewrite.element_type)
+class LowerSlicedTensorExtract(RewritePattern):
+    """Rewrite extract(collapse_shape(extract_slice(array))) to a single element load.
+
+    JAX lowers a runtime index into an array to a unit-size slice followed by a
+    reshape to a scalar tensor. The slice offset is the index being read, so the
+    whole chain collapses to one cc.compute_ptr + cc.load on the CC array.
+    """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
+        """Lower an element access that reaches the array through a slice."""
+        collapse_op = op.tensor.owner
+        if not isinstance(collapse_op, tensor.CollapseShapeOp):
+            return
+
+        slice_op = collapse_op.operands[0].owner
+        if not isinstance(slice_op, tensor.ExtractSliceOp):
+            return
+
+        if not _is_array_pointer(slice_op.source.type):
+            return
+
+        new_ops, loaded = _emit_element_load(slice_op.source, _slice_index(slice_op))
+        rewriter.replace_matched_op(new_ops, [loaded])
 
 
-def _rewrite_loop_results(
-    loop_op: CcLoopOp,
-    rewrites: dict[int, _LoopArgRewrite],
-    array_map: dict,
-) -> None:
-    """Change loop results to pointers and register them for later accesses."""
-    for index, rewrite in rewrites.items():
-        if index >= len(loop_op.res):
-            continue
-        result = loop_op.res[index]
-        Rewriter.replace_value_with_new_type(result, rewrite.pointer_type)
-        array_map[result] = (result, rewrite.element_type)
+class EraseDeadTensorOp(RewritePattern):
+    """Erase tensor operations whose results fell out of use during lowering."""
 
+    _ERASABLE = (arith.ConstantOp, tensor.CollapseShapeOp, tensor.ExtractSliceOp)
 
-# ===================================================================
-# Call rewriting (uses array_map — no redundant copies)
-# ===================================================================
+    def match_and_rewrite(self, op: Operation, rewriter: PatternRewriter) -> None:
+        """Erase an unused tensor constant, slice, or reshape."""
+        if not isinstance(op, self._ERASABLE):
+            return
+        if not all(_is_rank_1_tensor(result.type) for result in op.results):
+            return
+        if any(any(result.uses) for result in op.results):
+            return
 
-
-def _rewrite_calls_in_block(block: Block, func_rewrites: dict, array_map: dict) -> None:
-    """Rewrite func.call ops, passing existing CC arrays from array_map."""
-    for op in list(block.ops):
-        if not isinstance(op, func_dialect.CallOp):
-            continue
-        callee = op.callee.string_value()
-        if callee not in func_rewrites:
-            continue
-
-        new_operands = list(op.operands)
-        for arg_idx, old_type, arr_type, _ in func_rewrites[callee]:
-            tensor_val = op.operands[arg_idx]
-            if tensor_val in array_map:
-                new_operands[arg_idx] = array_map[tensor_val][0]
-            else:
-                new_operands[arg_idx] = _materialize_tensor_value(tensor_val, old_type, arr_type, block, op)
-
-        new_call = func_dialect.CallOp(op.callee, new_operands, list(op.result_types))
-        block.insert_ops_before([new_call], op)
-        for old_res, new_res in zip(op.results, new_call.results):
-            old_res.replace_all_uses_with(new_res)
-        Rewriter.erase_op(op, safe_erase=False)
+        rewriter.erase_op(op)
 
 
 # ===================================================================
-# Helpers
+# Stage 2: type conversion
 # ===================================================================
 
 
-def _is_ranked_1_tensor(t) -> bool:
+def _convert_tensor_types(module: ModuleOp) -> None:
+    """Convert rank-1 tensor types at every boundary that carries a value."""
+    PatternRewriteWalker(TensorToArrayPointer(), apply_recursively=False).rewrite_module(module)
+    PatternRewriteWalker(ConvertFuncSignature(), apply_recursively=False).rewrite_module(module)
+
+
+class TensorToArrayPointer(TypeConversionPattern):
+    """Convert rank-1 tensor types to CC array pointers.
+
+    ``recursive`` makes the conversion reach into structured attributes, which is
+    what rewrites a ``func.func`` signature: its function type holds the input and
+    output types as parameters, so both directions are converted together.
+
+    ``ops`` restricts the conversion to the operations that carry a value across a
+    boundary. ``arith.constant`` is deliberately absent, because its dense value
+    attribute carries a tensor type that has to keep describing the literal rather
+    than the storage it is materialized into. Stage 1 has already replaced every
+    dense constant that can be materialized, and the pipeline's closing verifier
+    reports any that could not be.
+    """
+
+    recursive = True
+    ops = (func_dialect.FuncOp, func_dialect.CallOp, CcLoopOp, CcIfOp)
+
+    @attr_type_rewrite_pattern
+    def convert_type(self, typ: TensorType) -> Attribute | None:
+        """Map a rank-1 tensor type onto the CC array pointer that replaces it."""
+        if not _is_rank_1_tensor(typ):
+            return None
+        return _array_pointer_type(typ)
+
+
+class ConvertFuncSignature(RewritePattern):
+    """Convert rank-1 tensor types in a function signature to CC array pointers.
+
+    This is not folded into TensorToArrayPointer because xDSL's recursive type
+    conversion does not descend into a FunctionType's parameters (checked against
+    xdsl 0.59), so a function's declared argument and result types are the one
+    boundary it leaves untouched. Both patterns map types through
+    :func:`_converted_type`, so they stay in agreement.
+    """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: func_dialect.FuncOp, rewriter: PatternRewriter) -> None:
+        """Rewrite a function's declared argument and result types."""
+        function_type = op.function_type
+        inputs = [_converted_type(t) for t in function_type.inputs]
+        outputs = [_converted_type(t) for t in function_type.outputs]
+
+        if inputs == list(function_type.inputs) and outputs == list(function_type.outputs):
+            return
+
+        op.function_type = FunctionType.from_lists(inputs, outputs)
+
+
+# ===================================================================
+# Types
+# ===================================================================
+
+
+def _is_rank_1_tensor(t: Attribute) -> bool:
+    """Return True if *t* is a ranked tensor type with exactly one dimension."""
     return isinstance(t, TensorType) and len(t.get_shape()) == 1
 
 
-def _cast_index_to_i64(val: SSAValue, block: Block, insert_before) -> SSAValue:
-    if isinstance(val.type, IndexType):
-        cast = arith.IndexCastOp(val, i64)
-        block.insert_ops_before([cast], insert_before)
-        return cast.result
-    return val
+def _is_array_pointer(t: Attribute) -> bool:
+    """Return True if *t* is a pointer to a CC array."""
+    return isinstance(t, CcPtrType) and isinstance(t.element_type, CcArrayType)
 
 
-def _emit_load_from_array(arr_ptr, index, elem_type, block, insert_before):
-    """Emit cc.compute_ptr + cc.load."""
-    if isinstance(index, SSAValue):
-        index = _cast_index_to_i64(index, block, insert_before)
-    ptr = CcComputePtrOp(arr_ptr, index, elem_type)
-    load = CcLoadOp(ptr.result)
-    block.insert_ops_before([ptr, load], insert_before)
-    return load.result
+def _converted_type(t: Attribute) -> Attribute:
+    """Return the CC array pointer replacing *t*, or *t* itself if it is not a rank-1 tensor."""
+    return _array_pointer_type(t) if _is_rank_1_tensor(t) else t
 
 
-def _make_scalar_const(value, elem_type):
-    if isinstance(elem_type, (Float64Type, Float32Type, Float16Type)):
-        return arith.ConstantOp(FloatAttr(float(value), elem_type))
-    return arith.ConstantOp(IntegerAttr(int(value), elem_type))
+def _array_pointer_type(tensor_type: TensorType) -> CcPtrType:
+    """Return the CC array pointer type that replaces *tensor_type*."""
+    return CcPtrType(CcArrayType(tensor_type.element_type, tensor_type.get_shape()[0]))
+
+
+def _pointee_element_type(pointer: SSAValue) -> Attribute:
+    """Return the element type of the CC array *pointer* refers to."""
+    return pointer.type.element_type.element_type
 
 
 # ===================================================================
-# Array materialization
+# Emission
 # ===================================================================
 
 
-def _materialize_array(const_op, block: Block, array_map: dict) -> None:
-    """Replace a ranked tensor constant with cc.alloca + stores."""
-    values = _get_dense_values(const_op)
-    if values is None:
-        return
+def _element_pointer_op(base: SSAValue, index: int, element_type: Attribute) -> Operation:
+    """Return the operation addressing element *index* of the array *base*.
 
-    result_type = const_op.result.type
-    size = result_type.get_shape()[0]
-    elem_type = result_type.element_type
-    arr_type = CcArrayType(elem_type, size)
-
-    alloca = CcAllocaOp(arr_type)
-    block.insert_ops_before([alloca], const_op)
-
-    for i, val in enumerate(values):
-        scalar_const = _make_scalar_const(val, elem_type)
-        block.insert_ops_before([scalar_const], const_op)
-        if i == 0:
-            cast = CcCastOp(alloca.result, CcPtrType(elem_type))
-            block.insert_ops_before([cast], const_op)
-            store = CcStoreOp(scalar_const.result, cast.result)
-        else:
-            ptr = CcComputePtrOp(alloca.result, i, elem_type)
-            block.insert_ops_before([ptr], const_op)
-            store = CcStoreOp(scalar_const.result, ptr.result)
-        block.insert_ops_before([store], const_op)
-
-    array_map[const_op.result] = (alloca.result, elem_type)
+    Element 0 is addressed with cc.cast and the remaining elements with
+    cc.compute_ptr, mirroring what native CUDA-Q emits when it fills an array.
+    """
+    if index == 0:
+        return CcCastOp(base, CcPtrType(element_type))
+    return CcComputePtrOp(base, index, element_type)
 
 
-def _materialize_tensor_value(
-    tensor_val: SSAValue,
-    tensor_type: TensorType,
-    arr_type: CcArrayType,
-    block: Block,
-    insert_before,
-) -> SSAValue:
-    """Materialize a non-constant tensor into a CC array (fallback)."""
-    size = tensor_type.get_shape()[0]
-    elem_type = tensor_type.element_type
+def _emit_element_load(pointer: SSAValue, index: int | SSAValue) -> tuple[list[Operation], SSAValue]:
+    """Return the operations loading element *index* of *pointer*, and the loaded value."""
+    element_type = _pointee_element_type(pointer)
+    new_ops: list[Operation] = []
 
-    alloca = CcAllocaOp(arr_type)
-    block.insert_ops_before([alloca], insert_before)
+    if isinstance(index, SSAValue) and isinstance(index.type, IndexType):
+        index_cast = arith.IndexCastOp(index, i64)
+        new_ops.append(index_cast)
+        index = index_cast.result
 
-    for i in range(size):
-        idx = arith.ConstantOp(IntegerAttr(i, IndexType()))
-        extract = tensor.ExtractOp(tensor_val, [idx.result], elem_type)
-        block.insert_ops_before([idx, extract], insert_before)
-        if i == 0:
-            cast = CcCastOp(alloca.result, CcPtrType(elem_type))
-            block.insert_ops_before([cast], insert_before)
-            store = CcStoreOp(extract.result, cast.result)
-        else:
-            ptr = CcComputePtrOp(alloca.result, i, elem_type)
-            block.insert_ops_before([ptr], insert_before)
-            store = CcStoreOp(extract.result, ptr.result)
-        block.insert_ops_before([store], insert_before)
+    element_pointer = CcComputePtrOp(pointer, index, element_type)
+    load = CcLoadOp(element_pointer.result)
+    new_ops += [element_pointer, load]
 
-    return alloca.result
+    return new_ops, load.result
 
 
-def _get_dense_values(const_op):
+def _scalar_constant(value, element_type: Attribute) -> arith.ConstantOp:
+    """Return a scalar arith.constant holding *value* at *element_type*."""
+    if isinstance(element_type, (Float16Type, Float32Type, Float64Type)):
+        return arith.ConstantOp(FloatAttr(float(value), element_type))
+    return arith.ConstantOp(IntegerAttr(int(value), element_type))
+
+
+def _dense_values(const_op: arith.ConstantOp) -> list | None:
+    """Return the literal elements of a dense constant, or None if it has none."""
     if not isinstance(const_op.value, DenseIntOrFPElementsAttr):
         return None
     try:
@@ -447,95 +356,45 @@ def _get_dense_values(const_op):
 
 
 # ===================================================================
-# Access pattern rewriting
+# Slices
 # ===================================================================
 
 
-def _rewrite_tensor_extract(extract_op, block: Block, array_map: dict) -> None:
-    """Rewrite ranked tensor.extract → cc.compute_ptr + cc.load."""
-    source = extract_op.tensor
-    indices = list(extract_op.indices)
-    if not indices or source not in array_map:
-        return
-    arr_ptr, elem_type = array_map[source]
-    loaded = _emit_load_from_array(arr_ptr, indices[0], elem_type, block, extract_op)
-    extract_op.result.replace_all_uses_with(loaded)
-    Rewriter.erase_op(extract_op, safe_erase=False)
+def _slice_index(slice_op: tensor.ExtractSliceOp) -> int | SSAValue:
+    """Return the element index a unit slice selects, static or dynamic."""
+    _require_unit_slice(slice_op)
+
+    static_offsets = list(slice_op.static_offsets.get_values())
+    if static_offsets and static_offsets[0] != _MLIR_DYNAMIC:
+        return int(static_offsets[0])
+
+    offsets = list(slice_op.offsets)
+    if not offsets:
+        raise CudaqUnsupportedArrayOperationError(
+            "This @cudaq_kernel function reads an array slice whose offset is "
+            "neither a constant nor a runtime value, which CUDA-Q cannot compile."
+        )
+    return offsets[0]
 
 
-def _rewrite_extract_slice_chain(slice_op, block: Block, array_map: dict) -> None:
-    """Rewrite extract_slice → collapse_shape → extract[] chain.
+def _require_unit_slice(slice_op: tensor.ExtractSliceOp) -> None:
+    """Reject any slice that reads more than a single element.
 
-    Handles the case where the collapse_shape result has multiple
-    tensor.extract users (e.g., when the same array element is read
-    multiple times).
+    A CC array access loads one element, so only a one-dimensional slice of size
+    one and stride one can be expressed. Wider slices are rejected rather than
+    silently lowered to a read of their first element.
     """
-    source = slice_op.operands[0]
-    if source not in array_map:
-        return
-    arr_ptr, elem_type = array_map[source]
+    sizes = _static_values(slice_op.static_sizes)
+    strides = _static_values(slice_op.static_strides)
 
-    offset = _get_static_offset(slice_op)
-    collapse_op = _find_single_user(slice_op.results[0], tensor.CollapseShapeOp)
-    if collapse_op is None:
-        return
-
-    # Find ALL tensor.extract users of the collapse_shape result
-    extract_ops = _find_all_users(collapse_op.results[0], tensor.ExtractOp)
-    if not extract_ops:
-        return
-
-    # Rewrite each extract op
-    for extract_op in extract_ops:
-        if offset is not None:
-            loaded = _emit_load_from_array(arr_ptr, offset, elem_type, block, extract_op)
-        else:
-            dynamic_offsets = list(slice_op.offsets)
-            if not dynamic_offsets:
-                continue
-            loaded = _emit_load_from_array(arr_ptr, dynamic_offsets[0], elem_type, block, extract_op)
-
-        extract_op.result.replace_all_uses_with(loaded)
-
-        Rewriter.erase_op(extract_op, safe_erase=False)
-
-    # Clean up collapse_shape and extract_slice if no remaining uses
-    if not any(collapse_op.results[0].uses):
-        Rewriter.erase_op(collapse_op, safe_erase=False)
-    if not any(slice_op.results[0].uses):
-        Rewriter.erase_op(slice_op, safe_erase=False)
+    if sizes != [1] or strides != [1]:
+        raise CudaqUnsupportedArrayOperationError(
+            "This @cudaq_kernel function reads a range of a classical array "
+            f"(sizes {sizes}, strides {strides}), which CUDA-Q cannot compile.\n\n"
+            "Read individual array elements instead of slicing the array."
+        )
 
 
-def _find_all_users(value: SSAValue, op_type: type) -> list:
-    """Find all users of a value with the given operation type.
-
-    Returns a list of operations (may be empty).
-    """
-    results = []
-    for use in value.uses:
-        if isinstance(use.operation, op_type):
-            if use.operation not in results:
-                results.append(use.operation)
-    return results
-
-
-def _get_static_offset(slice_op) -> int | None:
-    """Extract the static offset from a tensor.extract_slice op.
-
-    Returns None if the offset is dynamic (sentinel value i64::MIN).
-    """
-    values = list(slice_op.static_offsets.get_values())
-    if values and values[0] != _MLIR_DYNAMIC:
-        return int(values[0])
-    return None
-
-
-def _find_single_user(value: SSAValue, op_type: type):
-    """Find a single user of a value with the given operation type.
-
-    Returns the operation if found, otherwise None.
-    """
-    for use in value.uses:
-        if isinstance(use.operation, op_type):
-            return use.operation
-    return None
+def _static_values(dense_array) -> list[int]:
+    """Return the integers held by a dense array property."""
+    return [int(value) for value in dense_array.get_values()]
