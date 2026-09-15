@@ -136,6 +136,7 @@ If you are interested in how the QIR representation looks like, try calling
    Control Flow/index
    Sampling
    Expectation Value
+   BackendSampling
    Resource Estimation
    Simulation Tools/index
    MLIR Interface

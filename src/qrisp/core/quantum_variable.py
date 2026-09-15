@@ -232,7 +232,7 @@ class QuantumVariable:
 
         """
         # Store quantum session
-        from qrisp.core import QuantumSession
+        from qrisp.core import QuantumSession, QuantumVariableNamingError
         from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
@@ -263,13 +263,13 @@ class QuantumVariable:
                     self.name = name
                     self.qs.register_qv(self, size)
 
-                except RuntimeError:
+                except QuantumVariableNamingError:
                     i = int(self.creation_counter[0])
                     while True:
                         try:
                             self.name = name + "_" + str(i)
                             self.qs.register_qv(self, size)
-                        except RuntimeError:
+                        except QuantumVariableNamingError:
                             i += 1
                             continue
                         break
@@ -307,7 +307,7 @@ class QuantumVariable:
                             self.qs.register_qv(self, size)
                             name_found = True
                             break
-                        except RuntimeError:
+                        except QuantumVariableNamingError:
                             name = python_var_name + "_" + str(i)
                             i += 1
 
@@ -318,7 +318,7 @@ class QuantumVariable:
                         self.name = self.get_unique_name()
                         self.qs.register_qv(self, size)
                         break
-                    except RuntimeError:
+                    except QuantumVariableNamingError:
                         pass
 
         # This attribute tracks the created QuantumVariables for the
@@ -524,7 +524,7 @@ class QuantumVariable:
         4
 
         """
-        from qrisp.core import QuantumSession
+        from qrisp.core import QuantumSession, QuantumVariableNamingError
         from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
@@ -558,14 +558,14 @@ class QuantumVariable:
             try:
                 duplicate.name = self.name + "_dupl"
                 new_qs.register_qv(duplicate, size)
-            except RuntimeError:
+            except QuantumVariableNamingError:
                 i = 0
                 while True:
                     try:
                         duplicate.name = self.name + "_dupl" + str(i)
                         new_qs.register_qv(duplicate, size)
                         break
-                    except RuntimeError:
+                    except QuantumVariableNamingError:
                         pass
                     i += 1
 
