@@ -417,7 +417,7 @@ def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
     # zero operator then so does the product, and building the whole chain of
     # factors for it would be wasted. The factors are checked against each other
     # first, so that a mismatched one is not swallowed by the zero result.
-    if any(_is_statically_zero(factor.alpha) for factor in factors):
+    if any(factor._is_zero or _is_statically_zero(factor.alpha) for factor in factors):
         return _zero_block_encoding(factors[0].num_ops)
     return ProductBlockEncoding(factors)
 

@@ -760,6 +760,26 @@ def test_zero_annihilates_a_product(name, build):
     assert not isinstance(product, ProductBlockEncoding)
 
 
+def test_zero_annihilates_a_product_across_a_pytree_boundary():
+    """A product formed inside a traced function must annihilate too.
+
+    The factor arrives with a tracer in place of its normalization, so the
+    annihilation cannot be read off alpha any more than the refusal in apply can.
+    Missing it builds an ordinary product whose own alpha is traced in turn, so
+    nothing downstream catches it either: the remaining factors were applied and
+    the result reported as a success.
+    """
+    A, B = _zero_cases()
+    zero = A - A
+
+    @terminal_sampling
+    def main(BE):
+        return (BE @ B).apply_rus(lambda: QuantumFloat(1))()
+
+    with pytest.raises(ValueError, match="zero operator"):
+        main(zero)
+
+
 @pytest.mark.parametrize(
     "name, apply_it",
     [
