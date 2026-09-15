@@ -642,11 +642,28 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     canonicalization a child that is not a block encoding surfaces as an
     AttributeError from an unrelated place, and one carrying a zero coefficient
     disappears without its operand count ever being compared.
-    """
-    terms = tuple(terms)
-    if any(not isinstance(block_encoding, BlockEncoding) for _, block_encoding in terms):
-        raise TypeError("Expected every item to be a BlockEncoding.")
 
+    A NumPy array coefficient is also detached here. The terms are the
+    authoritative representation and everything else is derived from them and
+    cached, so a coefficient the caller can still write to would leave those
+    derived values describing a combination that no longer exists. Only NumPy
+    arrays need this: every other kind of coefficient that reaches here, tracers
+    included, is already immutable.
+    """
+    checked: list[_LCUTerm] = []
+    for coefficient, block_encoding in terms:
+        if not isinstance(block_encoding, BlockEncoding):
+            raise TypeError("Expected every item to be a BlockEncoding.")
+        detached = coefficient
+        if isinstance(coefficient, np.ndarray):
+            if coefficient.ndim != 0:
+                raise ValueError(
+                    f"Expected every coefficient to be a scalar, but got an array of shape {coefficient.shape}."
+                )
+            detached = coefficient.item()
+        checked.append((detached, block_encoding))
+
+    terms = tuple(checked)
     if terms:
         num_ops = terms[0][1].num_ops
         if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):

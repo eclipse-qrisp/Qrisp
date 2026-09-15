@@ -914,3 +914,66 @@ def test_prep_amplitudes_are_real_and_non_negative(name, coefficients):
 
     assert np.all(np.isreal(amplitudes))
     assert np.all(np.real(amplitudes) >= 0)
+
+
+#
+# Coefficients are detached from the caller
+#
+
+
+def test_a_mutable_coefficient_cannot_make_the_derived_values_stale():
+    """Writing to a coefficient array after construction must not change the terms.
+
+    The terms are authoritative and everything else is derived from them and
+    cached, so a coefficient the caller can still write to would leave those
+    derived values describing a combination that no longer exists.
+    """
+    first = BlockEncoding(1, [], lambda operand: x(operand[0]))
+    second = BlockEncoding(1, [], lambda operand: x(operand[1]))
+
+    coefficient = np.array(2.0)
+    combination = BlockEncoding.linear_combination([first, second], coefficients=[coefficient, 1.0])
+    normalization = combination.alpha
+
+    coefficient[...] = 3.0
+
+    assert [value for value, _ in combination.terms] == [2.0, 1.0]
+    assert combination.alpha == normalization
+
+
+@pytest.mark.parametrize(
+    "name, build",
+    [
+        (
+            "through linear_combination",
+            lambda be: BlockEncoding.linear_combination([be], coefficients=[np.array([1.0, 2.0])]),
+        ),
+        ("through scalar multiplication", lambda be: be * np.array([1.0, 2.0])),
+    ],
+)
+def test_a_non_scalar_coefficient_is_rejected(name, build):
+    """An array of coefficients for a single term has no meaning and must be refused.
+
+    It used to be accepted, collapse the normalization to a sum of its entries, and
+    fail much later when the unitary was applied.
+    """
+    block_encoding = BlockEncoding(1, [], lambda operand: x(operand[0]))
+
+    with pytest.raises(ValueError, match="scalar"):
+        build(block_encoding)
+
+
+def test_immutable_coefficient_kinds_are_left_alone():
+    """Only NumPy arrays are detached, since nothing else that arrives is mutable."""
+    import jax.numpy as jnp
+
+    block_encoding = BlockEncoding(1, [], lambda operand: x(operand[0]))
+    other = BlockEncoding(1, [], lambda operand: x(operand[1]))
+
+    combination = BlockEncoding.linear_combination(
+        [block_encoding, other], coefficients=[np.array(2.0), jnp.array(1.0)]
+    )
+    stored = [type(value).__name__ for value, _ in combination.terms]
+
+    assert stored[0] == "float", "a NumPy array must be detached into a plain scalar"
+    assert stored[1] == "ArrayImpl", "a JAX array is already immutable and must pass through"
