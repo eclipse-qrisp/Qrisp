@@ -55,6 +55,17 @@ if TYPE_CHECKING:
     PyTreeAuxData = tuple[Callable[..., None], int, bool]
 
 
+def _is_statically_zero(value: Any) -> bool:
+    """Return whether ``value`` is a concrete scalar zero."""
+    if isinstance(value, jax.core.Tracer):
+        return False
+    try:
+        value = np.asarray(value)
+    except Exception:
+        return False
+    return value.ndim == 0 and bool(value == 0)
+
+
 @register_pytree_node_class
 @dataclass(frozen=False)
 class BlockEncoding:
@@ -442,6 +453,12 @@ class BlockEncoding:
         """
         if len(operands) != self.num_ops:
             raise ValueError(f"Operation expected {self.num_ops} operands, but got {len(operands)}.")
+        if _is_statically_zero(self.alpha):
+            # A zero normalization encodes the zero operator, whose block encoding
+            # can never succeed: the projection onto the ancillas being zero has
+            # probability zero. Arithmetic may still produce one, as in ``A - A``,
+            # and combine it away again, so it is only applying one that is refused.
+            raise ValueError("A block encoding of the zero operator cannot be applied.")
 
         ancillas = self.create_ancillas()
         self.unitary(*ancillas, *operands)
@@ -501,6 +518,9 @@ class BlockEncoding:
         """
         if not callable(operand_prep):
             raise TypeError(f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}.")
+        if _is_statically_zero(self.alpha):
+            # See apply: the zero operator has no successful branch to repeat until.
+            raise ValueError("A block encoding of the zero operator cannot be applied.")
 
         @RUS
         def rus_function(*args):

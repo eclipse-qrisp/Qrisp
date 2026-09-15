@@ -232,12 +232,19 @@ def test_block_encoding_lcu_removes_static_zero_terms():
     assert combination.terms == ((2, second),)
 
 
-def test_block_encoding_lcu_rejects_all_zero_terms():
-    """Verify that static cancellation cannot create a zero-normalization LCU."""
+def test_block_encoding_lcu_cancels_to_the_zero_encoding():
+    """Verify that static cancellation yields the zero operator rather than an error.
+
+    This used to raise. Rejecting the cancellation also rejected expressions that
+    only cancel in part, such as ``A - A + B``, because Python associates to the
+    left and builds the cancelling half first.
+    """
     block_encoding = BlockEncoding(1, [], lambda operand: None)
 
-    with pytest.raises(ValueError, match="all-zero linear combination"):
-        BlockEncoding.linear_combination([block_encoding, block_encoding], coefficients=[1, -1])
+    combination = BlockEncoding.linear_combination([block_encoding, block_encoding], coefficients=[1, -1])
+
+    assert isinstance(combination, BlockEncoding)
+    assert combination.alpha == 0
 
 
 def test_block_encoding_lcu_preserves_dynamic_coefficients():
@@ -522,3 +529,75 @@ def test_coefficient_reality_survives_the_pytree_boundary():
 
     assert observed["real"] is True
     assert observed["complex"] is False
+
+
+#
+# Zero block encodings
+#
+
+
+def _zero_cases():
+    A = BlockEncoding.from_operator(Z(0))
+    B = BlockEncoding.from_operator(X(0))
+    return A, B
+
+
+@pytest.mark.parametrize(
+    "name, build",
+    [
+        ("scaled by zero", lambda A, B: 0.0 * A),
+        ("exact cancellation", lambda A, B: A - A),
+        ("cancellation after merging", lambda A, B: 2 * A - A - A),
+        ("two cancelling pairs", lambda A, B: (A - A) + (B - B)),
+    ],
+)
+def test_fully_cancelling_combination_is_the_zero_encoding(name, build):
+    """A combination that cancels must stay a block encoding, of the zero operator.
+
+    Rejecting it at construction would also reject expressions whose result is
+    perfectly ordinary, since Python associates to the left and ``A - A + B`` builds
+    the cancelling part first.
+    """
+    A, B = _zero_cases()
+    encoding = build(A, B)
+
+    assert isinstance(encoding, BlockEncoding)
+    assert encoding.alpha == 0
+
+
+@pytest.mark.parametrize(
+    "name, build",
+    [
+        ("zero term first", lambda A, B: 0 * A + B),
+        ("cancellation first", lambda A, B: A - A + B),
+        ("cancellation parenthesised", lambda A, B: (A - A) + B),
+        ("cancellation across the sum", lambda A, B: A + B - A),
+    ],
+)
+def test_zero_terms_are_absorbed_by_a_combination(name, build):
+    """A term contributing nothing must leave no trace in the result.
+
+    A term contributes ``coefficient * child.alpha``, so it drops out when either
+    factor is zero. Dropping it is what lets the surviving single term be handed
+    back unwrapped, rather than as a combination carrying a dead SELECT branch.
+    """
+    A, B = _zero_cases()
+
+    assert build(A, B) is B
+
+
+def test_zero_encoding_cannot_be_applied():
+    """Applying the zero operator has no meaning and must say so.
+
+    Its block encoding can never succeed: the probability of projecting onto the
+    ancillas being zero is itself zero. The error belongs here rather than at
+    construction, where it would also reject expressions that cancel only in part.
+    """
+    A, _ = _zero_cases()
+    zero = A - A
+
+    with pytest.raises(ValueError, match="zero operator"):
+        zero.apply(QuantumFloat(1))
+
+    with pytest.raises(ValueError, match="zero operator"):
+        zero.apply_rus(lambda: QuantumFloat(1))
