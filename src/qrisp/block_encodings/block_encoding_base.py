@@ -29,6 +29,7 @@ from jax.tree_util import register_pytree_node_class
 from jax.typing import ArrayLike
 
 from qrisp.alg_primitives.reflection import reflection
+from qrisp.block_encodings.predicates import _is_statically_zero
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import h, measure, reset, x
 from qrisp.environments import conjugate, control, invert
@@ -53,17 +54,6 @@ if TYPE_CHECKING:
     # tree_flatten/tree_unflatten below.
     PyTreeChildren = tuple[ArrayLike, list[QuantumVariableTemplate]]
     PyTreeAuxData = tuple[Callable[..., None], int, bool]
-
-
-def _is_statically_zero(value: Any) -> bool:
-    """Return whether ``value`` is a concrete scalar zero."""
-    if isinstance(value, jax.core.Tracer):
-        return False
-    try:
-        value = np.asarray(value)
-    except Exception:
-        return False
-    return value.ndim == 0 and bool(value == 0)
 
 
 @register_pytree_node_class
