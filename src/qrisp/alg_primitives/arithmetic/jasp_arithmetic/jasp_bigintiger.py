@@ -16,9 +16,11 @@
 
 """Defines the JAX-compatible fixed-width BigInteger type with modular and continued-fraction arithmetic."""
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 import jax
+import jax.core
 import jax.numpy as jnp
 from jax import lax
 from jax.tree_util import register_pytree_node_class
@@ -56,8 +58,8 @@ class BigInteger:
 
     digits: jnp.ndarray  # Little-endian base-2^32
 
-    def __call__(self):
-        """Return a float64 approximation of the integer value when in tracing mode and an exact Python integer otherwise.
+    def __call__(self) -> "jax.Array | int":
+        """Return a float64 approximation when tracing, an exact Python integer otherwise.
 
         Computes sum_i digits[i] * (2^32)^i. Exact only for values
         that fit into float64 or for Python integers.
@@ -75,14 +77,14 @@ class BigInteger:
                 lambda i, val: jnp.float64(self.digits[i]) * BASE_FL ** jnp.float64(i) + val,
                 0.0,
             )
-        else:
-            r = 0
-            for i, v in enumerate(self.digits):
-                if v != 0:
-                    r += int(v) * 2 ** (i * 32)
-            return r
 
-    def tree_flatten(self):
+        r = 0
+        for i, v in enumerate(self.digits):
+            if v != 0:
+                r += int(v) * 2 ** (i * 32)
+        return r
+
+    def tree_flatten(self) -> tuple:
         """PyTree flatten for JAX.
 
         Returns
@@ -95,12 +97,12 @@ class BigInteger:
         return (self.digits,), None
 
     @classmethod
-    def tree_unflatten(cls, aux_data, children):
+    def tree_unflatten(cls, _aux_data, children) -> "BigInteger":
         """PyTree unflatten for JAX.
 
         Parameters
         ----------
-        aux_data : Any
+        _aux_data : Any
             Auxiliary data (unused, expected `None`).
         children : tuple
             Tuple containing the digits array.
@@ -114,7 +116,7 @@ class BigInteger:
         return cls(*children)
 
     @staticmethod
-    def create_static(n, size):
+    def create_static(n, size) -> "BigInteger":
         """Create a BigInteger from Python using pure Python loops.
 
         This variant does not use JAX primitives and is suitable for static
@@ -139,13 +141,13 @@ class BigInteger:
             raise ValueError(f"Input must be non-negative, got {n}.")
 
         digits = []
-        for i in range(size):
+        for _ in range(size):
             digits.append(n % BASE)
             n //= BASE
         return BigInteger(jnp.array(digits, dtype=DTYPE))
 
     @staticmethod
-    def create(n, size):
+    def create(n, size) -> "BigInteger":
         """Create a BigInteger using JAX primitives.
 
         Constructs a fixed-width BigInteger with exactly `size` limbs, interpreting
@@ -170,6 +172,14 @@ class BigInteger:
         JAX's host integer range (typically up to 64 bits). For arbitrarily large
         Python integers, prefer `create_static`.
 
+        Examples
+        --------
+        >>> a = BigInteger.create(123456789, 4)
+        >>> a()
+        123456789
+        >>> (a + BigInteger.create(1, 4))()
+        123456790
+
         """
 
         def body_fun(i, args):
@@ -182,7 +192,7 @@ class BigInteger:
         return BigInteger(digits)
 
     @staticmethod
-    def create_dynamic(n, size):
+    def create_dynamic(n, size) -> "BigInteger":
         """Alias of `create`.
 
         Parameters
@@ -205,7 +215,7 @@ class BigInteger:
         return BigInteger.create(n, size)
 
     @staticmethod
-    def coerce(n, size):
+    def coerce(n, size) -> "BigInteger":
         """Coerce ``n`` into a fixed-width BigInteger of ``size`` limbs.
 
         Python integers are routed through ``create_static`` so very large
@@ -319,28 +329,8 @@ class BigInteger:
             result = result.at[i].set(jnp.uint32(s))
             return new_carry, result
 
-        carry, result = lax.fori_loop(0, a.shape[0], add_step, (0, result))
+        _, result = lax.fori_loop(0, a.shape[0], add_step, (0, result))
         return BigInteger(result)
-
-    @jax.jit
-    def __sub_alt__(self, other: "BigInteger") -> "BigInteger":
-        """Alternative subtraction using bitwise complement identity.
-
-        Computes (self - other) as `~((~self) + other)` with wraparound
-        modulo 2^(32*n).
-
-        Parameters
-        ----------
-        other : BigInteger or int
-            Subtrahend.
-
-        Returns
-        -------
-        BigInteger
-            (self - other) mod 2^(32*n).
-
-        """
-        return ~((~self) + other)
 
     @jax.jit
     def __mul__(self, other: "BigInteger") -> "BigInteger":
@@ -389,7 +379,7 @@ class BigInteger:
         return BigInteger(result)
 
     @jax.jit
-    def __pow__(self, other):
+    def __pow__(self, other) -> "BigInteger":
         """Integer exponentiation (square-and-multiply).
 
         Performs `self ** other` by binary exponentiation, modulo 2^(32*n).
@@ -415,7 +405,7 @@ class BigInteger:
         acc = BigInteger.create(1, n)
 
         def cond_fun(state):
-            base, exp, acc = state
+            _, exp, _ = state
             return exp > 0
 
         def body_fun(state):
@@ -433,7 +423,7 @@ class BigInteger:
         _, _, acc = lax.while_loop(cond_fun, body_fun, (base, exp, acc))
         return acc
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """String representation with limbs in little-endian order.
 
         Returns
@@ -446,7 +436,7 @@ class BigInteger:
         # return f"BigInteger(digits={self.digits.tolist()})"
 
     @jax.jit
-    def __lt__(self, other: "BigInteger"):
+    def __lt__(self, other: "BigInteger") -> jax.Array:
         """Less-than comparison between two fixed-width BigIntegers.
 
         If `other` is a scalar, it is converted to the same width. Requires
@@ -488,7 +478,7 @@ class BigInteger:
         return res != 0
 
     @jax.jit
-    def __eq__(self, other: "BigInteger"):
+    def __eq__(self, other: "BigInteger") -> jax.Array:
         """Equality comparison between two fixed-width BigIntegers.
 
         If `other` is a scalar, it is converted to the same width.
@@ -514,7 +504,7 @@ class BigInteger:
         return jnp.all(d0 == d1)
 
     @jax.jit
-    def __ne__(self, other: "BigInteger"):
+    def __ne__(self, other: "BigInteger") -> jax.Array:
         """Inequality comparison between two fixed-width BigIntegers.
 
         Parameters
@@ -531,7 +521,7 @@ class BigInteger:
         return jnp.logical_not(self == other)
 
     @jax.jit
-    def __le__(self, other: "BigInteger"):
+    def __le__(self, other: "BigInteger") -> jax.Array:
         """Less-or-equal comparison between two fixed-width BigIntegers.
 
         If `other` is a scalar, it is converted to the same width. Requires
@@ -572,7 +562,7 @@ class BigInteger:
         res = lax.cond(res == -5, lambda: 1, lambda: res)
         return res != 0
 
-    def __gt__(self, other: "BigInteger"):
+    def __gt__(self, other: "BigInteger") -> jax.Array:
         """Greater-than comparison between two fixed-width BigIntegers.
 
         If `other` is a scalar, it is converted to the same width. Requires
@@ -597,7 +587,7 @@ class BigInteger:
 
         return other.__lt__(self)
 
-    def __ge__(self, other: "BigInteger"):
+    def __ge__(self, other: "BigInteger") -> jax.Array:
         """Greater-or-equal comparison between two fixed-width BigIntegers.
 
         If `other` is a scalar, it is converted to the same width. Requires
@@ -623,7 +613,7 @@ class BigInteger:
         return other.__le__(self)
 
     @jax.jit
-    def __lshift__(self, shift):
+    def __lshift__(self, shift: int | jax.Array) -> "BigInteger":
         """Logical left shift by a non-negative number of bits.
 
         Shifts bits left by `shift` and fills with zeros, within fixed width.
@@ -640,28 +630,30 @@ class BigInteger:
             (self << shift) mod 2^(32*n).
 
         """
-        total_bits = self.digits.shape[0] * 32
-        zeros = BigInteger(jnp.zeros_like(self.digits))
+        n = self.digits.shape[0]
+        total_bits = n * 32
+        shift = jnp.asarray(shift, dtype=jnp.int32)
 
-        def do_shift(_):
-            def body_fun(i, x):
-                return lax.cond(
-                    self.get_bit(i) != 0,
-                    lambda: x.flip_bit(i + shift),
-                    lambda: x,
-                )
+        def do_shift(_: None) -> jax.Array:
+            # Whole-limb shift (little-endian: digit i moves to i + limb_shift),
+            # then a limb-wise sub-32-bit shift for the remainder. Avoids the
+            # O(total_bits) individual bit-flip loop below for large widths.
+            limb_shift = shift // 32
+            bit_shift = shift % 32
+            idx = jnp.arange(n) - limb_shift
+            valid = (idx >= 0) & (idx < n)
+            gathered = self.digits[jnp.clip(idx, 0, n - 1)]
+            shifted_by_limb = jnp.where(valid, gathered, jnp.uint32(0))
+            out, _carry = _shl_bits(shifted_by_limb, bit_shift)
+            return out
 
-            return lax.fori_loop(0, total_bits - shift, body_fun, zeros)
+        def zero(_: None) -> jax.Array:
+            return jnp.zeros_like(self.digits)
 
-        return lax.cond(
-            jnp.asarray(shift) >= total_bits,
-            lambda _: zeros,
-            do_shift,
-            operand=None,
-        )
+        return BigInteger(lax.cond(shift >= total_bits, zero, do_shift, operand=None))
 
     @jax.jit
-    def __rshift__(self, shift):
+    def __rshift__(self, shift: int | jax.Array) -> "BigInteger":
         """Logical right shift by a non-negative number of bits.
 
         Shifts bits right by `shift` and fills with zeros, within fixed width.
@@ -678,25 +670,26 @@ class BigInteger:
             (self >> shift) within fixed width.
 
         """
-        total_bits = self.digits.shape[0] * 32
-        zeros = BigInteger(jnp.zeros_like(self.digits))
+        n = self.digits.shape[0]
+        total_bits = n * 32
+        shift = jnp.asarray(shift, dtype=jnp.int32)
 
-        def do_shift(_):
-            def body_fun(i, x):
-                return lax.cond(
-                    self.get_bit(i) != 0,
-                    lambda: x.flip_bit(i - shift),
-                    lambda: x,
-                )
+        def do_shift(_: None) -> jax.Array:
+            # Whole-limb shift (little-endian: digit i moves to i - limb_shift),
+            # then a limb-wise sub-32-bit shift for the remainder. Avoids the
+            # O(total_bits) individual bit-flip loop below for large widths.
+            limb_shift = shift // 32
+            bit_shift = shift % 32
+            idx = jnp.arange(n) + limb_shift
+            valid = (idx >= 0) & (idx < n)
+            gathered = self.digits[jnp.clip(idx, 0, n - 1)]
+            shifted_by_limb = jnp.where(valid, gathered, jnp.uint32(0))
+            return _shr_bits(shifted_by_limb, bit_shift)
 
-            return lax.fori_loop(shift, total_bits, body_fun, zeros)
+        def zero(_: None) -> jax.Array:
+            return jnp.zeros_like(self.digits)
 
-        return lax.cond(
-            jnp.asarray(shift) >= total_bits,
-            lambda _: zeros,
-            do_shift,
-            operand=None,
-        )
+        return BigInteger(lax.cond(shift >= total_bits, zero, do_shift, operand=None))
 
     @jax.jit
     def __and__(self, other: "BigInteger") -> "BigInteger":
@@ -777,7 +770,7 @@ class BigInteger:
         return BigInteger(~self.digits)
 
     @jax.jit
-    def __mod__(self, other: "BigInteger"):
+    def __mod__(self, other: "BigInteger") -> "BigInteger":
         """Modulo operation `self % other` (fixed-width).
 
         If `other` is a scalar, it is converted to the same width. Uses
@@ -796,10 +789,10 @@ class BigInteger:
         """
         if not isinstance(other, BigInteger):
             other = BigInteger.create(other, self.digits.shape[0])
-        r, q = self.remainder_division(other)
+        r, _ = self.remainder_division(other)
         return r
 
-    def __rmod__(self, other):
+    def __rmod__(self, other) -> "BigInteger":
         """Reflected modulo: ``other % self``.
 
         Converts `other` to a BigInteger with the same width as `self`,
@@ -821,7 +814,7 @@ class BigInteger:
         return other % self
 
     @jax.jit
-    def __floordiv__(self, other: "BigInteger"):
+    def __floordiv__(self, other: "BigInteger") -> "BigInteger":
         """Floor division `self // other` (fixed-width).
 
         If `other` is a scalar, it is converted to the same width. Uses
@@ -840,11 +833,11 @@ class BigInteger:
         """
         if not isinstance(other, BigInteger):
             other = BigInteger.create(other, self.digits.shape[0])
-        r, q = self.remainder_division(other)
+        _, q = self.remainder_division(other)
         return q
 
     @jax.jit
-    def get_bit(self, i: int):
+    def get_bit(self, i: int) -> jax.Array:
         """Get the value of the i-th bit (0-based, LSB=bit 0).
 
         Parameters
@@ -863,7 +856,7 @@ class BigInteger:
         return (self.digits[pos] >> pos_in) & 1
 
     @jax.jit
-    def flip_bit(self, i: int):
+    def flip_bit(self, i: int) -> "BigInteger":
         """Toggle the i-th bit (0-based, LSB=bit 0).
 
         Parameters
@@ -884,7 +877,7 @@ class BigInteger:
         return BigInteger(ds)
 
     @jax.jit
-    def bit_size(self):
+    def bit_size(self) -> "jax.Array | int":
         """Return the position of the most significant set bit plus one.
 
         Approximates the bit-length of the value: floor(log2(x)) + 1.
@@ -909,13 +902,15 @@ class BigInteger:
 
             ms = lax.while_loop(cond_fun, body_fun, n - 1)
             limb = self.digits[ms]
-            # bit length of a 32-bit limb
-            limb_bits = jnp.floor(jnp.log2(jnp.float64(limb))).astype(jnp.int64) + 1
+            # Bit length of a 32-bit limb, via exact leading-zero count
+            # rather than float64 log2 (avoids relying on float precision
+            # for what is otherwise an exact integer computation).
+            limb_bits = jnp.int64(32) - jnp.int64(_clz32(limb))
             return jnp.int64(32) * jnp.int64(ms) + limb_bits
 
         return lax.cond(is_zero, lambda: jnp.int64(0), nonzero_len)
 
-    def remainder_division(self, other: "BigInteger"):
+    def remainder_division(self, other: "BigInteger") -> tuple["BigInteger", "BigInteger"]:
         """Exact division using Knuth long division (base 2^32).
 
         Computes quotient and remainder such that:
@@ -943,9 +938,8 @@ class BigInteger:
         r_digits, q_digits = _remainder_division_knuth(self.digits, other.digits)
         return BigInteger(r_digits), BigInteger(q_digits)
 
-    def get_larger(self):
-        """Given a BigInteger with n limbs, return a new BigInteger with 2n limbs and the
-        same number
+    def get_larger(self) -> "BigInteger":
+        """Given a BigInteger with n limbs, return a new BigInteger with 2n limbs and the same number.
 
         Returns
         -------
@@ -1019,7 +1013,7 @@ def _ms_length(a: jnp.ndarray):
 
 
 @jax.jit
-def _shl_bits(arr: jnp.ndarray, s):
+def _shl_bits(arr: jnp.ndarray, s: int | jax.Array) -> tuple[jax.Array, jax.Array]:
     """Shift-left by `s` bits across limbs (0 <= s < 32).
 
     Parameters
@@ -1064,7 +1058,7 @@ def _shl_bits(arr: jnp.ndarray, s):
 
 
 @jax.jit
-def _shr_bits(arr: jnp.ndarray, s) -> jnp.ndarray:
+def _shr_bits(arr: jnp.ndarray, s: int | jax.Array) -> jnp.ndarray:
     """Shift-right by `s` bits across limbs (0 <= s < 32).
 
     Parameters
@@ -1345,6 +1339,16 @@ def bi_modinv(a: BigInteger, m: BigInteger) -> BigInteger:
     Uses `//` and `%` which rely on exact multi-precision division implemented
     in this module. Both `a` and `m` are treated as fixed-width unsigned values.
 
+    Examples
+    --------
+    >>> a = BigInteger.create(3, 2)
+    >>> m = BigInteger.create(11, 2)
+    >>> t = bi_modinv(a, m)
+    >>> t()
+    4
+    >>> (a * t % m)()
+    1
+
     """
     # Widen to 2n limbs
     n = a.digits.shape[0]
@@ -1358,7 +1362,7 @@ def bi_modinv(a: BigInteger, m: BigInteger) -> BigInteger:
     r, new_r = m, a
 
     def cond(state):
-        _, new_t, r, new_r = state
+        _, _, _, new_r = state
         return new_r != bi0
 
     def body(state):
@@ -1371,12 +1375,12 @@ def bi_modinv(a: BigInteger, m: BigInteger) -> BigInteger:
 
         return new_t, t_updated, new_r, r_updated
 
-    final_t, _, final_r, _ = lax.while_loop(cond, body, (t, new_t, r, new_r))
+    final_t, _, _, _ = lax.while_loop(cond, body, (t, new_t, r, new_r))
     return BigInteger(final_t.digits[0:n])
 
 
 @jax.jit
-def bi_extended_euclidean(a, b):
+def bi_extended_euclidean(a: BigInteger, b: BigInteger | int) -> tuple[BigInteger, BigInteger, BigInteger]:
     """Extended Euclidean Algorithm (fixed-width arithmetic).
 
     Computes `g, x, y` such that `a*x + b*y = g = gcd(a, b)`. Compatible with
@@ -1401,6 +1405,19 @@ def bi_extended_euclidean(a, b):
     All operations occur modulo 2^(32*n), so the interpretation follows
     fixed-width arithmetic semantics.
 
+    Examples
+    --------
+    >>> g, x, y = bi_extended_euclidean(BigInteger.create(35, 2), BigInteger.create(15, 2))
+    >>> g()
+    5
+
+    A negative Bézout coefficient wraps around to its unsigned complement
+    modulo 2**(32*n) (here y represents -2 in a 64-bit ring); the identity
+    still holds when checked in that same ring:
+
+    >>> (35 * x() + 15 * y()) % 2**64
+    5
+
     """
     n = a.digits.shape[0]
     if not isinstance(b, BigInteger):
@@ -1413,7 +1430,7 @@ def bi_extended_euclidean(a, b):
     state = (b, a, bi0, bi1, bi1, bi0)
 
     def cond_fun(state):
-        r, old_r, s, old_s, t, old_t = state
+        r, _, _, _, _, _ = state
         return r != bi0
 
     def body_fun(state):
@@ -1428,7 +1445,7 @@ def bi_extended_euclidean(a, b):
             t,
         )
 
-    r, old_r, s, old_s, t, old_t = lax.while_loop(cond_fun, body_fun, state)
+    _, old_r, _, old_s, _, old_t = lax.while_loop(cond_fun, body_fun, state)
     # old_r is gcd, old_s and old_t are the Bézout coefficients
     return old_r, old_s, old_t
 
@@ -1464,6 +1481,17 @@ def bi_montgomery_encode(x: BigInteger, R: BigInteger, modulus: BigInteger) -> B
       modulo reduction. The remainder is strictly less than modulus < 2^(32*n), so it
       fits in n limbs and can be safely truncated back.
     - All three inputs must share the same limb width n.
+
+    Examples
+    --------
+    >>> R = BigInteger.create(1024, 2)
+    >>> N = BigInteger.create(97, 2)
+    >>> x = BigInteger.create(42, 2)
+    >>> encoded = bi_montgomery_encode(x, R, N)
+    >>> encoded()
+    37
+    >>> bi_montgomery_decode(encoded, R, N)()
+    42
 
     """
     n = modulus.digits.shape[0]
@@ -1593,6 +1621,17 @@ def bi_contfrac_best_approx(
     - Arithmetic is exact in the fixed-width ring; for valid inputs arising in Shor's
       post-processing (with q <= b and typical bounds <= b), no wrap-around occurs.
 
+    Examples
+    --------
+    A phase-estimation-style measurement of 64/256 (= 1/4 exactly), recovered
+    under a denominator bound of 15:
+
+    >>> a = BigInteger.create(64, 4)
+    >>> b = BigInteger.create(256, 4)
+    >>> p, q = bi_contfrac_best_approx(a, b, max_den=BigInteger.create(15, 4))
+    >>> p(), q()
+    (1, 4)
+
     """
     n_limbs = a.digits.shape[0]
     assert n_limbs == b.digits.shape[0], "BigInteger widths must match"
@@ -1610,19 +1649,15 @@ def bi_contfrac_best_approx(
         max_iters = int(2 * 32 * n_limbs + 4)
 
     @jax.jit
-    def _loop(
-        a0: BigInteger,
-        b0: BigInteger,
-        p0: BigInteger,
-        p1: BigInteger,
-        q0: BigInteger,
-        q1: BigInteger,
-        res_p: BigInteger,
-        res_q: BigInteger,
-        done: bool,
-        i: int,
-    ) -> tuple:
+    def _loop(state: tuple) -> tuple:
         """One step of CF with bound handling. Internal helper for while_loop."""
+        a0, b0, p0, p1, q0, q1, res_p, res_q, done, i = state
+
+        def bi_select(pred, on_true: BigInteger, on_false: BigInteger) -> BigInteger:
+            # lax.select operates on raw arrays; BigInteger is a pytree, so we
+            # select on the underlying digit arrays and re-wrap.
+            return BigInteger(jax.lax.select(pred, on_true.digits, on_false.digits))
+
         # Compute quotient and remainder
         quot = a0 // b0
         rem = a0 % b0
@@ -1641,25 +1676,53 @@ def bi_contfrac_best_approx(
         q1_is_zero = q1 == bi0
         t_num = max_den - q0
         t = t_num // jax.lax.cond(q1_is_zero, lambda: bi1, lambda: q1)
-        p_bound = t * p1 + p0
-        q_bound = t * q1 + q0
+        semiconv_p = t * p1 + p0
+        semiconv_q = t * q1 + q0
+
+        # A semiconvergent (p0 + t*p1)/(q0 + t*q1) is not always at least as
+        # good an approximation to a/b as the plain previous convergent
+        # p1/q1 (a simple t-vs-quot/2 threshold has an ambiguous boundary
+        # case at t == quot/2 exactly). Instead, compare their exact errors
+        # directly: for a candidate P/Q, |a*Q - b*P| is proportional to its
+        # distance from a/b (scaled by b*Q); compare two candidates by
+        # cross-multiplying these error terms by the other's denominator.
+        # a, b, p1, q1 are each <= n limbs, so their pairwise products need
+        # up to 2n limbs; the resulting error magnitudes are provably < b
+        # (a classical continued-fraction fact: they coincide with the
+        # remainder sequence of the Euclidean algorithm on a, b), so the
+        # subsequent multiplication by a <=n-limb denominator still fits
+        # comfortably within 2n limbs. q1_is_zero only occurs at the very
+        # first step, where the semiconvergent formula is the only valid
+        # choice (q1 itself would be an invalid, zero denominator).
+        a_w, b_w = a.get_larger(), b.get_larger()
+        p1_w, q1_w = p1.get_larger(), q1.get_larger()
+        sp_w, sq_w = semiconv_p.get_larger(), semiconv_q.get_larger()
+
+        def bi_abs_diff(x: BigInteger, y: BigInteger) -> BigInteger:
+            return bi_select(x < y, y - x, x - y)
+
+        err_prev = bi_abs_diff(a_w * q1_w, b_w * p1_w)
+        err_semi = bi_abs_diff(a_w * sq_w, b_w * sp_w)
+        use_semiconvergent = jnp.logical_or(err_semi * q1_w <= err_prev * sq_w, q1_is_zero)
+        p_bound = bi_select(use_semiconvergent, semiconv_p, p1)
+        q_bound = bi_select(use_semiconvergent, semiconv_q, q1)
 
         # Choose final result when done at this step
-        sel_p = jax.lax.select(exceed, p_bound, pn)
-        sel_q = jax.lax.select(exceed, q_bound, qn)
+        sel_p = bi_select(exceed, p_bound, pn)
+        sel_q = bi_select(exceed, q_bound, qn)
 
         # Update result slots if we finish now
-        res_p_next = jax.lax.select(jnp.logical_or(exceed, exact_end), sel_p, res_p)
-        res_q_next = jax.lax.select(jnp.logical_or(exceed, exact_end), sel_q, res_q)
+        res_p_next = bi_select(jnp.logical_or(exceed, exact_end), sel_p, res_p)
+        res_q_next = bi_select(jnp.logical_or(exceed, exact_end), sel_q, res_q)
         done_next = jnp.logical_or(done, jnp.logical_or(exceed, exact_end))
 
         # Prepare state for next iteration (if not done)
-        a_next = jax.lax.select(done_next, a0, b0)
-        b_next = jax.lax.select(done_next, b0, rem)
-        p0_next = jax.lax.select(done_next, p0, p1)
-        p1_next = jax.lax.select(done_next, p1, pn)
-        q0_next = jax.lax.select(done_next, q0, q1)
-        q1_next = jax.lax.select(done_next, q1, qn)
+        a_next = bi_select(done_next, a0, b0)
+        b_next = bi_select(done_next, b0, rem)
+        p0_next = bi_select(done_next, p0, p1)
+        p1_next = bi_select(done_next, p1, pn)
+        q0_next = bi_select(done_next, q0, q1)
+        q1_next = bi_select(done_next, q1, qn)
         i_next = i + jnp.int32(1)
         return (
             a_next,
@@ -1675,7 +1738,7 @@ def bi_contfrac_best_approx(
         )
 
     def cond_fn(state):
-        a0, b0, p0, p1, q0, q1, res_p, res_q, done, i = state
+        _, _, _, _, _, _, _, _, done, i = state
         under_cap = i < jnp.int32(max_iters)
         return jnp.logical_and(jnp.logical_not(done), under_cap)
 
@@ -1721,6 +1784,17 @@ def bi_shor_recover_denominator(
     - Returns the denominator of the CF-derived convergent; caller should perform
       the usual validity checks for Shor (closeness, non-trivial factor conditions, etc.).
 
+    Examples
+    --------
+    Same 64/256 measurement as in `bi_contfrac_best_approx`, recovering a
+    candidate order r <= 15 directly:
+
+    >>> a = BigInteger.create(64, 4)
+    >>> b = BigInteger.create(256, 4)
+    >>> r = bi_shor_recover_denominator(a, b, N_bound=BigInteger.create(15, 4))
+    >>> r()
+    4
+
     """
     n_limbs = a.digits.shape[0]
     if isinstance(N_bound, BigInteger):
@@ -1728,11 +1802,13 @@ def bi_shor_recover_denominator(
         assert max_den.digits.shape[0] == n_limbs, "N_bound width must match a,b"
     else:
         max_den = BigInteger.create(int(N_bound), n_limbs)
-    p, q = bi_contfrac_best_approx(a, b, max_den=max_den, max_iters=max_iters)
+    _, q = bi_contfrac_best_approx(a, b, max_den=max_den, max_iters=max_iters)
     return q
 
 
-def bi_contfrac_convergents(a: BigInteger, b: BigInteger, max_terms: int | None = None):
+def bi_contfrac_convergents(
+    a: BigInteger, b: BigInteger, max_terms: int | None = None
+) -> Iterator[tuple[BigInteger, BigInteger]]:
     """Generator of convergents p/q for a/b (Python generator; not JAX-traced).
 
     Yields successive convergents (p_k, q_k) using the standard recurrence until
