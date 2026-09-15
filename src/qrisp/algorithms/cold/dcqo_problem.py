@@ -632,9 +632,9 @@ class DCQOProblem:
             Evolution time for the simulation.
         method : str
             Method to solve the QUBO with. Either ``LCD`` or ``COLD``.
-        N_opt : int
+        N_opt : int, optional
             Number of optimization parameters in ``H_control``.
-        CRAB : bool
+        CRAB : bool, optional
             If ``True``, the CRAB optimization method is being used. The default is ``False``.
         optimizer : str, optional
             Specifies the `SciPy optimization routine
@@ -647,8 +647,8 @@ class DCQOProblem:
             ``agp_coeff_magnitude``.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
-        options : dict
-            Additional options for the Scipy solver.
+        options : dict, optional
+            A dictionary of additional options for the Scipy solver.
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
         precision : float, optional
