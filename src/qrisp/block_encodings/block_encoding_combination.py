@@ -49,7 +49,7 @@ from qrisp.block_encodings.block_encoding_base import BlockEncoding, _LCUTerm, _
 from qrisp.block_encodings.predicates import _is_non_negative_real, _is_real, _is_statically_zero
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import gphase
-from qrisp.environments import conjugate, invert
+from qrisp.environments import conjugate
 from qrisp.jasp import q_switch, qache
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumFloat
@@ -694,30 +694,6 @@ def _is_trace_independent(templates: Sequence[QuantumVariableTemplate]) -> bool:
     return all(not isinstance(template.qv_size, jax.core.Tracer) for template in templates)
 
 
-def _make_lcu_branch(
-    child_unitary: Callable[..., None],
-    layout: _AncillaLayout,
-    name: str,
-) -> Callable[..., None]:
-    """Build one SELECT branch applying ``child_unitary`` to views into the workspace.
-
-    The shared workspace is taken as the branch's first operand rather than being
-    captured from the enclosing scope, so the branch can be built once, ahead of
-    any tracing, and reused for every invocation of the LCU unitary.
-    """
-
-    def branch(shared_ancilla, *operands):
-        child_unitary(*layout.construct_views(shared_ancilla), *operands)
-
-    branch.__name__ = name
-    # Caching the branch body is what keeps the repeated tracing of q_switch cheap:
-    # the tree-based q_switch traces every branch more than once while unrolling its
-    # walk, and custom_control/custom_inversion speculatively trace the controlled
-    # and inverted variants on top of that. With a qached body all but the first of
-    # those become pjit cache hits.
-    return qache(branch)
-
-
 def _identity_lcu_branch(shared_ancilla: QuantumVariable, *operands: QuantumVariable) -> None:
     """Pad the SELECT to a power of two; selected only for zero-amplitude indices."""
 
@@ -864,12 +840,35 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
     @property
     def _lcu_amplitudes(self) -> ArrayLike:
-        """Return the PREP amplitudes, padded to the selector dimension."""
+        """Return the PREP amplitudes, padded to the selector dimension.
+
+        These are magnitudes only: a term's argument is applied by its SELECT
+        branch instead, which keeps PREP real and non-negative whatever the
+        coefficients are. See :attr:`_lcu_phases`.
+        """
         coefficients = self._lcu_coefficients
         xp = np if isinstance(coefficients, np.ndarray) else jnp
 
         padded = xp.pad(coefficients, (0, (1 << self._lcu_selector_size) - len(self.terms)))
-        return xp.sqrt(padded / xp.sum(xp.abs(padded)))
+        magnitudes = xp.abs(padded)
+        return xp.sqrt(magnitudes / xp.sum(magnitudes))
+
+    @property
+    def _lcu_phases(self) -> ArrayLike:
+        r"""Return $\arg(c_i \alpha_i)$ for every term.
+
+        A term contributes ``coefficient * child.alpha`` to the encoded operator.
+        Splitting that into a magnitude and an argument lets PREP act on the
+        magnitudes alone, with the argument applied inside the term's SELECT
+        branch, where the selector turns it into a relative phase.
+
+        Keeping PREP real and non-negative is what allows the uncomputation to be
+        a conjugation rather than a separately traced inverse, and it is also what
+        makes the construction Hermitian for real coefficients.
+        """
+        coefficients = self._lcu_coefficients
+        xp = np if isinstance(coefficients, np.ndarray) else jnp
+        return xp.angle(coefficients)
 
     @property
     def alpha(self) -> ArrayLike:
@@ -900,6 +899,46 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         if _is_trace_independent(templates):
             object.__setattr__(self, "_cached_anc_templates", templates)
         return list(templates)
+
+    def _make_lcu_branch(
+        self,
+        child_unitary: Callable[..., None],
+        layout: _AncillaLayout,
+        term_index: int,
+    ) -> Callable[..., None]:
+        """Build one SELECT branch applying ``child_unitary`` to views into the workspace.
+
+        The shared workspace is taken as the branch's first operand rather than being
+        captured from the enclosing scope, so the branch can be built once, ahead of
+        any tracing, and reused for every invocation of the LCU unitary.
+
+        The branch also carries its term's argument, which the selector turns into a
+        relative phase. That value is read per call rather than captured here: for
+        traced coefficients it is a tracer, and this closure outlives the trace that
+        builds it, since the unitary holding it is cached. Whether a phase is applied
+        at all is decided here, because a coefficient that is known and non-negative
+        needs no gate.
+        """
+        coefficient, block_encoding = self.terms[term_index]
+        if isinstance(coefficient, jax.core.Tracer):
+            applies_phase = True
+        else:
+            applies_phase = not _is_non_negative_real(coefficient * block_encoding.alpha)
+
+        def branch(shared_ancilla, *operands):
+            child_unitary(*layout.construct_views(shared_ancilla), *operands)
+            if applies_phase:
+                # Anchored on an operand qubit: the shared workspace is empty whenever
+                # no child carries ancillas, and a global phase needs some qubit.
+                gphase(self._lcu_phases[term_index], operands[0][0])
+
+        branch.__name__ = f"lcu_branch_{term_index}"
+        # Caching the branch body is what keeps the repeated tracing of q_switch cheap:
+        # the tree-based q_switch traces every branch more than once while unrolling its
+        # walk, and custom_control/custom_inversion speculatively trace the controlled
+        # and inverted variants on top of that. With a qached body all but the first of
+        # those become pjit cache hits.
+        return qache(branch)
 
     @property
     def unitary(self) -> Callable[..., None]:
@@ -943,7 +982,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         child_unitaries = [block_encoding.unitary for _, block_encoding in self.terms]
 
         branches = [
-            _make_lcu_branch(child_unitary, layout, f"lcu_branch_{term_index}")
+            self._make_lcu_branch(child_unitary, layout, term_index)
             for term_index, (child_unitary, layout) in enumerate(zip(child_unitaries, layouts))
         ]
         # Padding to the full selector dimension covers the selector states that no
@@ -951,27 +990,17 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         # for them never contributes; it only has to leave the operands untouched.
         branches += [_identity_lcu_branch] * ((1 << self._lcu_selector_size) - len(branches))
 
-        # PREP acts on real amplitudes whenever the linear combination has no
-        # negative or complex coefficient, which lets the uncomputation be expressed
-        # as a conjugation instead of a separately traced inverse.
-        has_real_amplitudes = all(_is_non_negative_real(coefficient) for coefficient, _ in self.terms)
-
+        # PREP always acts on magnitudes, because every term's argument is applied
+        # by its own branch. The uncomputation is therefore always a conjugation,
+        # which traces PREP once instead of tracing a separate inverse, and the
+        # construction is Hermitian whenever the branch phases are signs.
         def unitary(*args):
             selector = args[0]
             shared_ancilla = args[1]
             operands = args[2:]
 
-            amplitudes = self._lcu_amplitudes
-            xp = np if isinstance(amplitudes, np.ndarray) else jnp
-
-            if has_real_amplitudes:
-                with conjugate(prepare)(selector, xp.abs(amplitudes)):
-                    q_switch(selector, branches, shared_ancilla, *operands)
-            else:
-                prepare(selector, amplitudes)
+            with conjugate(prepare)(selector, self._lcu_amplitudes):
                 q_switch(selector, branches, shared_ancilla, *operands)
-                with invert():
-                    prepare(selector, xp.conjugate(amplitudes))
 
         cacheable = all(layout.has_static_sizes for layout in layouts) and all(
             _is_reusable_unitary(block_encoding) for _, block_encoding in self.terms
@@ -992,15 +1021,14 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
     @property
     def is_hermitian(self) -> bool:
-        """Return whether the encoded operator is known to be Hermitian.
+        """Return whether the block-encoding unitary is known to be Hermitian.
 
-        Hermitian children are not enough: a complex coefficient makes the sum
-        non-Hermitian, as in ``I + 1j * Z``. Given linearly independent Hermitian
-        children the condition is also necessary, but independence is not known
-        here, so a combination may report False while being Hermitian. That is the
-        safe direction, since a caller such as
-        :meth:`~qrisp.block_encodings.BlockEncoding.qubitization` selects a cheaper
-        construction on the strength of this.
+        The attribute describes the unitary, not the encoded operator. PREP acts on
+        magnitudes and SELECT applies each term's argument, so the unitary is
+        ``PREP* (D SELECT) PREP`` with ``D`` the diagonal of those arguments. That
+        is Hermitian when SELECT is, which needs Hermitian children, and when ``D``
+        is real, which needs real coefficients. A sign is allowed; a genuine complex
+        phase is not.
         """
         return all(_is_real(coefficient) and block_encoding.is_hermitian for coefficient, block_encoding in self.terms)
 
