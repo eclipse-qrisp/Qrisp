@@ -15,9 +15,9 @@
 ********************************************************************************
 """
 
-from jax.tree_util import tree_flatten, tree_unflatten
 import numpy as np
 import pytest
+from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp import (
     QuantumBool,
@@ -820,3 +820,97 @@ def test_a_zero_factor_does_not_hide_an_operand_mismatch(name, build):
 
     with pytest.raises(ValueError, match="same number of operands"):
         build(one, two)
+
+
+#
+# is_hermitian describes the unitary that is built
+#
+
+
+def _unitary_hermiticity_error(block_encoding):
+    """Build the block-encoding unitary and return max|U - U^dagger|."""
+    operand = QuantumVariable(1)
+    ancillas = block_encoding.create_ancillas()
+    block_encoding.unitary(*ancillas, operand)
+    unitary = operand.qs.get_unitary()
+    return float(np.max(np.abs(unitary - unitary.conj().T)))
+
+
+@pytest.mark.parametrize(
+    "name, build, expected",
+    [
+        ("non-negative terms", lambda Z_be, X_be: Z_be + X_be, True),
+        ("scaled non-negative terms", lambda Z_be, X_be: Z_be + 2.0 * X_be, True),
+        ("signed sum", lambda Z_be, X_be: Z_be - X_be, True),
+        ("negated single term", lambda Z_be, X_be: -Z_be, True),
+        ("complex sum", lambda Z_be, X_be: Z_be + 1j * X_be, False),
+        ("complex single term", lambda Z_be, X_be: 1j * Z_be, False),
+    ],
+)
+def test_is_hermitian_agrees_with_the_unitary_that_is_built(name, build, expected):
+    """The attribute is about the unitary, which is not the same question as the operator.
+
+    PREP acts on magnitudes and each SELECT branch applies its term's argument, so
+    the unitary is ``PREP* (D SELECT) PREP``. That is Hermitian when the arguments
+    are signs, which a signed sum satisfies and a complex one does not. Claiming
+    otherwise is not cosmetic: qubitization builds a different walk operator on the
+    strength of it.
+    """
+    Z_be = BlockEncoding.from_operator(Z(0))
+    X_be = BlockEncoding.from_operator(X(0))
+    encoding = build(Z_be, X_be)
+
+    assert encoding.is_hermitian is expected
+    if expected:
+        assert _unitary_hermiticity_error(encoding) < 1e-9
+    else:
+        assert _unitary_hermiticity_error(encoding) > 1e-9
+
+
+def test_signed_sum_polynomial_matches_the_direct_encoding():
+    """A polynomial of a signed sum must agree with encoding the polynomial directly.
+
+    This is where a unitary that is not Hermitian, but claims to be, shows up as
+    wrong numbers rather than as an error: qubitization takes the reflection
+    shortcut, which is only valid for a Hermitian unitary.
+    """
+    operator = Z(0) - X(0) + Z(1)
+    combination = (
+        BlockEncoding.from_operator(Z(0)) - BlockEncoding.from_operator(X(0)) + BlockEncoding.from_operator(Z(1))
+    )
+    reference = BlockEncoding.from_operator(operator**2)
+
+    @terminal_sampling
+    def main(block_encoding):
+        return block_encoding.apply_rus(lambda: QuantumVariable(2))()
+
+    from_combination = main(combination.poly(np.array([0.0, 0.0, 1.0])))
+    from_reference = main(reference)
+
+    for state in (0, 1):
+        assert np.isclose(from_combination.get(state, 0), from_reference.get(state, 0), atol=1e-3)
+
+
+@pytest.mark.parametrize(
+    "name, coefficients",
+    [
+        ("non-negative", [1.0, 2.0]),
+        ("signed", [1.0, -2.0]),
+        ("complex", [1.0, 1j]),
+    ],
+)
+def test_prep_amplitudes_are_real_and_non_negative(name, coefficients):
+    """Whatever the coefficients, PREP is handed magnitudes.
+
+    That is what leaves a single construction to build. The arguments live in the
+    branches, so PREP never needs a separately inverted twin, and the uncomputation
+    stays a conjugation.
+    """
+    Z_be = BlockEncoding.from_operator(Z(0))
+    X_be = BlockEncoding.from_operator(X(0))
+    combination = BlockEncoding.linear_combination([Z_be, X_be], coefficients=coefficients)
+
+    amplitudes = np.asarray(combination._lcu_amplitudes)
+
+    assert np.all(np.isreal(amplitudes))
+    assert np.all(np.real(amplitudes) >= 0)
