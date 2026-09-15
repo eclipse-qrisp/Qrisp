@@ -15,6 +15,7 @@
 ********************************************************************************
 """
 
+import jax.numpy as jnp
 import numpy as np
 import pytest
 from jax.tree_util import tree_flatten, tree_unflatten
@@ -26,6 +27,7 @@ from qrisp import (
     control,
     h,
     jaspify,
+    make_jaspr,
     measure,
     s_dg,
     terminal_sampling,
@@ -250,7 +252,6 @@ def test_block_encoding_lcu_cancels_to_the_zero_encoding():
 def test_block_encoding_lcu_preserves_dynamic_coefficients():
     """Verify that dynamic coefficients are not compared in Python."""
     import jax
-    import jax.numpy as jnp
 
     block_encoding = BlockEncoding(2, [], lambda operand: None)
 
@@ -949,13 +950,20 @@ def test_a_mutable_coefficient_cannot_make_the_derived_values_stale():
             lambda be: BlockEncoding.linear_combination([be], coefficients=[np.array([1.0, 2.0])]),
         ),
         ("through scalar multiplication", lambda be: be * np.array([1.0, 2.0])),
+        (
+            "as a JAX array",
+            lambda be: BlockEncoding.linear_combination([be], coefficients=[jnp.array([1.0, 2.0])]),
+        ),
+        ("as a traced array", lambda be: make_jaspr(lambda c: c * be)(jnp.array([1.0, 2.0]))),
     ],
 )
 def test_a_non_scalar_coefficient_is_rejected(name, build):
     """An array of coefficients for a single term has no meaning and must be refused.
 
     It used to be accepted, collapse the normalization to a sum of its entries, and
-    fail much later when the unitary was applied.
+    fail much later when the unitary was applied. The check reads ``ndim`` rather
+    than testing for a NumPy array, so that a JAX array or a traced one is caught
+    the same way; only the detaching that follows is NumPy-specific.
     """
     block_encoding = BlockEncoding(1, [], lambda operand: x(operand[0]))
 
@@ -965,8 +973,6 @@ def test_a_non_scalar_coefficient_is_rejected(name, build):
 
 def test_immutable_coefficient_kinds_are_left_alone():
     """Only NumPy arrays are detached, since nothing else that arrives is mutable."""
-    import jax.numpy as jnp
-
     block_encoding = BlockEncoding(1, [], lambda operand: x(operand[0]))
     other = BlockEncoding(1, [], lambda operand: x(operand[1]))
 

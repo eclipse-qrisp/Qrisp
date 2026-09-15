@@ -643,6 +643,12 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     AttributeError from an unrelated place, and one carrying a zero coefficient
     disappears without its operand count ever being compared.
 
+    The shape check reads ``ndim`` instead of testing for a NumPy array, so that a
+    JAX array or a traced one is rejected the same way rather than silently giving
+    the derived amplitudes an extra axis. Objects without ``ndim`` are left alone,
+    which keeps plain scalars and the placeholders JAX builds its argument metadata
+    from out of the check.
+
     A NumPy array coefficient is also detached here. The terms are the
     authoritative representation and everything else is derived from them and
     cached, so a coefficient the caller can still write to would leave those
@@ -654,13 +660,11 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     for coefficient, block_encoding in terms:
         if not isinstance(block_encoding, BlockEncoding):
             raise TypeError("Expected every item to be a BlockEncoding.")
-        detached = coefficient
-        if isinstance(coefficient, np.ndarray):
-            if coefficient.ndim != 0:
-                raise ValueError(
-                    f"Expected every coefficient to be a scalar, but got an array of shape {coefficient.shape}."
-                )
-            detached = coefficient.item()
+        if getattr(coefficient, "ndim", 0) != 0:
+            raise ValueError(
+                f"Expected every coefficient to be a scalar, but got an array of shape {coefficient.shape}."
+            )
+        detached = coefficient.item() if isinstance(coefficient, np.ndarray) else coefficient
         checked.append((detached, block_encoding))
 
     terms = tuple(checked)
@@ -1012,14 +1016,15 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         relative phase. That value is read per call rather than captured here: for
         traced coefficients it is a tracer, and this closure outlives the trace that
         builds it, since the unitary holding it is cached. Whether a phase is applied
-        at all is decided here, because a coefficient that is known and non-negative
+        at all is decided here, because a contribution that is known and non-negative
         needs no gate.
         """
         coefficient, block_encoding = self.terms[term_index]
-        if isinstance(coefficient, jax.core.Tracer):
+        effective_coefficient = coefficient * block_encoding.alpha
+        if isinstance(effective_coefficient, jax.core.Tracer):
             applies_phase = True
         else:
-            applies_phase = not _is_non_negative_real(coefficient * block_encoding.alpha)
+            applies_phase = not _is_non_negative_real(effective_coefficient)
 
         def branch(shared_ancilla, *operands):
             child_unitary(*layout.construct_views(shared_ancilla), *operands)
@@ -1058,15 +1063,13 @@ class LinearCombinationBlockEncoding(BlockEncoding):
             coefficient, block_encoding = self.terms[0]
             child_unitary = block_encoding.unitary
 
-            # alpha carries the coefficient's magnitude, so the unitary supplies
-            # coefficient / abs(coefficient): a global phase of arg(coefficient),
-            # of which a negative real coefficient is the arg == pi case.
-            if isinstance(coefficient, jax.core.Tracer):
-                phase = jnp.angle(coefficient)
+            effective_coefficient = coefficient * block_encoding.alpha
+            if isinstance(effective_coefficient, jax.core.Tracer):
+                phase = jnp.angle(effective_coefficient)
                 applies_phase = True
             else:
-                phase = float(np.angle(coefficient))
-                # A coefficient that is real and positive needs no gate at all.
+                phase = float(np.angle(effective_coefficient))
+                # A contribution that is real and positive needs no gate at all.
                 applies_phase = phase != 0.0
 
             def unitary(*args):
@@ -1074,7 +1077,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
                 if applies_phase:
                     gphase(phase, args[0][0])
 
-            if not isinstance(coefficient, jax.core.Tracer) and block_encoding._has_reusable_unitary:
+            if not isinstance(effective_coefficient, jax.core.Tracer) and block_encoding._has_reusable_unitary:
                 object.__setattr__(self, "_cached_unitary", unitary)
             return unitary
 
