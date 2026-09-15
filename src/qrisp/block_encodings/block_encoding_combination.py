@@ -70,7 +70,11 @@ def build_linear_combination(  # noqa: D417
 
     This method implements the linear combination $\sum_i\alpha_iA_i$ via the LCU
     (Linear Combination of Unitaries) framework, where $A_i$ are
-    the operators encoded by the respective instances, and $\alpha_i$ are real coefficients.
+    the operators encoded by the respective instances, and $\alpha_i$ are scalar,
+    potentially complex coefficients.
+
+    Hermiticity is only retained for real coefficients: a complex coefficient makes
+    the combination non-Hermitian even when every $A_i$ is Hermitian.
 
     Equivalently, block-encoded operators can also be combined via ``+``, ``-`` and scalar multiplication.
 
