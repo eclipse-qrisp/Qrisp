@@ -21,21 +21,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-import jax
 import jax.numpy as jnp
 
+from qrisp.block_encodings.predicates import _as_static_size
 from qrisp.core import QuantumVariable
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
-
-
-def _as_static_size(size: Any) -> int | None:
-    """Return ``size`` as a Python int, or ``None`` if it is only known at runtime."""
-    if isinstance(size, jax.core.Tracer):
-        return None
-    try:
-        return int(size)
-    except (TypeError, ValueError):
-        return None
 
 
 @dataclass(frozen=True)

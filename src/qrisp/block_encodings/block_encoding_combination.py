@@ -47,45 +47,18 @@ from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.block_encodings.ancilla_layout import _AncillaLayout, _maximum_layout_size
 from qrisp.block_encodings.block_encoding_base import (
     BlockEncoding,
-    _is_statically_zero,
     _LCUTerm,
     _LCUTerms,
     _ProductFactors,
     _ProductStrategy,
 )
+from qrisp.block_encodings.predicates import _is_non_negative_real, _is_real, _is_statically_zero
 from qrisp.core import QuantumVariable, mcx
 from qrisp.core.gate_application_functions import gphase
 from qrisp.environments import conjugate, control, invert
 from qrisp.jasp import q_switch, qache
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool, QuantumFloat
-
-
-def _is_real(value: Any) -> bool:
-    """Return whether a value is real, as far as is knowable at build time.
-
-    A traced value has no value yet, but it does have a dtype, and a dtype that is
-    not complex cannot carry an imaginary part. A complex dtype may still hold a
-    real value at run time; reporting that as possibly complex is the safe
-    direction, because the answer selects an implementation statically.
-
-    An array counts as real only if every entry does, matching
-    :func:`_is_non_negative_real`.
-    """
-    if isinstance(value, jax.core.Tracer):
-        return not jnp.issubdtype(value.dtype, jnp.complexfloating)
-    try:
-        return bool(np.all(np.isreal(value)))
-    except Exception:
-        return False
-
-
-def _is_non_negative_real(value: Any) -> bool:
-    try:
-        value = np.asarray(value)
-    except Exception:
-        return False
-    return bool(np.all(np.isreal(value)) and np.all(np.real(value) >= 0))
 
 
 # The functions below are written as methods but defined at module level, and
