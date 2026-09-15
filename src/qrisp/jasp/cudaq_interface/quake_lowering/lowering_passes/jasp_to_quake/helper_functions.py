@@ -18,11 +18,7 @@
 
 from xdsl.dialects import arith, tensor
 from xdsl.dialects.builtin import (
-    BFloat16Type,
     DenseIntOrFPElementsAttr,
-    Float16Type,
-    Float32Type,
-    Float64Type,
     IntegerAttr,
     IntegerType,
     TensorType,
@@ -43,6 +39,7 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     VeqSizeOp,
     _make_gate_op,
 )
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.ir_helpers import _is_float_type, _is_scalar_tensor
 from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.gate_mapping import GateInfo
 from qrisp.jasp.mlir.xdsl_dialect import (
     QuantumGateOp,
@@ -100,14 +97,9 @@ def _is_numeric_type(t: Attribute) -> bool:
     return isinstance(scalar, IntegerType) or _is_float_type(scalar)
 
 
-def _is_float_type(t: Attribute) -> bool:
-    """Return True for any xDSL float type."""
-    return isinstance(t, (Float16Type, Float32Type, Float64Type, BFloat16Type))
-
-
 def _scalar_type_of(t: Attribute) -> Attribute:
     """Return the scalar element type (unwrap rank-0 tensor if needed)."""
-    if isinstance(t, TensorType) and not t.get_shape():
+    if _is_scalar_tensor(t):
         return t.element_type
     return t
 

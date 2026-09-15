@@ -49,14 +49,8 @@
 from xdsl.dialects import arith, tensor
 from xdsl.dialects import func as func_dialect
 from xdsl.dialects.builtin import (
-    DenseIntOrFPElementsAttr,
-    Float16Type,
-    Float32Type,
-    Float64Type,
-    FloatAttr,
     FunctionType,
     IndexType,
-    IntegerAttr,
     ModuleOp,
     TensorType,
     i64,
@@ -83,13 +77,16 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcPtrType,
     CcStoreOp,
 )
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.ir_helpers import (
+    _MLIR_DYNAMIC,
+    _dense_values,
+    _is_array_pointer,
+    _is_rank_1_tensor,
+    _scalar_attr,
+)
 from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.safeguard_no_ranked_tensor_linalg import (
     CudaqUnsupportedArrayOperationError,
 )
-
-# MLIR's sentinel for "dynamic dimension/offset"
-_MLIR_DYNAMIC = -9223372036854775808
-
 
 # ===================================================================
 # Public entry point
@@ -142,7 +139,7 @@ class MaterializeDenseArrayConstant(RewritePattern):
         if not _is_rank_1_tensor(tensor_type) or not any(op.result.uses):
             return
 
-        values = _dense_values(op)
+        values = _dense_values(op.value)
         if values is None:
             return
 
@@ -280,16 +277,6 @@ class ConvertFuncSignature(RewritePattern):
 # ===================================================================
 
 
-def _is_rank_1_tensor(t: Attribute) -> bool:
-    """Return True if *t* is a ranked tensor type with exactly one dimension."""
-    return isinstance(t, TensorType) and len(t.get_shape()) == 1
-
-
-def _is_array_pointer(t: Attribute) -> bool:
-    """Return True if *t* is a pointer to a CC array."""
-    return isinstance(t, CcPtrType) and isinstance(t.element_type, CcArrayType)
-
-
 def _converted_type(t: Attribute) -> Attribute:
     """Return the CC array pointer replacing *t*, or *t* itself if it is not a rank-1 tensor."""
     return _array_pointer_type(t) if _is_rank_1_tensor(t) else t
@@ -340,19 +327,14 @@ def _emit_element_load(pointer: SSAValue, index: int | SSAValue) -> tuple[list[O
 
 def _scalar_constant(value, element_type: Attribute) -> arith.ConstantOp:
     """Return a scalar arith.constant holding *value* at *element_type*."""
-    if isinstance(element_type, (Float16Type, Float32Type, Float64Type)):
-        return arith.ConstantOp(FloatAttr(float(value), element_type))
-    return arith.ConstantOp(IntegerAttr(int(value), element_type))
-
-
-def _dense_values(const_op: arith.ConstantOp) -> list | None:
-    """Return the literal elements of a dense constant, or None if it has none."""
-    if not isinstance(const_op.value, DenseIntOrFPElementsAttr):
-        return None
-    try:
-        return list(const_op.value.iter_values())
-    except (AttributeError, TypeError):
-        return None
+    attr = _scalar_attr(value, element_type)
+    if attr is None:
+        raise CudaqUnsupportedArrayOperationError(
+            f"This @cudaq_kernel function uses a classical array of {element_type}, "
+            "which CUDA-Q cannot compile.\n\n"
+            "Use an array of integers or floating point numbers instead."
+        )
+    return arith.ConstantOp(attr)
 
 
 # ===================================================================

@@ -24,16 +24,13 @@
 # linalg patterns are present before Quake lowering starts.
 
 from xdsl.dialects import linalg
-from xdsl.dialects.builtin import ModuleOp, TensorType
+from xdsl.dialects.builtin import ModuleOp
+
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.ir_helpers import _is_ranked_tensor
 
 
 class CudaqUnsupportedArrayOperationError(RuntimeError):
     """Raised when an unsupported array operation survives emission."""
-
-
-def _is_ranked_tensor_type(t) -> bool:
-    """Return ``True`` iff *t* is a ranked TensorType (rank > 0)."""
-    return isinstance(t, TensorType) and len(t.get_shape()) > 0
 
 
 def _verify_no_ranked_tensor_linalg(module: ModuleOp) -> None:
@@ -42,8 +39,8 @@ def _verify_no_ranked_tensor_linalg(module: ModuleOp) -> None:
         if not isinstance(current_op, linalg.GenericOp):
             continue
 
-        operand_has_ranked_tensor = any(_is_ranked_tensor_type(operand.type) for operand in current_op.operands)
-        result_has_ranked_tensor = any(_is_ranked_tensor_type(result.type) for result in current_op.results)
+        operand_has_ranked_tensor = any(_is_ranked_tensor(operand.type) for operand in current_op.operands)
+        result_has_ranked_tensor = any(_is_ranked_tensor(result.type) for result in current_op.results)
 
         if operand_has_ranked_tensor or result_has_ranked_tensor:
             raise CudaqUnsupportedArrayOperationError(

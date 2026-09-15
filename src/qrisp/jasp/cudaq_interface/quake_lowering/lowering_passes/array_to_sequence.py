@@ -32,7 +32,7 @@
 #   unchanged, requiring no call graph analysis or propagation.
 
 from xdsl.dialects import func as func_dialect
-from xdsl.dialects.builtin import Attribute, FunctionType, ModuleOp
+from xdsl.dialects.builtin import FunctionType, ModuleOp
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
     PatternRewriter,
@@ -49,9 +49,10 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcSequenceDataOp,
     CcSequenceType,
 )
-
-_MLIR_DYNAMIC = -9223372036854775808
-
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.ir_helpers import (
+    _MLIR_DYNAMIC,
+    _is_array_pointer,
+)
 
 # ===================================================================
 # Public entry point
@@ -87,7 +88,7 @@ class EntrypointArrayToSequencePattern(RewritePattern):
 
         for idx, arg in enumerate(block.args):
             old_type = arg.type
-            if not _is_array_ptr(old_type):
+            if not _is_array_pointer(old_type):
                 continue
 
             # Already converted — break greedy loop
@@ -132,8 +133,3 @@ def _is_entrypoint(func_op: func_dialect.FuncOp) -> bool:
         val = func_op.attributes["cudaq.entrypoint"]
         return getattr(val, "data", str(val)).strip('"') == "true"
     return False
-
-
-def _is_array_ptr(t: Attribute) -> bool:
-    """Return True if the type is !cc.ptr<!cc.array<...>>."""
-    return isinstance(t, CcPtrType) and isinstance(t.element_type, CcArrayType)

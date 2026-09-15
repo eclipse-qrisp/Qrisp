@@ -36,14 +36,7 @@ from xdsl.context import Context
 from xdsl.dialects import arith, tensor
 from xdsl.dialects import func as func_dialect
 from xdsl.dialects.builtin import (
-    DenseIntOrFPElementsAttr,
-    Float16Type,
-    Float32Type,
-    Float64Type,
-    FloatAttr,
     FunctionType,
-    IntegerAttr,
-    IntegerType,
     ModuleOp,
     TensorType,
 )
@@ -56,6 +49,12 @@ from xdsl.pattern_rewriter import (
     op_type_rewrite_pattern,
 )
 from xdsl.rewriter import InsertPoint
+
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.ir_helpers import (
+    _dense_values,
+    _is_scalar_tensor,
+    _scalar_attr,
+)
 
 # ===================================================================
 # Public entry point
@@ -72,25 +71,11 @@ def _unwrap_scalar_tensors(module: ModuleOp) -> None:
 # ------------------------------------------------------------------ #
 def _dense_to_scalar_attr(dense_attr, scalar_type):
     """Extract a scalar attribute from a rank-0 DenseIntOrFPElementsAttr."""
-    if not isinstance(dense_attr, DenseIntOrFPElementsAttr):
+    elements = _dense_values(dense_attr)
+    if elements is None or len(elements) != 1:
         return None
 
-    try:
-        elements = list(dense_attr.iter_values())
-    except (AttributeError, TypeError):
-        return None
-
-    if len(elements) != 1:
-        return None
-
-    raw = elements[0]
-
-    if isinstance(scalar_type, IntegerType):
-        return IntegerAttr(int(raw), scalar_type)
-    if isinstance(scalar_type, (Float16Type, Float32Type, Float64Type)):
-        return FloatAttr(float(raw), scalar_type)
-
-    return None
+    return _scalar_attr(elements[0], scalar_type)
 
 
 # ------------------------------------------------------------------ #
@@ -115,7 +100,7 @@ class UnwrapFuncAndReturn(RewritePattern):
 
         for operand in op.operands:
             t = operand.type
-            if isinstance(t, TensorType) and not t.get_shape():
+            if _is_scalar_tensor(t):
                 # Isolate the boundary by inserting an extract
                 extract_op = tensor.ExtractOp(operand, [], t.element_type)
                 rewriter.insert_op(extract_op, InsertPoint.before(op))
@@ -161,7 +146,7 @@ class UnwrapFuncArgs(RewritePattern):
         args_to_wrap = []
 
         for i, t in enumerate(ftype.inputs):
-            if isinstance(t, TensorType) and not t.get_shape():
+            if _is_scalar_tensor(t):
                 new_inputs.append(t.element_type)
                 args_to_wrap.append((i, t, t.element_type))
                 changed = True
@@ -225,7 +210,7 @@ class UnwrapCall(RewritePattern):
         # 1. Handle Operands (Arguments passed to the call)
         for operand in op.operands:
             t = operand.type
-            if isinstance(t, TensorType) and not t.get_shape():
+            if _is_scalar_tensor(t):
                 # Inject a tensor.extract before the call
                 extract = tensor.ExtractOp(operand, [], t.element_type)
                 ops_to_insert_before.append(extract)
@@ -237,7 +222,7 @@ class UnwrapCall(RewritePattern):
         # 2. Handle Results (Returns from the call)
         for res in op.results:
             t = res.type
-            if isinstance(t, TensorType) and not t.get_shape():
+            if _is_scalar_tensor(t):
                 new_result_types.append(t.element_type)
                 changed = True
             else:
@@ -282,7 +267,7 @@ class FoldExtractOfDenseConstant(RewritePattern):
             return
 
         src = op.tensor
-        if not isinstance(src.type, TensorType) or src.type.get_shape():
+        if not _is_scalar_tensor(src.type):
             return
 
         defn = src.owner

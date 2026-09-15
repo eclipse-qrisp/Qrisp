@@ -58,6 +58,7 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcIfOp,
     CcLoopOp,
 )
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.ir_helpers import _is_scalar_tensor
 
 # ===================================================================
 # Public entry point
@@ -106,11 +107,6 @@ def _find_trailing_yield(block: Block) -> Optional[YieldOp]:
 # ===================================================================
 
 
-def _is_rank0_tensor(t: Attribute) -> bool:
-    """Return True if *t* is a rank-0 TensorType."""
-    return isinstance(t, TensorType) and len(t.get_shape()) == 0
-
-
 def _get_element_type(t: Attribute) -> Optional[Attribute]:
     """Extract the element type from a TensorType."""
     if isinstance(t, TensorType):
@@ -120,7 +116,7 @@ def _get_element_type(t: Attribute) -> Optional[Attribute]:
 
 def _unwrap(val: SSAValue, insert_hook: Operation) -> SSAValue:
     """Extract a scalar from a rank-0 tensor; no-op for scalars."""
-    if _is_rank0_tensor(val.type):
+    if _is_scalar_tensor(val.type):
         elem_type = _get_element_type(val.type)
         if elem_type is None:
             return val
@@ -144,7 +140,7 @@ def _rewrite_region_args_for_tensors(region: Region) -> Region:
     needs_wrap = False
 
     for arg in block.args:
-        if _is_rank0_tensor(arg.type):
+        if _is_scalar_tensor(arg.type):
             elem_type = _get_element_type(arg.type)
             if elem_type:
                 new_arg_types.append(elem_type)
@@ -160,7 +156,7 @@ def _rewrite_region_args_for_tensors(region: Region) -> Region:
     new_block = Block(arg_types=new_arg_types)
 
     for old_arg, new_arg in zip(block.args, new_block.args):
-        if _is_rank0_tensor(old_arg.type):
+        if _is_scalar_tensor(old_arg.type):
             wrap = tensor.FromElementsOp.create(
                 operands=[new_arg],
                 result_types=[old_arg.type],
@@ -193,7 +189,7 @@ class ScfIfPattern(RewritePattern):
         # Determine CC result types (unwrap tensors)
         result_types: List[Attribute] = []
         for t in if_op.result_types:
-            if _is_rank0_tensor(t):
+            if _is_scalar_tensor(t):
                 elem_t = _get_element_type(t)
                 result_types.append(elem_t if elem_t else t)
             else:
@@ -221,7 +217,7 @@ class ScfIfPattern(RewritePattern):
         for i, res in enumerate(if_op.results):
             orig_type = res.type
             scalar_res = cc_if.res[i]
-            if _is_rank0_tensor(orig_type):
+            if _is_scalar_tensor(orig_type):
                 wrap = tensor.FromElementsOp.create(
                     operands=[scalar_res],
                     result_types=[orig_type],
@@ -249,7 +245,7 @@ class ScfForPattern(RewritePattern):
 
         # Helper to unwrap values directly in the outer block scope via the rewriter
         def _unwrap_outer(val: SSAValue) -> SSAValue:
-            if _is_rank0_tensor(val.type):
+            if _is_scalar_tensor(val.type):
                 elem_type = _get_element_type(val.type)
                 if elem_type:
                     ext = tensor.ExtractOp(val, [], elem_type)
@@ -310,7 +306,7 @@ class ScfForPattern(RewritePattern):
         for i, res in enumerate(for_op.results):
             orig_type = res.type
             scalar_res = loop_results[i]
-            if _is_rank0_tensor(orig_type):
+            if _is_scalar_tensor(orig_type):
                 wrap = tensor.FromElementsOp.create(
                     operands=[scalar_res],
                     result_types=[orig_type],
@@ -332,7 +328,7 @@ class ScfWhilePattern(RewritePattern):
         init_args = list(while_op.operands)
 
         def _unwrap_outer(val: SSAValue) -> SSAValue:
-            if _is_rank0_tensor(val.type):
+            if _is_scalar_tensor(val.type):
                 elem_type = _get_element_type(val.type)
                 if elem_type:
                     ext = tensor.ExtractOp(val, [], elem_type)
@@ -391,7 +387,7 @@ class ScfWhilePattern(RewritePattern):
         for i, res in enumerate(while_op.results):
             orig_type = res.type
             scalar_res = cc_loop.res[i]
-            if _is_rank0_tensor(orig_type):
+            if _is_scalar_tensor(orig_type):
                 wrap = tensor.FromElementsOp.create(
                     operands=[scalar_res],
                     result_types=[orig_type],
@@ -418,7 +414,7 @@ class ScfIndexSwitchPattern(RewritePattern):
         """Lower an SCF index switch to nested CC conditionals."""
         result_types: List[Attribute] = []
         for t in switch_op.result_types:
-            if _is_rank0_tensor(t):
+            if _is_scalar_tensor(t):
                 elem_t = _get_element_type(t)
                 result_types.append(elem_t if elem_t else t)
             else:
@@ -468,7 +464,7 @@ class ScfIndexSwitchPattern(RewritePattern):
         for i, res in enumerate(switch_op.results):
             orig_type = res.type
             scalar_res = cc_if.res[i]
-            if _is_rank0_tensor(orig_type):
+            if _is_scalar_tensor(orig_type):
                 wrap = tensor.FromElementsOp.create(
                     operands=[scalar_res],
                     result_types=[orig_type],
