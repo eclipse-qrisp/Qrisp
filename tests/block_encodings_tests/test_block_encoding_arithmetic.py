@@ -16,9 +16,9 @@
 """
 
 import jax.numpy as jnp
-from jax.tree_util import tree_flatten, tree_unflatten
 import numpy as np
 import pytest
+from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp import (
     QuantumBool,
@@ -34,7 +34,7 @@ from qrisp import (
     x,
     z,
 )
-from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding
+from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding, ProductBlockEncoding
 from qrisp.operators import X, Y, Z
 
 
@@ -252,7 +252,6 @@ def test_block_encoding_lcu_cancels_to_the_zero_encoding():
 def test_block_encoding_lcu_preserves_dynamic_coefficients():
     """Verify that dynamic coefficients are not compared in Python."""
     import jax
-    import jax.numpy as jnp
 
     block_encoding = BlockEncoding(2, [], lambda operand: None)
 
@@ -279,6 +278,140 @@ def test_block_encoding_linear_combination_validates_inputs():
 
     with pytest.raises(ValueError, match="same number of operands"):
         BlockEncoding.linear_combination([block_encoding, two_operand_block_encoding])
+
+
+def test_block_encoding_product_is_flattened_and_keeps_separate_ancillas():
+    """Verify that nested products preserve factor order and ancilla ownership."""
+    first = BlockEncoding(2, [QuantumFloat(2)], lambda ancilla, operand: None)
+    second = BlockEncoding(3, [QuantumBool()], lambda ancilla, operand: None)
+    third = BlockEncoding(5, [QuantumFloat(1)], lambda ancilla, operand: None)
+
+    nested_product = ProductBlockEncoding([first, second], strategy="separate")
+    product = ProductBlockEncoding([nested_product, third], strategy="separate")
+
+    assert isinstance(product, ProductBlockEncoding)
+    assert product.factors == (first, second, third)
+    assert product.strategy == "separate"
+    assert product.alpha == 30
+    assert product.num_ancs == first.num_ancs + second.num_ancs + third.num_ancs
+    assert [template.qv_size for template in product._anc_templates] == [2, 1, 1]
+
+    with pytest.raises(TypeError):
+        product.factors[0] = first
+    with pytest.raises(AttributeError):
+        product.factors = ()
+    with pytest.raises(AttributeError):
+        product._factors = ()
+
+
+def test_block_encoding_product_defaults_to_qubit_efficient_strategy():
+    """Verify the default optimized strategy's execution and structural metadata."""
+    calls = []
+
+    def factor_unitary(ancilla, operand):
+        calls.append("factor")
+
+    factor = BlockEncoding(1, [QuantumBool()], factor_unitary)
+    product = ProductBlockEncoding([factor])
+
+    assert product.strategy == "qubit_efficient"
+    assert (factor @ factor).strategy == "qubit_efficient"
+    product.unitary(*product.create_ancillas(), QuantumVariable(1))
+    assert calls == ["factor"]
+    assert product.num_ancs == factor.num_ancs
+
+    leaves, treedef = tree_flatten(product)
+    reconstructed = tree_unflatten(treedef, leaves)
+    assert reconstructed.strategy == "qubit_efficient"
+    assert reconstructed.dagger().strategy == "qubit_efficient"
+
+    with pytest.raises(ValueError, match="Unknown product strategy"):
+        ProductBlockEncoding([factor], strategy="unknown")
+    with pytest.raises(AttributeError):
+        product.strategy = "separate"
+    with pytest.raises(AttributeError):
+        product._strategy = "separate"
+
+
+def test_block_encoding_qubit_efficient_product_reuses_heterogeneous_ancillas():
+    """Verify that factors share the largest workspace plus a logarithmic shift register."""
+    first = BlockEncoding(1, [QuantumFloat(2), QuantumBool()], lambda *args: None)
+    second = BlockEncoding(1, [QuantumFloat(1)], lambda *args: None)
+    third = BlockEncoding(1, [QuantumBool(), QuantumBool()], lambda *args: None)
+
+    product = ProductBlockEncoding([first, second, third], strategy="qubit_efficient")
+
+    assert product.num_ancs == 2
+    assert [template.qv_size for template in product._anc_templates] == [2, 3]
+
+
+@pytest.mark.parametrize(
+    "operators",
+    [
+        [X(0) + 0.4 * Z(0), Y(0) + 0.3 * Z(0)],
+        [X(0) + 0.4 * Z(0), Y(0) + 0.3 * Z(0), X(0) + 0.2 * Y(0)],
+        [
+            X(0) * X(1) + 0.2 * Z(0),
+            Y(0) * Y(1) + 0.3 * X(1),
+            Z(0) * Z(1) + 0.2 * X(0),
+            X(0) + 0.1 * Y(1),
+        ],
+    ],
+    ids=["two_factors", "three_factors", "four_multiqubit_factors"],
+)
+def test_block_encoding_qubit_efficient_product_matches_separate_strategy(operators):
+    """Verify shared-workspace products against the Jasp-compiled reference strategy."""
+    factors = [BlockEncoding.from_operator(operator) for operator in operators]
+    separate = ProductBlockEncoding(factors, strategy="separate")
+    qubit_efficient = ProductBlockEncoding(factors, strategy="qubit_efficient")
+    num_qubits = max(operator.find_minimal_qubit_amount() for operator in operators)
+
+    @terminal_sampling
+    def main(block_encoding):
+        return block_encoding.apply_rus(lambda: QuantumVariable(num_qubits))()
+
+    _compare_results(main(separate), main(qubit_efficient), num_qubits)
+
+
+def test_block_encoding_product_applies_factors_in_reverse_order():
+    """Verify that A @ B applies B before A."""
+    calls = []
+
+    def first_unitary(ancilla, operand):
+        calls.append("first")
+
+    def second_unitary(ancilla, operand):
+        calls.append("second")
+
+    first = BlockEncoding(1, [QuantumBool()], first_unitary)
+    second = BlockEncoding(1, [QuantumBool()], second_unitary)
+    product = first @ second
+    ancillas = product.create_ancillas()
+    operand = QuantumVariable(1)
+
+    product.unitary(*ancillas, operand)
+
+    assert calls == ["second", "first"]
+
+
+def test_block_encoding_product_supports_pytree_and_structural_dagger():
+    """Verify product reconstruction and reversed factor daggers."""
+    first = BlockEncoding(2, [], lambda operand: None)
+    second = BlockEncoding(3, [], lambda operand: None)
+    third = BlockEncoding(5, [], lambda operand: None)
+    product = first @ second @ third
+
+    leaves, treedef = tree_flatten(product)
+    reconstructed = tree_unflatten(treedef, leaves)
+    dagger = product.dagger()
+
+    assert isinstance(reconstructed, ProductBlockEncoding)
+    assert len(reconstructed.factors) == 3
+    assert reconstructed.alpha == product.alpha
+    assert isinstance(dagger, ProductBlockEncoding)
+    assert len(dagger.factors) == 3
+    assert [factor.alpha for factor in dagger.factors] == [third.alpha, second.alpha, first.alpha]
+    assert dagger.alpha == product.alpha
 
 
 def test_linear_combination_block_encoding_has_immutable_derived_representation():
@@ -606,6 +739,48 @@ def test_zero_encoding_cannot_be_applied():
 
 
 @pytest.mark.parametrize(
+    "name, build",
+    [
+        ("zero on the left", lambda A, B: (A - A) @ B),
+        ("zero on the right", lambda A, B: B @ (A - A)),
+        ("zero late in a chain", lambda A, B: A @ B @ (A - A)),
+        ("zero from a zero coefficient", lambda A, B: (0 * A) @ B),
+    ],
+)
+def test_zero_annihilates_a_product(name, build):
+    """A zero factor makes the whole product the zero operator.
+
+    Where a sum absorbs a zero term, a product is annihilated by one, so there is
+    nothing to gain from building the remaining factors.
+    """
+    A, B = _zero_cases()
+    product = build(A, B)
+
+    assert product.alpha == 0
+    assert not isinstance(product, ProductBlockEncoding)
+
+
+def test_zero_annihilates_a_product_across_a_pytree_boundary():
+    """A product formed inside a traced function must annihilate too.
+
+    The factor arrives with a tracer in place of its normalization, so the
+    annihilation cannot be read off alpha any more than the refusal in apply can.
+    Missing it builds an ordinary product whose own alpha is traced in turn, so
+    nothing downstream catches it either: the remaining factors were applied and
+    the result reported as a success.
+    """
+    A, B = _zero_cases()
+    zero = A - A
+
+    @terminal_sampling
+    def main(BE):
+        return (BE @ B).apply_rus(lambda: QuantumFloat(1))()
+
+    with pytest.raises(ValueError, match="zero operator"):
+        main(zero)
+
+
+@pytest.mark.parametrize(
     "name, apply_it",
     [
         ("apply", lambda BE: BE.apply(QuantumFloat(1))),
@@ -686,6 +861,26 @@ def test_an_invalid_child_is_reported_as_a_type_error():
     """
     with pytest.raises(TypeError, match="BlockEncoding"):
         LinearCombinationBlockEncoding([(1, "not a block encoding")])
+
+
+@pytest.mark.parametrize(
+    "name, build",
+    [
+        ("zero factor on the left", lambda one, two: (one - one) @ two),
+        ("zero factor on the right", lambda one, two: two @ (one - one)),
+    ],
+)
+def test_a_zero_factor_does_not_hide_an_operand_mismatch(name, build):
+    """A product checks its factors against each other before zero annihilates it.
+
+    A zero factor collapses the product without the remaining factors being built,
+    so the operand counts have to be compared first or the mismatch is swallowed
+    by the zero result.
+    """
+    one, two = _one_and_two_operand_encodings()
+
+    with pytest.raises(ValueError, match="same number of operands"):
+        build(one, two)
 
 
 #

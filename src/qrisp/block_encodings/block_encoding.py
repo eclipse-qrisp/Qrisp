@@ -19,6 +19,7 @@
 from .block_encoding_base import BlockEncoding
 from .block_encoding_combination import (
     LinearCombinationBlockEncoding,
+    ProductBlockEncoding,
     apply_add,
     apply_kron,
     apply_matmul,
@@ -68,4 +69,4 @@ BlockEncoding.pseudo_inv = apply_pseudo_inv
 BlockEncoding.sim = apply_sim
 BlockEncoding.svt = apply_svt
 
-__all__ = ["BlockEncoding", "LinearCombinationBlockEncoding"]
+__all__ = ["BlockEncoding", "LinearCombinationBlockEncoding", "ProductBlockEncoding"]
