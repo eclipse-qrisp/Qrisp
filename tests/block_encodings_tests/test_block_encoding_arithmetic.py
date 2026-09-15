@@ -757,3 +757,66 @@ def test_zero_annihilates_a_product(name, build):
 
     assert product.alpha == 0
     assert not isinstance(product, ProductBlockEncoding)
+
+
+#
+# Terms are validated as supplied
+#
+
+
+def _one_and_two_operand_encodings():
+    one = BlockEncoding(1, [], lambda a: None, num_ops=1)
+    two = BlockEncoding(1, [], lambda a, b: None, num_ops=2)
+    return one, two
+
+
+@pytest.mark.parametrize(
+    "name, build",
+    [
+        ("zero coefficient", lambda one, two: BlockEncoding.linear_combination([one, two], coefficients=[1, 0])),
+        ("zero encoding on the right", lambda one, two: one + (two - two)),
+        ("zero encoding on the left", lambda one, two: (two - two) + one),
+    ],
+)
+def test_a_zero_term_does_not_hide_an_operand_mismatch(name, build):
+    """Operand counts are compared before any term is dropped.
+
+    Canonicalization removes a term that contributes nothing, so a mismatched
+    child carrying a zero coefficient used to disappear before being checked, and
+    the combination silently returned the surviving encoding instead of rejecting
+    the call.
+    """
+    one, two = _one_and_two_operand_encodings()
+
+    with pytest.raises(ValueError, match="same number of operands"):
+        build(one, two)
+
+
+def test_an_invalid_child_is_reported_as_a_type_error():
+    """A child that is not a block encoding must raise the documented TypeError.
+
+    Canonicalization reads each child's normalization, so an invalid one used to
+    surface as an AttributeError raised from the merging step.
+    """
+    with pytest.raises(TypeError, match="BlockEncoding"):
+        LinearCombinationBlockEncoding([(1, "not a block encoding")])
+
+
+@pytest.mark.parametrize(
+    "name, build",
+    [
+        ("zero factor on the left", lambda one, two: (one - one) @ two),
+        ("zero factor on the right", lambda one, two: two @ (one - one)),
+    ],
+)
+def test_a_zero_factor_does_not_hide_an_operand_mismatch(name, build):
+    """A product checks its factors against each other before zero annihilates it.
+
+    A zero factor collapses the product without the remaining factors being built,
+    so the operand counts have to be compared first or the mismatch is swallowed
+    by the zero result.
+    """
+    one, two = _one_and_two_operand_encodings()
+
+    with pytest.raises(ValueError, match="same number of operands"):
+        build(one, two)

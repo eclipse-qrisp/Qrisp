@@ -125,6 +125,7 @@ def build_linear_combination(  # noqa: D417
 
 def build_from_lcu_terms(cls, terms: Sequence[_LCUTerm]) -> BlockEncoding:
     """Build a linear-combination block encoding from weighted terms."""
+    terms = _validate_lcu_terms(terms)
     num_ops = terms[0][1].num_ops if terms else 1
     terms = _canonicalize_lcu_terms(terms)
     if len(terms) == 0:
@@ -411,12 +412,13 @@ def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
     if not isinstance(other, BlockEncoding):
         return NotImplemented
 
-    factors = self._get_product_factors() + other._get_product_factors()
+    factors = _validate_product_factors(self._get_product_factors() + other._get_product_factors())
     # Zero annihilates a product, where a sum absorbs it: if any factor encodes the
     # zero operator then so does the product, and building the whole chain of
-    # factors for it would be wasted.
+    # factors for it would be wasted. The factors are checked against each other
+    # first, so that a mismatched one is not swallowed by the zero result.
     if any(_is_statically_zero(factor.alpha) for factor in factors):
-        return _zero_block_encoding(self.num_ops)
+        return _zero_block_encoding(factors[0].num_ops)
     return ProductBlockEncoding(factors)
 
 
@@ -610,6 +612,46 @@ def _zero_block_encoding(num_ops: int = 1) -> BlockEncoding:
     block without at least one ancilla to project onto.
     """
     return BlockEncoding(0, [], lambda *args: None, num_ops=num_ops)
+
+
+def _validate_product_factors(factors: _ProductFactors) -> _ProductFactors:
+    """Check the factors as supplied, before any are dropped.
+
+    A zero factor annihilates the product, so it has to be recognised only after
+    the factors have been checked against each other. Otherwise a factor with a
+    mismatched operand count disappears into the zero result without ever being
+    compared, and the call is accepted where it should be rejected.
+    """
+    factors = tuple(factors)
+    for factor in factors:
+        if not isinstance(factor, BlockEncoding):
+            raise TypeError(f"Expected every factor to be a BlockEncoding, but got {type(factor).__name__}.")
+
+    if factors:
+        num_ops = factors[0].num_ops
+        if any(factor.num_ops != num_ops for factor in factors):
+            raise ValueError("All product factors must have the same number of operands.")
+    return factors
+
+
+def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
+    """Check the terms as supplied, before any are merged or dropped.
+
+    Canonicalization reads each child's normalization and can remove a term
+    outright, so a malformed or mismatched child has to be rejected first. After
+    canonicalization a child that is not a block encoding surfaces as an
+    AttributeError from an unrelated place, and one carrying a zero coefficient
+    disappears without its operand count ever being compared.
+    """
+    terms = tuple(terms)
+    if any(not isinstance(block_encoding, BlockEncoding) for _, block_encoding in terms):
+        raise TypeError("Expected every item to be a BlockEncoding.")
+
+    if terms:
+        num_ops = terms[0][1].num_ops
+        if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):
+            raise ValueError("All block-encodings must have the same number of operands.")
+    return terms
 
 
 def _canonicalize_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
@@ -814,15 +856,9 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         would leak the tracer.
 
         """
-        terms = _canonicalize_lcu_terms(terms)
+        terms = _canonicalize_lcu_terms(_validate_lcu_terms(terms))
         if len(terms) == 0:
             raise ValueError("Cannot construct a block encoding from an all-zero linear combination.")
-        if any(not isinstance(block_encoding, BlockEncoding) for _, block_encoding in terms):
-            raise TypeError("Expected every item to be a BlockEncoding.")
-
-        num_ops = terms[0][1].num_ops
-        if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):
-            raise ValueError("All block-encodings must have the same number of operands.")
 
         self._terms = terms
 
