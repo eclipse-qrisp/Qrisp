@@ -1097,7 +1097,7 @@ class Jaspr(ClosedJaxpr):
             ``"sample"``
                 Targets ``cudaq.sample``.  Every ``quake.mz`` is emitted on the
                 full operand (``!quake.ref`` or ``!quake.veq<?>``), leaving the
-                ``!quake.measure`` / ``!cc.stdvec<!quake.measure>`` result for the
+                ``!cc.measure_handle`` / ``!cc.sequence<!cc.measure_handle>`` result for the
                 CUDAQ runtime to collect across shots.  To keep SSA valid through
                 all intermediate passes, a zero dummy constant (``tensor<i1>``
                 for single qubits, ``tensor<i64>`` for arrays) is substituted

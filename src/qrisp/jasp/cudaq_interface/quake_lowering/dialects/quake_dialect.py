@@ -52,7 +52,10 @@ from xdsl.irdl import (
 )
 from xdsl.printer import Printer
 
-from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import CcMeasureHandleType, CcStdVecType
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
+    CcMeasureHandleType,
+    CcSequenceType,
+)
 
 # ---------------------------------------------------------------------------
 # Types
@@ -475,11 +478,10 @@ class MzOp(IRDLOperation):
     """Measure in the Z basis.
 
     - Single qubit: ``quake.mz %ref : (!quake.ref) -> !cc.measure_handle``
-    - Register:     ``quake.mz %veq : (!quake.veq<?>) -> !cc.stdvec<!cc.measure_handle>``
+    - Register:     ``quake.mz %veq : (!quake.veq<?>) -> !cc.sequence<!cc.measure_handle>``
 
-    Per the CUDA-Q Quake dialect (>= 0.15.0), measuring a single qubit
-    returns ``!cc.measure_handle`` and measuring a ``veq`` returns
-    ``!cc.stdvec<!cc.measure_handle>``.
+    Measuring a single qubit returns ``!cc.measure_handle`` and measuring a
+    ``veq`` returns ``!cc.sequence<!cc.measure_handle>``.
     """
 
     name = "quake.mz"
@@ -490,7 +492,7 @@ class MzOp(IRDLOperation):
         # Choose result type based on whether we're measuring a single qubit or a veq.
         """Initialize the object."""
         if isinstance(qubit.type, QuakeVeqType):
-            result_type = CcStdVecType()
+            result_type = CcSequenceType()
         else:
             result_type = CcMeasureHandleType()
         super().__init__(operands=[qubit], result_types=[result_type])
@@ -502,7 +504,7 @@ class MzOp(IRDLOperation):
         printer.print_string(" : (")
         printer.print_attribute(self.qubit.type)
         if isinstance(self.qubit.type, QuakeVeqType):
-            printer.print_string(") -> !cc.stdvec<!cc.measure_handle>")
+            printer.print_string(") -> !cc.sequence<!cc.measure_handle>")
         else:
             printer.print_string(") -> ")
             printer.print_attribute(self.result.type)
@@ -613,4 +615,4 @@ class QuakeDialect(Dialect):
         QuakeLogOutputOp,
         *_ALL_GATE_CLASSES,
     ]
-    attributes = [QuakeRefType, QuakeVeqType, QuakeMeasureType, CcStdVecType, CcMeasureHandleType]
+    attributes = [QuakeRefType, QuakeVeqType, QuakeMeasureType, CcSequenceType, CcMeasureHandleType]

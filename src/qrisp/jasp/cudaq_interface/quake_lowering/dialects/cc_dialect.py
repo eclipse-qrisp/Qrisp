@@ -20,11 +20,11 @@
 # =========================================================================
 #
 # Covers:
-# - Types (!cc.ptr<T>, !cc.array<T x N>, !cc.stdvec<T>, !cc.struct<"name" {T1, T2, ...}>)
+# - Types (!cc.ptr<T>, !cc.array<T x N>, !cc.sequence<T>, !cc.struct<"name" {T1, T2, ...}>)
 # - Local memory ops (cc.alloca, cc.store, cc.load)
 # - Structured control-flow ops (cc.if, cc.loop, cc.condition, cc.continue, cc.break)
 # - Pointer arithmetic ops (cc.compute_ptr, cc.cast)
-# - StdVec ops (cc.stdvec_data)
+# - Sequence ops (cc.sequence_data)
 # - Struct ops (cc.undef, cc.insert_value) – used by CUDA-Q
 #   preparation for multi-return packing and .run variant synthesis.
 #
@@ -121,23 +121,22 @@ class CcPtrType(ParametrizedAttribute, TypeAttribute):
 
 
 @irdl_attr_definition
-class CcStdVecType(ParametrizedAttribute, TypeAttribute):
-    """CUDA-Q CC ``!cc.stdvec<T>`` type.
+class CcSequenceType(ParametrizedAttribute, TypeAttribute):
+    """CUDA-Q CC ``!cc.sequence<T>`` type.
 
     When used without an explicit element_type parameter, prints as
-    ``!cc.stdvec<!cc.measure_handle>`` (the return type of quake.mz on veq
-    in cudaq >= 0.15.0).
+    ``!cc.sequence<!cc.measure_handle>`` (the return type of quake.mz on veq).
 
     When constructed with an element_type parameter, prints as
-    ``!cc.stdvec<T>`` for the given element type (used for array params).
+    ``!cc.sequence<T>`` for the given element type (used for array params).
     """
 
-    name = "cc.stdvec"
+    name = "cc.sequence"
 
     element_type: Attribute
 
     def __init__(self, element_type: Attribute | None = None) -> None:
-        """Initialize a standard-vector type, defaulting to measurement handles."""
+        """Initialize a sequence type, defaulting to measurement handles."""
         if element_type is None:
             element_type = CcMeasureHandleType()
         super().__init__(element_type)
@@ -577,18 +576,18 @@ class CcCastOp(IRDLOperation):
 
 
 # ---------------------------------------------------------------------------
-# StdVec ops (used by array-to-stdvec lowering)
+# Sequence ops (used by array-to-sequence lowering)
 # ---------------------------------------------------------------------------
 
 
 @irdl_op_definition
-class CcStdVecDataOp(IRDLOperation):
-    """Extract raw data pointer from a stdvec.
+class CcSequenceDataOp(IRDLOperation):
+    """Extract raw data pointer from a sequence.
 
-    ``%ptr = cc.stdvec_data %vec : (!cc.stdvec<T>) -> !cc.ptr<!cc.array<T x ?>>``
+    ``%ptr = cc.sequence_data %seq : (!cc.sequence<T>) -> !cc.ptr<!cc.array<T x ?>>``
     """
 
-    name = "cc.stdvec_data"
+    name = "cc.sequence_data"
     vec = operand_def(AnyAttr())
     result = result_def(AnyAttr())
 
@@ -597,7 +596,7 @@ class CcStdVecDataOp(IRDLOperation):
         super().__init__(operands=[vec], result_types=[result_type])
 
     def print(self, printer: Printer) -> None:
-        """Print the CC vector-data operation."""
+        """Print the CC sequence-data operation."""
         printer.print_string(" ")
         printer.print_ssa_value(self.vec)
         printer.print_string(" : (")
@@ -698,10 +697,10 @@ class CcDialect(Dialect):
         # Pointer arithmetic
         CcComputePtrOp,
         CcCastOp,
-        # StdVec
-        CcStdVecDataOp,
+        # Sequence
+        CcSequenceDataOp,
         # Struct / value
         CcUndefOp,
         CcInsertValueOp,
     ]
-    attributes = [CcArrayType, CcPtrType, CcMeasureHandleType, CcStdVecType, CcStructType]
+    attributes = [CcArrayType, CcPtrType, CcMeasureHandleType, CcSequenceType, CcStructType]

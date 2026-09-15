@@ -14,17 +14,17 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Lower CC arrays to standard vectors."""
+"""Lower CC arrays to CUDA-Q sequences."""
 
-# CC Array Pointer → CC StdVec Lowering (Entrypoint Only)
-# =======================================================
+# CC Array Pointer → CC Sequence Lowering (Entrypoint Only)
+# =========================================================
 #
 # Rewrites !cc.ptr<!cc.array<T x N>> parameters in the CUDA-Q entrypoint
-# to !cc.stdvec<T> for runtime compatibility.
+# to !cc.sequence<T> for runtime compatibility.
 #
 # Approach
 # --------
-# - Replace the array pointer parameter with a stdvec in the entrypoint
+# - Replace the array pointer parameter with a sequence in the entrypoint
 #   signature.
 # - Immediately extract the data pointer and cast it back to the original
 #   statically-sized array pointer type.
@@ -46,8 +46,8 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcArrayType,
     CcCastOp,
     CcPtrType,
-    CcStdVecDataOp,
-    CcStdVecType,
+    CcSequenceDataOp,
+    CcSequenceType,
 )
 
 _MLIR_DYNAMIC = -9223372036854775808
@@ -58,10 +58,10 @@ _MLIR_DYNAMIC = -9223372036854775808
 # ===================================================================
 
 
-def _lower_array_to_stdvec(module: ModuleOp) -> None:
-    """In-place pass: Rewrite entrypoint array pointer args to stdvec with immediate cast-back."""
+def _lower_array_to_sequence(module: ModuleOp) -> None:
+    """Rewrite entrypoint array pointer args to sequences with immediate cast-back."""
     walker = PatternRewriteWalker(
-        GreedyRewritePatternApplier([EntrypointArrayToStdVecPattern()]),
+        GreedyRewritePatternApplier([EntrypointArrayToSequencePattern()]),
         walk_regions_first=False,
     )
     walker.rewrite_module(module)
@@ -72,12 +72,12 @@ def _lower_array_to_stdvec(module: ModuleOp) -> None:
 # ===================================================================
 
 
-class EntrypointArrayToStdVecPattern(RewritePattern):
-    """Rewrites entrypoint array pointer params to stdvec with immediate cast to static array pointer."""
+class EntrypointArrayToSequencePattern(RewritePattern):
+    """Rewrite entrypoint array params to sequences with an immediate cast to the static array pointer."""
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: func_dialect.FuncOp, rewriter: PatternRewriter) -> None:
-        """Convert entrypoint array parameters to CUDA-Q standard vectors."""
+        """Convert entrypoint array parameters to CUDA-Q sequences."""
         if not _is_entrypoint(op):
             return
 
@@ -91,16 +91,16 @@ class EntrypointArrayToStdVecPattern(RewritePattern):
                 continue
 
             # Already converted — break greedy loop
-            if isinstance(old_type, CcStdVecType):
+            if isinstance(old_type, CcSequenceType):
                 continue
 
             modified = True
             elem_type = old_type.element_type.element_type
-            stdvec_type = CcStdVecType(elem_type)
+            sequence_type = CcSequenceType(elem_type)
             dyn_ptr_type = CcPtrType(CcArrayType(elem_type, _MLIR_DYNAMIC))
 
-            # Insert stdvec_data to extract a dynamic-sized array pointer
-            data_op = CcStdVecDataOp(arg, dyn_ptr_type)
+            # Extract a dynamic-sized array pointer from the sequence.
+            data_op = CcSequenceDataOp(arg, dyn_ptr_type)
             rewriter.insert_op(data_op, InsertPoint.at_start(block))
 
             # Cast dynamic pointer back to the original static pointer type
@@ -113,9 +113,9 @@ class EntrypointArrayToStdVecPattern(RewritePattern):
                     continue
                 use.operation.operands[use.index] = cast_op.result
 
-            # Update block argument type to stdvec
-            Rewriter.replace_value_with_new_type(arg, stdvec_type)
-            new_inputs[idx] = stdvec_type
+            # Update block argument type to sequence.
+            Rewriter.replace_value_with_new_type(arg, sequence_type)
+            new_inputs[idx] = sequence_type
 
         if modified:
             op.function_type = FunctionType.from_lists(new_inputs, list(op.function_type.outputs))

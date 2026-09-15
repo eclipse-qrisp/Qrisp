@@ -24,7 +24,11 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     QuakeRefType,
     QuakeVeqType,
 )
-from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import CcDialect, CcMeasureHandleType, CcStdVecType
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
+    CcDialect,
+    CcMeasureHandleType,
+    CcSequenceType,
+)
 
 __all__ = [
     "QuakeDialect",
@@ -33,5 +37,5 @@ __all__ = [
     "QuakeMeasureType",
     "CcDialect",
     "CcMeasureHandleType",
-    "CcStdVecType",
+    "CcSequenceType",
 ]

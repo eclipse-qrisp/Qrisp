@@ -37,16 +37,16 @@
 #    constant-sized !quake.veq<?> allocations as !quake.veq<N>.
 # 5. Ranked tensor → CC array (ranked_tensor_to_array) – Lower ranked
 #    tensor constants, accesses, signatures, and calls to CC arrays.
-# 6. Array → stdvec (array_to_stdvec) – Rewrite entrypoint array
-#    pointers to !cc.stdvec<T> for CUDA-Q runtime compatibility.
+# 6. Array → sequence (array_to_sequence) – Rewrite entrypoint array
+#    pointers to !cc.sequence<T> for CUDA-Q runtime compatibility.
 #
 # The returned ModuleOp contains only the dialects and operations supported by
 # the CUDA-Q ingestion layer; no !jasp.* types or tensor operations remain.
 
 from xdsl.dialects.builtin import ModuleOp
 
-from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.array_to_stdvec import (
-    _lower_array_to_stdvec,
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.array_to_sequence import (
+    _lower_array_to_sequence,
 )
 from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.jasp_to_quake import (
     _jasp_to_quake,
@@ -94,7 +94,7 @@ def _jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
         ``"sample"``
             Targets ``cudaq.sample``.  Every ``quake.mz`` is emitted on the
             full operand (``!quake.ref`` or ``!quake.veq<?>``), leaving the
-            ``!quake.measure`` / ``!cc.stdvec<!quake.measure>`` result for the
+            ``!quake.measure`` / ``!cc.sequence<!quake.measure>`` result for the
             CUDAQ runtime to collect across shots.  To keep SSA valid through
             all intermediate passes, a zero dummy constant (``tensor<i1>``
             for single qubits, ``tensor<i64>`` for arrays) is substituted
@@ -131,7 +131,7 @@ def _jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
             _LoweringPass("scalar-tensor-unwrap", _unwrap_scalar_tensors),
             _LoweringPass("staticize-veq-alloca", _staticize_veq_alloca),
             _LoweringPass("ranked-tensor-to-array", _lower_ranked_tensors),
-            _LoweringPass("array-to-stdvec", _lower_array_to_stdvec),
+            _LoweringPass("array-to-sequence", _lower_array_to_sequence),
         ),
     )
 

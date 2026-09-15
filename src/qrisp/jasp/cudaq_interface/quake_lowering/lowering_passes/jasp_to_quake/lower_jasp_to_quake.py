@@ -367,7 +367,7 @@ class LowerMeasure(RewritePattern):
         ``i64`` (little-endian), which is wrapped to ``tensor<i64>``.
 
     Qubit array, ``"sample"`` mode
-        ``quake.mz %veq → !cc.stdvec<!quake.measure>`` only.  The classical
+        ``quake.mz %veq → !cc.sequence<!quake.measure>`` only.  The classical
         result is replaced by a zero ``tensor<i64>`` placeholder; stripped
         from the return by :func:`_fix_return_op`.
     """
