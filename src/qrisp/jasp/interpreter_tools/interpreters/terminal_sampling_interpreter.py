@@ -248,6 +248,11 @@ def terminal_sampling_evaluator(sampling_res_type):
                     elif sampling_res_type == "array":
                         sampling_res = []
                         sampling_res_dict = {}
+                        # One dtype per decoder output, filled in from the
+                        # first decoded value.  The samples are assembled
+                        # into one 1D column per output further below, so
+                        # each output keeps the dtype its decoder produced.
+                        leaf_dtypes = [None] * len(eqn.params["jaxpr"].jaxpr.outvars)
                     elif sampling_res_type == "dict":
                         sampling_res = {}
 
@@ -285,7 +290,9 @@ def terminal_sampling_evaluator(sampling_res_type):
                             if sampling_res_type == "ev":
                                 sampling_res += outvalues * v
                             elif sampling_res_type == "array":
-                                sampling_res_dict[outvalues.item()] = v
+                                if leaf_dtypes[0] is None:
+                                    leaf_dtypes[0] = np.asarray(outvalues).dtype
+                                sampling_res_dict[(outvalues.item(),)] = v
                             elif sampling_res_type == "dict":
                                 key = outvalues
                                 if type(v) not in [int, float]:
@@ -301,7 +308,9 @@ def terminal_sampling_evaluator(sampling_res_type):
                         elif sampling_res_type == "ev":
                             sampling_res += jnp.array(outvalues) * v
                         elif sampling_res_type == "array":
-                            sampling_res_dict[tuple(np.array(outvalues))] = v
+                            if leaf_dtypes[0] is None:
+                                leaf_dtypes[:] = [np.asarray(x).dtype for x in outvalues]
+                            sampling_res_dict[tuple(x.item() for x in outvalues)] = v
                         elif sampling_res_type == "dict":
                             if type(v) not in [int, float]:
                                 if v.dtype in [np.float64, np.float32]:
@@ -313,10 +322,17 @@ def terminal_sampling_evaluator(sampling_res_type):
                             sampling_res[tuple(x.item() for x in outvalues)] = v
 
                     if sampling_res_type == "array":
-                        keys = np.array(list(sampling_res_dict.keys()))
+                        keys = list(sampling_res_dict.keys())
                         counts = np.array(list(sampling_res_dict.values()))
-                        sampling_res = np.repeat(keys, counts, axis=0)
-                        np.random.shuffle(sampling_res)
+                        # A single permutation shared by every column: the
+                        # values of one shot belong together, so shuffling
+                        # the columns independently would destroy the
+                        # correlation between the sampled outputs.
+                        perm = np.random.permutation(int(counts.sum()))
+                        sampling_res = [
+                            np.repeat(np.array([key[i] for key in keys], dtype=dt), counts)[perm]
+                            for i, dt in enumerate(leaf_dtypes)
+                        ]
                     elif sampling_res_type == "ev":
                         sampling_res = sampling_res / shots
                         if sampling_res.shape[0] == 1:
@@ -327,7 +343,10 @@ def terminal_sampling_evaluator(sampling_res_type):
                         sampling_res = dict(sorted(sampling_res.items(), key=lambda item: item[0]))
                         sampling_res = dict(sorted(sampling_res.items(), key=lambda item: -item[1]))
 
-                    decoded_meas_res.append(sampling_res)
+                    if sampling_res_type == "array":
+                        decoded_meas_res.extend(sampling_res)
+                    else:
+                        decoded_meas_res.append(sampling_res)
 
             return eqn_evaluator(eqn, context_dic)
 
@@ -348,6 +367,15 @@ def terminal_sampling_evaluator(sampling_res_type):
                 "return values. Use terminal_sampling=False "
                 "to sample with classical returns."
             )
+
+        # "ev" mode accumulates into a single 1D (n,) array, so for
+        # multiple outvars it has to be split into n scalars.  ("array"
+        # mode already yields one value per outvar, and "dict" mode
+        # yields a single dict.)
+        if len(eqn.outvars) > 1 and len(decoded_meas_res) == 1:
+            flat = decoded_meas_res[0]
+            if hasattr(flat, "ndim") and flat.ndim == 1 and flat.shape[0] == len(eqn.outvars):
+                decoded_meas_res = [flat[i] for i in range(flat.shape[0])]
 
         insert_outvalues(eqn, context_dic, decoded_meas_res)
 
