@@ -560,6 +560,34 @@ class ResetOp(IRDLOperation):
         printer.print_string(") -> ()")
 
 
+@irdl_op_definition
+class QuakeLogOutputOp(IRDLOperation):
+    """Log a classical value for retrieval by ``cudaq.run``.
+
+    ::
+
+        quake.log_output %val : (i64) -> ()
+
+    This op records the value for the CUDA-Q runtime to collect across shots.
+    It has no results.
+    """
+
+    name = "quake.log_output"
+    value = operand_def(AnyAttr())
+
+    def __init__(self, value: SSAValue) -> None:
+        """Initialize the object."""
+        super().__init__(operands=[value])
+
+    def print(self, printer: Printer) -> None:
+        """Print the Quake log-output operation."""
+        printer.print_string(" ")
+        printer.print_ssa_value(self.value)
+        printer.print_string(" : (")
+        printer.print_attribute(self.value.type)
+        printer.print_string(") -> ()")
+
+
 # ---------------------------------------------------------------------------
 # Dialect registration
 # ---------------------------------------------------------------------------
@@ -582,6 +610,7 @@ class QuakeDialect(Dialect):
         MzOp,
         DiscriminateOp,
         ResetOp,
+        QuakeLogOutputOp,
         *_ALL_GATE_CLASSES,
     ]
     attributes = [QuakeRefType, QuakeVeqType, QuakeMeasureType, CcStdVecType, CcMeasureHandleType]

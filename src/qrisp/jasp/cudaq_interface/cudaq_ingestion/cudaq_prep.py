@@ -27,7 +27,7 @@
 # - Removes old-style attrs, strips visibility
 # - Adds cudaq-entrypoint / cudaq-kernel unit attrs
 # - Packs multiple return values into !cc.struct
-# - Synthesizes .run variant (cc.log_output + void return)
+# - Synthesizes .run variant (quake.log_output + void return)
 # - Synthesizes .run.entry
 # - Injects module-level attributes (llvm.data_layout, quake.mangled_name_map, etc.)
 #
@@ -53,10 +53,10 @@ from xdsl.ir import Block, Region
 
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcInsertValueOp,
-    CcLogOutputOp,
     CcStructType,
     CcUndefOp,
 )
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import QuakeLogOutputOp
 
 # ===========================================================================
 # Internal helpers
@@ -217,12 +217,12 @@ def _pass_synthesize_run(module: ModuleOp, source_func: func.FuncOp, run_func_na
     run_func = source_func.clone()
     run_func.properties["sym_name"] = StringAttr(run_func_name)
 
-    # Replace return with cc.log_output + void return
+    # Replace return with quake.log_output + void return
     return_op = _find_entry_return(run_func)
     if return_op is not None:
         block = return_op.parent_block()
         for val in list(return_op.operands):
-            block.insert_op_before(CcLogOutputOp(val), return_op)
+            block.insert_op_before(QuakeLogOutputOp(val), return_op)
         block.insert_op_before(func.ReturnOp(), return_op)
         block.erase_op(return_op)
 

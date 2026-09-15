@@ -124,7 +124,7 @@ def _cudaq_kernel_from_xdsl_module(
         - ``"run"`` — Prepares the kernel for use with ``cudaq.run()``. This mode
           preserves the function's return values by synthesizing additional
           ``.run`` and ``.run.entry`` function variants. The ``.run`` variant
-          replaces ``func.return`` operations with ``cc.log_output`` calls,
+          replaces ``func.return`` operations with ``quake.log_output`` calls,
           which is the mechanism CUDA-Q uses to capture and aggregate per-shot
           measurement results across repeated executions. Use this mode when
           you need to retrieve computed classical values (e.g., expectation
