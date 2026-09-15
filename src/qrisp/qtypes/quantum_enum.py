@@ -64,6 +64,11 @@ class QuantumEnum(QuantumVariable):
         """
         super().__init__(self.size, qs=qs, name=name)
 
+    @staticmethod
+    def auto(enum_cls: type[Enum]):
+        """Adds methods for encoding and decoding QuantumEnums."""
+        return enum_cls.auto_implement(enum_cls)
+
     class Binary(Enum):
         r"""Binary encoding for python enums resulting in values in the range of 0 to n-1
 
@@ -105,7 +110,7 @@ class QuantumEnum(QuantumVariable):
                 cls.size = ceil(log2(len(enum_cls.__members__)))
 
                 def encoder(self, value):
-                    if value is not enum_cls:
+                    if not isinstance(value, enum_cls):
                         raise ValueError(f"Can only encode values of type {enum_cls}")
                     return value.value
 
@@ -169,7 +174,7 @@ class QuantumEnum(QuantumVariable):
                 cls.size = len(enum_cls.__members__)
 
                 def encoder(self, value):
-                    if value is not enum_cls:
+                    if not isinstance(value, enum_cls):
                         raise ValueError(f"Can only encode values of type {enum_cls}")
                     return value.value
 
@@ -192,9 +197,3 @@ class QuantumEnum(QuantumVariable):
                 return cls
 
             return decorator
-
-
-@staticmethod
-def auto(enum_cls: type[Enum]):
-    """Adds methods for encoding and decoding QuantumEnums."""
-    return enum_cls.auto_implement(enum_cls)
