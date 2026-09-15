@@ -1,6 +1,6 @@
-"""********************************************************************************
-
-* Copyright (c) 2024 the Qrisp authors
+"""
+********************************************************************************
+* Copyright (c) 2026 the Qrisp authors
 *
 * This program and the accompanying materials are made available under the
 * terms of the Eclipse Public License 2.0 which is available at
@@ -14,8 +14,9 @@
 *
 * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
-
 """
+
+"""Provides shorthand functions a_b, c_b returning BosonicOperator instances for single ladder operators."""
 
 from qrisp.operators.bosonic.bosonic_operator import BosonicOperator
 from qrisp.operators.bosonic.bosonic_term import BosonicTerm
