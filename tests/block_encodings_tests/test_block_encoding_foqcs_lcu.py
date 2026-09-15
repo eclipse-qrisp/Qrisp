@@ -487,9 +487,10 @@ def test_block_encoding_from_foqcs_lcu_heisenberg_prep_jasp():
     manual = _post_selection(multi_measurement([operand] + ancillas))
     rus = _sample_rus(be, psi, L)
 
+    keys = sorted(set(manual) | set(rus))
     assert np.allclose(
-        [manual[key] for key in sorted(manual)],
-        [rus[key] for key in sorted(rus)],
+        [manual.get(key, 0) for key in keys],
+        [rus.get(key, 0) for key in keys],
         atol=1e-4,
     )
 
