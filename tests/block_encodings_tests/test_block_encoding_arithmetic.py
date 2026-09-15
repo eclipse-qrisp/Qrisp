@@ -760,6 +760,46 @@ def test_zero_annihilates_a_product(name, build):
     assert not isinstance(product, ProductBlockEncoding)
 
 
+@pytest.mark.parametrize(
+    "name, apply_it",
+    [
+        ("apply", lambda BE: BE.apply(QuantumFloat(1))),
+        ("apply_rus", lambda BE: BE.apply_rus(lambda: QuantumFloat(1))()),
+    ],
+)
+def test_zero_encoding_cannot_be_applied_across_a_pytree_boundary(name, apply_it):
+    """Passing the zero encoding to a traced function must not smuggle it past the guard.
+
+    alpha is a pytree child, so an encoding handed to a jitted function arrives
+    with a tracer in place of its normalization, and a tracer cannot be compared
+    against zero. Deriving the refusal from alpha alone therefore stopped working
+    at exactly that boundary, and silently: the encoding carries no ancillas, so
+    apply_rus found an empty success condition, reported success, and returned the
+    operand untouched, which is the identity rather than zero.
+    """
+    A, _ = _zero_cases()
+    zero = A - A
+
+    @terminal_sampling
+    def main(BE):
+        return apply_it(BE)
+
+    with pytest.raises(ValueError, match="zero operator"):
+        main(zero)
+
+
+def test_zero_encoding_reports_a_hermitian_unitary():
+    """The zero encoding's unitary is a no-op, and the identity is Hermitian.
+
+    is_hermitian describes the unitary rather than the encoded operator, and this
+    one applies nothing at all. Reporting it as non-Hermitian would send
+    transformations down the general path for no reason.
+    """
+    A, _ = _zero_cases()
+
+    assert (A - A).is_hermitian
+
+
 #
 # Terms are validated as supplied
 #

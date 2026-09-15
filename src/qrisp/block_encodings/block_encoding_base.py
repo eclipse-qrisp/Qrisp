@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import jax
 import jax.numpy as jnp
@@ -259,6 +259,13 @@ class BlockEncoding:
 
     """
 
+    # Whether this is known to encode the zero operator, as a property of the
+    # type rather than of alpha. alpha is a pytree child, so it becomes a tracer
+    # whenever an encoding is passed across a jit boundary and its value stops
+    # being readable; the type survives, because tree_unflatten reconstructs it.
+    # See _ZeroBlockEncoding in block_encoding_combination.py.
+    _is_zero: ClassVar[bool] = False
+
     def __init__(
         self,
         alpha: "ArrayLike",
@@ -443,11 +450,13 @@ class BlockEncoding:
         """
         if len(operands) != self.num_ops:
             raise ValueError(f"Operation expected {self.num_ops} operands, but got {len(operands)}.")
-        if _is_statically_zero(self.alpha):
+        if self._is_zero or _is_statically_zero(self.alpha):
             # A zero normalization encodes the zero operator, whose block encoding
             # can never succeed: the projection onto the ancillas being zero has
             # probability zero. Arithmetic may still produce one, as in ``A - A``,
             # and combine it away again, so it is only applying one that is refused.
+            # The type is asked first, because alpha alone cannot answer this once
+            # the encoding has crossed a jit boundary.
             raise ValueError("A block encoding of the zero operator cannot be applied.")
 
         ancillas = self.create_ancillas()
@@ -508,8 +517,10 @@ class BlockEncoding:
         """
         if not callable(operand_prep):
             raise TypeError(f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}.")
-        if _is_statically_zero(self.alpha):
+        if self._is_zero or _is_statically_zero(self.alpha):
             # See apply: the zero operator has no successful branch to repeat until.
+            # Without this the encoding carries no ancillas, so every repetition
+            # measures an empty success condition and reports the operand unchanged.
             raise ValueError("A block encoding of the zero operator cannot be applied.")
 
         @RUS
