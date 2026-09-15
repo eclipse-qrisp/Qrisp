@@ -16,6 +16,6 @@
 ********************************************************************************
 """
 
-from .block_encoding import BlockEncoding
+from .block_encoding import BlockEncoding, LinearCombinationBlockEncoding
 
-__all__ = ["BlockEncoding"]
+__all__ = ["BlockEncoding", "LinearCombinationBlockEncoding"]

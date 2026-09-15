@@ -29,6 +29,8 @@ Constructors
      - Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_projector`
      - Constructs a BlockEncoding of a projector.
+   * - :func:`~qrisp.block_encodings.BlockEncoding.linear_combination`
+     - Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
 
 .. toctree:: 
    :hidden:
@@ -40,6 +42,7 @@ Constructors
    methods/from_foqcs_lcu_operator
    methods/from_foqcs_lcu_prep
    methods/from_projector
+   methods/linear_combination
 
 Utilities
 ---------
