@@ -26,6 +26,65 @@ from qrisp.core import QuantumVariable
 from qrisp.operators.qubit import QubitOperator, X, Y, Z
 
 
+def _order1_agp_coeffs(h, J, lam, f=0.0, f_deriv=0.0, *, uniform=True):  # noqa: PLR0913 -- one coefficient formula, four call sites
+    r"""First-order AGP coefficients for the ansatz $A_\lambda = \sum_i \alpha_i \sigma^y_i$.
+
+    Minimises the action $S = \mathrm{Tr}[G_\lambda^2]$ with
+    $G_\lambda = \partial_\lambda H + i[A_\lambda, H]$ for the Hamiltonian the circuit evolves,
+
+    .. math::
+        H(\lambda) = (1-\lambda)\sum_i \sigma^x_i
+                    + \lambda\Big(\sum_{i<j} J_{ij}\sigma^z_i\sigma^z_j + \sum_i h_i\sigma^z_i\Big)
+                    + f\sum_i \sigma^z_i .
+
+    Writing $b = 1-\lambda$ and $c_i = \lambda h_i + f$, the Pauli strings in $G_\lambda$ are
+    trace-orthogonal, so the action is quadratic in the coefficients and
+
+    .. math::
+        \alpha_i = -\frac{b\dot c_i - c_i\dot b}
+                        {2\left(b^2 + c_i^2 + \lambda^2\sum_{j\neq i} J_{ij}^2\right)},
+        \qquad b\dot c_i - c_i\dot b = h_i + f + (1-\lambda)f'.
+
+    The uniform case shares one coefficient across all sites, which sums numerator and
+    denominator over $i$. Both forms reproduce an exact matrix minimisation of $S$ to machine
+    precision, and the same derivation applied to Eq. (23) of `COLD
+    <https://doi.org/10.1103/PRXQuantum.4.010312>`_ reproduces its Eq. (30).
+
+    Parameters
+    ----------
+    h : np.array
+        Onsite energies of the problem Hamiltonian.
+    J : np.array
+        Coupling energies of the problem Hamiltonian.
+    lam : float
+        Value of the scheduling function at this timestep.
+    f : float, optional
+        Control pulse amplitude (COLD). Zero for LCD, which has no control Hamiltonian.
+    f_deriv : float, optional
+        Derivative of the control pulse with respect to ``lam``. Zero for LCD.
+    uniform : bool, optional
+        Whether to share a single coefficient across all sites. The default is ``True``.
+
+    Returns
+    -------
+    alph : list[float]
+        The AGP coefficient per site, of length ``len(h)``.
+
+    """
+    N = len(h)
+    c = lam * h + f
+    b = 1 - lam
+    nom = h + f + b * f_deriv
+    # sum_{j != i} J_ij**2, per site
+    J_sq = np.sum(J**2, axis=1) - np.diag(J) ** 2
+
+    if uniform:
+        alph = -np.sum(nom) / (2 * (N * b**2 + np.sum(c**2) + lam**2 * np.sum(J_sq)))
+        return [alph] * N
+
+    return [-nom[i] / (2 * (b**2 + c[i] ** 2 + lam**2 * J_sq[i])) for i in range(N)]
+
+
 def create_COLD_instance(Q, uniform_AGP_coeffs):
     """Create the necessary parameters and operators to initialize a DCQO problem instance for COLD.
 
@@ -55,31 +114,8 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
         return lam_expr
 
     # AGP coefficients
-    if uniform_AGP_coeffs:
-
-        def alpha(lam, f, f_deriv):
-            A = lam * h + f
-            B = 1 - lam
-            C = h + f_deriv
-
-            nom = np.sum(A + 4 * B * C)
-            denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-            alph = nom / denom
-            alph = [alph] * N
-
-            return alph
-
-    else:
-
-        def alpha(lam, f, f_deriv):
-            nom = [h[i] + f + (1 - lam) * f_deriv for i in range(N)]
-            denom = [
-                2 * ((lam * h[i] + f) ** 2 + (1 - lam) ** 2 + lam**2 * sum([J[i][j] for j in range(N) if j != i]))
-                for i in range(N)
-            ]
-
-            alph = [nom[i] / denom[i] for i in range(N)]
-            return alph
+    def alpha(lam, f, f_deriv):
+        return _order1_agp_coeffs(h, J, lam, f, f_deriv, uniform=uniform_AGP_coeffs)
 
     # Initial Hamiltonian
     H_init = 1 * sum([X(i) for i in range(N)])
@@ -149,25 +185,15 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     def build_coeffs(agp_type, uniform_AGP_coeffs, J, h):
 
         def order1_uniform(J, h):
+            # LCD has no control Hamiltonian, so f = f_deriv = 0.
             def alpha(lam):
-                A = lam * h
-                B = 1 - lam
-                nom = np.sum(A + 4 * B * h)
-                denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-                alph = nom / denom
-                alph = [alph] * N
-                return alph
+                return _order1_agp_coeffs(h, J, lam, uniform=True)
 
             return alpha
 
         def order1_nonuniform(J, h):
             def alpha(lam):
-                denom = [
-                    2 * ((lam * h[i]) ** 2 + (1 - lam) ** 2 + lam**2 * sum([J[i][j] for j in range(N) if j != i]))
-                    for i in range(N)
-                ]
-                alph = [h[i] / denom[i] for i in range(N)]
-                return alph
+                return _order1_agp_coeffs(h, J, lam, uniform=False)
 
             return alpha
 
