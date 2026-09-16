@@ -734,6 +734,25 @@ def test_a_zero_term_does_not_hide_an_operand_mismatch(name, build):
         build(one, two)
 
 
+def test_a_combination_with_no_terms_is_rejected():
+    """An empty combination has nothing to derive anything from.
+
+    The operand count, the selector width and the normalization are all read off
+    the terms, starting with the first one, so an empty combination is an object
+    that raises an IndexError the moment anything is asked of it. The public
+    factory documents ValueError for this, and the class must agree: it is
+    exported, and reachable directly and through _from_lcu_terms.
+    """
+    with pytest.raises(ValueError, match="At least one block-encoding"):
+        LinearCombinationBlockEncoding([])
+
+    with pytest.raises(ValueError, match="At least one block-encoding"):
+        BlockEncoding._from_lcu_terms(())
+
+    with pytest.raises(ValueError, match="At least one block-encoding"):
+        BlockEncoding.linear_combination([], coefficients=[])
+
+
 def test_an_invalid_child_is_reported_as_a_type_error():
     """A child that is not a block encoding must raise the documented TypeError.
 

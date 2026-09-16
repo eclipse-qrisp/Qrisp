@@ -53,7 +53,7 @@ from qrisp.qtypes import QuantumFloat
 
 
 def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
-    """Check the terms as supplied, and reject the combinations that have no encoding.
+    """Check the terms as supplied, and reject the ones that describe no encoding.
 
     The terms are taken as written. ``A - A`` builds the two-term combination it
     reads as, rather than being recognized as the zero operator and simplified
@@ -84,10 +84,12 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
         checked.append((detached, block_encoding))
 
     terms = tuple(checked)
-    if terms:
-        num_ops = terms[0][1].num_ops
-        if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):
-            raise ValueError("All block-encodings must have the same number of operands.")
+    if not terms:
+        raise ValueError("At least one block-encoding is required.")
+
+    num_ops = terms[0][1].num_ops
+    if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):
+        raise ValueError("All block-encodings must have the same number of operands.")
     return terms
 
 
