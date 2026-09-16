@@ -53,13 +53,6 @@ from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
 def _validate_product_factors(factors: _ProductFactors) -> _ProductFactors:
-    """Check the factors as supplied.
-
-    The factors are taken as written, the way the terms of a linear combination
-    are: a product is a description of a circuit rather than an expression to be
-    simplified. A factor that encodes nothing is left in place, and reports that
-    when its own unitary is built.
-    """
     factors = tuple(factors)
     for factor in factors:
         if not isinstance(factor, BlockEncoding):

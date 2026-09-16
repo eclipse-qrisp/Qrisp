@@ -75,7 +75,7 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     checked: list[_LCUTerm] = []
     for coefficient, block_encoding in terms:
         if not isinstance(block_encoding, BlockEncoding):
-            raise TypeError("Expected every item to be a BlockEncoding.")
+            raise TypeError(f"Expected every item to be a BlockEncoding, but got {type(block_encoding).__name__}.")
         if getattr(coefficient, "ndim", 0) != 0:
             raise ValueError(
                 f"Expected every coefficient to be a scalar, but got an array of shape {coefficient.shape}."
@@ -372,15 +372,16 @@ class LinearCombinationBlockEncoding(BlockEncoding):
             self._make_lcu_branch(child_unitary, layout, term_index)
             for term_index, (child_unitary, layout) in enumerate(zip(child_unitaries, layouts))
         ]
+
+        # TODO: Remove after fixing padding in q_switch implementation (PR #880).
         # Padding to the full selector dimension covers the selector states that no
         # term addresses. Those states carry zero amplitude, so the branch chosen
         # for them never contributes; it only has to leave the operands untouched.
         branches += [_identity_lcu_branch] * ((1 << self._lcu_selector_size) - len(branches))
 
-        # PREP always acts on magnitudes, because every term's argument is applied
-        # by its own branch. The uncomputation is therefore always a conjugation,
-        # which traces PREP once instead of tracing a separate inverse, and the
-        # construction is Hermitian whenever the branch phases are signs.
+        # PREP acts on magnitudes. Each branch applies its term's coefficient phase together
+        # with the corresponding block encoding unitary, so the overall construction is
+        # PREP† · SELECT · PREP.
         def unitary(*args):
             selector = args[0]
             shared_ancilla = args[1]
@@ -412,7 +413,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
         The attribute describes the unitary, not the encoded operator. PREP acts on
         magnitudes and SELECT applies each term's argument, so the unitary is
-        ``PREP* (D SELECT) PREP`` with ``D`` the diagonal of those arguments. That
+        ``PREP† (D SELECT) PREP`` with ``D`` the diagonal of those arguments. That
         is Hermitian when SELECT is, which needs Hermitian children, and when ``D``
         is real, which needs real coefficients. A sign is allowed; a genuine complex
         phase is not.
