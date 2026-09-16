@@ -16,11 +16,13 @@
 
 """Implements the block encoding of a product of block encodings.
 
-A ProductBlockEncoding holds the factors it was built from, in the order they
-are applied, and derives everything else from them. The arithmetic that produces
-one lives in block_encoding_arithmetic.py, which imports this module; the
-dependency runs one way only, so this module knows nothing about the operators
-that build it, nor about the linear combination beside it.
+A ProductBlockEncoding stores its factors in mathematical order, which is
+opposite to the order in which they are applied. For example, the product
+``A * B`` is stored as ``(A, B)`` but applies ``B`` first and then ``A``.
+Everything else is derived from this factor sequence. The arithmetic that
+produces a product lives in block_encoding_arithmetic.py, which imports this
+module; the dependency runs one way only, so this module knows nothing about
+the operators that build it.
 """
 
 from __future__ import annotations
@@ -394,6 +396,13 @@ class ProductBlockEncoding(BlockEncoding):
 
     def _get_product_factors(self) -> _ProductFactors:
         return self.factors
+
+    def dagger(self) -> ProductBlockEncoding:
+        """Return the product dagger with reversed, individually Hermitian conjugated factors."""
+        return ProductBlockEncoding(
+            tuple(factor.dagger() for factor in reversed(self.factors)),
+            strategy=self.strategy,
+        )
 
     def tree_flatten(self) -> tuple[_ProductFactors, _ProductStrategy]:
         """Flatten the authoritative product factors for JAX pytree handling."""

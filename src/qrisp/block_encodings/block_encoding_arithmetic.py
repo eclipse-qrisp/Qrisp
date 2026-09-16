@@ -330,8 +330,8 @@ def apply_mul(self, other: "ArrayLike") -> BlockEncoding:  # noqa: D417
 def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
     r"""Returns a BlockEncoding of the product of two operators.
 
-    This method implements the operator product $A \cdot B$ by composing
-    two BlockEncodings, where $A$ and $B$ are the operators encoded by the respective instances.
+    This method implements the operator product $A \cdot B$,
+    where $A$ and $B$ are the operators encoded by the respective instances.
 
     Parameters
     ----------

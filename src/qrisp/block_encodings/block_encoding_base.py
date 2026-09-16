@@ -758,13 +758,17 @@ class BlockEncoding:
     def dagger(self) -> BlockEncoding:
         r"""Returns a new BlockEncoding representing the Hermitian conjugate of the operator.
 
-        For a block-encoded operator $A$ with block-encoding unitary $U_A$, this method returns a new BlockEncoding with unitary $U_A^{\dagger}$.
-        The resulting block-encoding represents the operator $A^{\dagger}$ with the same scaling factor $\alpha$.
+        This method implements the Hermitian conjugate $A^{\dagger}$,
+        where $A$ is the operator encoded by this instance.
 
         Returns
         -------
         BlockEncoding
             A new BlockEncoding instance representing the Hermitian conjugate of the operator.
+
+        Notes
+        -----
+        - **Normalization**: The resulting block-encoding maintains the same scaling factor $\alpha$ as the original.
 
         Examples
         --------
