@@ -17,8 +17,8 @@
 """Assembles the BlockEncoding class by attaching its constructor and transformation methods."""
 
 from .block_encoding_base import BlockEncoding
-from .block_encoding_combination import (
-    LinearCombinationBlockEncoding,
+from .block_encoding_linear_combination import LinearCombinationBlockEncoding
+from .block_encoding_arithmetic import (
     apply_add,
     apply_kron,
     apply_matmul,

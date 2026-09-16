@@ -1039,20 +1039,20 @@ class BlockEncoding:
     # ------------------------------------------------------------------
     # The methods below are attached to this class after its definition, in
     # block_encoding.py: each one is implemented in its own module under
-    # constructors/ or transformations/, or in block_encoding_combination.py,
+    # constructors/ or transformations/, or in block_encoding_arithmetic.py,
     # and each of those modules needs to import BlockEncoding itself, so
     # importing them here at runtime would be circular. Re-declaring them
     # under TYPE_CHECKING (never executed at runtime) makes them visible to
     # type checkers as ordinary members of this class, without changing any
     # runtime behaviour or reintroducing that circular import.
     #
-    # The arithmetic operators live in block_encoding_combination.py because
-    # they construct the composite encodings defined there, which in turn
-    # subclass this class. Keeping them there is what makes that dependency
-    # run one way only.
+    # The arithmetic operators live in block_encoding_arithmetic.py because
+    # they construct the composite encodings, which in turn subclass this
+    # class. Keeping them there is what makes that dependency run one way
+    # only.
     # ------------------------------------------------------------------
     if TYPE_CHECKING:
-        from .block_encoding_combination import (
+        from .block_encoding_arithmetic import (
             apply_add,
             apply_kron,
             apply_matmul,
