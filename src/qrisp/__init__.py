@@ -24,6 +24,13 @@ import jax
 
 jax.config.update("jax_enable_x64", True)
 
+from importlib.metadata import PackageNotFoundError, version as _get_version
+
+try:
+    __version__ = _get_version("qrisp")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
+
 from qrisp._cache_config import QRISP_COMPILATION_CACHE_SIZE
 
 from qrisp.circuit import *
