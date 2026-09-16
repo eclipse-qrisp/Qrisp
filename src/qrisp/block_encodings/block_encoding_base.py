@@ -1044,7 +1044,7 @@ class BlockEncoding:
         """Return whether ``unitary`` yields the same object on every access.
 
         A plain block encoding stores its unitary in a field, so it always does.
-        The composite encodings in block_encoding_combination.py derive theirs, and
+        The composite encodings beside this module derive theirs, and
         override this to report whether that derivation could be cached. Handing a
         freshly built closure to an enclosing composite would defeat the caches
         Jasp keys on object identity, so a composite consults this before caching
@@ -1055,20 +1055,20 @@ class BlockEncoding:
     # ------------------------------------------------------------------
     # The methods below are attached to this class after its definition, in
     # block_encoding.py: each one is implemented in its own module under
-    # constructors/ or transformations/, or in block_encoding_combination.py,
+    # constructors/ or transformations/, or in block_encoding_arithmetic.py,
     # and each of those modules needs to import BlockEncoding itself, so
     # importing them here at runtime would be circular. Re-declaring them
     # under TYPE_CHECKING (never executed at runtime) makes them visible to
     # type checkers as ordinary members of this class, without changing any
     # runtime behaviour or reintroducing that circular import.
     #
-    # The arithmetic operators live in block_encoding_combination.py because
-    # they construct the composite encodings defined there, which in turn
-    # subclass this class. Keeping them there is what makes that dependency
-    # run one way only.
+    # The arithmetic operators live in block_encoding_arithmetic.py because
+    # they construct the composite encodings, which in turn subclass this
+    # class. Keeping them there is what makes that dependency run one way
+    # only.
     # ------------------------------------------------------------------
     if TYPE_CHECKING:
-        from .block_encoding_combination import (
+        from .block_encoding_arithmetic import (
             apply_add,
             apply_kron,
             apply_matmul,
