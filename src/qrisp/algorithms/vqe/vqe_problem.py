@@ -308,7 +308,7 @@ class VQEProblem:
                     **mes_kwargs,
                     precompiled_qc=compiled_qc,
                     subs_dic=subs_dic,
-                    measurement_data=measurement_data,
+                    _measurement_data=measurement_data,
                 )(theta)
 
                 if self.callback:
@@ -439,8 +439,8 @@ class VQEProblem:
         if "precision" not in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
-        if "diagonalisation_method" not in mes_kwargs:
-            mes_kwargs["diagonalisation_method"] = "commuting_qw"
+        if "diagonalization_method" not in mes_kwargs:
+            mes_kwargs["diagonalization_method"] = "commuting_qw"
 
         options["maxiter"] = max_iter
 
@@ -450,7 +450,7 @@ class VQEProblem:
         else:
             measurement_data = QubitOperatorMeasurement(
                 self.hamiltonian,
-                diagonalisation_method=mes_kwargs["diagonalisation_method"],
+                diagonalization_method=mes_kwargs["diagonalization_method"],
             )
 
         opt_theta, opt_res = self.optimization_routine(
@@ -535,8 +535,8 @@ class VQEProblem:
         if "precision" not in mes_kwargs:
             mes_kwargs["precision"] = 0.01
 
-        if "diagonalisation_method" not in mes_kwargs:
-            mes_kwargs["diagonalisation_method"] = "commuting_qw"
+        if "diagonalization_method" not in mes_kwargs:
+            mes_kwargs["diagonalization_method"] = "commuting_qw"
 
         options["maxiter"] = max_iter
 
@@ -546,7 +546,7 @@ class VQEProblem:
         else:
             measurement_data = QubitOperatorMeasurement(
                 self.hamiltonian,
-                diagonalisation_method=mes_kwargs["diagonalisation_method"],
+                diagonalization_method=mes_kwargs["diagonalization_method"],
             )
 
         opt_theta, opt_res = self.optimization_routine(

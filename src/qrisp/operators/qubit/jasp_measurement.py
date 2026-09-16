@@ -16,98 +16,52 @@
 
 """Jasp/JAX-traceable expectation-value measurement of QubitOperators via sampling."""
 
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Literal
+
 import jax
 import jax.numpy as jnp
-import numpy as np
 
 from qrisp.jasp import sample
+from qrisp.operators.qubit.measurement_plan import _create_measurement_plan
+
+if TYPE_CHECKING:
+    from qrisp.core import QuantumVariable
+    from qrisp.operators.hamiltonian import Hamiltonian
 
 
-def get_jasp_measurement(
-    hamiltonian,
-    state_prep,
-    state_args=(),
-    precision=0.01,
-    diagonalisation_method="commuting_qw",
-):
-    r"""This method returns the expected value of a Hamiltonian for the state of a quantum argument.
-
-    Parameters
-    ----------
-    hamiltonian : QubitOperator
-        The Hamiltonian for which the exptectaion value is measuered.
-    state_prep : callable
-        A function returning a QuantumVariable.
-        The expectation of the Hamiltonian for the state from this QuantumVariable will be measured.
-        The state preparation function can only take classical values as arguments.
-        This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
-    state_args : tuple
-        A tuple of arguments of the ``state_prep`` function.
-    precision: float, optional
-        The precision with which the expectation of the Hamiltonian is to be evaluated.
-        The default is 0.01. The number of shots scales quadratically with the inverse precision.
-    diagonalisation_method : str, optional
-        Specifies the method for grouping and diagonalizing the QubitOperator.
-        Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms,
-        and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
-        The default is ``commuting_qw``.
-
-    Returns
-    -------
-    float
-        The expected value of the Hamiltonian.
-
-    """
-    hamiltonian = hamiltonian.hermitize()
-    hamiltonian = hamiltonian.eliminate_ladder_conjugates()
-    hamiltonian = hamiltonian.apply_threshold(0)
-    if len(hamiltonian.terms_dict) == 0:
-        return 0
-
-    if diagonalisation_method == "commuting_qw":
-        temp_groups = hamiltonian.commuting_qw_groups()
-        groups = []
-        # In order for the change of basis function (below) to work properly,
-        # the ladder terms either need to completely agree or completely disagree
-        for group in temp_groups:
-            groups.extend(group.group_up(lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)))
-
-    elif diagonalisation_method == "commuting":
-        temp_groups = hamiltonian.group_up(lambda a, b: a.commute_pauli(b))
-        groups = []
-        # In order for the change of basis function (below) to work properly,
-        # the ladder terms either need to completely agree or completely disagree
-        for group in temp_groups:
-            groups.extend(group.group_up(lambda a, b: a.ladders_agree(b) or not a.ladders_intersect(b)))
-
-    else:
-        raise Exception(f"Unknown diagonalisation method: {diagonalisation_method}.")
+def _jasp_expectation_value_helper(  # noqa: PLR0913
+    hamiltonian: Hamiltonian,
+    state_prep: Callable[..., QuantumVariable],
+    *,
+    precision: float = 0.01,
+    shots: int | None = None,
+    max_shots: int | None = None,
+    state_args: tuple = (),
+    diagonalization_method: Literal["commuting", "commuting_qw"] = "commuting_qw",
+) -> jax.Array:
+    """Evaluate a the expectation value of a Hamiltonian using Jasp sampling."""
+    plan = _create_measurement_plan(hamiltonian, diagonalization_method, construct_basis_gates=False)
+    if len(plan.hamiltonian.terms_dict) == 0:
+        return jnp.array(0)
 
     samples = []
     meas_ops = []
     meas_coeffs = []
-    stds = []
+    shots_list = plan.allocate_shots(precision, shots=shots, max_shots=max_shots)
 
-    # Compute amounts of shots
-    for group in groups:
-        # Collect standard deviation
-        n = hamiltonian.find_minimal_qubit_amount()
-        stds.append(np.sqrt(group.get_operator_variance(n=n)))
-
-    N = sum(stds)
-    shots_list = [N * s for s in stds]
-
-    for index, group in enumerate(groups):
+    for index, group in enumerate(plan.groups):
         # Calculate the new measurement operators (after change of basis)
-        meas_op = group.change_of_basis(method=diagonalisation_method)
+        meas_op = plan.measurement_operators[index]
 
         def new_state_prep(state_args):
             qv = state_prep(*state_args)
-            group.change_of_basis(qv, method=diagonalisation_method)
+            group.change_of_basis(qv, method=diagonalization_method)
             return qv
 
-        shots = int(shots_list[index] / precision**2)
-        res = sample(new_state_prep, shots=shots)(state_args)
+        res = sample(new_state_prep, shots=shots_list[index])(state_args)
 
         samples.append(jnp.int64(res))
 
@@ -138,6 +92,7 @@ def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
 
 @jax.jit
 def jasp_evaluate_observable_jitted(observable: tuple, x: int):
+    """Evaluate one serialized observable for a sampled bitstring."""
     # This function evaluates how to compute the energy of a measurement sample x.
     # Since we are also considering ladder operators, this energy can either be
     # 0, -1 or 1. For more details check out the comments of QubitOperator.get_conjugation_circuit
@@ -166,6 +121,7 @@ def jasp_evaluate_observable_jitted(observable: tuple, x: int):
 
 @jax.jit
 def sum_over_observables_and_samples(observables, x_values, coefficients):
+    """Sum serialized observable values over all samples in one group."""
 
     def body_fun(i, val):
         sum_val = val
