@@ -206,6 +206,7 @@ def test_array_returned_from_qache_becomes_array_pointer():
     with tensor.extract - operations that CUDA-Q 0.16 can no longer parse, since
     it no longer registers the upstream tensor dialect.
     """
+
     @qache
     def make_angles():
         return jnp.array([0.0, 3.14159265])
