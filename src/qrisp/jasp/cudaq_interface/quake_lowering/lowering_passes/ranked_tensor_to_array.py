@@ -123,11 +123,6 @@ def _lower_tensor_operations(module: ModuleOp) -> None:
         apply_recursively=False,
     ).rewrite_module(module)
 
-    # Erasing is a separate walk: an operation only becomes dead once its users
-    # have been rewritten above, and mixing erasure into the walk that creates
-    # the replacements leaves erased operations on xDSL's worklist.
-    PatternRewriteWalker(EraseDeadTensorOp(), apply_recursively=False).rewrite_module(module)
-
 
 class MaterializeDenseArrayConstant(RewritePattern):
     """Replace a dense rank-1 tensor constant with a cc.alloca and element stores."""
@@ -193,23 +188,6 @@ class LowerSlicedTensorExtract(RewritePattern):
 
         new_ops, loaded = _emit_element_load(slice_op.source, _slice_index(slice_op))
         rewriter.replace_matched_op(new_ops, [loaded])
-
-
-class EraseDeadTensorOp(RewritePattern):
-    """Erase tensor operations whose results fell out of use during lowering."""
-
-    _ERASABLE = (arith.ConstantOp, tensor.CollapseShapeOp, tensor.ExtractSliceOp)
-
-    def match_and_rewrite(self, op: Operation, rewriter: PatternRewriter) -> None:
-        """Erase an unused tensor constant, slice, or reshape."""
-        if not isinstance(op, self._ERASABLE):
-            return
-        if not all(_is_rank_1_tensor(result.type) for result in op.results):
-            return
-        if any(any(result.uses) for result in op.results):
-            return
-
-        rewriter.erase_op(op)
 
 
 # ===================================================================
