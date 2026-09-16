@@ -109,7 +109,7 @@ def _build_product_steps(
 ) -> tuple[Callable[..., None], ...]:
     """Build one qached step per factor, sharing the step between repeated factors.
 
-    A factor may appear more than once in a product -- ``H.dagger() @ P @ H`` is the
+    A factor may appear more than once in a product -- ``H @ P @ H`` is the
     common case -- and the repeated occurrences apply the same unitary to the same
     ancillas. Giving them one step rather than one per position means the factor is
     traced once instead of once per occurrence.
@@ -126,7 +126,7 @@ def _build_product_steps(
         layout = layouts[index] if layouts is not None else None
 
         try:
-            key = hash((child_unitary, layout)), child_unitary, layout
+            key = hash((id(factor), child_unitary, layout)), id(factor), child_unitary, layout
         except TypeError:
             key = None
 
@@ -288,10 +288,13 @@ class ProductBlockEncoding(BlockEncoding):
             else self._build_unitary_separate()
         )
 
-        # The closure captures the factor layouts, so those have to be free of
-        # traced sizes too, not just the factor unitaries it dispatches to.
-        cacheable = all(factor._has_reusable_unitary for factor in self.factors) and all(
-            layout.has_static_sizes for layout in self._product_layouts
+        uses_shared_layouts = (
+            self.strategy == "qubit_efficient"
+            and len(self.factors) > 1
+            and any(factor.num_ancs != 0 for factor in self.factors)
+        )
+        cacheable = all(factor._has_reusable_unitary for factor in self.factors) and (
+            not uses_shared_layouts or all(layout.has_static_sizes for layout in self._product_layouts)
         )
         if cacheable:
             object.__setattr__(self, "_cached_unitary", unitary)

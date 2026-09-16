@@ -35,8 +35,10 @@ Numerical behaviour is covered by test_block_encoding_arithmetic.py.
 import numpy as np
 import pytest
 
-from qrisp import QuantumFloat, QuantumVariable, make_jaspr, terminal_sampling, x
+from qrisp import QuantumFloat, QuantumVariable, make_jaspr, terminal_sampling, x, z
 from qrisp.block_encodings import BlockEncoding, ProductBlockEncoding
+from qrisp.block_encodings.ancilla_layout import _AncillaLayout
+from qrisp.block_encodings.block_encoding_product import _build_product_steps
 from qrisp.jasp import count_ops, depth, num_qubits
 from qrisp.operators import X, Y, Z
 
@@ -166,8 +168,8 @@ def test_product_nested_in_linear_combination_does_not_amplify_tracing():
 def test_shared_factor_is_traced_once_across_products():
     """A factor reused by two different products must be traced once, not twice.
 
-    This is the ``H.dagger() @ P @ H`` shape, where the same expensive encoding
-    appears more than once in the flattened factor list.
+    This is the ``H @ P @ H`` shape, where the same expensive encoding appears more
+    than once in the flattened factor list.
     """
     executions = []
     shared = _counting_encoding(executions)
@@ -176,6 +178,87 @@ def test_shared_factor_is_traced_once_across_products():
     _trace(shared @ other @ shared)
 
     assert len(executions) == 1
+
+
+@pytest.mark.parametrize(
+    "name, build, expected",
+    [
+        ("separate", lambda a, b: ProductBlockEncoding((a, b), strategy="separate"), True),
+        ("qubit_efficient, one factor", lambda a, b: ProductBlockEncoding((a,), strategy="qubit_efficient"), True),
+        ("qubit_efficient, shared workspace", lambda a, b: ProductBlockEncoding((a, b)), False),
+    ],
+)
+def test_only_the_shared_workspace_path_loses_caching_to_traced_sizes(name, build, expected):
+    """Traced ancilla sizes must only stop the unitary that captured a layout.
+
+    Passing a product to a traced function rebuilds its ancilla templates from
+    pytree leaves, so their sizes become tracers and the layouts stop being static.
+    Only the qubit-efficient unitary for more than one factor with ancillas closes
+    over those layouts; the separate strategy and the single-factor path build steps
+    that take their ancillas as arguments. Refusing to cache those as well handed
+    every repeated application a fresh closure for no reason.
+    """
+    first = BlockEncoding(1, [QuantumFloat(2)], lambda ancilla, operand: x(operand[0]))
+    second = BlockEncoding(1, [QuantumFloat(2)], lambda ancilla, operand: z(operand[0]))
+
+    observed = {}
+
+    def main(product):
+        product.unitary
+        observed["static layouts"] = all(layout.has_static_sizes for layout in product._product_layouts)
+        observed["cached"] = "_cached_unitary" in product.__dict__
+        return QuantumFloat(1)
+
+    make_jaspr(main)(build(first, second))
+
+    assert not observed["static layouts"], "the premise: a pytree crossing traces the sizes"
+    assert observed["cached"] is expected
+
+
+def test_factors_sharing_a_unitary_do_not_share_a_step():
+    """Two distinct factors must not share a step just because they look alike.
+
+    The qubit-efficient step captures a layout and builds its factor's ancillas
+    from it, so sharing a step shares templates. Two layouts compare equal far more
+    readily than they describe the same ancillas: QuantumVariableTemplate compares
+    its variable's type alone, so templates differing in exponent or signedness are
+    equal, and the layout adds only the sizes. Factors that also share one unitary
+    callable therefore collided, and the second was handed ancillas built from the
+    first one's templates -- here, an exponent of 0 where it asked for -2.
+    """
+
+    def shared_unitary(ancilla, operand):
+        x(operand[0])
+
+    first = BlockEncoding(1, [QuantumFloat(3)], shared_unitary)
+    second = BlockEncoding(1, [QuantumFloat(3, exponent=-2)], shared_unitary)
+
+    assert first.unitary is second.unitary, "the premise: one callable, two factors"
+
+    layouts = tuple(_AncillaLayout.from_templates(factor._anc_templates) for factor in (first, second))
+    assert layouts[0] == layouts[1], "the premise: the layouts compare equal despite differing"
+
+    steps = _build_product_steps((first, second), layouts)
+
+    assert steps[0] is not steps[1]
+
+
+def test_a_repeated_factor_still_shares_its_step():
+    """Identity in the key must not cost the sharing the key exists for.
+
+    The same factor appearing at more than one position is the case worth sharing,
+    and keying on the factor itself keeps it: only the occurrences of one object
+    collapse onto a single step.
+    """
+    repeated = BlockEncoding(1, [QuantumFloat(3)], lambda ancilla, operand: x(operand[0]))
+    other = BlockEncoding(1, [QuantumFloat(3)], lambda ancilla, operand: z(operand[0]))
+
+    factors = (repeated, other, repeated)
+    layouts = tuple(_AncillaLayout.from_templates(factor._anc_templates) for factor in factors)
+    steps = _build_product_steps(factors, layouts)
+
+    assert steps[0] is steps[2]
+    assert steps[0] is not steps[1]
 
 
 #
