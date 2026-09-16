@@ -18,7 +18,7 @@
 
 A ProductBlockEncoding stores its factors in mathematical order, which is
 opposite to the order in which they are applied. For example, the product
-``A * B`` is stored as ``(A, B)`` but applies ``B`` first and then ``A``.
+``A @ B`` is stored as ``(A, B)`` but applies ``B`` first and then ``A``.
 Everything else is derived from this factor sequence. The arithmetic that
 produces a product lives in block_encoding_arithmetic.py, which imports this
 module; the dependency runs one way only, so this module knows nothing about
