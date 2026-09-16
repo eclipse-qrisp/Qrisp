@@ -131,7 +131,7 @@ def test_conjugate():
 # ---------------------------------------------------------------------------
 
 
-def test_classcial_control():
+def test_classical_control():
     """Control on a measurement result."""
 
     @cudaq_kernel
