@@ -471,8 +471,8 @@ class DCQOProblem:
         options : dict
             A dictionary of solver options.
         objective : str
-            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``).
-            Default is ``exp_value``.
+            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``). Required --
+            this parameter is positional here; :meth:`run` is what applies the ``exp_value`` default.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
         precision : float, optional
@@ -626,7 +626,7 @@ class DCQOProblem:
         N_opt=None,
         CRAB=False,
         optimizer="COBYQA",
-        objective="agp_coeff_magnitude",
+        objective="exp_value",
         bounds=(),
         options={},
         mes_kwargs={},
@@ -660,8 +660,11 @@ class DCQOProblem:
         options : dict
             A dictionary of solver options.
         objective : str
-            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``). Default is
-            ``agp_coeff_magnitude``.
+            The objective function to be minimized. Default is ``exp_value``, which optimizes the control
+            pulses against the measured energy of ``H_prob`` and is the reliable choice. The alternative
+            ``agp_coeff_magnitude`` is a cheap proxy that minimizes the magnitude of the AGP coefficients
+            instead of running the circuit; it avoids the simulation cost but can select controls that
+            perform worse than no control at all, so opt into it only deliberately.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
         options : dict
