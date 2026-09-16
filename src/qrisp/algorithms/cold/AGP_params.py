@@ -91,11 +91,16 @@ def build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
     H = defaultdict(complex)
     dH = defaultdict(complex)
 
-    # X-field
+    # X-field. The sign must match the circuit: DCQOProblem evolves
+    # H = (1 - lam) * H_init + lam * H_prob with H_init = +sum_i X_i (see
+    # create_COLD_instance/create_LCD_instance), so the transverse term enters with a
+    # positive coefficient and its lambda-derivative is -1. Modelling it with the opposite
+    # sign describes a Hamiltonian unitarily equivalent under prod_i Z_i, under which
+    # sigma^y -> -sigma^y, and therefore returns every AGP coefficient negated.
     for i in range(N):
         pX = pauli_from_ops({i: 1})
-        H[pX] += -(1 - lam)
-        dH[pX] += 1.0
+        H[pX] += 1 - lam
+        dH[pX] += -1.0
 
     # ZZ couplings
     for i in range(N):
