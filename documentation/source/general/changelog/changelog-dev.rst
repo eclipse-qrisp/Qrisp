@@ -49,7 +49,7 @@ New Features
 Improvements
 ------------
 
-- **Flattened block-encoding arithmetic**
+- **Efficient block-encoding arithmetic**
   Block-encoding linear combinations now use a single LCU construction instead
   of recursively nested binary combinations. Mutually exclusive LCU branches
   reuse one shared ancilla workspace, including for heterogeneous ancilla
@@ -60,18 +60,7 @@ Improvements
   separate-ancilla construction remains available as an explicit strategy.
   Block-encoding linear combinations can be constructed explicitly with
   :meth:`~qrisp.block_encodings.BlockEncoding.linear_combination`
-  (`PR #865 <https://github.com/eclipse-qrisp/Qrisp/pull/865>`_).
-
-  The unitary of a linear combination, together with its SELECT branches,
-  ancilla layouts and templates, is derived once and reused. Quantities that are
-  known at build time are kept as NumPy values, which keeps ``prepare`` on its
-  concrete state-preparation path. Without this, every enclosing ``q_switch``
-  re-traced the whole subtree, and nested linear combinations multiplied that
-  cost once per nesting level.
-
-  Products cache their derived state the same way, and share one traced step
-  between repeated occurrences of the same factor, so an expression such as
-  ``H.dagger() @ P @ H`` traces ``H`` once rather than twice.
+  (`PR #892 <https://github.com/eclipse-qrisp/Qrisp/pull/892>`_).
 
 - :class:`~qrisp.interface.QiskitJob` and :class:`~qrisp.interface.AQTJob`
   now skip the live provider query and return the cached status once a job
