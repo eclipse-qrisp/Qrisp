@@ -93,23 +93,6 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     return terms
 
 
-def _is_reusable_unitary(block_encoding: BlockEncoding) -> bool:
-    """Return whether ``block_encoding.unitary`` yields the same object on every access.
-
-    A plain BlockEncoding stores its unitary in a field, so it is always reusable.
-    A LinearCombinationBlockEncoding derives its unitary and only caches it when the
-    derivation captured no JAX tracer. Reusing a child unitary that is rebuilt on
-    every access would hand every enclosing ``q_switch`` a fresh Python closure,
-    which is exactly what this module's caching exists to avoid.
-
-    The child's ``unitary`` must have been accessed before this is called, so that
-    a cacheable child has had the chance to populate its cache.
-    """
-    if isinstance(block_encoding, LinearCombinationBlockEncoding):
-        return "_cached_unitary" in block_encoding.__dict__
-    return True
-
-
 def _identity_lcu_branch(shared_ancilla: QuantumVariable, *operands: QuantumVariable) -> None:
     """Pad the SELECT to a power of two; selected only for zero-amplitude indices."""
 
@@ -395,7 +378,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
                 if applies_phase:
                     gphase(phase, args[0][0])
 
-            if not isinstance(effective_coefficient, jax.core.Tracer) and _is_reusable_unitary(block_encoding):
+            if not isinstance(effective_coefficient, jax.core.Tracer) and block_encoding._has_reusable_unitary:
                 object.__setattr__(self, "_cached_unitary", unitary)
             return unitary
 
@@ -424,7 +407,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
                 q_switch(selector, branches, shared_ancilla, *operands)
 
         cacheable = all(layout.has_static_sizes for layout in layouts) and all(
-            _is_reusable_unitary(block_encoding) for _, block_encoding in self.terms
+            block_encoding._has_reusable_unitary for _, block_encoding in self.terms
         )
         if cacheable:
             object.__setattr__(self, "_cached_unitary", unitary)
@@ -455,6 +438,11 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
     def _get_lcu_terms(self) -> _LCUTerms:
         return self.terms
+
+    @property
+    def _has_reusable_unitary(self) -> bool:
+        """Return whether the derived unitary was cached and can therefore be reused."""
+        return "_cached_unitary" in self.__dict__
 
     def tree_flatten(self) -> tuple[tuple[ArrayLike | BlockEncoding, ...], int]:
         """Flatten only the authoritative terms for JAX pytree handling."""

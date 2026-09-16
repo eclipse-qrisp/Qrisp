@@ -753,6 +753,67 @@ def test_a_combination_with_no_terms_is_rejected():
         BlockEncoding.linear_combination([], coefficients=[])
 
 
+class _NeverReusable(BlockEncoding):
+    """A child whose unitary is rebuilt on every access, as a composite's can be."""
+
+    @property
+    def _has_reusable_unitary(self) -> bool:
+        return False
+
+
+@pytest.mark.parametrize(
+    "name, build",
+    [
+        ("combination of it", lambda child, other: child + other),
+        ("product with it", lambda child, other: child @ other),
+        ("product with it second", lambda child, other: other @ child),
+    ],
+)
+def test_a_composite_does_not_cache_around_a_child_it_cannot_reuse(name, build):
+    """A composite must ask its children before caching a unitary that captured theirs.
+
+    Both composite kinds derive their unitary and cache it, and both can fail to:
+    a derivation capturing a traced size belongs to the trace that built it. Each
+    reports that through _has_reusable_unitary, and each asks its children the same
+    question, since caching a closure around a child that is rebuilt on every
+    access would hand every enclosing q_switch a fresh Python object and defeat the
+    caches Jasp keys on identity.
+
+    Asking through the property rather than a type test is what makes this hold
+    both ways round: a combination inside a product and a product inside a
+    combination.
+    """
+    child = _NeverReusable(1, [], lambda operand: x(operand[0]))
+    other = BlockEncoding(1, [], lambda operand: z(operand[0]))
+
+    composite = build(child, other)
+    composite.unitary
+
+    assert not composite._has_reusable_unitary
+    assert "_cached_unitary" not in composite.__dict__
+
+
+def test_both_composites_report_their_own_reusability():
+    """Every encoding answers for itself, so neither composite is a special case.
+
+    A plain encoding stores its unitary and always reuses it. A composite derives
+    one and reports whether that derivation was cacheable, so an enclosing
+    composite gets the right answer whichever kind it holds.
+    """
+    plain = BlockEncoding(1, [], lambda operand: x(operand[0]))
+    other = BlockEncoding(1, [], lambda operand: z(operand[0]))
+
+    assert plain._has_reusable_unitary
+
+    for composite in (plain + 2 * other, plain @ other):
+        assert type(composite)._has_reusable_unitary is not BlockEncoding._has_reusable_unitary, (
+            f"{type(composite).__name__} must answer for itself rather than inherit the plain answer"
+        )
+        assert not composite._has_reusable_unitary, "nothing is reusable before the unitary is built"
+        composite.unitary
+        assert composite._has_reusable_unitary
+
+
 def test_an_invalid_child_is_reported_as_a_type_error():
     """A child that is not a block encoding must raise the documented TypeError.
 
