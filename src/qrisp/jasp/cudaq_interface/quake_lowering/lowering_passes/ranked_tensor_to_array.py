@@ -43,8 +43,9 @@
 #    lowered once their definition has been converted.
 #
 # Handles both static and dynamic array indexing. Anything this pass cannot
-# express is left in place rather than lowered incorrectly; the pipeline's
-# closing verifier reports what remains.
+# express is left in place rather than lowered incorrectly, and surfaces when
+# CUDA-Q parses the module: since 0.16 it no longer registers the upstream
+# tensor dialect, so a residual tensor operation fails at ingestion.
 
 from xdsl.dialects import arith, tensor
 from xdsl.dialects import func as func_dialect
@@ -212,8 +213,8 @@ class TensorToArrayPointer(TypeConversionPattern):
     boundary. ``arith.constant`` is deliberately absent, because its dense value
     attribute carries a tensor type that has to keep describing the literal rather
     than the storage it is materialized into. Stage 1 has already replaced every
-    dense constant that can be materialized, and the pipeline's closing verifier
-    reports any that could not be.
+    dense constant that can be materialized, and one that could not be keeps a
+    consistent type rather than being handed a pointer it cannot describe.
     """
 
     recursive = True
