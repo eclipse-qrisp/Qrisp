@@ -34,5 +34,6 @@ setuptools.setup(
     ],
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
+    package_data={"qrisp": ["py.typed"]},
     python_requires=">=3.11, <3.14",
 )
