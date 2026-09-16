@@ -274,7 +274,7 @@ def apply_mul(self, other: "ArrayLike") -> BlockEncoding:  # noqa: D417
 
     Notes
     -----
-    - Multiplying by a scalar $c$ results in a new BlockEncoding of $cA$ by updating $\alpha \rightarrow c\alpha$.
+    - Multiplying by a scalar $c$ encodes $cA$, multiplies the normalization by $|c|$, and applies the argument of $c$ as a phase.
 
     Examples
     --------
