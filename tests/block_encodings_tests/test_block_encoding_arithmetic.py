@@ -212,41 +212,55 @@ def test_block_encoding_flattened_linear_combination():
     _compare_results(res_target, main(BE_direct), n)
 
 
-def test_block_encoding_lcu_canonicalizes_repeated_references():
-    """Verify that repeated references are merged into one weighted term."""
-    block_encoding = BlockEncoding(1, [], lambda operand: None)
+def test_block_encoding_lcu_takes_the_terms_as_written():
+    """Terms are kept as supplied, including ones that cancel or contribute nothing.
 
-    combination = BlockEncoding.linear_combination(
-        [block_encoding, block_encoding],
-        coefficients=[2, 3],
-    )
-
-    assert combination.terms == ((5, block_encoding),)
-
-
-def test_block_encoding_lcu_removes_static_zero_terms():
-    """Verify that concrete zero coefficients are removed."""
-    first = BlockEncoding(1, [], lambda operand: None)
-    second = BlockEncoding(1, [], lambda operand: None)
-
-    combination = BlockEncoding.linear_combination([first, second], coefficients=[0, 2])
-
-    assert combination.terms == ((2, second),)
-
-
-def test_block_encoding_lcu_cancels_to_the_zero_encoding():
-    """Verify that static cancellation yields the zero operator rather than an error.
-
-    This used to raise. Rejecting the cancellation also rejected expressions that
-    only cancel in part, such as ``A - A + B``, because Python associates to the
-    left and builds the cancelling half first.
+    A combination is a description of a circuit, not an expression to be
+    simplified: ``A - A`` builds the two-term combination it reads as and applies
+    it, the way subtracting an array from itself computes rather than collapsing.
     """
     block_encoding = BlockEncoding(1, [], lambda operand: None)
+    other = BlockEncoding(1, [], lambda operand: None)
 
-    combination = BlockEncoding.linear_combination([block_encoding, block_encoding], coefficients=[1, -1])
+    repeated = BlockEncoding.linear_combination([block_encoding, block_encoding], coefficients=[2, 3])
+    assert repeated.terms == ((2, block_encoding), (3, block_encoding))
+    assert repeated.alpha == 5
 
-    assert isinstance(combination, BlockEncoding)
-    assert combination.alpha == 0
+    with_a_zero = BlockEncoding.linear_combination([block_encoding, other], coefficients=[0, 2])
+    assert with_a_zero.terms == ((0, block_encoding), (2, other))
+
+    cancelling = BlockEncoding.linear_combination([block_encoding, other], coefficients=[1, -1])
+    assert cancelling.alpha == 2
+
+
+def test_an_all_zero_combination_is_refused_when_it_is_built():
+    """The one combination with no circuit behind it must say so, but not too early.
+
+    Its normalization is zero, so PREP would be asked for a state whose amplitudes
+    are sqrt(0/0), and the single-term path would otherwise apply the child as
+    though its coefficient were one. Refusing it at construction instead would
+    reject ``0 * A + B``, which is perfectly ordinary: Python associates to the
+    left, so the zero-weighted term is built on its own before B is added.
+
+    A combination that merely cancels is not this case. ``A - A`` has terms with
+    normalizations of their own and an ordinary preparation; it encodes zero,
+    which shows up as a postselection that never succeeds.
+    """
+    block_encoding = BlockEncoding(1, [], lambda operand: x(operand[0]))
+    other = BlockEncoding(1, [], lambda operand: z(operand[0]))
+
+    for coefficients in ([0, 0], [0]):
+        combination = BlockEncoding.linear_combination(
+            [block_encoding, other][: len(coefficients)], coefficients=coefficients
+        )
+        assert combination.alpha == 0
+        with pytest.raises(ValueError, match="all-zero"):
+            combination.unitary
+
+    # A zero-weighted term alongside a surviving one is built and applied normally.
+    partial = BlockEncoding.linear_combination([block_encoding, other], coefficients=[0, 1])
+    assert partial.alpha == 1
+    assert np.allclose(partial._lcu_amplitudes, [0, 1])
 
 
 def test_block_encoding_lcu_preserves_dynamic_coefficients():
@@ -671,153 +685,23 @@ def test_coefficient_reality_survives_the_pytree_boundary():
 #
 
 
-def _zero_cases():
+def test_a_product_takes_its_factors_as_written():
+    """A product keeps every factor, including one that encodes nothing.
+
+    Products are read the same way linear combinations are: a description of a
+    circuit rather than an expression to simplify. A factor whose normalization is
+    zero used to annihilate the whole product into a zero encoding; it is now left
+    in place and reports that itself when its unitary is built.
+    """
     A = BlockEncoding.from_operator(Z(0))
     B = BlockEncoding.from_operator(X(0))
-    return A, B
 
+    cancelling = A - A
+    product = cancelling @ B
 
-@pytest.mark.parametrize(
-    "name, build",
-    [
-        ("scaled by zero", lambda A, B: 0.0 * A),
-        ("exact cancellation", lambda A, B: A - A),
-        ("cancellation after merging", lambda A, B: 2 * A - A - A),
-        ("two cancelling pairs", lambda A, B: (A - A) + (B - B)),
-    ],
-)
-def test_fully_cancelling_combination_is_the_zero_encoding(name, build):
-    """A combination that cancels must stay a block encoding, of the zero operator.
-
-    Rejecting it at construction would also reject expressions whose result is
-    perfectly ordinary, since Python associates to the left and ``A - A + B`` builds
-    the cancelling part first.
-    """
-    A, B = _zero_cases()
-    encoding = build(A, B)
-
-    assert isinstance(encoding, BlockEncoding)
-    assert encoding.alpha == 0
-
-
-@pytest.mark.parametrize(
-    "name, build",
-    [
-        ("zero term first", lambda A, B: 0 * A + B),
-        ("cancellation first", lambda A, B: A - A + B),
-        ("cancellation parenthesised", lambda A, B: (A - A) + B),
-        ("cancellation across the sum", lambda A, B: A + B - A),
-    ],
-)
-def test_zero_terms_are_absorbed_by_a_combination(name, build):
-    """A term contributing nothing must leave no trace in the result.
-
-    A term contributes ``coefficient * child.alpha``, so it drops out when either
-    factor is zero. Dropping it is what lets the surviving single term be handed
-    back unwrapped, rather than as a combination carrying a dead SELECT branch.
-    """
-    A, B = _zero_cases()
-
-    assert build(A, B) is B
-
-
-def test_zero_encoding_cannot_be_applied():
-    """Applying the zero operator has no meaning and must say so.
-
-    Its block encoding can never succeed: the probability of projecting onto the
-    ancillas being zero is itself zero. The error belongs here rather than at
-    construction, where it would also reject expressions that cancel only in part.
-    """
-    A, _ = _zero_cases()
-    zero = A - A
-
-    with pytest.raises(ValueError, match="zero operator"):
-        zero.apply(QuantumFloat(1))
-
-    with pytest.raises(ValueError, match="zero operator"):
-        zero.apply_rus(lambda: QuantumFloat(1))
-
-
-@pytest.mark.parametrize(
-    "name, build",
-    [
-        ("zero on the left", lambda A, B: (A - A) @ B),
-        ("zero on the right", lambda A, B: B @ (A - A)),
-        ("zero late in a chain", lambda A, B: A @ B @ (A - A)),
-        ("zero from a zero coefficient", lambda A, B: (0 * A) @ B),
-    ],
-)
-def test_zero_annihilates_a_product(name, build):
-    """A zero factor makes the whole product the zero operator.
-
-    Where a sum absorbs a zero term, a product is annihilated by one, so there is
-    nothing to gain from building the remaining factors.
-    """
-    A, B = _zero_cases()
-    product = build(A, B)
-
-    assert product.alpha == 0
-    assert not isinstance(product, ProductBlockEncoding)
-
-
-def test_zero_annihilates_a_product_across_a_pytree_boundary():
-    """A product formed inside a traced function must annihilate too.
-
-    The factor arrives with a tracer in place of its normalization, so the
-    annihilation cannot be read off alpha any more than the refusal in apply can.
-    Missing it builds an ordinary product whose own alpha is traced in turn, so
-    nothing downstream catches it either: the remaining factors were applied and
-    the result reported as a success.
-    """
-    A, B = _zero_cases()
-    zero = A - A
-
-    @terminal_sampling
-    def main(BE):
-        return (BE @ B).apply_rus(lambda: QuantumFloat(1))()
-
-    with pytest.raises(ValueError, match="zero operator"):
-        main(zero)
-
-
-@pytest.mark.parametrize(
-    "name, apply_it",
-    [
-        ("apply", lambda BE: BE.apply(QuantumFloat(1))),
-        ("apply_rus", lambda BE: BE.apply_rus(lambda: QuantumFloat(1))()),
-    ],
-)
-def test_zero_encoding_cannot_be_applied_across_a_pytree_boundary(name, apply_it):
-    """Passing the zero encoding to a traced function must not smuggle it past the guard.
-
-    alpha is a pytree child, so an encoding handed to a jitted function arrives
-    with a tracer in place of its normalization, and a tracer cannot be compared
-    against zero. Deriving the refusal from alpha alone therefore stopped working
-    at exactly that boundary, and silently: the encoding carries no ancillas, so
-    apply_rus found an empty success condition, reported success, and returned the
-    operand untouched, which is the identity rather than zero.
-    """
-    A, _ = _zero_cases()
-    zero = A - A
-
-    @terminal_sampling
-    def main(BE):
-        return apply_it(BE)
-
-    with pytest.raises(ValueError, match="zero operator"):
-        main(zero)
-
-
-def test_zero_encoding_reports_a_hermitian_unitary():
-    """The zero encoding's unitary is a no-op, and the identity is Hermitian.
-
-    is_hermitian describes the unitary rather than the encoded operator, and this
-    one applies nothing at all. Reporting it as non-Hermitian would send
-    transformations down the general path for no reason.
-    """
-    A, _ = _zero_cases()
-
-    assert (A - A).is_hermitian
+    assert isinstance(product, ProductBlockEncoding)
+    assert product.factors == (cancelling, B)
+    assert product.alpha == cancelling.alpha * B.alpha
 
 
 #
@@ -835,17 +719,14 @@ def _one_and_two_operand_encodings():
     "name, build",
     [
         ("zero coefficient", lambda one, two: BlockEncoding.linear_combination([one, two], coefficients=[1, 0])),
-        ("zero encoding on the right", lambda one, two: one + (two - two)),
-        ("zero encoding on the left", lambda one, two: (two - two) + one),
+        ("plain mismatch", lambda one, two: BlockEncoding.linear_combination([one, two], coefficients=[1, 1])),
     ],
 )
 def test_a_zero_term_does_not_hide_an_operand_mismatch(name, build):
-    """Operand counts are compared before any term is dropped.
+    """Operand counts are compared for every term, whatever it contributes.
 
-    Canonicalization removes a term that contributes nothing, so a mismatched
-    child carrying a zero coefficient used to disappear before being checked, and
-    the combination silently returned the surviving encoding instead of rejecting
-    the call.
+    A term weighted by zero is kept like any other, so its child has to be checked
+    like any other; it must not be the one that slips through.
     """
     one, two = _one_and_two_operand_encodings()
 
@@ -856,8 +737,8 @@ def test_a_zero_term_does_not_hide_an_operand_mismatch(name, build):
 def test_an_invalid_child_is_reported_as_a_type_error():
     """A child that is not a block encoding must raise the documented TypeError.
 
-    Canonicalization reads each child's normalization, so an invalid one used to
-    surface as an AttributeError raised from the merging step.
+    Validation reads each child's normalization, so an invalid one would otherwise
+    surface as an AttributeError raised from somewhere unrelated.
     """
     with pytest.raises(TypeError, match="BlockEncoding"):
         LinearCombinationBlockEncoding([(1, "not a block encoding")])

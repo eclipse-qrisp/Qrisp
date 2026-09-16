@@ -34,7 +34,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from types import NotImplementedType
-from typing import Any, ClassVar
+from typing import Any
 
 import jax
 import jax.numpy as jnp
@@ -126,13 +126,6 @@ def build_linear_combination(  # noqa: D417
 def build_from_lcu_terms(cls, terms: Sequence[_LCUTerm]) -> BlockEncoding:
     """Build a linear-combination block encoding from weighted terms."""
     terms = _validate_lcu_terms(terms)
-    num_ops = terms[0][1].num_ops if terms else 1
-    terms = _canonicalize_lcu_terms(terms)
-    if len(terms) == 0:
-        # Everything cancelled. The result is the zero operator, which is a block
-        # encoding like any other, so that expressions such as ``A - A + B`` keep
-        # building instead of failing halfway through.
-        return _zero_block_encoding(num_ops)
     if len(terms) == 1:
         coefficient, block_encoding = terms[0]
         if isinstance(coefficient, (int, float, complex, np.number)) and coefficient == 1:
@@ -413,12 +406,6 @@ def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
         return NotImplemented
 
     factors = _validate_product_factors(self._get_product_factors() + other._get_product_factors())
-    # Zero annihilates a product, where a sum absorbs it: if any factor encodes the
-    # zero operator then so does the product, and building the whole chain of
-    # factors for it would be wasted. The factors are checked against each other
-    # first, so that a mismatched one is not swallowed by the zero result.
-    if any(factor._is_zero or _is_statically_zero(factor.alpha) for factor in factors):
-        return _zero_block_encoding(factors[0].num_ops)
     return ProductBlockEncoding(factors)
 
 
@@ -601,45 +588,13 @@ def apply_neg(self) -> BlockEncoding:
     return type(self)._from_lcu_terms(terms)
 
 
-@register_pytree_node_class
-class _ZeroBlockEncoding(BlockEncoding):
-    """A block encoding of the zero operator, recognizable after a pytree round trip.
-
-    The zero operator differs from every other encoding in that applying it is
-    refused rather than performed, so that has to stay knowable. Reading it off
-    ``alpha`` only works outside a trace: ``alpha`` is a pytree child, so passing
-    an encoding to a jitted function turns it into a tracer whose value cannot be
-    compared against zero. The type is carried in the pytree structure instead and
-    is reconstructed by ``tree_unflatten``, so it survives that crossing.
-    """
-
-    _is_zero: ClassVar[bool] = True
-
-
-def _zero_block_encoding(num_ops: int = 1) -> _ZeroBlockEncoding:
-    """Return a block encoding of the zero operator.
-
-    A normalization of zero encodes the zero operator whatever the unitary is, so
-    the cheapest honest choice is a no-op on no ancillas. It exists so that a fully
-    cancelling combination stays a block encoding and can be combined further; a
-    sum absorbs it and a product is annihilated by it. Applying it is rejected in
-    :meth:`~qrisp.block_encodings.BlockEncoding.apply`, since no unitary has a zero
-    block without at least one ancilla to project onto.
-
-    The no-op unitary is the identity, which is Hermitian. That is a statement
-    about the unitary, as ``is_hermitian`` always is, and not about the zero
-    operator, which is Hermitian as well.
-    """
-    return _ZeroBlockEncoding(0, [], lambda *args: None, num_ops=num_ops, is_hermitian=True)
-
-
 def _validate_product_factors(factors: _ProductFactors) -> _ProductFactors:
-    """Check the factors as supplied, before any are dropped.
+    """Check the factors as supplied.
 
-    A zero factor annihilates the product, so it has to be recognised only after
-    the factors have been checked against each other. Otherwise a factor with a
-    mismatched operand count disappears into the zero result without ever being
-    compared, and the call is accepted where it should be rejected.
+    The factors are taken as written, the way the terms of a linear combination
+    are: a product is a description of a circuit rather than an expression to be
+    simplified. A factor that encodes nothing is left in place, and reports that
+    when its own unitary is built.
     """
     factors = tuple(factors)
     for factor in factors:
@@ -654,13 +609,11 @@ def _validate_product_factors(factors: _ProductFactors) -> _ProductFactors:
 
 
 def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
-    """Check the terms as supplied, before any are merged or dropped.
+    """Check the terms as supplied, and reject the combinations that have no encoding.
 
-    Canonicalization reads each child's normalization and can remove a term
-    outright, so a malformed or mismatched child has to be rejected first. After
-    canonicalization a child that is not a block encoding surfaces as an
-    AttributeError from an unrelated place, and one carrying a zero coefficient
-    disappears without its operand count ever being compared.
+    The terms are taken as written. ``A - A`` builds the two-term combination it
+    reads as, rather than being recognized as the zero operator and simplified
+    away, so that what is applied is what was asked for.
 
     The shape check reads ``ndim`` instead of testing for a NumPy array, so that a
     JAX array or a traced one is rejected the same way rather than silently giving
@@ -692,26 +645,6 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
         if any(block_encoding.num_ops != num_ops for _, block_encoding in terms):
             raise ValueError("All block-encodings must have the same number of operands.")
     return terms
-
-
-def _canonicalize_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
-    """Merge identity-equal child encodings and remove concrete zero terms."""
-    merged_terms: list[_LCUTerm] = []
-    for coefficient, block_encoding in terms:
-        for index, (_, existing_block_encoding) in enumerate(merged_terms):
-            if existing_block_encoding is block_encoding:
-                merged_terms[index] = (merged_terms[index][0] + coefficient, block_encoding)
-                break
-        else:
-            merged_terms.append((coefficient, block_encoding))
-
-    # A term contributes ``coefficient * child.alpha`` to the encoded operator, so
-    # it drops out when either factor is zero, not only the coefficient.
-    return tuple(
-        (coefficient, block_encoding)
-        for coefficient, block_encoding in merged_terms
-        if not _is_statically_zero(coefficient) and not _is_statically_zero(block_encoding.alpha)
-    )
 
 
 def _template_of_size(quantum_variable: QuantumVariable, size: Any) -> QuantumVariableTemplate:
@@ -869,11 +802,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         would leak the tracer.
 
         """
-        terms = _canonicalize_lcu_terms(_validate_lcu_terms(terms))
-        if len(terms) == 0:
-            raise ValueError("Cannot construct a block encoding from an all-zero linear combination.")
-
-        self._terms = terms
+        self._terms = _validate_lcu_terms(terms)
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Prevent reassignment of the authoritative term representation."""
@@ -1077,6 +1006,16 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         cached = self.__dict__.get("_cached_unitary")
         if cached is not None:
             return cached
+
+        if _is_statically_zero(self.alpha):
+            # Every term contributes zero, so there is nothing for the unitary to
+            # be: PREP would be asked for a state whose amplitudes are sqrt(0/0),
+            # and the single-term path would otherwise apply the child as though
+            # its coefficient were one. This is the only combination that is
+            # refused. One that merely cancels, such as ``A - A``, has an ordinary
+            # unitary built from terms with normalizations of their own; that it
+            # encodes zero shows up as a postselection which never succeeds.
+            raise ValueError("Cannot build the unitary for an all-zero linear combination.")
 
         if len(self.terms) == 1:
             coefficient, block_encoding = self.terms[0]

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import jax
 import jax.numpy as jnp
@@ -29,7 +29,6 @@ from jax.tree_util import register_pytree_node_class
 from jax.typing import ArrayLike
 
 from qrisp.alg_primitives.reflection import reflection
-from qrisp.block_encodings.predicates import _is_statically_zero
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import h, measure, reset, x
 from qrisp.environments import conjugate, control, invert
@@ -259,13 +258,6 @@ class BlockEncoding:
 
     """
 
-    # Whether this is known to encode the zero operator, as a property of the
-    # type rather than of alpha. alpha is a pytree child, so it becomes a tracer
-    # whenever an encoding is passed across a jit boundary and its value stops
-    # being readable; the type survives, because tree_unflatten reconstructs it.
-    # See _ZeroBlockEncoding in block_encoding_combination.py.
-    _is_zero: ClassVar[bool] = False
-
     def __init__(
         self,
         alpha: "ArrayLike",
@@ -450,15 +442,6 @@ class BlockEncoding:
         """
         if len(operands) != self.num_ops:
             raise ValueError(f"Operation expected {self.num_ops} operands, but got {len(operands)}.")
-        if self._is_zero or _is_statically_zero(self.alpha):
-            # A zero normalization encodes the zero operator, whose block encoding
-            # can never succeed: the projection onto the ancillas being zero has
-            # probability zero. Arithmetic may still produce one, as in ``A - A``,
-            # and combine it away again, so it is only applying one that is refused.
-            # The type is asked first, because alpha alone cannot answer this once
-            # the encoding has crossed a jit boundary.
-            raise ValueError("A block encoding of the zero operator cannot be applied.")
-
         ancillas = self.create_ancillas()
         self.unitary(*ancillas, *operands)
         return ancillas
@@ -517,11 +500,6 @@ class BlockEncoding:
         """
         if not callable(operand_prep):
             raise TypeError(f"Expected 'operand_prep' to be a callable, but got {type(operand_prep).__name__}.")
-        if self._is_zero or _is_statically_zero(self.alpha):
-            # See apply: the zero operator has no successful branch to repeat until.
-            # Without this the encoding carries no ancillas, so every repetition
-            # measures an empty success condition and reports the operand unchanged.
-            raise ValueError("A block encoding of the zero operator cannot be applied.")
 
         @RUS
         def rus_function(*args):
