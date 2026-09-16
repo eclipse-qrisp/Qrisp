@@ -395,13 +395,6 @@ class ProductBlockEncoding(BlockEncoding):
     def _get_product_factors(self) -> _ProductFactors:
         return self.factors
 
-    def dagger(self) -> ProductBlockEncoding:
-        """Return the product dagger with reversed, individually inverted factors."""
-        return ProductBlockEncoding(
-            tuple(factor.dagger() for factor in reversed(self.factors)),
-            strategy=self.strategy,
-        )
-
     def tree_flatten(self) -> tuple[_ProductFactors, _ProductStrategy]:
         """Flatten the authoritative product factors for JAX pytree handling."""
         return self.factors, self.strategy

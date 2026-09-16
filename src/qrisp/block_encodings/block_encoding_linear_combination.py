@@ -99,56 +99,39 @@ def _identity_lcu_branch(shared_ancilla: QuantumVariable, *operands: QuantumVari
 
 @register_pytree_node_class
 class LinearCombinationBlockEncoding(BlockEncoding):
-    """A block encoding represented by an immutable tuple of LCU terms."""
+    r"""A block encoding represented by an immutable tuple of LCU terms.
+
+    Each term is a ``(coefficient, block_encoding)`` pair. If the child
+    block-encoding represents $A_i / \alpha_i$, the combined LCU uses
+    ``coefficient * child.alpha`` as the coefficient of its child unitary.
+    The resulting normalization is therefore
+    ``sum(abs(coefficient * child.alpha))``.
+
+    The child ancillas are packed into one shared workspace after one
+    selector register. The workspace is sized to the largest child layout,
+    and each selected branch reconstructs its typed ancillas as views into
+    that workspace. Since the selector chooses exactly one child unitary,
+    nested sums are lowered to one preparation/select/preparation sequence.
+    The terms are retained as the immutable authoritative representation;
+    the compiled unitary and metadata are derived from them.
+
+    Parameters
+    ----------
+    terms : tuple[tuple[ArrayLike, BlockEncoding], ...]
+        Weighted block-encoding terms. The terms must be non-empty, and all
+        child block-encodings must have the same number of operands.
+
+    Raises
+    ------
+    ValueError
+        If no terms are supplied or the child operand counts differ.
+    TypeError
+        If a term does not contain a BlockEncoding.
+
+    """
 
     def __init__(self, terms: Sequence[_LCUTerm]) -> None:
-        r"""Initialize a linear-combination block encoding from weighted terms.
-
-        Each term is a ``(coefficient, block_encoding)`` pair. If the child
-        block-encoding represents $A_i / \alpha_i$, the combined LCU uses
-        ``coefficient * child.alpha`` as the coefficient of its child unitary.
-        The resulting normalization is therefore
-        ``sum(abs(coefficient * child.alpha))``.
-
-        The child ancillas are packed into one shared workspace after one
-        selector register. The workspace is sized to the largest child layout,
-        and each selected branch reconstructs its typed ancillas as views into
-        that workspace. Since the selector chooses exactly one child unitary,
-        nested sums are lowered to one preparation/select/preparation sequence.
-        The terms are retained as the immutable authoritative representation;
-        the compiled unitary and metadata are derived from them.
-
-        Parameters
-        ----------
-        terms : tuple[tuple[ArrayLike, BlockEncoding], ...]
-            Weighted block-encoding terms. The terms must be non-empty, and all
-            child block-encodings must have the same number of operands.
-
-        Raises
-        ------
-        ValueError
-            If no terms are supplied or the child operand counts differ.
-        TypeError
-            If a term does not contain a BlockEncoding.
-
-        Notes
-        -----
-        A single term with coefficient ``1`` is returned as the original child
-        by the factory that constructs this class. A single term with another
-        coefficient uses the child's ancillas directly and applies the required
-        phase for a negative coefficient.
-
-        Everything derived from the terms — the unitary, its SELECT branches, the
-        ancilla layouts and templates, the coefficients and the normalization — is
-        built once and cached, and derived quantities that are known at build time
-        are kept as NumPy values rather than JAX arrays. Both are required for the
-        compilation cost to stay proportional to the size of the expression: Jasp's
-        caches are keyed on object identity, and ``prepare`` selects its algorithm
-        by whether its amplitude vector converts to NumPy. Derived values that
-        capture a JAX tracer are not cached, since reusing them in a later trace
-        would leak the tracer.
-
-        """
+        r"""Initialize a linear-combination block encoding from weighted terms."""
         self._terms = _validate_lcu_terms(terms)
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -165,16 +148,16 @@ class LinearCombinationBlockEncoding(BlockEncoding):
     #
     # Derived state
     #
-    # Everything below is derived from the authoritative terms. It is cached on
-    # first access, because rebuilding it would produce fresh Python objects every
-    # time, and Jasp's caches (qache, and hence jax.jit) are keyed on object
-    # identity. Without the cache, every enclosing q_switch re-traces the whole
-    # subtree from scratch, and nested linear combinations multiply that cost once
-    # per nesting level.
-    #
-    # A derived value is only cached when it is independent of any JAX trace.
-    # Values that capture tracers must be rebuilt per trace: a tracer leaked into
-    # a later trace raises a JAX leak error.
+    # Everything derived from the terms — the unitary, its SELECT branches, the
+    # ancilla layouts and templates, the coefficients and the normalization — is
+    # built once and cached, and derived quantities that are known at build time
+    # are kept as NumPy values rather than JAX arrays. Both are required:
+    # 1) Without the cache, every enclosing q_switch re-traces the whole
+    # subtree from scratch,
+    # 2) ``prepare`` selects its algorithm by whether its amplitude vector
+    # converts to NumPy.
+    # Derived values that capture a JAX tracer are not cached,
+    # since reusing them in a later trace would leak the tracer.
     #
 
     @property
