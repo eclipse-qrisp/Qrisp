@@ -198,25 +198,37 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
             return alpha
 
         def nc_uniform(J, h):
+            r"""Shared coefficient for the nested-commutator AGP.
+
+            Minimises $S = \mathrm{Tr}[G_\lambda^2]$ for the single merged ansatz operator
+            $A_\lambda = \sum_i A_i$ with
+            $A_i = -2(h_i\sigma^y_i + \sum_{j<i} J_{ij}(\sigma^y_i\sigma^z_j + \sigma^z_i\sigma^y_j))$,
+            against the Hamiltonian the circuit evolves (transverse term $+(1-\lambda)\sum_i\sigma^x_i$).
+
+            The action is quadratic in the coefficient, and every trace evaluates in closed form.
+            The numerator reproduces Eq. (S11) of `BF-DCQO <https://arxiv.org/abs/2405.13898>`_ for a
+            uniform transverse field. All aggregates are $O(N^2)$, so this stays cheap where an
+            explicit minimal-action solve would cost $O(N^4)$.
+            """
+            J_sq = np.asarray(J, dtype=float) ** 2
+            np.fill_diagonal(J_sq, 0.0)
+            h_sq = np.asarray(h, dtype=float) ** 2
+
+            S_h2 = np.sum(h_sq)
+            S_h4 = np.sum(h_sq**2)
+            # sums over unordered pairs i < j
+            S_2 = np.sum(J_sq) / 2
+            S_4 = np.sum(J_sq**2) / 2
+            # sum_{i<j} J_ij**2 (h_i**2 + h_j**2)
+            S_hsqR = np.sum(J_sq * h_sq[None, :])
+            # sum over unordered pairs of distinct edges sharing a site
+            R_i = np.sum(J_sq, axis=1)
+            S_adj = (np.sum(R_i**2) - 2 * S_4) / 2
+
             def alpha(lam):
-                S_hR = sum([sum([J[i][j] ** 2 * (h[i] + h[j]) for i in range(j)]) for j in range(N)])
-                S_hsqR = sum([sum([J[i][j] ** 2 * (h[i] ** 2 + h[j] ** 2) for i in range(j)]) for j in range(N)])
-                S_2 = sum([sum([J[i][j] ** 2 for i in range(j)]) for j in range(N)])
-                S_4 = sum([sum([J[i][j] ** 4 for i in range(j)]) for j in range(N)])
-                R_i_list = [sum([J[i][j] ** 2 if j != i else 0 for j in range(N)]) for i in range(N)]
-                S_Rsq = sum(R_i**2 for R_i in R_i_list)
-                S_h = sum(h)
-                S_hsq = sum(i**2 for i in h)
-
-                nom = S_h + 2 * S_2
-                denom = 4 * (
-                    lam**2 * (S_hsq + 2 * S_hsqR + 6 * S_hR + 2 * S_Rsq + 4 * S_2 - 2 * S_4)
-                    + (1 - lam) ** 2 * (N + 8 * S_2)
-                )
-
-                alph = -nom / denom
-                alph = [alph] * N
-                return alph
+                nom = S_h2 + 2 * S_2
+                denom = 4 * ((S_h2 + 8 * S_2) * (1 - lam) ** 2 + lam**2 * (S_h4 + 2 * S_4 + 6 * S_hsqR + 6 * S_adj))
+                return [nom / denom] * N
 
             return alpha
 
