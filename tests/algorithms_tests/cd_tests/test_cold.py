@@ -31,7 +31,6 @@ from qrisp.operators.qubit.qubit_term import QubitTerm
 
 def test_cold_uniform_magnitude():
     """COLD with uniform AGP coefficients, magnitude objective, finds the known solution."""
-
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -47,7 +46,6 @@ def test_cold_uniform_magnitude():
 
 def test_cold_nonuniform_magnitude():
     """COLD with non-uniform AGP coefficients, magnitude objective, finds the known solution."""
-
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -63,7 +61,6 @@ def test_cold_nonuniform_magnitude():
 
 def test_cold_uniform_cost():
     """COLD with uniform AGP coefficients, expectation-value objective, finds the known solution."""
-
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -79,7 +76,6 @@ def test_cold_uniform_cost():
 
 def test_cold_nonuniform_cost():
     """COLD with non-uniform AGP coefficients, expectation-value objective, finds the known solution."""
-
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -95,7 +91,6 @@ def test_cold_nonuniform_cost():
 
 def test_coldcrab_uniform_cost():
     """COLD with CRAB-randomized pulses, uniform AGP, expectation-value objective, finds the known solution."""
-
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     np.random.seed(42)  # Deterministic for reproducible test results
@@ -111,7 +106,6 @@ def test_coldcrab_uniform_cost():
 
 def test_coldcrab_uniform_magnitude():
     """COLD with CRAB-randomized pulses, uniform AGP, magnitude objective, finds the known solution."""
-
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -127,7 +121,6 @@ def test_coldcrab_uniform_magnitude():
 
 def test_cold_expvalue_method_backend():
     """COLD's expectation-value objective runs against an explicit measurement backend, not just the default statevector path."""
-
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
     problem_args = {"method": "COLD", "uniform": True}  # , "agp_type": "order1"}
@@ -147,7 +140,6 @@ def test_cold_expvalue_method_backend():
 
 def test_cold_full_example():
     """End-to-end COLD run built directly via DCQOProblem (not solve_QUBO's factory helpers)."""
-
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array(
         [

@@ -366,7 +366,9 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
 
 
 def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
-    """Solves a QUBO Matrix using counterdiabatic driving. This method uses the pre-defined COLD/LCD operators
+    """Solves a QUBO Matrix using counterdiabatic driving.
+
+    This method uses the pre-defined COLD/LCD operators
     (hamiltonian, scheduling function, AGP parameters) as described in the tutorial.
     To define your own operators, create a DCQO instance and use the ``run`` method.
 
@@ -381,7 +383,9 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
         approximation, especially at short evolution times. For COLD, ``nc`` requires
         ``"uniform": True``.
     run_args : dict
-        Holds arguments for running the DCQO instance (``N_steps``, ``T``, ``N_opt``, ``CRAB``, ``objective``,``precision``, ``backend``, ``exp_value_backend``).
+        Holds arguments for running the DCQO instance
+        (``N_steps``, ``T``, ``N_opt``, ``CRAB``,``objective``,
+        ``precision``, ``backend``, ``exp_value_backend``).
         All optionas are also listed here: :meth:`DCQOProblem.run`.
 
     Returns
@@ -415,7 +419,19 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
 
     ::
 
-        {'111110': [0.9816, np.float64(-7.3999999999999995)], '111111': [0.0058, np.float64(-6.8999999999999995)], '111100': [0.0048, np.float64(-4.0)], '011110': [0.0032, np.float64(-4.2)], '110110': [0.0022, np.float64(-5.199999999999999)], '111010': [0.0012, np.float64(-6.8)], '001110': [0.0004, np.float64(-3.2)], '011100': [0.0002, np.float64(-2.0)], '110010': [0.0002, np.float64(-3.5999999999999996)], '011010': [0.0002, np.float64(-4.4)], '101110': [0.0002, np.float64(-6.8)]}
+    {
+        '111110': [0.9816, np.float64(-7.3999999999999995)],
+        '111111': [0.0058, np.float64(-6.8999999999999995)],
+        '111100': [0.0048, np.float64(-4.0)],
+        '011110': [0.0032, np.float64(-4.2)],
+        '110110': [0.0022, np.float64(-5.199999999999999)],
+        '111010': [0.0012, np.float64(-6.8)],
+        '001110': [0.0004, np.float64(-3.2)],
+        '011100': [0.0002, np.float64(-2.0)],
+        '110010': [0.0002, np.float64(-3.5999999999999996)],
+        '011010': [0.0002, np.float64(-4.4)],
+        '101110': [0.0002, np.float64(-6.8)]
+    }
 
     """
     method = problem_args["method"]
