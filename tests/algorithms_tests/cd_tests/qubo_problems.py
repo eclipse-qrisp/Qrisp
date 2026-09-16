@@ -1,5 +1,11 @@
 """Example QUBO matrices and their known optimal solutions, indexed by problem size N."""
 
+"""QUBO instances with their known optimal solutions, used as test fixtures.
+
+These used to live in ``qrisp.algorithms.cold.problems`` and were re-exported into the public
+namespace by a star import, although nothing outside the test suite ever consumed them.
+"""
+
 import numpy as np
 
 # N = 3

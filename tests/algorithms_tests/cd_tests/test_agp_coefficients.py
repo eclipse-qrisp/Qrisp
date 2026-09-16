@@ -82,14 +82,19 @@ def _d_hamiltonian(h, J, f_deriv):
     return -Sx + ZZ + Hz + f_deriv * Sz
 
 
+def _trace_of_product(A, B):
+    """Tr(A @ B) without forming the product, which matters once N reaches 10."""
+    return np.sum(A * B.T)
+
+
 def _minimise_action(ansatz, H, dH):
     """Minimise Tr[(dH + i sum_k a_k [A_k, H])**2] over the coefficients a_k.
 
     The action is quadratic in the coefficients, so the minimum solves a linear system.
     """
     K = [1j * (A @ H - H @ A) for A in ansatz]
-    M = np.array([[np.trace(a @ b).real for b in K] for a in K])
-    g = np.array([-np.trace(dH @ k).real for k in K])
+    M = np.array([[_trace_of_product(a, b).real for b in K] for a in K])
+    g = np.array([-_trace_of_product(dH, k).real for k in K])
     return np.linalg.solve(M, g)
 
 
@@ -393,3 +398,38 @@ def test_solve_qubo_rejects_an_unknown_method():
     Q, _, _ = _random_qubo(4, seed=903)
     with pytest.raises(ValueError, match="LCD"):
         solve_QUBO(Q, problem_args={"method": "COLDD", "uniform": True}, run_args={"N_steps": 4, "T": 1})
+
+
+def test_cold_nc_uniform_coefficient_holds_at_ten_qubits():
+    """The closed form is structurally N-independent; this checks it where that could break.
+
+    The aggregates it sums over -- pairs of couplings sharing a site, couplings against
+    non-incident fields -- only become distinguishable at larger N, so a term missing from the
+    derivation could hide at N = 3 or 4 and still show up on a real problem. Ten qubits is the
+    largest size where the 2**N reference is still cheap to build.
+    """
+    N = 10
+    Q, h, J = _random_qubo(N, seed=1010)
+    lam, f, f_deriv = 0.46, -0.37, 0.52
+
+    coeff_func = create_COLD_instance(Q, uniform_AGP_coeffs=True, agp_type="nc")[4]
+    got = np.asarray(coeff_func(lam, f, f_deriv), dtype=float)
+
+    merged = [sum(_nc_site_operators(h, J, N))]
+    exact = _minimise_action(merged, _hamiltonian(h, J, lam, f), _d_hamiltonian(h, J, f_deriv))
+
+    np.testing.assert_allclose(got, np.full(N, exact[0]), rtol=1e-10, atol=1e-12)
+
+
+def test_order1_coefficients_hold_at_ten_qubits():
+    """Same check for the order1 closed forms, uniform and non-uniform."""
+    N = 10
+    Q, h, J = _random_qubo(N, seed=1011)
+    lam, f, f_deriv = 0.33, 0.28, -0.41
+
+    H, dH = _hamiltonian(h, J, lam, f), _d_hamiltonian(h, J, f_deriv)
+    for uniform in (True, False):
+        got = np.asarray(create_COLD_instance(Q, uniform_AGP_coeffs=uniform)[4](lam, f, f_deriv), dtype=float)
+        exact = _minimise_action(_order1_ansatz(N, uniform), H, dH)
+        expected = np.full(N, exact[0]) if uniform else exact
+        np.testing.assert_allclose(got, expected, rtol=1e-10, atol=1e-12)
