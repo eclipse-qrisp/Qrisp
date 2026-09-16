@@ -98,15 +98,13 @@ class DCQOProblem:
         # Create AGP
         A_lam = sum([Y(i) for i in range(N)]) # uniform
 
-        # Function for uniform AGP coefficients
+        # Function for uniform AGP coefficients. This minimizes the action
+        # S = Tr[G^2], G = d_lambda H + i[A_lam, H], for the ansatz A_lam = sum_i Y_i.
         def alpha(lam):
-            A = lam * h
-            B = 1 - lam
-            nom = np.sum(A + 4*B*h)
-            denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-            alph = nom/denom
-            alph = [alph]*N
-            return alph
+            J_sq = np.sum(J**2) - np.sum(np.diag(J)**2)   # sum_{i != j} J_ij**2
+            nom = np.sum(h)
+            denom = 2 * (N * (1 - lam)**2 + np.sum((lam * h)**2) + lam**2 * J_sq)
+            return [-nom/denom]*N
 
         # Simple scheduling function 0 -> 1
         def lam():
@@ -124,7 +122,12 @@ class DCQOProblem:
 
     ::
 
-        {'1011': [0.40630593694063055, np.float64(-2.5)],
+        {'1011': [0.4618, np.float64(-2.5)], '0111': [0.1724, np.float64(-0.6000000000000001)], '0011': [0.131,
+         np.float64(-1.3)], '1001': [0.0588, np.float64(-2.0)], '1111': [0.0514, np.float64(-1.0)], '0101': [0.0304,
+         np.float64(-0.5)], '1101': [0.028, np.float64(-0.9)], '0001': [0.023, np.float64(-0.8)], '1000': [0.0192,
+         np.float64(-1.2)], '0100': [0.006, np.float64(0.3)], '1010': [0.006, np.float64(-2.3)], '0000': [0.0032,
+         np.float64(0.0)], '0010': [0.0032, np.float64(-1.1)], '1100': [0.0026, np.float64(-0.09999999999999998)],
+         '1110': [0.0022, np.float64(-0.8000000000000003)], '0110': [0.0008, np.float64(-0.40000000000000013)]}
          '1111': [0.16247837521624783, np.float64(-0.9999999999999999)],
          '0111': [0.13156868431315685, np.float64(-0.6000000000000001)],
          '1000': [0.06881931180688193, np.float64(-1.2)], '0011': [0.05949940500594993, np.float64(-1.3)],
