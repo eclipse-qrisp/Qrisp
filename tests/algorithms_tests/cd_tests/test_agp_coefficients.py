@@ -301,3 +301,95 @@ def test_every_agp_type_and_uniformity_combination_is_reachable():
     for agp_type, uniform in itertools.product(("order1", "nc"), (True, False)):
         coeff = create_LCD_instance(Q, agp_type=agp_type, uniform_AGP_coeffs=uniform)[4]
         assert np.all(np.isfinite(np.asarray(coeff(0.5), dtype=float)))
+
+
+@pytest.mark.parametrize("N", [3, 4, 5])
+def test_cold_nc_uniform_coefficient_minimises_the_action_with_control_field(N):
+    """The nested-commutator closed form stays variational with the COLD control pulse on.
+
+    f enters H and f_deriv enters d_lambda H, so the coefficient picks up terms in both that are
+    absent from the LCD case. This is what makes agp_type="nc" usable from COLD at all.
+    """
+    Q, h, J = _random_qubo(N, seed=800 + N)
+    lam, f, f_deriv = 0.46, -0.37, 0.52
+
+    coeff_func = create_COLD_instance(Q, uniform_AGP_coeffs=True, agp_type="nc")[4]
+    got = np.asarray(coeff_func(lam, f, f_deriv), dtype=float)
+
+    merged = [sum(_nc_site_operators(h, J, N))]
+    exact = _minimise_action(merged, _hamiltonian(h, J, lam, f), _d_hamiltonian(h, J, f_deriv))
+
+    np.testing.assert_allclose(got, np.full(N, exact[0]), rtol=1e-10, atol=1e-12)
+
+
+def test_cold_nc_reduces_to_the_lcd_coefficient_when_the_control_is_off():
+    """Switching the control pulse off must reproduce the LCD coefficient exactly."""
+    Q, _, _ = _random_qubo(4, seed=900)
+
+    cold = create_COLD_instance(Q, uniform_AGP_coeffs=True, agp_type="nc")[4]
+    lcd = create_LCD_instance(Q, agp_type="nc", uniform_AGP_coeffs=True)[4]
+
+    for lam in (0.1, 0.5, 0.9):
+        np.testing.assert_allclose(cold(lam, 0.0, 0.0), lcd(lam), rtol=1e-12, atol=1e-14)
+
+
+def test_cold_rejects_non_uniform_nested_commutators():
+    """COLD compiles a symbolic control pulse, which the non-uniform nc solver cannot consume.
+
+    Refusing up front beats failing deep inside compile_U_cold with a sympy conversion error.
+    """
+    Q, _, _ = _random_qubo(4, seed=901)
+    with pytest.raises(NotImplementedError, match="uniform_AGP_coeffs=True"):
+        create_COLD_instance(Q, uniform_AGP_coeffs=False, agp_type="nc")
+
+
+def test_invalid_agp_type_is_rejected_by_both_instance_builders():
+    """An unknown agp_type must name the offending value and the valid options."""
+    Q, _, _ = _random_qubo(4, seed=902)
+    with pytest.raises(ValueError, match="bogus"):
+        create_COLD_instance(Q, uniform_AGP_coeffs=True, agp_type="bogus")
+    with pytest.raises(KeyError):
+        create_LCD_instance(Q, agp_type="bogus", uniform_AGP_coeffs=True)
+
+
+@pytest.mark.parametrize("agp_type", ["order1", "nc"])
+def test_solve_qubo_routes_agp_type_to_both_methods(agp_type):
+    """agp_type must reach COLD as well as LCD, and find the optimum at short evolution time."""
+    from qrisp.algorithms.cold import solve_QUBO
+
+    Q = np.array(
+        [
+            [-0.6, 0.2, -0.5, -0.4, -0.6, 0.0],
+            [0.2, -1.0, 0.0, 0.0, 0.0, 0.0],
+            [-0.5, 0.0, -1.2, 0.5, -0.5, 0.0],
+            [-0.4, 0.0, 0.5, -0.8, 0.0, 0.1],
+            [-0.6, 0.0, -0.5, 0.0, -1.2, 0.0],
+            [0.0, 0.0, 0.0, 0.1, 0.0, 0.3],
+        ]
+    )
+    solution = "111110"
+
+    np.random.seed(42)  # Deterministic for reproducible test results
+    res = solve_QUBO(
+        Q,
+        problem_args={"method": "LCD", "uniform": True, "agp_type": agp_type},
+        run_args={"N_steps": 20, "T": 1},
+    )
+    assert solution in list(res.keys())[0:3]
+
+    np.random.seed(42)  # Deterministic for reproducible test results
+    res = solve_QUBO(
+        Q,
+        problem_args={"method": "COLD", "uniform": True, "agp_type": agp_type},
+        run_args={"N_steps": 20, "T": 1, "N_opt": 1, "CRAB": False, "bounds": (-3, 3)},
+    )
+    assert solution in list(res.keys())[0:3]
+
+
+def test_solve_qubo_rejects_an_unknown_method():
+    """A typo in 'method' used to fall through and raise UnboundLocalError."""
+    from qrisp.algorithms.cold import solve_QUBO
+
+    Q, _, _ = _random_qubo(4, seed=903)
+    with pytest.raises(ValueError, match="LCD"):
+        solve_QUBO(Q, problem_args={"method": "COLDD", "uniform": True}, run_args={"N_steps": 4, "T": 1})

@@ -85,7 +85,98 @@ def _order1_agp_coeffs(h, J, lam, f=0.0, f_deriv=0.0, *, uniform=True):  # noqa:
     return [-nom[i] / (2 * (b**2 + c[i] ** 2 + lam**2 * J_sq[i])) for i in range(N)]
 
 
-def create_COLD_instance(Q, uniform_AGP_coeffs):
+def _nc_uniform_agp_coeffs(h, J):
+    r"""Build the shared coefficient of the nested-commutator AGP, as a function of the schedule.
+
+    Minimises the action $S = \mathrm{Tr}[G_\lambda^2]$, $G_\lambda = \partial_\lambda H + i[A_\lambda, H]$,
+    for the single merged ansatz operator $A_\lambda = \sum_i A_i$ with
+
+    .. math::
+        A_i = -2\Big(h_i\sigma^y_i
+              + \sum_{j<i} J_{ij}(\sigma^y_i\sigma^z_j + \sigma^z_i\sigma^y_j)\Big),
+
+    against the Hamiltonian the circuit evolves,
+
+    .. math::
+        H(\lambda) = (1-\lambda)\sum_i \sigma^x_i
+                   + \lambda\Big(\sum_{i<j} J_{ij}\sigma^z_i\sigma^z_j + \sum_i h_i\sigma^z_i\Big)
+                   + f\sum_i \sigma^z_i .
+
+    The action is quadratic in the coefficient and every trace evaluates in closed form, giving
+
+    .. math::
+        \alpha = \frac{S_{h^2} + 2S_2 + \big(f + (1-\lambda)f'\big)S_h}
+                      {4\big[(S_{h^2} + 8S_2)(1-\lambda)^2
+                       + \lambda^2 (S_{h^4} + 2S_4 + 6S_{h^2R} + 6S_{adj})
+                       + 2\lambda (S_{h^3} + 3S_{hR})f
+                       + (S_{h^2} + 2S_2)f^2\big]} .
+
+    The numerator at $f = f' = 0$ reproduces Eq. (S11) of `BF-DCQO
+    <https://arxiv.org/abs/2405.13898>`_ for a uniform transverse field. Every aggregate is
+    $O(N^2)$ to build and the coefficient is then $O(1)$ per timestep, where an explicit
+    minimal-action solve would cost $O(N^4)$.
+
+    Parameters
+    ----------
+    h : np.array
+        Onsite energies of the problem Hamiltonian.
+    J : np.array
+        Coupling energies of the problem Hamiltonian.
+
+    Returns
+    -------
+    alpha : callable
+        A function ``alpha(lam, f=0.0, f_deriv=0.0)`` returning the coefficient for every site.
+        LCD has no control Hamiltonian and calls it with ``f = f_deriv = 0``.
+
+    """
+    N = len(h)
+    h = np.asarray(h, dtype=float)
+    J_sq = np.asarray(J, dtype=float) ** 2
+    np.fill_diagonal(J_sq, 0.0)
+    h_sq = h**2
+
+    S_h = np.sum(h)
+    S_h2 = np.sum(h_sq)
+    S_h3 = np.sum(h**3)
+    S_h4 = np.sum(h_sq**2)
+    # sums over unordered pairs i < j
+    S_2 = np.sum(J_sq) / 2
+    S_4 = np.sum(J_sq**2) / 2
+    # sum_{i<j} J_ij**2 (h_i + h_j) and sum_{i<j} J_ij**2 (h_i**2 + h_j**2)
+    S_hR = np.sum(J_sq * h[None, :])
+    S_hsqR = np.sum(J_sq * h_sq[None, :])
+    # sum over unordered pairs of distinct edges sharing a site
+    R_i = np.sum(J_sq, axis=1)
+    S_adj = (np.sum(R_i**2) - 2 * S_4) / 2
+
+    def alpha(lam, f=0.0, f_deriv=0.0):
+        nom = S_h2 + 2 * S_2 + (f + (1 - lam) * f_deriv) * S_h
+        denom = 4 * (
+            (S_h2 + 8 * S_2) * (1 - lam) ** 2
+            + lam**2 * (S_h4 + 2 * S_4 + 6 * S_hsqR + 6 * S_adj)
+            + 2 * lam * (S_h3 + 3 * S_hR) * f
+            + (S_h2 + 2 * S_2) * f**2
+        )
+        return [nom / denom] * N
+
+    return alpha
+
+
+def _nested_commutator_operators(h, J):
+    """A_i = -2 (h_i Y_i + sum_{j<i} J_ij (Y_i Z_j + Z_i Y_j)), the first-order NC ansatz.
+
+    This is the ansatz of Eq. (1) of `BF-DCQO <https://arxiv.org/abs/2405.13898>`_, split into one
+    operator per site so that non-uniform coefficients can be attached to it.
+    """
+    N = len(h)
+    return [
+        -2 * (h[i] * Y(i) + QubitOperator.sum(J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i)))
+        for i in range(N)
+    ]
+
+
+def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
     """Create the necessary parameters and operators to initialize a DCQO problem instance for COLD.
 
     Parameters
@@ -94,6 +185,13 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
         The QUBO Matrix to be encoded in the Hamiltonian.
     uniform_AGP_coeffs : bool
         Whether to approximate the AGP with uniform or non-uniform coefficients.
+    agp_type : str, optional
+        Which approximation of the AGP to use, either ``order1`` (a sum of single-qubit Y
+        operators) or ``nc`` (first-order nested commutators). The default is ``order1``.
+        ``nc`` is the better approximation and is recommended for short evolution times, and
+        requires ``uniform_AGP_coeffs=True``: the non-uniform coefficients have no closed form and
+        their solver cannot take the symbolic control pulse COLD compiles into the circuit. Use
+        :func:`create_LCD_instance` for the non-uniform nested-commutator ansatz.
 
     Returns
     -------
@@ -114,8 +212,27 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
         return lam_expr
 
     # AGP coefficients
-    def alpha(lam, f, f_deriv):
-        return _order1_agp_coeffs(h, J, lam, f, f_deriv, uniform=uniform_AGP_coeffs)
+    if agp_type == "order1":
+
+        def alpha(lam, f, f_deriv):
+            return _order1_agp_coeffs(h, J, lam, f, f_deriv, uniform=uniform_AGP_coeffs)
+
+    elif agp_type == "nc" and uniform_AGP_coeffs:
+        alpha = _nc_uniform_agp_coeffs(h, J)
+
+    elif agp_type == "nc":
+        # Non-uniform nested-commutator coefficients have no closed form; they need the explicit
+        # minimal-action solve in solve_alpha, which works on numpy arrays. COLD's exp_value
+        # objective compiles a parametrized circuit and passes sympy Symbols as f and f_deriv,
+        # which that solver cannot consume. Refuse rather than fail deep inside the compile.
+        raise NotImplementedError(
+            "agp_type='nc' with uniform_AGP_coeffs=False is not supported for COLD. Use "
+            "uniform_AGP_coeffs=True, which has a closed-form coefficient, or run the "
+            "non-uniform nested-commutator ansatz with method='LCD'."
+        )
+
+    else:
+        raise ValueError(f"{agp_type} is not a valid option as agp_type. Valid options are 'order1' and 'nc'.")
 
     # Initial Hamiltonian
     H_init = 1 * sum([X(i) for i in range(N)])
@@ -128,11 +245,13 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
         )
     )
 
-    # AGP as function of alpha
-    if uniform_AGP_coeffs:
-        A_lam = sum([Y(i) for i in range(N)])
+    # AGP as function of alpha. A single QubitOperator signals uniform coefficients to
+    # DCQOProblem, a list of them one coefficient per site.
+    if agp_type == "order1":
+        A_lam = sum([Y(i) for i in range(N)]) if uniform_AGP_coeffs else [Y(i) for i in range(N)]
     else:
-        A_lam = [Y(i) for i in range(N)]
+        site_operators = _nested_commutator_operators(h, J)
+        A_lam = QubitOperator.sum(site_operators) if uniform_AGP_coeffs else site_operators
 
     # Control Hamiltonian
     H_control = sum([Z(i) for i in range(N)])
@@ -172,11 +291,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
             return A_lam
 
         def nested_commutators(J, h):
-            A_lam = [
-                -2 * (h[i] * Y(i) + QubitOperator.sum(J[i][j] * (Y(i) * Z(j) + Z(i) * Y(j)) for j in range(i)))
-                for i in range(N)
-            ]
-            return A_lam
+            return _nested_commutator_operators(h, J)
 
         builders = {"order1": order1(), "nc": nested_commutators(J, h)}
 
@@ -198,39 +313,8 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
             return alpha
 
         def nc_uniform(J, h):
-            r"""Shared coefficient for the nested-commutator AGP.
-
-            Minimises $S = \mathrm{Tr}[G_\lambda^2]$ for the single merged ansatz operator
-            $A_\lambda = \sum_i A_i$ with
-            $A_i = -2(h_i\sigma^y_i + \sum_{j<i} J_{ij}(\sigma^y_i\sigma^z_j + \sigma^z_i\sigma^y_j))$,
-            against the Hamiltonian the circuit evolves (transverse term $+(1-\lambda)\sum_i\sigma^x_i$).
-
-            The action is quadratic in the coefficient, and every trace evaluates in closed form.
-            The numerator reproduces Eq. (S11) of `BF-DCQO <https://arxiv.org/abs/2405.13898>`_ for a
-            uniform transverse field. All aggregates are $O(N^2)$, so this stays cheap where an
-            explicit minimal-action solve would cost $O(N^4)$.
-            """
-            J_sq = np.asarray(J, dtype=float) ** 2
-            np.fill_diagonal(J_sq, 0.0)
-            h_sq = np.asarray(h, dtype=float) ** 2
-
-            S_h2 = np.sum(h_sq)
-            S_h4 = np.sum(h_sq**2)
-            # sums over unordered pairs i < j
-            S_2 = np.sum(J_sq) / 2
-            S_4 = np.sum(J_sq**2) / 2
-            # sum_{i<j} J_ij**2 (h_i**2 + h_j**2)
-            S_hsqR = np.sum(J_sq * h_sq[None, :])
-            # sum over unordered pairs of distinct edges sharing a site
-            R_i = np.sum(J_sq, axis=1)
-            S_adj = (np.sum(R_i**2) - 2 * S_4) / 2
-
-            def alpha(lam):
-                nom = S_h2 + 2 * S_2
-                denom = 4 * ((S_h2 + 8 * S_2) * (1 - lam) ** 2 + lam**2 * (S_h4 + 2 * S_4 + 6 * S_hsqR + 6 * S_adj))
-                return [nom / denom] * N
-
-            return alpha
+            # LCD has no control Hamiltonian, so the coefficient is evaluated at f = f_deriv = 0.
+            return _nc_uniform_agp_coeffs(h, J)
 
         def nc_nonuniform(J, h):
             def alpha(lam):
@@ -291,7 +375,11 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     Q : np.array
         QUBO Matrix to solve.
     problem_args : dict
-        Holds arguments for DCQO problem creation (``method``: str ("COLD"/"LCD"), ``uniform``: bool).
+        Holds arguments for DCQO problem creation (``method``: str ("COLD"/"LCD"), ``uniform``: bool,
+        ``agp_type``: str ("order1"/"nc"), optional, default "order1"). ``agp_type`` applies to both
+        methods. ``nc`` approximates the AGP with first-order nested commutators and is the better
+        approximation, especially at short evolution times. For COLD, ``nc`` requires
+        ``"uniform": True``.
     run_args : dict
         Holds arguments for running the DCQO instance (``N_steps``, ``T``, ``N_opt``, ``CRAB``, ``objective``,``precision``, ``backend``, ``exp_value_backend``).
         All optionas are also listed here: :meth:`DCQOProblem.run`.
@@ -310,16 +398,16 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
         import numpy as np
         from qrisp.algorithms.cold import solve_QUBO
 
-        Q = np.array([[-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],
-                    [0.6, -0.9,  0.5, 0.0, 0.0, 0.0],
-                    [0.4, 0.5, -1.0, -0.6, 0.0, 0.0],
-                    [0.0, 0.0, -0.6, -0.5, 0.6, 0.0],
-                    [0.0, 0.0, 0.0, 0.6, -0.3, 0.5],
-                    [0.0, 0.0, 0.0, 0.0, 0.5, -0.4]])
+        Q = np.array([[-0.6,  0.2, -0.5, -0.4, -0.6,  0.0],
+                    [ 0.2, -1.0,  0.0,  0.0,  0.0,  0.0],
+                    [-0.5,  0.0, -1.2,  0.5, -0.5,  0.0],
+                    [-0.4,  0.0,  0.5, -0.8,  0.0,  0.1],
+                    [-0.6,  0.0, -0.5,  0.0, -1.2,  0.0],
+                    [ 0.0,  0.0,  0.0,  0.1,  0.0,  0.3]])
 
         problem_args = {"method": "COLD", "uniform": False}
 
-        run_args = {"N_steps": 4, "T": 8, "N_opt": 1, "CRAB": False, "bounds": (-3, 3)}
+        run_args = {"N_steps": 20, "T": 1, "N_opt": 1, "CRAB": False, "bounds": (-3, 3)}
 
         result = solve_QUBO(Q, problem_args, run_args)
 
@@ -327,22 +415,21 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
 
     ::
 
-        {'111111': [0.368, np.float64(-0.20000000000000018)], '111101': [0.1722, np.float64(-2.1000000000000005)], '111011': [0.158, np.float64(0.2999999999999999)], '110111': [0.0622, np.float64(0.19999999999999984)], '111100': [0.0448, np.float64(-1.7000000000000002)], '011111': [0.0372, np.float64(-1.1)], '110101': [0.0208, np.float64(-1.7000000000000002)], '011101': [0.0184, np.float64(-3.0)], '111110': [0.0166, np.float64(-0.8000000000000002)], '011011': [0.0164, np.float64(-0.6000000000000001)], '111001': [0.0154, np.float64(-0.40000000000000013)], '001111': [0.0078, np.float64(-1.2000000000000002)], '110011': [0.0062, np.float64(-0.5000000000000002)], '010111': [0.0062, np.float64(0.09999999999999998)], '100111': [0.006, np.float64(-0.10000000000000009)], '110100': [0.0054, np.float64(-1.3000000000000003)], '110001': [0.005, np.float64(-1.2000000000000002)], '100101': [0.0034, np.float64(-2.0)], '011100': [0.0032, np.float64(-2.6)], '001101': [0.0032, np.float64(-3.1)], '111010': [0.003, np.float64(-0.30000000000000004)], '110110': [0.0026, np.float64(-0.4000000000000002)], '001011': [0.0024, np.float64(-0.7000000000000001)], '111000': [0.0014, np.float64(-1.1102230246251565e-16)], '010001': [0.0012, np.float64(-1.3)], '010101': [0.0012, np.float64(-1.7999999999999998)], '010011': [0.0012, np.float64(-0.6000000000000001)], '000111': [0.0012, np.float64(1.0)], '011110': [0.001, np.float64(-1.7000000000000002)], '110000': [0.0008, np.float64(-0.8000000000000002)], '011001': [0.0008, np.float64(-1.3)], '101101': [0.0008, np.float64(-3.4)], '101111': [0.0008, np.float64(-1.5)], '100100': [0.0006, np.float64(-1.6)], '001100': [0.0006, np.float64(-2.7)], '000101': [0.0006, np.float64(-0.9)], '100011': [0.0006, np.float64(-0.8000000000000002)], '011000': [0.0004, np.float64(-0.9)], '000100': [0.0004, np.float64(-0.5)], '010100': [0.0004, np.float64(-1.4)], '101100': [0.0004, np.float64(-3.0)], '001110': [0.0004, np.float64(-1.8000000000000003)], '101011': [0.0004, np.float64(-1.0)], '100001': [0.0002, np.float64(-1.5)], '000011': [0.0002, np.float64(0.3)]}
+        {'111110': [0.9816, np.float64(-7.3999999999999995)], '111111': [0.0058, np.float64(-6.8999999999999995)], '111100': [0.0048, np.float64(-4.0)], '011110': [0.0032, np.float64(-4.2)], '110110': [0.0022, np.float64(-5.199999999999999)], '111010': [0.0012, np.float64(-6.8)], '001110': [0.0004, np.float64(-3.2)], '011100': [0.0002, np.float64(-2.0)], '110010': [0.0002, np.float64(-3.5999999999999996)], '011010': [0.0002, np.float64(-4.4)], '101110': [0.0002, np.float64(-6.8)]}
 
     """
     method = problem_args["method"]
+    # Both methods accept the AGP type; 1st order is the default.
+    agp_type = problem_args.get("agp_type", "order1")
 
     if method == "LCD":
-        # Check if AGP type is specified, otherwise use 1st order
-        try:
-            agp_type = problem_args["agp_type"]
-        except KeyError:
-            agp_type = "order1"
-
         problem_operators = create_LCD_instance(Q, agp_type=agp_type, uniform_AGP_coeffs=problem_args["uniform"])
 
     elif method == "COLD":
-        problem_operators = create_COLD_instance(Q, uniform_AGP_coeffs=problem_args["uniform"])
+        problem_operators = create_COLD_instance(Q, uniform_AGP_coeffs=problem_args["uniform"], agp_type=agp_type)
+
+    else:
+        raise ValueError(f"{method} is not a valid option as method. Valid options are 'LCD' and 'COLD'.")
 
     # Create qarg and problem instrance
     qarg = QuantumVariable(Q.shape[0])
