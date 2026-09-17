@@ -22,7 +22,7 @@ from scipy.optimize import Bounds, minimize
 
 from qrisp import h, z
 from qrisp.algorithms.cold._fast_trotterization import fast_trotterization
-from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
+from qrisp.algorithms.cold.AGP_params import _solve_alpha_gamma_chi
 from qrisp.operators import QubitOperator
 
 
@@ -69,7 +69,7 @@ class DCQOProblem:
 
         import numpy as np
         import sympy as sp
-        from qrisp.operators.qubit import X, Y, Z
+        from qrisp.operators.qubit import QubitOperator, X, Y, Z
         from qrisp.algorithms.cold import DCQOProblem
         from qrisp import QuantumVariable
 
@@ -98,15 +98,13 @@ class DCQOProblem:
         # Create AGP
         A_lam = sum([Y(i) for i in range(N)]) # uniform
 
-        # Function for uniform AGP coefficients
+        # Function for uniform AGP coefficients. This minimizes the action
+        # S = Tr[G^2], G = d_lambda H + i[A_lam, H], for the ansatz A_lam = sum_i Y_i.
         def alpha(lam):
-            A = lam * h
-            B = 1 - lam
-            nom = np.sum(A + 4*B*h)
-            denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-            alph = nom/denom
-            alph = [alph]*N
-            return alph
+            J_sq = np.sum(J**2) - np.sum(np.diag(J)**2)   # sum_{i != j} J_ij**2
+            nom = np.sum(h)
+            denom = 2 * (N * (1 - lam)**2 + np.sum((lam * h)**2) + lam**2 * J_sq)
+            return [-nom/denom]*N
 
         # Simple scheduling function 0 -> 1
         def lam():
@@ -124,21 +122,27 @@ class DCQOProblem:
 
     ::
 
-        {'1011': [0.40630593694063055, np.float64(-2.5)],
-         '1111': [0.16247837521624783, np.float64(-0.9999999999999999)],
-         '0111': [0.13156868431315685, np.float64(-0.6000000000000001)],
-         '1000': [0.06881931180688193, np.float64(-1.2)], '0011': [0.05949940500594993, np.float64(-1.3)],
-         '1010': [0.04499955000449995, np.float64(-2.3)], '1101': [0.04084959150408495, np.float64(-0.9)],
-         '0110': [0.019769802301976978, np.float64(-0.40000000000000013)],
-         '1100': [0.01815981840181598, np.float64(-0.09999999999999998)],
-         '0100': [0.013679863201367985, np.float64(0.3)], '0001': [0.010399896001039988, np.float64(-0.8)],
-         '0000': [0.007659923400765992, np.float64(0.0)],
-         '1110': [0.006329936700632993, np.float64(-0.7999999999999999)],
-         '0101': [0.0052899471005289946, np.float64(-0.5)], '1001': [0.0024299757002429973, np.float64(-2.0)],
-         '0010': [0.0017599824001759982, np.float64(-1.1)]}
+        {
+            '1011': [0.4618, np.float64(-2.5)],
+            '0111': [0.1724, np.float64(-0.6000000000000001)],
+            '0011': [0.131, np.float64(-1.3)],
+            '1001': [0.0588, np.float64(-2.0)],
+            '1111': [0.0514, np.float64(-1.0)],
+            '0101': [0.0304, np.float64(-0.5)],
+            '1101': [0.028, np.float64(-0.9)],
+            '0001': [0.023, np.float64(-0.8)],
+            '1000': [0.0192, np.float64(-1.2)],
+            '0100': [0.006, np.float64(0.3)],
+            '1010': [0.006, np.float64(-2.3)],
+            '0000': [0.0032, np.float64(0.0)],
+            '0010': [0.0032, np.float64(-1.1)],
+            '1100': [0.0026, np.float64(-0.09999999999999998)],
+            '1110': [0.0022, np.float64(-0.8000000000000003)],
+            '0110': [0.0008, np.float64(-0.40000000000000013)]
+        }
 
     We get a dictionary where the key is the quantum state and the values are lists of [probability, cost].
-    So our most likely result is '1011' with probabilty 0.4 and the QUBO cost $x^T Q x = -2.5$.
+    So our most likely result is '1011' with probability around 0.4 and the QUBO cost $x^T Q x = -2.5$.
 
     .. |dcqo_link| raw:: html
 
@@ -221,11 +225,18 @@ class DCQOProblem:
         self.lam = lam
         self.lamdot = lamdot
 
-        # Functions for t = g(lam) and derivative (later needed for opt pulses)
+        # Inverse scheduling function g(lam) and its derivative (later needed for opt pulses)
         # must only be calculated for COLD, not for LCD
         if method == "COLD":
-            g = t_list  # g(lam[s]) = t[s] by definition
-            g_deriv = 1.0 / lamdot  # dt/dlambda = 1 / (dlambda/dt)
+            # g is the *normalized* time t/T (dimensionless), as in Eq. (18) of
+            # https://doi.org/10.1103/PRXQuantum.4.010312. Since lam[s] = lam_func(t[s], T) by
+            # construction, the inverse is simply t[s]/T for any monotonic lam_func -- the closed
+            # form of g is only needed to evaluate it off the time grid.
+            g = t_list / T
+            # lam is dimensionless but lamdot = dlam/dt is not: lam depends on t and T only through
+            # t/T, so lamdot scales as 1/T. The chain rule in _precompute_opt_pulses needs
+            # dg/dlam = (1/T) * dt/dlam, which is dimensionless.
+            g_deriv = 1.0 / (T * lamdot)
 
             self.g = g
             self.g_deriv = g_deriv
@@ -464,8 +475,8 @@ class DCQOProblem:
         options : dict
             A dictionary of solver options.
         objective : str
-            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``, ``agp_coeff_amplitude``).
-            Default is ``exp_value``.
+            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``). Required --
+            this parameter is positional here; :meth:`run` is what applies the ``exp_value`` default.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
         precision : float, optional
@@ -481,7 +492,7 @@ class DCQOProblem:
             The optimized parameters of the problem instance.
 
         """
-        # Different objective functions: exp_value, agp coeffs magnitude, agp coeffs amplitude
+        # Different objective functions: exp_value, agp coeffs magnitude
         if objective == "exp_value" and exp_value_backend is None:
             n_qubits = len(qarg)
             num_states = 1 << n_qubits
@@ -541,13 +552,16 @@ class DCQOProblem:
 
             return exp_val
 
-        # Magnitude of the AGP coefficients (coeffs are treated as uniform for simplification)
-        # (sum of absolute values for each timestep)
+        # Magnitude of the AGP coefficients (sum of absolute values over all timesteps)
         def objective_mag(params, CRAB):
             # Precompute opt pulses to be multiplied with opt params.
             # Must match the midpoint grid used in _precompute_timegrid.
             t_list = (np.arange(int(N_steps)) + 0.5) * (T / N_steps)
             sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
+            # Match the AGP ansatz the circuit actually applies: apply_cold_hamiltonian uses a single
+            # merged A_lam (QubitOperator) for uniform coefficients and one operator per qubit (list)
+            # for non-uniform ones.
+            uniform = isinstance(self.A_lam, QubitOperator)
             magnitude = 0
 
             # Iterate through lambda(t)
@@ -555,8 +569,12 @@ class DCQOProblem:
                 # Get alpha, f and f_deriv for the timestep
                 f = sin_matrix[s, :] @ params
                 f_deriv = cos_matrix[s, :] @ params
-                alpha, gamma, chi = solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=True)
-                magnitude += np.abs(gamma[0]) + np.abs(chi[0]) + np.abs(alpha[0])
+                alpha, gamma, chi = _solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=uniform)
+                # Weight by lamdot: the AGP enters the circuit as dt*lamdot[s]*alpha (see
+                # apply_cold_hamiltonian), and alpha itself diverges as 1/lamdot through f_deriv.
+                # Without this factor the sum is dominated by the first and last timestep, whose
+                # actual contribution to the evolution is negligible, and it grows as N_steps**3.
+                magnitude += self.lamdot[s] * (np.sum(np.abs(alpha)) + np.sum(np.abs(gamma)) + np.sum(np.abs(chi)))
 
             return magnitude
 
@@ -570,7 +588,10 @@ class DCQOProblem:
             objective = objective_mag
 
         else:
-            raise ValueError("{objective} is not a valid option as objective.")
+            raise ValueError(
+                f"{objective} is not a valid option as objective. "
+                "Valid options are 'exp_value' and 'agp_coeff_magnitude'."
+            )
 
         res = minimize(
             objective,
@@ -609,7 +630,7 @@ class DCQOProblem:
         N_opt=None,
         CRAB=False,
         optimizer="COBYQA",
-        objective="agp_coeff_magnitude",
+        objective="exp_value",
         bounds=(),
         options={},
         mes_kwargs={},
@@ -643,8 +664,11 @@ class DCQOProblem:
         options : dict
             A dictionary of solver options.
         objective : str
-            The objective function to be minimized (``exp_value``, ``agp_coeff_magnitude``). Default is
-            ``agp_coeff_magnitude``.
+            The objective function to be minimized. Default is ``exp_value``, which optimizes the control
+            pulses against the measured energy of ``H_prob`` and is the reliable choice. The alternative
+            ``agp_coeff_magnitude`` is a cheap proxy that minimizes the magnitude of the AGP coefficients
+            instead of running the circuit; it avoids the simulation cost but can select controls that
+            perform worse than no control at all, so opt into it only deliberately.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
         options : dict
