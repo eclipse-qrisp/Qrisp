@@ -262,6 +262,8 @@ New Tutorials/ Updated Documentation
 API Changes
 -----------
 
+* Added meta type for QuantumEnums with auto encoding/decoding.
+  (`PR #713 <https://github.com/eclipse-qrisp/Qrisp/pull/713>`_).
 * :class:`~qrisp.interface.IQMBackend` is now a delegation shim that
   re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` (IQM client).
   The backend implementation and its tests live in the IQM client
@@ -391,5 +393,6 @@ First Time Contributors 🎉
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
+* `Cedric <https://github.com/CedricSchacht>`_
 * `micpap25 <https://github.com/micpap25>`_
 * `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_
