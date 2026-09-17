@@ -21,7 +21,8 @@ import itertools
 import numpy as np
 import sympy as sp
 
-from qrisp.algorithms.cold import DCQOProblem, solve_alpha
+from qrisp.algorithms.cold import DCQOProblem
+from qrisp.algorithms.cold.AGP_params import _solve_alpha
 from qrisp.core import QuantumVariable
 from qrisp.operators.qubit import QubitOperator, X, Y, Z
 
@@ -158,6 +159,8 @@ def _nc_uniform_agp_coeffs(h, J):
             + 2 * lam * (S_h3 + 3 * S_hR) * f
             + (S_h2 + 2 * S_2) * f**2
         )
+        if denom == 0:
+            return [0.0] * N
         return [nom / denom] * N
 
     return alpha
@@ -222,7 +225,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
 
     elif agp_type == "nc":
         # Non-uniform nested-commutator coefficients have no closed form; they need the explicit
-        # minimal-action solve in solve_alpha, which works on numpy arrays. COLD's exp_value
+        # minimal-action solve in _solve_alpha, which works on numpy arrays. COLD's exp_value
         # objective compiles a parametrized circuit and passes sympy Symbols as f and f_deriv,
         # which that solver cannot consume. Refuse rather than fail deep inside the compile.
         raise NotImplementedError(
@@ -318,7 +321,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
 
         def nc_nonuniform(J, h):
             def alpha(lam):
-                alph = solve_alpha(h, J, lam)
+                alph = _solve_alpha(h, J, lam)
                 return alph
 
             return alpha
@@ -377,16 +380,18 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     Q : np.array
         QUBO Matrix to solve.
     problem_args : dict
-        Holds arguments for DCQO problem creation (``method``: str ("COLD"/"LCD"), ``uniform``: bool,
-        ``agp_type``: str ("order1"/"nc"), optional, default "order1"). ``agp_type`` applies to both
-        methods. ``nc`` approximates the AGP with first-order nested commutators and is the better
-        approximation, especially at short evolution times. For COLD, ``nc`` requires
-        ``"uniform": True``.
+        Holds arguments for DCQO problem creation:
+
+        * ``method`` : str -- "COLD" or "LCD".
+        * ``uniform`` : bool.
+        * ``agp_type`` : str, optional -- "order1" (default) or "nc". Applies to both
+          methods. ``nc`` approximates the AGP with first-order nested commutators and is
+          the better approximation, especially at short evolution times. For COLD, ``nc``
+          requires ``"uniform": True``.
     run_args : dict
-        Holds arguments for running the DCQO instance
-        (``N_steps``, ``T``, ``N_opt``, ``CRAB``,``objective``,
-        ``precision``, ``backend``, ``exp_value_backend``).
-        All optionas are also listed here: :meth:`DCQOProblem.run`.
+        Holds arguments for running the DCQO instance (``N_steps``, ``T``, ``N_opt``,
+        ``CRAB``, ``objective``, ``precision``, ``backend``, ``exp_value_backend``).
+        All options are also listed here: :meth:`DCQOProblem.run`.
 
     Returns
     -------
@@ -419,19 +424,19 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
 
     ::
 
-    {
-        '111110': [0.9816, np.float64(-7.3999999999999995)],
-        '111111': [0.0058, np.float64(-6.8999999999999995)],
-        '111100': [0.0048, np.float64(-4.0)],
-        '011110': [0.0032, np.float64(-4.2)],
-        '110110': [0.0022, np.float64(-5.199999999999999)],
-        '111010': [0.0012, np.float64(-6.8)],
-        '001110': [0.0004, np.float64(-3.2)],
-        '011100': [0.0002, np.float64(-2.0)],
-        '110010': [0.0002, np.float64(-3.5999999999999996)],
-        '011010': [0.0002, np.float64(-4.4)],
-        '101110': [0.0002, np.float64(-6.8)]
-    }
+        {
+            '111110': [0.9816, np.float64(-7.3999999999999995)],
+            '111111': [0.0058, np.float64(-6.8999999999999995)],
+            '111100': [0.0048, np.float64(-4.0)],
+            '011110': [0.0032, np.float64(-4.2)],
+            '110110': [0.0022, np.float64(-5.199999999999999)],
+            '111010': [0.0012, np.float64(-6.8)],
+            '001110': [0.0004, np.float64(-3.2)],
+            '011100': [0.0002, np.float64(-2.0)],
+            '110010': [0.0002, np.float64(-3.5999999999999996)],
+            '011010': [0.0002, np.float64(-4.4)],
+            '101110': [0.0002, np.float64(-6.8)]
+        }
 
     """
     method = problem_args["method"]

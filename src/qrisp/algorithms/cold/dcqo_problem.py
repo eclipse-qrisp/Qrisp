@@ -22,7 +22,7 @@ from scipy.optimize import Bounds, minimize
 
 from qrisp import h, z
 from qrisp.algorithms.cold._fast_trotterization import fast_trotterization
-from qrisp.algorithms.cold.AGP_params import solve_alpha_gamma_chi
+from qrisp.algorithms.cold.AGP_params import _solve_alpha_gamma_chi
 from qrisp.operators import QubitOperator
 
 
@@ -122,26 +122,27 @@ class DCQOProblem:
 
     ::
 
-        {'1011': [0.4618, np.float64(-2.5)], '0111': [0.1724, np.float64(-0.6000000000000001)], '0011': [0.131,
-         np.float64(-1.3)], '1001': [0.0588, np.float64(-2.0)], '1111': [0.0514, np.float64(-1.0)], '0101': [0.0304,
-         np.float64(-0.5)], '1101': [0.028, np.float64(-0.9)], '0001': [0.023, np.float64(-0.8)], '1000': [0.0192,
-         np.float64(-1.2)], '0100': [0.006, np.float64(0.3)], '1010': [0.006, np.float64(-2.3)], '0000': [0.0032,
-         np.float64(0.0)], '0010': [0.0032, np.float64(-1.1)], '1100': [0.0026, np.float64(-0.09999999999999998)],
-         '1110': [0.0022, np.float64(-0.8000000000000003)], '0110': [0.0008, np.float64(-0.40000000000000013)]}
-         '1111': [0.16247837521624783, np.float64(-0.9999999999999999)],
-         '0111': [0.13156868431315685, np.float64(-0.6000000000000001)],
-         '1000': [0.06881931180688193, np.float64(-1.2)], '0011': [0.05949940500594993, np.float64(-1.3)],
-         '1010': [0.04499955000449995, np.float64(-2.3)], '1101': [0.04084959150408495, np.float64(-0.9)],
-         '0110': [0.019769802301976978, np.float64(-0.40000000000000013)],
-         '1100': [0.01815981840181598, np.float64(-0.09999999999999998)],
-         '0100': [0.013679863201367985, np.float64(0.3)], '0001': [0.010399896001039988, np.float64(-0.8)],
-         '0000': [0.007659923400765992, np.float64(0.0)],
-         '1110': [0.006329936700632993, np.float64(-0.7999999999999999)],
-         '0101': [0.0052899471005289946, np.float64(-0.5)], '1001': [0.0024299757002429973, np.float64(-2.0)],
-         '0010': [0.0017599824001759982, np.float64(-1.1)]}
+        {
+            '1011': [0.4618, np.float64(-2.5)],
+            '0111': [0.1724, np.float64(-0.6000000000000001)],
+            '0011': [0.131, np.float64(-1.3)],
+            '1001': [0.0588, np.float64(-2.0)],
+            '1111': [0.0514, np.float64(-1.0)],
+            '0101': [0.0304, np.float64(-0.5)],
+            '1101': [0.028, np.float64(-0.9)],
+            '0001': [0.023, np.float64(-0.8)],
+            '1000': [0.0192, np.float64(-1.2)],
+            '0100': [0.006, np.float64(0.3)],
+            '1010': [0.006, np.float64(-2.3)],
+            '0000': [0.0032, np.float64(0.0)],
+            '0010': [0.0032, np.float64(-1.1)],
+            '1100': [0.0026, np.float64(-0.09999999999999998)],
+            '1110': [0.0022, np.float64(-0.8000000000000003)],
+            '0110': [0.0008, np.float64(-0.40000000000000013)]
+        }
 
     We get a dictionary where the key is the quantum state and the values are lists of [probability, cost].
-    So our most likely result is '1011' with probabilty 0.4 and the QUBO cost $x^T Q x = -2.5$.
+    So our most likely result is '1011' with probability around 0.4 and the QUBO cost $x^T Q x = -2.5$.
 
     .. |dcqo_link| raw:: html
 
@@ -568,7 +569,7 @@ class DCQOProblem:
                 # Get alpha, f and f_deriv for the timestep
                 f = sin_matrix[s, :] @ params
                 f_deriv = cos_matrix[s, :] @ params
-                alpha, gamma, chi = solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=uniform)
+                alpha, gamma, chi = _solve_alpha_gamma_chi(self.h, self.J, self.lam[s], f, f_deriv, uniform=uniform)
                 # Weight by lamdot: the AGP enters the circuit as dt*lamdot[s]*alpha (see
                 # apply_cold_hamiltonian), and alpha itself diverges as 1/lamdot through f_deriv.
                 # Without this factor the sum is dominated by the first and last timestep, whose

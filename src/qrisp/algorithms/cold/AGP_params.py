@@ -1,3 +1,19 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
 """Computes adiabatic gauge potential (AGP) coefficients for counterdiabatic driving via Pauli algebra."""
 
 from collections import defaultdict
@@ -7,7 +23,7 @@ import numpy as np
 # ----- Pauli algebra (bitwise) -----
 
 
-def pauli_mul(p1, p2):
+def _pauli_mul(p1, p2):
     """Multiply two Pauli strings encoded as (X_mask, Z_mask).
 
     Returns (result_pauli, phase).
@@ -24,7 +40,7 @@ def pauli_mul(p1, p2):
     return (X3, Z3), phase
 
 
-def commutator_dict(A, B):
+def _commutator_dict(A, B):
     """Compute commutator of A and B.
 
     A, B are dicts: { (X,Z) : coeff }
@@ -34,8 +50,8 @@ def commutator_dict(A, B):
 
     for p1, c1 in A.items():
         for p2, c2 in B.items():
-            pauli_12, phase_12 = pauli_mul(p1, p2)
-            pauli_21, phase_21 = pauli_mul(p2, p1)
+            pauli_12, phase_12 = _pauli_mul(p1, p2)
+            pauli_21, phase_21 = _pauli_mul(p2, p1)
 
             out[pauli_12] += c1 * c2 * phase_12
             out[pauli_21] -= c2 * c1 * phase_21
@@ -44,7 +60,7 @@ def commutator_dict(A, B):
     return {p: c for p, c in out.items() if c != 0}
 
 
-def trace(O1, O2):
+def _trace(O1, O2):
     """Compute trace of D1*D2 (both pauli operators).
 
     Tr( O1 O2 ) = 2^N * sum_k coeff1(k) * coeff2(k), Pauli strings orthogonal.
@@ -64,7 +80,7 @@ def trace(O1, O2):
 # ----- Helpers to build strings -----
 
 
-def pauli_from_ops(ops):
+def _pauli_from_ops(ops):
     """Create pauli dict from operator string dict.
 
     ops: dict {index: pauli_int}
@@ -86,7 +102,7 @@ def pauli_from_ops(ops):
 # ----- General builders for linear system -----
 
 
-def build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
+def _build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
     """Create Hamiltonian H and derivative dH/dlam.
 
     Using from model values h, J, lam. B_val and Bp_val.
@@ -103,7 +119,7 @@ def build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
     # sign describes a Hamiltonian unitarily equivalent under prod_i Z_i, under which
     # sigma^y -> -sigma^y, and therefore returns every AGP coefficient negated.
     for i in range(N):
-        pX = pauli_from_ops({i: 1})
+        pX = _pauli_from_ops({i: 1})
         H[pX] += 1 - lam
         dH[pX] += -1.0
 
@@ -112,7 +128,7 @@ def build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
         for j in range(i + 1, N):
             Jij = J[i, j]
             if Jij != 0:
-                pZZ = pauli_from_ops({i: 3, j: 3})
+                pZZ = _pauli_from_ops({i: 3, j: 3})
                 H[pZZ] += lam * Jij
                 dH[pZZ] += Jij
 
@@ -120,21 +136,21 @@ def build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
     for i in range(N):
         hi = h[i]
         if hi != 0:
-            pZ = pauli_from_ops({i: 3})
+            pZ = _pauli_from_ops({i: 3})
             H[pZ] += lam * hi
             dH[pZ] += hi
 
     # global Z field
     if B_val != 0.0 or Bp_val != 0.0:
         for i in range(N):
-            pZ = pauli_from_ops({i: 3})
+            pZ = _pauli_from_ops({i: 3})
             H[pZ] += B_val
             dH[pZ] += Bp_val
 
     return dict(H), dict(dH)
 
 
-def build_AGP_templates_NC(h, J):
+def _build_AGP_templates_NC(h, J):
     """Build AGP ansatz from nested commutators 1st order.
 
     A_i = -2 [ h_i Y_i + sum_{j<i} J_ij ( Z_i Y_j + Y_i Z_j ) ]
@@ -147,7 +163,7 @@ def build_AGP_templates_NC(h, J):
 
         # -2 h_i Y_i
         if h[i] != 0.0:
-            pY = pauli_from_ops({i: 2})
+            pY = _pauli_from_ops({i: 2})
             A_i[pY] = A_i.get(pY, 0.0) - 2.0 * h[i]
 
         # -2 J_ij (Z_i Y_j + Y_i Z_j)
@@ -156,8 +172,8 @@ def build_AGP_templates_NC(h, J):
             if Jij == 0.0:
                 continue
 
-            pZiYj = pauli_from_ops({i: 3, j: 2})
-            pYiZj = pauli_from_ops({i: 2, j: 3})
+            pZiYj = _pauli_from_ops({i: 3, j: 2})
+            pYiZj = _pauli_from_ops({i: 2, j: 3})
 
             A_i[pZiYj] = A_i.get(pZiYj, 0.0) - 2.0 * Jij
             A_i[pYiZj] = A_i.get(pYiZj, 0.0) - 2.0 * Jij
@@ -167,7 +183,7 @@ def build_AGP_templates_NC(h, J):
     return A
 
 
-def build_AGP_templates(N, uniform=False):
+def _build_AGP_templates(N, uniform=False):
     """Build AGP ansatz for 2nd order with uniform or non-uniform parameters"""
     A = []
 
@@ -175,7 +191,7 @@ def build_AGP_templates(N, uniform=False):
     if not uniform:
         # alpha: Y_i
         for i in range(N):
-            A_i = {pauli_from_ops({i: 2}): 1.0}
+            A_i = {_pauli_from_ops({i: 2}): 1.0}
             A.append(A_i)
 
         # gamma: X/Y
@@ -185,9 +201,9 @@ def build_AGP_templates(N, uniform=False):
                 if j == i:
                     continue
                 if j > i:
-                    A_i[pauli_from_ops({i: 1, j: 2})] += 1.0
+                    A_i[_pauli_from_ops({i: 1, j: 2})] += 1.0
                 else:
-                    A_i[pauli_from_ops({j: 1, i: 2})] += 1.0
+                    A_i[_pauli_from_ops({j: 1, i: 2})] += 1.0
             A.append(dict(A_i))
 
         # chi: Z/Y
@@ -197,9 +213,9 @@ def build_AGP_templates(N, uniform=False):
                 if j == i:
                     continue
                 if j > i:
-                    A_i[pauli_from_ops({i: 3, j: 2})] += 1.0
+                    A_i[_pauli_from_ops({i: 3, j: 2})] += 1.0
                 else:
-                    A_i[pauli_from_ops({j: 3, i: 2})] += 1.0
+                    A_i[_pauli_from_ops({j: 3, i: 2})] += 1.0
             A.append(dict(A_i))
 
     # Uniform case
@@ -209,27 +225,27 @@ def build_AGP_templates(N, uniform=False):
         A_chi = defaultdict(complex)
 
         for i in range(N):
-            A_alpha[pauli_from_ops({i: 2})] += 1.0
+            A_alpha[_pauli_from_ops({i: 2})] += 1.0
             for j in range(N):
                 if j == i:
                     continue
-                A_gamma[pauli_from_ops({min(i, j): 1, max(i, j): 2})] += 1.0
-                A_chi[pauli_from_ops({min(i, j): 3, max(i, j): 2})] += 1.0
+                A_gamma[_pauli_from_ops({min(i, j): 1, max(i, j): 2})] += 1.0
+                A_chi[_pauli_from_ops({min(i, j): 3, max(i, j): 2})] += 1.0
 
         A = [dict(A_alpha), dict(A_gamma), dict(A_chi)]
 
     return A
 
 
-def build_Hg_from_templates(h, J, lam, B_val, Bp_val, A_lam):  # noqa: PLR0913, PLR0917
+def _build_Hg_from_templates(h, J, lam, B_val, Bp_val, A_lam):  # noqa: PLR0913, PLR0917
     """Given templates A_lam (dict operators), build:
 
     C = [A_lam, H(lam)]
     Hmat_ij = Re Tr(C_i C_j)
     gvec = Re Tr(i dH/dlam * C)
     """
-    H, dH = build_H_and_dH(h, J, lam, B_val=B_val, Bp_val=Bp_val)
-    C = [commutator_dict(A, H) for A in A_lam]
+    H, dH = _build_H_and_dH(h, J, lam, B_val=B_val, Bp_val=Bp_val)
+    C = [_commutator_dict(A, H) for A in A_lam]
 
     # Build H and gvec for linear system
     P = len(A_lam)
@@ -237,10 +253,10 @@ def build_Hg_from_templates(h, J, lam, B_val, Bp_val, A_lam):  # noqa: PLR0913, 
     gvec = np.zeros(P, dtype=float)
 
     for i in range(P):
-        gvec[i] = float(np.real(1j * trace(dH, C[i])))
+        gvec[i] = float(np.real(1j * _trace(dH, C[i])))
 
         for j in range(i, P):
-            val = float(np.real(trace(C[i], C[j])))
+            val = float(np.real(_trace(C[i], C[j])))
             Hmat[i, j] = val
             Hmat[j, i] = val
 
@@ -248,7 +264,7 @@ def build_Hg_from_templates(h, J, lam, B_val, Bp_val, A_lam):  # noqa: PLR0913, 
 
 
 # ----- Solvers -----
-def solve_params(Hmat, gvec):
+def _solve_params(Hmat, gvec):
     """Solve Hmat x = gvec."""
     try:
         x = np.linalg.solve(Hmat, gvec)
@@ -257,7 +273,7 @@ def solve_params(Hmat, gvec):
     return x
 
 
-def solve_alpha(h, J, lam, B_val=0.0, Bp_val=0.0):
+def _solve_alpha(h, J, lam, B_val=0.0, Bp_val=0.0):
     """Solve minimal action for first order AGP.
 
     Returns alpha array of length N (non-uniform).
@@ -265,13 +281,13 @@ def solve_alpha(h, J, lam, B_val=0.0, Bp_val=0.0):
     N = len(h)
 
     # Build AGP from NC ansatz
-    A = build_AGP_templates_NC(h, J)
+    A = _build_AGP_templates_NC(h, J)
 
     # Build H and dH
-    H, dH = build_H_and_dH(h, J, lam, B_val=B_val, Bp_val=Bp_val)
+    H, dH = _build_H_and_dH(h, J, lam, B_val=B_val, Bp_val=Bp_val)
 
     # Compute commutators
-    C_list = [commutator_dict(A_i, H) for A_i in A]
+    C_list = [_commutator_dict(A_i, H) for A_i in A]
 
     # Create linear system Hx = g
     Hmat = np.zeros((N, N), dtype=float)
@@ -279,19 +295,19 @@ def solve_alpha(h, J, lam, B_val=0.0, Bp_val=0.0):
     for i in range(N):
         C = C_list[i]
         # Tr{dH * i[A_lam, H]}
-        gvec[i] = np.real(1j * trace(dH, C))
+        gvec[i] = np.real(1j * _trace(dH, C))
         # Tr{[A_lam, H] * [A_lam, H]}
         for j in range(i, N):
-            val = np.real(trace(C, C_list[j]))
+            val = np.real(_trace(C, C_list[j]))
             Hmat[i, j] = val
             Hmat[j, i] = val
 
     # Solve
-    alpha = solve_params(Hmat, gvec)
+    alpha = _solve_params(Hmat, gvec)
     return alpha
 
 
-def solve_alpha_gamma_chi(h, J, lam, B_val=0.0, Bp_val=0.0, uniform=False):  # noqa: PLR0913, PLR0917
+def _solve_alpha_gamma_chi(h, J, lam, B_val=0.0, Bp_val=0.0, uniform=False):  # noqa: PLR0913, PLR0917
     """Solve minimal action for 2nd order AGP (leading two three parameters alpha, gamma, chi).
 
     - uniform=False: each is length N
@@ -300,11 +316,11 @@ def solve_alpha_gamma_chi(h, J, lam, B_val=0.0, Bp_val=0.0, uniform=False):  # n
     """
     N = len(h)
     # Build AGP
-    A = build_AGP_templates(N, uniform=uniform)
+    A = _build_AGP_templates(N, uniform=uniform)
     # Create arrays for linear system
-    Hmat, gvec = build_Hg_from_templates(h, J, lam, B_val, Bp_val, A)
+    Hmat, gvec = _build_Hg_from_templates(h, J, lam, B_val, Bp_val, A)
     # Solve
-    x = solve_params(Hmat, gvec)
+    x = _solve_params(Hmat, gvec)
     if uniform:
         a, g, c = map(float, x)
         return np.full(N, a), np.full(N, g), np.full(N, c)

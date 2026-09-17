@@ -33,7 +33,9 @@ import itertools
 import numpy as np
 import pytest
 
-from qrisp.algorithms.cold.AGP_params import solve_alpha
+from qrisp import QuantumVariable
+from qrisp.algorithms.cold import DCQOProblem, solve_QUBO
+from qrisp.algorithms.cold.AGP_params import _solve_alpha
 from qrisp.algorithms.cold.problems.QUBO import create_COLD_instance, create_LCD_instance
 
 # the driven run must clear this, and beat the undriven baseline by a wide margin
@@ -184,7 +186,7 @@ def test_solve_alpha_matches_the_action_for_the_circuit_hamiltonian(N):
     _, h, J = _random_qubo(N, seed=400 + N)
     lam = 0.28
 
-    got = np.asarray(solve_alpha(h, J, lam), dtype=float)
+    got = np.asarray(_solve_alpha(h, J, lam), dtype=float)
     exact = _minimise_action(_nc_site_operators(h, J, N), _hamiltonian(h, J, lam, 0.0), _d_hamiltonian(h, J, 0.0))
 
     np.testing.assert_allclose(got, exact, rtol=1e-10, atol=1e-12)
@@ -244,9 +246,6 @@ def test_counterdiabatic_drive_helps_at_short_evolution_time(agp_type, uniform):
     here it shows up immediately -- the nested-commutator coefficient used to land below the
     no-drive baseline.
     """
-    from qrisp import QuantumVariable
-    from qrisp.algorithms.cold import DCQOProblem
-
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
     solution = "1011"
     N = Q.shape[0]
@@ -268,8 +267,6 @@ def test_counterdiabatic_drive_helps_at_short_evolution_time(agp_type, uniform):
 @pytest.mark.parametrize("objective", ["exp_value", "agp_coeff_magnitude"])
 def test_cold_runs_at_short_evolution_time_for_both_objectives(objective):
     """Both objectives must stay usable in the short-T regime, and return a real distribution."""
-    from qrisp.algorithms.cold import solve_QUBO
-
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -285,8 +282,6 @@ def test_cold_runs_at_short_evolution_time_for_both_objectives(objective):
 
 def test_cold_and_lcd_agree_on_the_cost_of_every_returned_state():
     """The reported cost must be x^T Q x for the returned bitstring, for either method."""
-    from qrisp.algorithms.cold import solve_QUBO
-
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
@@ -360,8 +355,6 @@ def test_invalid_agp_type_is_rejected_by_both_instance_builders():
 @pytest.mark.parametrize("agp_type", ["order1", "nc"])
 def test_solve_qubo_routes_agp_type_to_both_methods(agp_type):
     """agp_type must reach COLD as well as LCD, and find the optimum at short evolution time."""
-    from qrisp.algorithms.cold import solve_QUBO
-
     Q = np.array(
         [
             [-0.6, 0.2, -0.5, -0.4, -0.6, 0.0],
@@ -393,8 +386,6 @@ def test_solve_qubo_routes_agp_type_to_both_methods(agp_type):
 
 def test_solve_qubo_rejects_an_unknown_method():
     """A typo in 'method' used to fall through and raise UnboundLocalError."""
-    from qrisp.algorithms.cold import solve_QUBO
-
     Q, _, _ = _random_qubo(4, seed=903)
     with pytest.raises(ValueError, match="LCD"):
         solve_QUBO(Q, problem_args={"method": "COLDD", "uniform": True}, run_args={"N_steps": 4, "T": 1})
