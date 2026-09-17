@@ -69,7 +69,7 @@ class DCQOProblem:
 
         import numpy as np
         import sympy as sp
-        from qrisp.operators.qubit import X, Y, Z
+        from qrisp.operators.qubit import QubitOperator, X, Y, Z
         from qrisp.algorithms.cold import DCQOProblem
         from qrisp import QuantumVariable
 
