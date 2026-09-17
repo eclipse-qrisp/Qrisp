@@ -232,24 +232,12 @@ Bug Fixes
 * Corrected the adiabatic gauge potential (AGP) coefficients used by COLD and
   LCD. Every closed form deviated from the minimal-action solution
   :math:`S = \mathrm{Tr}[G_\lambda^2]`,
-  :math:`G_\lambda = \partial_\lambda H + i[A_\lambda, H]`, that they are meant to
-  solve. The first-order forms inflated the numerator's ``h`` term by
-  :math:`(4-3\lambda)` and its ``f'`` term by 4, summed ``J_ij`` where the
-  derivation requires ``J_ij**2``, and dropped the leading minus sign of the
-  quadratic minimiser. The nested-commutator uniform form summed ``h_i`` where
-  ``h_i**2`` belongs and used the transverse-field sum ``N`` in place of the
-  longitudinal ``sum h_i**2``. ``AGP_params`` separately modelled the transverse
-  term as :math:`-(1-\lambda)\sum_i \sigma^x_i` while the circuit evolves
-  :math:`+(1-\lambda)\sum_i \sigma^x_i`, which negated every coefficient it
-  produced. The three first-order errors partly masked one another, leaving a
-  coefficient at :math:`-(4-3\lambda)` times the correct value, which at small
-  :math:`\lambda` lands near a spurious over-rotation lobe and degrades towards
-  the fully destructive factor :math:`-1` as :math:`\lambda \to 1`. All forms
-  now reproduce an exact minimal-action calculation to machine precision for
-  ``N = 3`` through ``N = 10``. Under exact Schroedinger evolution the corrected
-  coefficients raise ground-state fidelity at every evolution time tested; the
-  nested-commutator ansatz previously performed worse than applying no
-  counterdiabatic drive at all.
+  :math:`G_\lambda = \partial_\lambda H + i[A_\lambda, H]`, that they are meant
+  to solve, through a mix of wrong exponents, sums used where sums of squares
+  belong, a dropped sign, and a sign convention mismatch between
+  ``AGP_params`` and the evolving circuit. All forms now reproduce an exact
+  minimal-action calculation to machine precision for ``N = 3`` through ``N = 10``.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
 * Fixed the inverse scheduling function ``g(lam)`` in
   :class:`~qrisp.cold.DCQOProblem`, which stored the dimensionful time ``t``
@@ -258,24 +246,22 @@ Bug Fixes
   ``dt/dlambda`` rather than ``dg/dlambda``. Both feed the chain rule for the
   control-pulse derivative, so it ran at a frequency ``T`` times too high with an
   amplitude ``T`` times too large. The two errors cancel exactly at ``T = 1``,
-  which was the only evolution time at which COLD matched the reference; at any
-  other ``T`` the AGP drive alternated sign between timesteps instead of
-  following a smooth decaying envelope. LCD never computes ``g`` and was
-  unaffected.
+  at any other ``T`` the AGP drive alternated sign between timesteps.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
 * Fixed the ``agp_coeff_magnitude`` objective, which summed the AGP coefficients
   without weighting by ``lamdot``. Since the coefficients diverge as
   ``1/lamdot`` through the control-pulse derivative while the circuit applies
   them as ``dt * lamdot * alpha``, the sum was dominated by the first and last
-  timestep -- whose actual contribution is negligible -- and grew as
-  ``N_steps**3``. It also hardcoded ``uniform=True`` when scoring, so a
-  non-uniform problem was evaluated against a uniform ansatz, and accumulated
-  only component ``[0]`` of each coefficient vector.
+  timestep and grew as ``N_steps**3``. It also hardcoded ``uniform=True`` when
+  scoring, so a non-uniform problem was evaluated against a uniform ansatz.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
 * :func:`~qrisp.cold.solve_QUBO` now raises a ``ValueError`` for an unrecognised
   ``method`` instead of failing with an ``UnboundLocalError``, and the
   ``ValueError`` rejecting an unknown ``objective`` no longer prints a literal
   ``{objective}`` from a missing f-string prefix.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
 Compatibility
 -------------
