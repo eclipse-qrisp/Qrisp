@@ -183,6 +183,16 @@ def _build_AGP_templates_NC(h, J):
     return A
 
 
+def _pair_terms(N, i, code):
+    """Sum_{j != i} P_code(min(i,j)) Y(max(i,j)) for fixed i."""
+    A_i = defaultdict(complex)
+    for j in range(N):
+        if j == i:
+            continue
+        A_i[_pauli_from_ops({min(i, j): code, max(i, j): 2})] += 1.0
+    return dict(A_i)
+
+
 def _build_AGP_templates(N, uniform=False):
     """Build AGP ansatz for 2nd order with uniform or non-uniform parameters"""
     A = []
@@ -191,32 +201,15 @@ def _build_AGP_templates(N, uniform=False):
     if not uniform:
         # alpha: Y_i
         for i in range(N):
-            A_i = {_pauli_from_ops({i: 2}): 1.0}
-            A.append(A_i)
+            A.append({_pauli_from_ops({i: 2}): 1.0})
 
         # gamma: X/Y
         for i in range(N):
-            A_i = defaultdict(complex)
-            for j in range(N):
-                if j == i:
-                    continue
-                if j > i:
-                    A_i[_pauli_from_ops({i: 1, j: 2})] += 1.0
-                else:
-                    A_i[_pauli_from_ops({j: 1, i: 2})] += 1.0
-            A.append(dict(A_i))
+            A.append(_pair_terms(N, i, 1))
 
         # chi: Z/Y
         for i in range(N):
-            A_i = defaultdict(complex)
-            for j in range(N):
-                if j == i:
-                    continue
-                if j > i:
-                    A_i[_pauli_from_ops({i: 3, j: 2})] += 1.0
-                else:
-                    A_i[_pauli_from_ops({j: 3, i: 2})] += 1.0
-            A.append(dict(A_i))
+            A.append(_pair_terms(N, i, 3))
 
     # Uniform case
     else:
