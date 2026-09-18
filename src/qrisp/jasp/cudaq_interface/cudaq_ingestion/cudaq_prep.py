@@ -29,7 +29,11 @@
 # - Packs multiple return values into !cc.struct
 # - Synthesizes .run variant (quake.log_output + void return)
 # - Synthesizes .run.entry
-# - Injects module-level attributes (llvm.data_layout, quake.mangled_name_map, etc.)
+# - Injects module-level attributes (quake.mangled_name_map, etc.)
+#
+# The host-specific llvm.data_layout attribute is deliberately not set here.
+# It is applied by xdsl_ingestion once the module has been parsed into CUDA-Q,
+# using CUDA-Q's own cudaq_runtime.set_data_layout.
 #
 # Implementation note
 # --------------------
@@ -70,8 +74,6 @@ class _CudaqPreparationConfig:
     func_name: str
     entry_point: str
     unique_name: str
-    data_layout: str
-    target_triple: str | None
     execution_mode: Literal["run", "sample"] = "run"
 
 
@@ -295,11 +297,14 @@ def _pass_inject_module_attrs(
     run_func_name=None,
     run_entry_name=None,
 ) -> None:
-    """Set module-level attributes required by CUDA-Q."""
+    """Set module-level attributes required by CUDA-Q.
+
+    ``llvm.data_layout`` is not set here; xdsl_ingestion applies it via
+    ``cudaq_runtime.set_data_layout`` after the module has been parsed
+    into CUDA-Q, so that the layout always matches the CUDA-Q build that
+    will execute the kernel.
+    """
     module.attributes["cc.python_uniqued"] = StringAttr(config.unique_name)
-    module.attributes["llvm.data_layout"] = StringAttr(config.data_layout)
-    if config.target_triple:
-        module.attributes["llvm.target_triple"] = StringAttr(config.target_triple)
 
     name_map = {config.func_name: StringAttr(config.entry_point)}
     if run_func_name and run_entry_name:
