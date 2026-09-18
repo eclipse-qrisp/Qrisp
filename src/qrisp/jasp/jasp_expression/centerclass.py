@@ -1117,7 +1117,7 @@ class Jaspr(ClosedJaxpr):
 
         ::
 
-            from qrisp import *
+            from qrisp import QuantumFloat, cx, t, measure
             from qrisp.jasp import make_jaspr
 
             def example_function(i):
@@ -1184,9 +1184,9 @@ class Jaspr(ClosedJaxpr):
             }
 
         """
-        from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake_mlir
+        from qrisp.jasp.cudaq_interface.quake_lowering import _jaspr_to_quake_mlir
 
-        return jaspr_to_quake_mlir(self, execution_mode=execution_mode)
+        return _jaspr_to_quake_mlir(self, execution_mode=execution_mode)
 
     def to_qasm(self, *args) -> str:
         """Compiles the Jaspr into an OpenQASM 2 string.

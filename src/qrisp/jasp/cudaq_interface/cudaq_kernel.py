@@ -49,9 +49,6 @@
 #    is correct on every platform CUDA-Q supports, with no host detection or
 #    hardcoded per-architecture layout strings on the Qrisp side.
 #
-# Note that `llvm.target_triple` is deliberately not set: CUDA-Q's Python
-# pipeline does not emit one either, and the kernel compiles and executes
-# without it.
 
 import inspect
 from collections.abc import Callable
@@ -140,7 +137,7 @@ def cudaq_kernel(
     No-argument kernel — identical usage to ``@cudaq.kernel``::
 
         import cudaq
-        from qrisp import *
+        from qrisp import QuantumVariable, cx, h, measure
         from qrisp import cudaq_kernel
 
         @cudaq_kernel
@@ -156,7 +153,7 @@ def cudaq_kernel(
     Multiple returns are supported; they are returned as a single tuple::
 
         import cudaq
-        from qrisp import *
+        from qrisp import QuantumFloat, h, measure
         from qrisp import cudaq_kernel
 
         @cudaq_kernel
@@ -175,7 +172,7 @@ def cudaq_kernel(
 
         import cudaq
         import numpy as np
-        from qrisp import *
+        from qrisp import QuantumFloat, h, ry, measure
         from qrisp import cudaq_kernel, FixedShapeNDArray
 
         @cudaq_kernel
@@ -201,7 +198,7 @@ def cudaq_kernel(
     ``cudaq.sample`` (void-return kernel, measurements collected by runtime)::
 
         import cudaq
-        from qrisp import *
+        from qrisp import QuantumVariable, cx, h, measure
         from qrisp import cudaq_kernel
 
         @cudaq_kernel(execution_mode="sample")
@@ -242,35 +239,6 @@ def cudaq_kernel(
             )
 
     jaspr = make_jaspr(func)(*dummy_args)
-
-    # NOTE: THe flowing code is commented out because:
-    # 1. The conversion to static register will likely not be necessary with a
-    # future CUDA-Q version:
-    # https://github.com/NVIDIA/cuda-quantum/pull/4945
-    # This can currently only be tested when installing CUDA-Q from source,
-    # as the latest release (0.15) does not include this change.
-    # 2. Use of profiler for deciding whether to use static register allocation
-    # could break for certain edge cases.
-
-    # try:
-    #    qubits_dict = profile_jaspr(jaspr, "num_qubits", meas_behavior="0", max_allocations=1000)(*dummy_args)
-    #    peak_allocations = qubits_dict.get("peak_allocations", 0)
-    #    total_allocated = qubits_dict.get("total_allocated", 0)
-
-    # Decide whether to use static register allocation based on peak vs total
-    # allocations. If total allocated qubits exceed 110% of peak allocations,
-    # we use static register allocation to optimize memory usage.
-    # Otherwise, we proceed with the original jaspr without static register allocation,
-    # since CUDA-Q runtime is faster without static register reinterpretation.
-    #    use_static_register = total_allocated > peak_allocations * 1.1
-    # except ValueError:
-    #    use_static_register = False
-
-    # if use_static_register:
-    #    static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, peak_allocations)
-    #    new_jaspr = static_reg_jaspr
-    # else:
-    #    new_jaspr = jaspr
 
     if register_size is not None:
         new_jaspr = jaspr_to_static_register_jaspr(jaspr, register_size)

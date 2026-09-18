@@ -963,3 +963,46 @@ def test_unsupported_gate_raises_not_implemented_error():
     ):
         with pytest.raises(NotImplementedError, match="Unsupported Jasp gate"):
             _lower(circuit)
+
+
+# ---------------------------------------------------------------------------
+# Public entry point: Jaspr.to_quake_mlir
+# ---------------------------------------------------------------------------
+
+
+def _example_circuit(i):
+    """The circuit used by the ``Jaspr.to_quake_mlir`` docstring example."""
+    qv = QuantumFloat(i)
+    cx(qv[0], qv[1])
+    t(qv[1])
+    meas_res = measure(qv)
+    meas_res += 1
+    return meas_res
+
+
+def test_to_quake_mlir_lowers_via_public_method():
+    """Test that Jaspr.to_quake_mlir correctly lowers a circuit."""
+    jaspr = make_jaspr(_example_circuit)(2)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        xdsl_module = jaspr.to_quake_mlir()
+
+    mlir = str(xdsl_module)
+    assert "func.func" in mlir
+    assert "quake.alloca" in mlir
+    assert "quake.x" in mlir
+    assert "quake.t" in mlir
+    _validate_quake_mlir(mlir)
+
+
+def test_to_quake_mlir_execution_mode_changes_output():
+    """ "run" and "sample" are both forwarded and produce different modules."""
+    jaspr = make_jaspr(_example_circuit)(2)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        run_mlir = str(jaspr.to_quake_mlir(execution_mode="run"))
+        sample_mlir = str(jaspr.to_quake_mlir(execution_mode="sample"))
+
+    assert run_mlir != sample_mlir

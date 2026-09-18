@@ -16,10 +16,6 @@
 
 """Compile normalized xDSL MLIR into native CUDA-Q kernels."""
 
-# Normalizing xDSL-printed MLIR and compiling it into a native CUDA-Q
-# kernel (pipeline stage 3 – "Re-Compilation").
-# =======================================================================
-
 import re
 from typing import Literal
 
@@ -37,7 +33,7 @@ from qrisp.jasp.cudaq_interface.cudaq_ingestion.cudaq_prep import (
 )
 
 # ------------------------------------------------------------------ #
-# xDSL → CUDA-Q serialization normalization
+# xDSL to CUDA-Q serialization normalization
 # ------------------------------------------------------------------ #
 
 
@@ -142,29 +138,6 @@ def _cudaq_kernel_from_xdsl_module(
     -------
     cudaq.kernel.kernel_decorator.PyKernelDecorator
         A compiled, callable CUDA-Q kernel.
-
-    Examples
-    --------
-    ::
-
-        from qrisp import QuantumVariable, h, cx, measure
-        from qrisp.jasp import make_jaspr
-        from qrisp.jasp.cudaq_interface.quake_lowering import jaspr_to_quake_mlir
-        from qrisp.jasp.cudaq_interface import cudaq_kernel_from_xdsl_module
-        import cudaq
-
-        def bell():
-            qv = QuantumVariable(2)
-            h(qv[0])
-            cx(qv[0], qv[1])
-            return measure(qv)
-
-        jaspr = make_jaspr(bell)()
-        xdsl_module = jaspr.to_quake_mlir()
-        kernel = cudaq_kernel_from_xdsl_module(xdsl_module)
-
-        print(kernel())                          # single-shot, e.g. 0 or 3
-        print(cudaq.run(kernel, shots_count=100))
 
     """
     module = xdsl_module.clone()
