@@ -883,35 +883,6 @@ def benchmark_function(function):
     return benchmarked_function
 
 
-def custom_qv(labels, decoder=None, qs=None, name=None):
-    if not isinstance(labels, list):
-        raise Exception("Tried to create custom QuantumVariable without providing a list type")
-
-    if len(labels) == 0:
-        raise Exception("Tried to create custom QuantumVariable without providing labels")
-    elif len(labels) == 1:
-        n = 1
-    else:
-        n = int(np.ceil(np.log2(len(labels))))
-
-    from qrisp import QuantumVariable
-
-    class CustomQuantumVariable(QuantumVariable):
-        def __init__(self, qs=None, name=None):
-            super().__init__(n, qs=qs, name=name)
-
-        def decoder(self, x):
-            if decoder is None:
-                if x < len(labels):
-                    return labels[x]
-                else:
-                    return "undefined_label_" + str(x)
-
-            return decoder(x)
-
-    return CustomQuantumVariable(qs=qs, name=name)
-
-
 # This is required in the qswitch-based state preparation,
 # where it is called inside jrange loops, because DynamicQubitArray
 # does not support reverse iteration.

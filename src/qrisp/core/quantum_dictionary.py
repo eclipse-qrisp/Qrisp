@@ -20,8 +20,8 @@ import itertools
 
 import numpy as np
 
-from qrisp.core import QuantumVariable, recursive_qv_search
-from qrisp.misc import bin_rep, custom_qv, int_as_array
+from qrisp.core import QuantumVariable, custom_qv, recursive_qv_search
+from qrisp.misc import bin_rep, int_as_array
 
 
 class QuantumDictionary(dict):

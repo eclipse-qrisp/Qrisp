@@ -1473,8 +1473,6 @@ class QuantumVariable:
         (1, 2, 3): 0.125, 'undefined_label_6': 0.125, 'undefined_label_7': 0.125}
 
         """
-        from qrisp.misc import custom_qv
-
         return custom_qv(label_list, decoder=decoder, qs=qs, name=name)
 
     def ensure_reg(self):
@@ -1487,6 +1485,38 @@ class QuantumVariable:
         from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 
         return QuantumVariableTemplate(self)
+
+
+def custom_qv(labels, decoder=None, qs=None, name=None):
+    """Create a QuantumVariable with a custom outcome-label list and/or decoder.
+
+    See :meth:`QuantumVariable.custom <qrisp.QuantumVariable.custom>` for the
+    user-facing documentation of this constructor.
+    """
+    if not isinstance(labels, list):
+        raise Exception("Tried to create custom QuantumVariable without providing a list type")
+
+    if len(labels) == 0:
+        raise Exception("Tried to create custom QuantumVariable without providing labels")
+    elif len(labels) == 1:
+        n = 1
+    else:
+        n = int(np.ceil(np.log2(len(labels))))
+
+    class CustomQuantumVariable(QuantumVariable):
+        def __init__(self, qs=None, name=None):
+            super().__init__(n, qs=qs, name=name)
+
+        def decoder(self, x):
+            if decoder is None:
+                if x < len(labels):
+                    return labels[x]
+                else:
+                    return "undefined_label_" + str(x)
+
+            return decoder(x)
+
+    return CustomQuantumVariable(qs=qs, name=name)
 
 
 def plot_histogram(outcome_labels, counts, filename=None):
