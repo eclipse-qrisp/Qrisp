@@ -25,12 +25,105 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import lax
+from jax.typing import ArrayLike
 
-from qrisp.misc.utility import EPSILON, swap_endianness
+from qrisp.misc.utility import EPSILON
 
 if TYPE_CHECKING:
     from qrisp.core import QuantumVariable
     from qrisp.typing import NDArrayLike
+
+
+# This is required in the qswitch-based state preparation, where it is called
+# inside jrange loops, because DynamicQubitArray does not support reverse iteration.
+def bit_reverse(i, width):
+    """Jasp-compatible bit-reversal function.
+
+    Interprets ``i`` as a ``width``-bit binary integer
+    and returns the decimal integer corresponding to the bit-reversal of ``i``.
+    The maximum supported width is 64 bits.
+
+    This function can be used in Jasp-mode and within a `jrange` loop.
+    It does not use any Python or Jax control flow, but only Jax array operations.
+
+    Parameters
+    ----------
+    i : jnp.ndarray
+        Index to be bit-reversed.
+    width : jnp.ndarray
+        Bit-width for the reversal (scalar array).
+
+    Returns
+    -------
+    jnp.ndarray
+        Bit-reversed index.
+
+
+    Examples
+    --------
+    For ``i=5`` and ``width=3``, the binary representation
+    of ``5`` is ``101``, and its bit-reversal is (again) ``101``, which is ``5`` in decimal.
+
+    >>> from qrisp.alg_primitives.state_preparation.qswitch_state_preparation import bit_reverse
+    >>> bit_reverse(5, 3)
+    5
+
+    For ``i=3`` and ``width=4``, the binary representation
+    of ``3`` is ``0011``, and its bit-reversal is ``1100``, which is ``12`` in decimal.
+
+    >>> bit_reverse(3, 4)
+    12
+
+    """
+    i = jnp.asarray(i, dtype=jnp.uint64)
+    width = jnp.asarray(width, dtype=jnp.uint64)
+
+    m1 = jnp.uint64(0x5555555555555555)
+    m2 = jnp.uint64(0x3333333333333333)
+    m3 = jnp.uint64(0x0F0F0F0F0F0F0F0F)
+    m4 = jnp.uint64(0x00FF00FF00FF00FF)
+    m5 = jnp.uint64(0x0000FFFF0000FFFF)
+    m6 = jnp.uint64(0x00000000FFFFFFFF)
+
+    i = ((i >> 1) & m1) | ((i & m1) << 1)
+    i = ((i >> 2) & m2) | ((i & m2) << 2)
+    i = ((i >> 4) & m3) | ((i & m3) << 4)
+    i = ((i >> 8) & m4) | ((i & m4) << 8)
+    i = ((i >> 16) & m5) | ((i & m5) << 16)
+    i = ((i >> 32) & m6) | ((i & m6) << 32)
+
+    return i >> jnp.asarray(64, jnp.uint64) - width
+
+
+def _bitrev_indices(n: ArrayLike) -> jax.Array:
+    """Return array r where r[j] = bitreverse(j) over n bits."""
+    idx = jnp.arange(1 << n, dtype=jnp.uint32)
+    rev = jnp.zeros_like(idx)
+    for k in range(n):
+        rev = (rev << 1) | ((idx >> k) & 1)
+    return rev
+
+
+def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jax.Array:
+    """Convert between big-endian and little-endian qubit ordering.
+
+    This transformation is its own inverse, so it works in both directions.
+
+    Parameters
+    ----------
+    vec : ArrayLike
+        The state vector to convert.
+    n : ArrayLike
+        The number of qubits.
+
+    Returns
+    -------
+    jax.Array
+        The state vector with reversed qubit ordering.
+
+    """
+    r = _bitrev_indices(n)
+    return vec[r]
 
 
 def _rot_params_from_state(
@@ -289,7 +382,6 @@ def prepare_qswitch(qv: QuantumVariable, target_array: NDArrayLike, big_endianne
     from qrisp.jasp.program_control.jrange_iterator import jrange
     from qrisp.jasp.program_control.prefix_control import q_switch
     from qrisp.jasp.tracing_logic import check_for_tracing_mode
-    from qrisp.misc.utility import bit_reverse
 
     target_array_jax: jax.Array = jnp.asarray(target_array, dtype=jnp.complex128)
     target_array_jax = target_array_jax / jnp.linalg.norm(target_array_jax)
