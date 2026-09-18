@@ -121,13 +121,18 @@ Bug Fixes
 * Fixed a failure when a function decorated with
   :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
   raised ``Automatic loop inversion is only supported for jrange-based loops``.
-  An inverted Jaspr keeps a back-pointer to the Jaspr it inverts, and the second
-  inversion follows it instead of deriving an inverse. Inverting can reclassify
-  arguments as constants, and folding them back rewrapped the Jaspr without
-  carrying the back-pointer over, so the second inversion fell back to inverting
-  the body, which is the derivation ``custom_inversion`` exists to avoid. This
-  affected, for instance, inverting a :func:`prepare <qrisp.prepare>` whose
-  amplitudes are only known at run time, as produced by a
+  The custom inverse and the custom controlled version registered by
+  :func:`custom_inversion <qrisp.custom_inversion>` and
+  :func:`custom_control <qrisp.custom_control>` are now brought into the calling
+  convention of the function they stand in for at the point where they are
+  traced, instead of being patched up every time an inversion or a control is
+  applied. Patching them up late meant rewrapping the Jaspr, and a rewrapped
+  Jaspr lost the very registrations these decorators exist to provide, so a
+  second inversion fell back to deriving an inverse from the body. The
+  signatures are now also checked against each other when the pair is
+  registered, so a mismatch is reported where it is introduced. This affected,
+  for instance, inverting a :func:`prepare <qrisp.prepare>` whose amplitudes are
+  only known at run time, as produced by a
   :class:`~qrisp.block_encodings.BlockEncoding` simulation with traced
   coefficients.
 
