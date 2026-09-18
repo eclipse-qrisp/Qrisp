@@ -58,6 +58,7 @@ def find_qs(args):
 
 
 def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
+    """Append operation to the QuantumSession of qubits, silently no-op'ing on an empty qubit list."""
     try:
         qs = find_qs(qubits)
         qs.append(operation, qubits, clbits, param_tracers=param_tracers)
