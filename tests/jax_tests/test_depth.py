@@ -33,10 +33,10 @@ from qrisp import (
     u3,
 )
 from qrisp.jasp import jrange, q_cond, qache
-from qrisp.jasp.interpreter_tools.interpreters.utilities import (
-    always_one,
-    always_zero,
-    meas_rng,
+from qrisp.jasp.evaluation_tools.profiler import (
+    _always_one as always_one,
+    _always_zero as always_zero,
+    _meas_rng as meas_rng,
 )
 
 

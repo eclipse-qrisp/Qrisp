@@ -25,27 +25,6 @@ from jax.typing import ArrayLike
 from qrisp.jasp.jasp_expression import Jaspr
 
 
-def always_zero(_):
-    """Return False for all inputs, simulating measurements that always yield 0."""
-    return False
-
-
-def always_one(_):
-    """Return True for all inputs, simulating measurements that always yield 1."""
-    return True
-
-
-def simulation():
-    """Simulate measurements normally without any forced behavior."""
-    pass
-
-
-# Deterministic for every key
-def meas_rng(key):
-    """Simulate measurements using the provided random key."""
-    return jax.numpy.bool_(jax.random.randint(key, (1,), 0, 2)[0])
-
-
 def is_abstract(tensor: ArrayLike) -> bool:
     """Check if the input is an abstract JAX value.
 
