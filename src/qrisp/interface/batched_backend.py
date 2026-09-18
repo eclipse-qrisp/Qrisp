@@ -307,10 +307,10 @@ class BatchedBackend:
 
 
 def batched_measurement(variables, backend, shots=None):
-    """Measure multiple :ref:`QuantumVariables <QuantumVariable>` in a single
-    batched execution using a :class:`~qrisp.interface.BatchedBackend`.
+    """Measure multiple QuantumVariables in a single batched execution.
 
-    All ``get_measurement`` calls are collected first (returning lazy results
+    Uses a :class:`~qrisp.interface.BatchedBackend`. All ``get_measurement``
+    calls are collected first (returning lazy results
     immediately), then :meth:`~qrisp.interface.BatchedBackend.dispatch` is
     called once to execute every circuit and populate all results together.
 
