@@ -1,19 +1,18 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
 """
 Tests verifying that Qrisp's statevector simulator and CUDA-Q agree on the
@@ -179,12 +178,14 @@ _NO_PARAM_SINGLE_QUBIT_GATES = [
 
 @pytest.mark.parametrize("gate_name,gate", _NO_PARAM_SINGLE_QUBIT_GATES)
 def test_gate_map_single_qubit_gates(gate_name, gate):
+    """Test single-qubit gates without parameters (h, x, y, z, s, t, s_dg, t_dg, sx, sx_dg)."""
     circuit = _single_qubit_circuit(lambda qv: gate(qv[0]))
     assert_statevectors_close(circuit)
 
 
 @pytest.mark.parametrize("gate_name,gate", _NO_PARAM_SINGLE_QUBIT_GATES)
 def test_controlled_single_qubit_gates(gate_name, gate):
+    """Test controlled single-qubit gates without parameters (ch, cx, cy, cz, cs, ct, cs_dg, ct_dg, csx, csx_dg)."""
     circuit = _two_qubit_circuit(lambda qv: _with_control(qv, lambda q: gate(q)))
     assert_statevectors_close(circuit)
 
@@ -204,6 +205,7 @@ _PARAM_SINGLE_QUBIT_GATES = [
 
 @pytest.mark.parametrize("gate_name,gate", _PARAM_SINGLE_QUBIT_GATES)
 def test_gate_map_single_qubit_parameterized_gates(gate_name, gate):
+    """Test single-qubit parameterized gates (rx, ry, rz, p, gphase)."""
     phi = _rand_angle()
     circuit = _single_qubit_circuit(lambda qv: gate(phi, qv[0]))
     assert_statevectors_close(circuit)
@@ -211,7 +213,7 @@ def test_gate_map_single_qubit_parameterized_gates(gate_name, gate):
 
 @pytest.mark.parametrize("gate_name,gate", _PARAM_SINGLE_QUBIT_GATES)
 def test_controlled_single_qubit_parameterized_gates(gate_name, gate):
-    """Also covers ``cgphase``: gphase turns into a phase gate when controlled."""
+    """Test controlled single-qubit parameterized gates (crx, cry, crz, cp, cgphase)."""
     phi = _rand_angle()
     circuit = _two_qubit_circuit(lambda qv: _with_control(qv, lambda q: gate(phi, q)))
     assert_statevectors_close(circuit)
@@ -223,12 +225,14 @@ def test_controlled_single_qubit_parameterized_gates(gate_name, gate):
 
 
 def test_u3_gate():
+    """Test the u3 gate."""
     theta, phi, lam = _rand_angle(), _rand_angle(), _rand_angle()
     circuit = _single_qubit_circuit(lambda qv: u3(theta, phi, lam, qv[0]))
     assert_statevectors_close(circuit)
 
 
 def test_controlled_u3_gate():
+    """Test the controlled u3 gate."""
     theta, phi, lam = _rand_angle(), _rand_angle(), _rand_angle()
     circuit = _two_qubit_circuit(lambda qv: _with_control(qv, lambda q: u3(theta, phi, lam, q)))
     assert_statevectors_close(circuit)
@@ -247,6 +251,7 @@ _NATIVE_CONTROLLED_GATES = [
 
 @pytest.mark.parametrize("gate_name,gate", _NATIVE_CONTROLLED_GATES)
 def test_gate_map_native_controlled_gates(gate_name, gate):
+    """Test native two-qubit controlled gates (cx, cy, cz)."""
     circuit = _two_qubit_circuit(lambda qv: gate(qv[0], qv[1]))
     assert_statevectors_close(circuit)
 
@@ -257,24 +262,28 @@ def test_gate_map_native_controlled_gates(gate_name, gate):
 
 
 def test_cp_gate():
+    """Test the controlled phase (cp) gate."""
     phi = _rand_angle()
     circuit = _two_qubit_circuit(lambda qv: cp(phi, qv[0], qv[1]))
     assert_statevectors_close(circuit)
 
 
 def test_swap_gate():
+    """Test the SWAP gate."""
     circuit = _two_qubit_circuit(lambda qv: swap(qv[0], qv[1]))
     assert_statevectors_close(circuit)
 
 
 @pytest.mark.parametrize("gate_name,gate", [("rxx", rxx), ("rzz", rzz)])
 def test_composite_two_qubit_rotation_gates(gate_name, gate):
+    """Test composite two-qubit rotation gates (rxx, rzz)."""
     phi = _rand_angle()
     circuit = _two_qubit_circuit(lambda qv: gate(phi, qv[0], qv[1]))
     assert_statevectors_close(circuit)
 
 
 def test_xxyy_gate():
+    """Test the XXYY gate."""
     phi, beta = _rand_angle(), _rand_angle()
     circuit = _two_qubit_circuit(lambda qv: xxyy(phi, beta, qv[0], qv[1]))
     assert_statevectors_close(circuit)

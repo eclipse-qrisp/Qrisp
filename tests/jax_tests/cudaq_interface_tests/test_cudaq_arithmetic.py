@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests for arithmetic operations on QuantumFloat and QuantumModulus using the CUDA-Q interface."""
 
 import operator
 import pytest
@@ -22,12 +23,15 @@ import cudaq
 
 from qrisp import (
     QuantumFloat,
+    QuantumModulus,
     measure,
 )
 from qrisp.jasp.cudaq_interface import cudaq_kernel
 
+_SHOTS_COUNT = 1
+
 # ---------------------------------------------------------------------------
-# Test QuantumFloat and arithmetic operations
+# Test QuantumFloat arithmetic operations
 # ---------------------------------------------------------------------------
 
 
@@ -44,7 +48,7 @@ instances = [
 @pytest.mark.parametrize("rhs_type", rhs_type)
 @pytest.mark.parametrize("size1, exp1, val1, size2, exp2, val2", instances)
 def test_quantum_float_arithmetic(op, rhs_type, size1, exp1, val1, size2, exp2, val2):
-    """Arithmetic operations on QuantumFloat with classical or quantum RHS."""
+    """Out-of-place arithmetic operations on QuantumFloat with classical or quantum RHS."""
 
     @cudaq_kernel
     def main():
@@ -62,8 +66,8 @@ def test_quantum_float_arithmetic(op, rhs_type, size1, exp1, val1, size2, exp2, 
 
     expected = op(val1, val2)
 
-    results = cudaq.run(main, shots_count=10)
-    assert results == 10 * [expected], (
+    results = cudaq.run(main, shots_count=_SHOTS_COUNT)
+    assert results == _SHOTS_COUNT * [expected], (
         f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {results}"
     )
 
@@ -99,8 +103,8 @@ def test_quantum_float_arithmetic_inpl(op, rhs_type, size1, exp1, val1, size2, e
 
     expected = op(val1, val2)
 
-    results = cudaq.run(main, shots_count=10)
-    assert results == 10 * [expected], (
+    results = cudaq.run(main, shots_count=_SHOTS_COUNT)
+    assert results == _SHOTS_COUNT * [expected], (
         f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {results}"
     )
 
@@ -117,7 +121,7 @@ rhs_type = ["classical", "quantum"]
 instances = [
     # (size1, exp1, val1, size2, exp2, val2)
     pytest.param(3, 0, 2, 3, 0, 1, id="QuantumFloat case 1"),
-    # pytest.param(3, 0, 3, 4, 0, 3, id="QuantumFloat case 2"), # Skipped because if included, would lead to high runtime
+    pytest.param(3, 0, 3, 4, 0, 3, id="QuantumFloat case 2"),
 ]
 
 
@@ -143,7 +147,78 @@ def test_quantum_float_comparison(op, rhs_type, size1, exp1, val1, size2, exp2, 
 
     expected = op(val1, val2)
 
-    results = cudaq.run(main, shots_count=1)
-    assert results == 1 * [expected], (
+    results = cudaq.run(main, shots_count=_SHOTS_COUNT)
+    assert results == _SHOTS_COUNT * [expected], (
+        f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {results}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Test QuantumModulus arithmetic operations
+# ---------------------------------------------------------------------------
+
+
+ops = [operator.add, operator.sub]  # operator.mul skipped because of runtime
+ops_inpl = [operator.iadd, operator.isub]
+rhs_type = ["classical", "quantum"]
+instances = [
+    # (modulus, val1, val2)
+    pytest.param(5, 2, 3, id="QuantumModulus case 1"),
+    pytest.param(5, 3, 4, id="QuantumModulus case 2"),
+]
+
+
+@pytest.mark.parametrize("op", ops)
+@pytest.mark.parametrize("rhs_type", rhs_type)
+@pytest.mark.parametrize("modulus, val1, val2", instances)
+def test_quantum_modulus_arithmetic(op, rhs_type, modulus, val1, val2):
+    """Out-of-place arithmetic operations on QuantumModulus with classical or quantum RHS."""
+
+    @cudaq_kernel
+    def main():
+        a = QuantumModulus(modulus)
+        a[:] = val1
+
+        if rhs_type == "classical":
+            b = val2
+        else:
+            b = QuantumModulus(modulus)
+            b[:] = val2
+
+        c = op(a, b)
+        return measure(c)
+
+    expected = op(val1, val2) % modulus
+
+    results = cudaq.run(main, shots_count=_SHOTS_COUNT)
+    assert results == _SHOTS_COUNT * [expected], (
+        f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {results}"
+    )
+
+
+@pytest.mark.parametrize("op", ops_inpl)
+@pytest.mark.parametrize("rhs_type", rhs_type)
+@pytest.mark.parametrize("modulus, val1, val2", instances)
+def test_quantum_modulus_arithmetic_inpl(op, rhs_type, modulus, val1, val2):
+    """In-place arithmetic operations on QuantumModulus."""
+
+    @cudaq_kernel
+    def main():
+        a = QuantumModulus(modulus)
+        a[:] = val1
+
+        if rhs_type == "classical":
+            b = val2
+        else:
+            b = QuantumModulus(modulus)
+            b[:] = val2
+
+        op(a, b)
+        return measure(a)
+
+    expected = op(val1, val2) % modulus
+
+    results = cudaq.run(main, shots_count=_SHOTS_COUNT)
+    assert results == _SHOTS_COUNT * [expected], (
         f"Expected quantum-{rhs_type} {op.__name__} of {val1} and {val2} to yield {expected}, got {results}"
     )
