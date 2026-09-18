@@ -28,10 +28,11 @@ from qrisp.circuit import (
     Qubit,
     QubitAlloc,
     QubitDealloc,
+    cnot_count,
+    get_depth_dic,
 )
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import multi_session_merge
-from qrisp.misc import get_depth_dic
 
 
 class QuantumSession(QuantumCircuit):
@@ -395,7 +396,6 @@ class QuantumSession(QuantumCircuit):
         """
         if len(self.env_stack) != 0:
             raise Exception("Tried to count CNOT gates with open if environments")
-        from qrisp.misc import cnot_count
 
         return cnot_count(self)
 
