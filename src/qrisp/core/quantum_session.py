@@ -1281,33 +1281,90 @@ def get_statevector_function(qs, decimals=None):
         return statevector
 
 
-def get_sympy_state(qs, decimals):
-    """Build the ``return_type="sympy"`` result for :meth:`QuantumSession.statevector`."""
-    from sympy import (
-        I,
-        Symbol,
-        cancel,
-        count_ops,
-        exp,
-        nsimplify,
-        pi,
-        simplify,
-    )
-    from sympy.physics.quantum import OrthogonalKet
+def _resolve_symbolic_amplitude(amplitude, nnz):
+    """Reduce a symbolic amplitude expression to sin/cos-of-simplified-angle terms via trigify_amp."""
+    from sympy import Symbol, nsimplify
 
-    from qrisp.misc import bin_rep
-    from qrisp.simulator import statevector_sim
+    process_stack = [amplitude]
+    while process_stack:
+        a = process_stack.pop(0)
+        if isinstance(a, (sympy.core.add.Add, sympy.core.mul.Mul)) and len(a.free_symbols) != 0:
+            process_stack.extend(a.args)
 
-    qv_list = list(qs.qv_list)
+        elif len(a.free_symbols) == 0:
+            sub_float = np.round(complex(a.evalf()), 5)
 
-    labels = []
-    for qv in qv_list:
-        labels.append([qv.decoder(i) for i in range(2**qv.size)])
+            if np.abs(sub_float - 1) < 10**-5:
+                abs_amp = 1
+                continue
+            elif np.abs(sub_float) < 10**-5:
+                continue
+            elif np.abs(sub_float) > 1:
+                continue
+            else:
+                abs_amp = trigify_amp(sub_float, nnz)
 
-    compiled_qc = qs.compile()
+            if np.angle(complex(a.evalf())) / np.pi == 1:
+                phase = -1
+            else:
+                phase = sympy.exp(
+                    sympy.I
+                    * nsimplify(
+                        np.angle(complex(a.evalf())) / np.pi,
+                        tolerance=10**-5,
+                    )
+                    * Symbol("pi")
+                )
 
-    sv_array = statevector_sim(compiled_qc)
+            expr = abs_amp * phase
 
+            amplitude = amplitude.subs(a, expr)
+
+    return amplitude.subs(1j, sympy.I)
+
+
+# Above this many operations, a simplified symbolic phase is considered too
+# unwieldy and the raw numeric angle is used instead.
+_MAX_PHASE_OP_COUNT = 5
+
+
+def _sympy_ket_expr_for_index(sv_array, ind, decimals, nnz, angles):
+    """Compute the symbolic ket-expression contribution of the nonzero amplitude at index ind."""
+    from sympy import I, count_ops, exp, nsimplify, pi
+
+    amplitude = sv_array[ind]
+
+    if not sv_array.dtype == np.dtype("O"):
+        if decimals is None:
+            try:
+                abs_amp = trigify_amp(amplitude, nnz)
+            except TypeError:
+                abs_amp = amplitude
+
+            # For some reason there is a sympy error, when the angle is equal to 1
+            if angles[ind] == 1:
+                phase = 1
+            else:
+                phase = nsimplify(float(angles[ind]), tolerance=10**-5)
+
+            if count_ops(phase) > _MAX_PHASE_OP_COUNT:
+                phase = angles[ind]
+
+            return exp(I * phase * pi) * abs_amp * nnz**0.5
+        else:
+            return sympy.N(amplitude, decimals)
+
+    else:
+        amplitude = _resolve_symbolic_amplitude(amplitude, nnz)
+        return sympy.trigsimp(amplitude) * nnz**0.5
+
+
+def _prepare_sympy_statevector(sv_array, decimals):
+    """Round (numeric) or simplify (symbolic) sv_array and find its nonzero-amplitude indices.
+
+    Returns (sv_array, angles, nz_indices, nnz). angles is None for symbolic
+    statevectors, where it is never read by _sympy_ket_expr_for_index.
+    """
     if not sv_array.dtype == np.dtype("O"):
         angles = np.angle(sv_array) % (2 * np.pi) / (np.pi)
 
@@ -1319,9 +1376,11 @@ def get_sympy_state(qs, decimals):
             angles = np.round(angles, 5)
 
         nz_indices = np.nonzero(sv_array)[0]
-        nnz = len(nz_indices)
 
     else:
+        from sympy import simplify
+
+        angles = None
         nz_indices = []
 
         for i in range(len(sv_array)):
@@ -1336,72 +1395,31 @@ def get_sympy_state(qs, decimals):
             if not sv_array[i] == 0:
                 nz_indices.append(i)
 
-        nnz = len(nz_indices)
+    return sv_array, angles, nz_indices, len(nz_indices)
+
+
+def get_sympy_state(qs, decimals):
+    """Build the ``return_type="sympy"`` result for :meth:`QuantumSession.statevector`."""
+    from sympy import Symbol, cancel, nsimplify, pi
+    from sympy.physics.quantum import OrthogonalKet
+
+    from qrisp.misc import bin_rep
+    from qrisp.simulator import statevector_sim
+
+    qv_list = list(qs.qv_list)
+
+    labels = []
+    for qv in qv_list:
+        labels.append([qv.decoder(i) for i in range(2**qv.size)])
+
+    compiled_qc = qs.compile()
+
+    sv_array = statevector_sim(compiled_qc)
+    sv_array, angles, nz_indices, nnz = _prepare_sympy_statevector(sv_array, decimals)
 
     res = 0
     for ind in list(nz_indices):
-        amplitude = sv_array[ind]
-
-        if not sv_array.dtype == np.dtype("O"):
-            if decimals is None:
-                try:
-                    abs_amp = trigify_amp(amplitude, nnz)
-                except TypeError:
-                    abs_amp = amplitude
-
-                # For some reason there is a sympy error, when the angle is equal to 1
-                if angles[ind] == 1:
-                    phase = 1
-                else:
-                    phase = nsimplify(float(angles[ind]), tolerance=10**-5)
-
-                if count_ops(phase) > 5:
-                    phase = angles[ind]
-
-                ket_expr = exp(I * phase * pi) * abs_amp * nnz**0.5
-            else:
-                ket_expr = sympy.N(amplitude, decimals)
-
-        else:
-            process_stack = [amplitude]
-            while process_stack:
-                a = process_stack.pop(0)
-                if isinstance(a, (sympy.core.add.Add, sympy.core.mul.Mul)) and len(a.free_symbols) != 0:
-                    process_stack.extend(a.args)
-
-                elif len(a.free_symbols) == 0:
-                    sub_float = np.round(complex(a.evalf()), 5)
-
-                    if np.abs(sub_float - 1) < 10**-5:
-                        abs_amp = 1
-                        continue
-                    elif np.abs(sub_float) < 10**-5:
-                        entry = entry.subs(a, 0)
-                        continue
-                    elif np.abs(sub_float) > 1:
-                        continue
-                    else:
-                        abs_amp = trigify_amp(sub_float, nnz)
-
-                    if np.angle(complex(a.evalf())) / np.pi == 1:
-                        phase = -1
-                    else:
-                        phase = sympy.exp(
-                            sympy.I
-                            * nsimplify(
-                                np.angle(complex(a.evalf())) / np.pi,
-                                tolerance=10**-5,
-                            )
-                            * Symbol("pi")
-                        )
-
-                    expr = abs_amp * phase
-
-                    amplitude = amplitude.subs(a, expr)
-
-            amplitude = amplitude.subs(1j, sympy.I)
-
-            ket_expr = sympy.trigsimp(amplitude) * nnz**0.5
+        ket_expr = _sympy_ket_expr_for_index(sv_array, ind, decimals, nnz, angles)
 
         int_string = bin_rep(ind, len(compiled_qc.qubits))
 
@@ -1428,6 +1446,11 @@ def get_sympy_state(qs, decimals):
 
     res = res.subs({Symbol("pi"): pi})
     return res
+
+
+# Above this many rendered LaTeX characters, a simplified sin/cos/nsimplify
+# expression is considered too unwieldy and a plainer fallback is used instead.
+_MAX_TRIGIFY_LATEX_LEN = 20
 
 
 def trigify_amp(amplitude, nnz):
@@ -1462,9 +1485,9 @@ def trigify_amp(amplitude, nnz):
         temp = nsimplify(np.abs(amplitude) * nnz**0.5, tolerance=10**-5) / nnz**0.5
 
     # if count_ops(temp) > 4:
-    if len(latex(temp)) > 20:
+    if len(latex(temp)) > _MAX_TRIGIFY_LATEX_LEN:
         temp = nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10**-5) / nnz**0.5
-        if len(latex(temp)) > 20:
+        if len(latex(temp)) > _MAX_TRIGIFY_LATEX_LEN:
             abs = np.abs(amplitude)
 
         else:
