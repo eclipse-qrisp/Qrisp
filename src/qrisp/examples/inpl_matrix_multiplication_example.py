@@ -25,7 +25,7 @@ from qrisp.alg_primitives.arithmetic import QuantumFloat, inplace_matrix_app
 def generate_random_inv_matrix(n, bit):
     import random
 
-    from qrisp.misc import is_inv
+    from qrisp.alg_primitives.arithmetic.arithmetic_tools import is_inv
 
     found = False
 

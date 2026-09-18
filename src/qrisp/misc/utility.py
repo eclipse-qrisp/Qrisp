@@ -102,24 +102,6 @@ def int_as_array(k, bit):
     return np.array([int(c) for c in bin_str])
 
 
-def array_as_int(array):
-    result = 0
-    for k in range(len(array)):
-        if array[::-1][k]:
-            result += 2 ** (k)
-
-    return result
-
-
-def is_inv(x, bit):
-    # return (math.gcd(int(np.round(x, 3)),2**bit) == 1)
-
-    # The only divisors 2**bit has is powers of 2
-    # ie. if tha factorization of x doesn't contain any powers of 2 it is invertible
-    # in other words: x is invertible if it is uneven
-    return bool(int(x) % 2)
-
-
 def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
     """Decorator to bundle up the quantum instructions of a function into a single gate
     object. Bundled gate objects can help debugging as it allows for a more clear

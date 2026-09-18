@@ -465,7 +465,7 @@ def inplace_matrix_app(vector, matrix):
     # that will be evaluated later by the circuit generator
     eval_eq = []
 
-    from qrisp.misc import is_inv
+    from qrisp.alg_primitives.arithmetic.arithmetic_tools import is_inv
 
     for i in range(n):
         # Save evaluation
