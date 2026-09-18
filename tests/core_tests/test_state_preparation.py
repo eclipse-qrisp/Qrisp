@@ -23,7 +23,8 @@ from jax.typing import ArrayLike
 from qrisp import QuantumFloat, QuantumVariable
 from qrisp.alg_primitives.state_preparation.prepare_func import prepare_qswitch
 from qrisp.jasp import terminal_sampling
-from qrisp.misc.utility import EPSILON, swap_endianness
+from qrisp.alg_primitives.state_preparation.qswitch_state_preparation import swap_endianness
+from qrisp.misc.utility import EPSILON
 
 ########################################################
 ### Test state preparation with array (based on qswitch)

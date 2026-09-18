@@ -93,7 +93,7 @@ class QuantumDictionary(dict):
     CustomQuantumVariable:
 
     >>> print(type(value_qv))
-    <class 'qrisp.misc.misc_functions.custom_qv.<locals>.CustomQuantumVariable'>
+    <class 'qrisp.core.quantum_variable.custom_qv.<locals>.CustomQuantumVariable'>
 
     If we want to apply further processing this might not be helpfull since custom
     QuantumVariables lack many methods that are available in more specific quantum

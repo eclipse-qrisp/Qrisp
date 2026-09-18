@@ -26,7 +26,7 @@ def test_inpl_matrix_multiplication_example():
     def generate_random_inv_matrix(n, bit):
         import random
 
-        from qrisp.misc import is_inv
+        from qrisp.alg_primitives.arithmetic.arithmetic_tools import is_inv
 
         found = False
 
