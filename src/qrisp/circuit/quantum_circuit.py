@@ -3107,6 +3107,16 @@ def get_depth_dic(qc: QuantumCircuit, transpile_qc: bool = True, depth_indicator
     return {qc.qubits[i]: op_stack[i] for i in range(len(qc.qubits))}
 
 
+def _single_axis_rotation_t_depth(par, epsilon):
+    """T-depth of a single-axis rotation given its rotation angle normalized to [0, 1) turns."""
+    if par in [0, 1 / 2]:
+        return 0
+    elif par in [1 / 4, 3 / 4]:
+        return 1
+    else:
+        return 3 * np.log2(1 / epsilon)
+
+
 def t_depth_indicator(op, epsilon):
     r"""This function returns the T-depth of an :ref:`Operation` object.
 
@@ -3154,24 +3164,14 @@ def t_depth_indicator(op, epsilon):
         return 0
     elif op.name in ["rx", "ry", "rz", "p", "u1"]:
         par = op.params[0] / (np.pi) % 1
-        if par in [0, 1 / 2]:
-            return 0
-        elif par in [1 / 4, 3 / 4]:
-            return 1
-        else:
-            return 3 * np.log2(1 / epsilon)
+        return _single_axis_rotation_t_depth(par, epsilon)
     elif op.name in ["t", "t_dg"]:
         return 1
     elif op.name == "u3":
         res = 0
         for _ in range(3):
             par = op.params[0] / (np.pi) % 1
-            if par in [0, 1 / 2]:
-                pass
-            elif par in [1 / 4, 3 / 4]:
-                res += 1
-            else:
-                res += 3 * np.log2(1 / epsilon)
+            res += _single_axis_rotation_t_depth(par, epsilon)
         return res
     else:
         raise Exception(f"Gate {op.name} not implemented")
@@ -3208,8 +3208,9 @@ def cnot_depth_indicator(op):
 
 
 def perm_lock(qubits):
-    """Locks a list of qubits such that only permeable gates can be executed on these
-    qubits. This means that an error will be raised if the user attempts to perform any
+    """Locks a list of qubits such that only permeable gates can be executed on these qubits.
+
+    This means that an error will be raised if the user attempts to perform any
     operation involving these qubits if the operation does not commute with the
     Z-operator of this qubit. For more information, what a permeable gate is, check the
     :ref:`uncomputation documentation <uncomputation>`.
@@ -3288,8 +3289,7 @@ def perm_unlock(qubits):
 
 
 def lock(qubits):
-    """Locks a list of qubits, implying an error will be raised if the user tries to
-    perform any operation involving these qubits.
+    """Locks a list of qubits, raising an error if any operation is performed on them.
 
     This can be reversed by calling unlock.
 
@@ -3365,7 +3365,7 @@ def render_qc(qc: QuantumCircuit) -> None:
         path = os.path.join(tmpdir, "document.tex")
         with open(path, "w") as fp:
             fp.write(latex_str)
-        subprocess.run(["lualatex", path], cwd=tmpdir)
+        subprocess.run(["lualatex", path], cwd=tmpdir, check=True)
         subprocess.run(
             [
                 "pdftocairo",
@@ -3378,6 +3378,7 @@ def render_qc(qc: QuantumCircuit) -> None:
                 "document",
             ],
             cwd=tmpdir,
+            check=True,
         )
 
         im = Image(filename=os.path.join(tmpdir, "document.png"))
