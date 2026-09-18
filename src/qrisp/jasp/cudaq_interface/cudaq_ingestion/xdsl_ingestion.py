@@ -25,6 +25,7 @@ from typing import Literal
 
 import cudaq
 from cudaq.kernel.kernel_decorator import PyKernelDecorator
+from cudaq.mlir._mlir_libs._quakeDialects import cudaq_runtime
 from cudaq.mlir.dialects import cc as cudaq_cc_dialect
 from cudaq.mlir.dialects import quake as cudaq_quake_dialect
 from cudaq.mlir.ir import Module, NoneType
@@ -34,7 +35,6 @@ from qrisp.jasp.cudaq_interface.cudaq_ingestion.cudaq_prep import (
     _CudaqPreparationConfig,
     _prepare_module_for_cudaq,
 )
-from qrisp.jasp.cudaq_interface.cudaq_ingestion.host_attributes import _get_llvm_attributes
 
 # ------------------------------------------------------------------ #
 # xDSL → CUDA-Q serialization normalization
@@ -178,9 +178,6 @@ def _cudaq_kernel_from_xdsl_module(
     entry_point = kernel.funcNameEntryPoint
     uniq_name = func_name.replace("__nvqpp__mlirgen__", "")
 
-    # Get platform LLVM attributes
-    data_layout_str, target_triple_str = _get_llvm_attributes()
-
     # Apply all structural passes (in-place on the xDSL module)
     _prepare_module_for_cudaq(
         module,
@@ -188,8 +185,6 @@ def _cudaq_kernel_from_xdsl_module(
             func_name=func_name,
             entry_point=entry_point,
             unique_name=uniq_name,
-            data_layout=data_layout_str,
-            target_triple=target_triple_str,
             execution_mode=execution_mode,
         ),
     )
@@ -206,6 +201,13 @@ def _cudaq_kernel_from_xdsl_module(
             cudaq_quake_dialect.register_dialect(context=kernel.ctx)
             cudaq_cc_dialect.register_dialect(context=kernel.ctx)
             new_module = Module.parse(adapted_mlir, kernel.ctx)
+
+        # CUDA-Q's C++ backend needs the host's llvm.data_layout to allocate
+        # memory. Rather than guessing it, we let CUDA-Q attach its own: this
+        # is the same call its Python AST bridge makes, so the layout is by
+        # construction the one the CUDA-Q build executing this kernel expects,
+        # on every platform it supports.
+        cudaq_runtime.set_data_layout(new_module)
 
         kernel.module = new_module
         NoneType.get(context=kernel.ctx)

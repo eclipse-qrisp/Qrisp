@@ -21,38 +21,37 @@
 #
 # Rationale
 # ---------
-# CUDA-Q's execution backend (C++) strictly requires an MLIR module to
-# specify the host machine's exact memory architecture (llvm.data_layout)
-# and hardware target (llvm.target_triple) to successfully compile and
-# allocate memory. Currently, the CUDA-Q Python API lacks a native
-# mechanism to cleanly ingest externally compiled MLIR strings. Omitting
-# these hardware attributes results in fatal "missing data layout"
-# runtime crashes.
+# CUDA-Q's execution backend (C++) requires an MLIR module to specify the
+# host machine's exact memory architecture (llvm.data_layout) in order to
+# compile and allocate memory; omitting it results in fatal "missing data
+# layout" runtime crashes. Currently, the CUDA-Q Python API lacks a native
+# mechanism to cleanly ingest externally compiled MLIR strings, so we
+# assemble the module ourselves and then hand it to CUDA-Q.
 #
 # Approach
 # --------
-# 1. Target Extraction: We define an empty Python function decorated with
-#    `@cudaq.kernel` to trigger the CUDA-Q compiler pipeline. This forces
-#    the underlying LLVM compiler to generate the exact, natively-matched
-#    layout and target triple for the host environment, which we then
-#    extract via regular expressions. If that fails
-#    (e.g. in CI environments where str() doesn't trigger full LLVM
-#    lowering), we fall back to well-known platform defaults derived from
-#    the host's architecture and OS.
+# 1. Interface Adaptation (cudaq_ingestion/cudaq_prep.py):
+#    We restructure the Qrisp-generated MLIR to match what CUDA-Q expects.
+#    Crucially, we also clone the primary entry function to create a required
+#    `.run` variant. During this cloning, we translate standard `func.return`
+#    instructions into `quake.log_output` operations. This structural change
+#    is required, as it is the exact mechanism CUDA-Q uses to capture and
+#    aggregate individual per-shot measurement data during simulation.
 #
-# 2. Interface Adaptation (cudaq_ingestion/cudaq_prep.py):
-#    We inject the extracted hardware specifications
-#    into the Qrisp-generated MLIR. Crucially, we also clone the primary
-#    entry function to create a required `.run` variant. During this cloning,
-#    we translate standard `func.return` instructions into `quake.log_output`
-#    operations. This structural change is required, as it is the exact
-#    mechanism CUDA-Q uses to capture and aggregate individual per-shot
-#    measurement data during simulation.
+# 2. Re-Compilation (cudaq_ingestion/xdsl_ingestion.py): The adapted MLIR
+#    string is fed back into CUDA-Q's internal compiler via `Module.parse()`.
+#    This re-compiles the string within the active MLIR context, resulting in
+#    a valid kernel object that the C++ backend can safely execute.
 #
-# 3. Re-Compilation: The fully adapted, hardware-aware MLIR string is fed
-#    back into CUDA-Q's internal compiler via `Module.parse()`. This
-#    re-compiles the string within the active MLIR context, resulting in a
-#    valid kernel object that the C++ backend can safely execute.
+# 3. Data Layout: We then call `cudaq_runtime.set_data_layout` on the parsed
+#    module -- the very same call CUDA-Q's own Python AST bridge makes after
+#    compiling an `@cudaq.kernel`. Delegating this to CUDA-Q means the layout
+#    is correct on every platform CUDA-Q supports, with no host detection or
+#    hardcoded per-architecture layout strings on the Qrisp side.
+#
+# Note that `llvm.target_triple` is deliberately not set: CUDA-Q's Python
+# pipeline does not emit one either, and the kernel compiles and executes
+# without it.
 
 import inspect
 from collections.abc import Callable
