@@ -1058,7 +1058,7 @@ class QuantumVariable:
         # qc = qc.transpile()
 
         from qrisp.interface.measurement_result import DecodedMeasurementResult
-        from qrisp.misc import get_measurement_from_qc
+        from qrisp.interface import get_measurement_from_qc
 
         counts = get_measurement_from_qc(qc, self.reg, backend, shots)
         result = DecodedMeasurementResult(counts, self.decoder)

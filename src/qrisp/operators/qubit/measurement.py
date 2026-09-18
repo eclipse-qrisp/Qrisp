@@ -188,7 +188,7 @@ class QubitOperatorMeasurement:
 
     def get_measurement(self, qc, qubit_list, precision, backend):
 
-        from qrisp.misc import get_measurement_from_qc
+        from qrisp.interface import get_measurement_from_qc
 
         results = []
         meas_coeffs = []

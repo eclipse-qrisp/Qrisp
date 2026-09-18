@@ -53,6 +53,11 @@ for i in [
     sys.modules["qrisp." + i] = sys.modules["qrisp.algorithms." + i]
 
 from qrisp.default_backend import *
+
+# qrisp.interface is not wildcard-exported (unlike the packages above), but
+# get_measurement_from_qc has always been part of the top-level qrisp namespace
+# (it used to live in qrisp.misc, which is wildcard-exported).
+from qrisp.interface import get_measurement_from_qc
 from qrisp.jasp import *
 
 

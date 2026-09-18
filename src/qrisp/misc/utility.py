@@ -19,7 +19,6 @@
 import functools
 import traceback
 import warnings
-from typing import TYPE_CHECKING
 
 import jax
 import jax.numpy as jnp
@@ -27,10 +26,6 @@ import numpy as np
 from jax.typing import ArrayLike
 
 from qrisp.misc.exceptions import QrispDeprecationWarning
-
-if TYPE_CHECKING:
-    from qrisp.interface.backend import BackendLike
-    from qrisp.interface.measurement_result import _IntKeyedResult
 
 # A small epsilon value for numerical stability.
 # Defined here for convenience, so it can be imported elsewhere.
@@ -973,53 +968,6 @@ def check_if_fresh(qubits, qs, ignore_q_envs=True):
             return False
 
     return True
-
-
-def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "_IntKeyedResult":
-    """Run *qc*, measure *qubits*, and return a lazy int-keyed probability mapping.
-
-    Appends measurement gates for each qubit in *qubits*, submits the circuit
-    to *backend*, and wraps the raw result in an
-    :class:`~qrisp.interface.measurement_result._IntKeyedResult` that converts
-    bitstrings to integers and normalises shot counts to probabilities on first
-    access.
-
-    Parameters
-    ----------
-    qc : QuantumCircuit
-        The circuit to execute. Measurement gates are added in-place.
-    qubits : sequence
-        The qubits to measure, in order.
-    backend : BackendLike
-        Any Qrisp-compatible backend (either a concrete
-        :class:`~qrisp.interface.Backend` subclass or a
-        :class:`~qrisp.interface.BatchedBackend`).
-    shots : int or None, optional
-        Number of shots. If ``None``, the backend's default is used.
-
-    Returns
-    -------
-    _IntKeyedResult
-        Lazy mapping from integer bitstring indices to normalised probabilities.
-        Population is deferred until the first access.
-
-    """
-    from qrisp.interface.measurement_result import MeasurementResult, _IntKeyedResult
-
-    cl = []
-    for i in range(len(qubits)):
-        cl.append(qc.add_clbit())
-
-    for i in range(len(qubits)):
-        qc.measure(qubits[i], cl[i])
-
-    raw = backend.run(qc, shots=shots)
-    if not isinstance(raw, MeasurementResult):
-        # Legacy backends (e.g. VirtualBackend) return a plain dict directly.
-        mr = MeasurementResult()
-        mr._inject(raw)
-        raw = mr
-    return _IntKeyedResult(raw, len(cl))
 
 
 def find_calling_line(level=0):

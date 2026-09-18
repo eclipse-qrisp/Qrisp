@@ -709,7 +709,7 @@ class QuantumArray:
             qc = circuit_preprocessor(qc)
 
         from qrisp.interface.measurement_result import DecodedMeasurementResult
-        from qrisp.misc import get_measurement_from_qc
+        from qrisp.interface import get_measurement_from_qc
 
         counts = get_measurement_from_qc(qc, qubits, backend, shots)
         return DecodedMeasurementResult(counts, self.decoder)
