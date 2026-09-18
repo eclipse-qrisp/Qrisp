@@ -55,9 +55,10 @@ for i in [
 from qrisp.default_backend import *
 
 # qrisp.interface is not wildcard-exported (unlike the packages above), but
-# get_measurement_from_qc has always been part of the top-level qrisp namespace
-# (it used to live in qrisp.misc, which is wildcard-exported).
-from qrisp.interface import get_measurement_from_qc
+# get_measurement_from_qc and batched_measurement have always been part of the
+# top-level qrisp namespace (they used to live in qrisp.misc, which is
+# wildcard-exported).
+from qrisp.interface import batched_measurement, get_measurement_from_qc
 from qrisp.jasp import *
 
 

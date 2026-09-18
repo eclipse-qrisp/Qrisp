@@ -25,6 +25,7 @@ from typing import overload
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.measurement_result import MeasurementResult
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 # NOTE: ``BatchedBackend`` intentionally does not inherit from
@@ -303,3 +304,76 @@ class BatchedBackend:
         Accessing them after ``clear()`` raises ``RuntimeError``.
         """
         self._queries = []
+
+
+def batched_measurement(variables, backend, shots=None):
+    """Measure multiple :ref:`QuantumVariables <QuantumVariable>` in a single
+    batched execution using a :class:`~qrisp.interface.BatchedBackend`.
+
+    All ``get_measurement`` calls are collected first (returning lazy results
+    immediately), then :meth:`~qrisp.interface.BatchedBackend.dispatch` is
+    called once to execute every circuit and populate all results together.
+
+    .. deprecated:: 0.8
+
+        ``batched_measurement`` is deprecated. You can call
+        :meth:`~qrisp.QuantumVariable.get_measurement` on each variable with a
+        :class:`~qrisp.interface.BatchedBackend`, then call
+        :meth:`~qrisp.interface.BatchedBackend.dispatch` directly instead::
+
+            bb = backend.batched()
+            r1 = qv1.get_measurement(backend=bb)
+            r2 = qv2.get_measurement(backend=bb)
+            bb.dispatch()
+
+    Parameters
+    ----------
+    variables : list[:ref:`QuantumVariable`]
+        A list of QuantumVariables to measure.
+    backend : :class:`~qrisp.interface.BatchedBackend`
+        A batched backend obtained via
+        :meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
+    shots : int, optional
+        Number of shots. Defaults to the backend's ``shots`` option.
+
+    Returns
+    -------
+    results : list[DecodedMeasurementResult]
+        One decoded result per variable, in the same order as *variables*.
+
+    Examples
+    --------
+    ::
+
+        from qrisp import QuantumFloat, batched_measurement
+        from qrisp.default_backend import QrispSimulatorBackend
+
+        bb = QrispSimulatorBackend().batched()
+
+        a = QuantumFloat(4)
+        b = QuantumFloat(3)
+        a[:] = 1
+        b[:] = 2
+        c = a + b
+
+        d = QuantumFloat(4)
+        e = QuantumFloat(3)
+        d[:] = 2
+        e[:] = 3
+        f = d + e
+
+        batched_measurement([c, f], backend=bb)
+        # Yields: [{3: 1.0}, {5: 1.0}]
+
+    """
+    warnings.warn(
+        "batched_measurement is deprecated and will be removed in a future release. "
+        "Call get_measurement() on each variable with a BatchedBackend, "
+        "then call backend.dispatch() directly.",
+        QrispDeprecationWarning,
+        stacklevel=2,
+    )
+
+    results = [var.get_measurement(backend=backend, shots=shots) for var in variables]
+    backend.dispatch()
+    return results

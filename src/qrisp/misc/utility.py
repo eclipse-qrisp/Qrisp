@@ -18,12 +18,9 @@
 
 import functools
 import traceback
-import warnings
 
 import jax.numpy as jnp
 import numpy as np
-
-from qrisp.misc.exceptions import QrispDeprecationWarning
 
 # A small epsilon value for numerical stability.
 # Defined here for convenience, so it can be imported elsewhere.
@@ -344,7 +341,7 @@ def gate_wrap_inner(function, permeability=None, is_qfree=None, name=None, verif
         wrapped_function.__name__ = function.__name__
         from qrisp import QuantumArray, QuantumVariable
         from qrisp.circuit import Qubit
-        from qrisp.core import recursive_qs_search
+        from qrisp.core import find_qs, recursive_qs_search
         from qrisp.environments import GateWrapEnvironment
 
         try:
@@ -570,39 +567,6 @@ def gate_wrap_inner(function, permeability=None, is_qfree=None, name=None, verif
         return result
 
     return wrapped_function
-
-
-def find_qs(args):
-
-    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
-
-    if check_for_tracing_mode():
-        return TracingQuantumSession.get_instance()
-
-    if hasattr(args, "qs"):
-        return args.qs()
-
-    from qrisp import QuantumArray, QuantumVariable, Qubit
-
-    for arg in args:
-        if isinstance(arg, (QuantumVariable, QuantumArray)):
-            return arg.qs
-        if isinstance(arg, Qubit):
-            return arg.qs()
-
-    for arg in args:
-        if isinstance(arg, (list, tuple)):
-            try:
-                return find_qs(arg)
-            except:
-                pass
-        if isinstance(arg, dict):
-            try:
-                return find_qs(arg.items())
-            except:
-                pass
-
-    raise Exception(f"Couldn't find QuantumSession in input {args}")
 
 
 # Function to measure multiple quantum variables at once to assess their entanglement
@@ -1114,37 +1078,6 @@ def redirect_qfunction(function_to_redirect):
     return redirected_qfunction
 
 
-def render_qc(qc):
-    latex_str = qc.to_latex()
-    import os.path
-    import subprocess
-    import tempfile
-
-    from IPython.display import Image, display
-
-    with tempfile.TemporaryDirectory(prefix="texinpy_") as tmpdir:
-        path = os.path.join(tmpdir, "document.tex")
-        with open(path, "w") as fp:
-            fp.write(latex_str)
-        subprocess.run(["lualatex", path], cwd=tmpdir)
-        subprocess.run(
-            [
-                "pdftocairo",
-                "-singlefile",
-                "-transp",
-                "-r",
-                "100",
-                "-png",
-                "document.pdf",
-                "document",
-            ],
-            cwd=tmpdir,
-        )
-
-        im = Image(filename=os.path.join(tmpdir, "document.png"))
-        display(im)
-
-
 def lifted(*args, verify=False):
     """Shorthand for ``gate_wrap(permability = "args", is_qfree = True)``.
 
@@ -1251,233 +1184,3 @@ def lifted(*args, verify=False):
         return gate_wrap(permeability="args", is_qfree=True)(args[0])
 
 
-def inpl_adder_test(inpl_adder):
-    """This function runs tests on a desired inplace addition function.
-    An inplace addition function is a function mapping (a, b) to (a, a+b),
-    where a is a :ref:`QuantumVariable`, list[:ref:`Qubit`] or an integer
-    and b is either a :ref:`QuantumVariable` or a list[:ref:`Qubit`].
-
-    Parameters
-    ----------
-    inpl_adder : callable
-        A quantum inplace addition function that can either act on single QuantumVariables or on lists of Qubits
-        by adding the first one to the second.
-
-    Returns
-    -------
-    Bool:
-        True if all tests are passed, else False/ Exceptions.
-
-    Examples
-    --------
-    We test the built-in Cuccaro adder:
-
-    ::
-
-        from qrisp import cuccaro_adder, inpl_adder_test
-
-        inpl_adder_test(cuccaro_adder)
-        print("The cuccaro adder passed the tests without errors.")
-
-    And now a new user-defined qcla adder:
-    ::
-
-        from qrisp import inpl_adder_test, qcla
-
-        qcla_2_0 = lambda x, y : qcla(x, y, radix_base = 2, radix_exponent = 0)
-        inpl_adder_test(qcla_2_0)
-        print("The qcla_2_0 adder passed the tests without errors.")
-
-    """
-    from qrisp import QuantumBool, QuantumFloat, control, h, multi_measurement
-
-    for i in range(1, 7):
-        for j in range(1, i + 1):
-            a = QuantumFloat(j)
-            b = QuantumFloat(i)
-            c = QuantumFloat(i)
-
-            h(a)
-            h(b)
-
-            c[:] = b
-
-            inpl_adder(a, c)
-
-            statevector_arr = a.qs.compile().statevector_array()
-            angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)])
-
-            # Test correct phase behavior
-            assert np.sum(np.abs(angles)) < 0.1, (
-                f"Quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
-            )
-
-            mes_res = multi_measurement([a, b, c])
-
-            for a, b, c in mes_res.keys():
-                assert (a + b) % (2**i) == c, (
-                    f"Quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
-                )
-
-        if i < 6:
-            for j in range(1, 2**i):
-                a = QuantumFloat(i)
-                b = QuantumFloat(i)
-
-                h(a)
-
-                b[:] = a
-
-                inpl_adder(j, a)
-
-                statevector_arr = a.qs.compile().statevector_array()
-                angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)])
-                assert np.sum(np.abs(angles)) < 0.1, (
-                    f"Classical-quantum adder produced a faulty phase shift on input size {i}."
-                )
-
-                mes_res = multi_measurement([a, b])
-
-                for a, b in mes_res.keys():
-                    assert (b + j) % (2**i) == a, (
-                        f"Classical-quantum addition result was incorrect for input values {a} += {c} on input size {i}."
-                    )
-
-    for i in range(1, 7):
-        for j in range(1, i + 1):
-            a = QuantumFloat(j)
-            b = QuantumFloat(i)
-            c = QuantumFloat(i)
-            qbl = QuantumBool()
-
-            h(qbl)
-            h(a)
-            h(b)
-
-            c[:] = b
-
-            with control(qbl):
-                inpl_adder(a, c)
-
-            statevector_arr = a.qs.compile().statevector_array()
-            angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)])
-            assert np.sum(np.abs(angles)) < 0.1, (
-                f"Controlled quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
-            )
-
-            mes_res = multi_measurement([a, b, c, qbl])
-
-            for a, b, c, qbl in mes_res.keys():
-                if qbl:
-                    assert (a + b) % (2**i) == c, (
-                        f"Controlled quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
-                    )
-                else:
-                    assert c == b, (
-                        f"Controlled quantum-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state.Faulty input sizes: {i},{j}"
-                    )
-
-        if i < 6:
-            for j in range(1, 2**i):
-                a = QuantumFloat(i)
-                b = QuantumFloat(i)
-                qbl = QuantumBool()
-
-                h(qbl)
-                h(a)
-
-                b[:] = a
-
-                with control(qbl):
-                    inpl_adder(j, a)
-
-                statevector_arr = a.qs.compile().statevector_array()
-                angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)])
-                assert np.sum(np.abs(angles)) < 0.1, (
-                    f"Controlled classical-quantum adder produced a faulty phase shift on input size {i}."
-                )
-
-                mes_res = multi_measurement([a, b, qbl])
-
-                for a, b, qbl in mes_res.keys():
-                    if qbl:
-                        assert (b + j) % (2**i) == a, (
-                            f"Controlled classical-quantum addition result was incorrect for input values {b} += {j} on input size, {i}."
-                        )
-                    else:
-                        assert b == a, (
-                            f"Controlled classical-quantum addition behaviour was incorrect; an operation was performed without the control qubit in |1> state. Faulty input sizes: {i}"
-                        )
-
-
-def batched_measurement(variables, backend, shots=None):
-    """Measure multiple :ref:`QuantumVariables <QuantumVariable>` in a single
-    batched execution using a :class:`~qrisp.interface.BatchedBackend`.
-
-    All ``get_measurement`` calls are collected first (returning lazy results
-    immediately), then :meth:`~qrisp.interface.BatchedBackend.dispatch` is
-    called once to execute every circuit and populate all results together.
-
-    .. deprecated:: 0.8
-
-        ``batched_measurement`` is deprecated. You can call
-        :meth:`~qrisp.QuantumVariable.get_measurement` on each variable with a
-        :class:`~qrisp.interface.BatchedBackend`, then call
-        :meth:`~qrisp.interface.BatchedBackend.dispatch` directly instead::
-
-            bb = backend.batched()
-            r1 = qv1.get_measurement(backend=bb)
-            r2 = qv2.get_measurement(backend=bb)
-            bb.dispatch()
-
-    Parameters
-    ----------
-    variables : list[:ref:`QuantumVariable`]
-        A list of QuantumVariables to measure.
-    backend : :class:`~qrisp.interface.BatchedBackend`
-        A batched backend obtained via
-        :meth:`Backend.batched() <qrisp.interface.Backend.batched>`.
-    shots : int, optional
-        Number of shots. Defaults to the backend's ``shots`` option.
-
-    Returns
-    -------
-    results : list[DecodedMeasurementResult]
-        One decoded result per variable, in the same order as *variables*.
-
-    Examples
-    --------
-    ::
-
-        from qrisp import QuantumFloat, batched_measurement
-        from qrisp.default_backend import QrispSimulatorBackend
-
-        bb = QrispSimulatorBackend().batched()
-
-        a = QuantumFloat(4)
-        b = QuantumFloat(3)
-        a[:] = 1
-        b[:] = 2
-        c = a + b
-
-        d = QuantumFloat(4)
-        e = QuantumFloat(3)
-        d[:] = 2
-        e[:] = 3
-        f = d + e
-
-        batched_measurement([c, f], backend=bb)
-        # Yields: [{3: 1.0}, {5: 1.0}]
-
-    """
-    warnings.warn(
-        "batched_measurement is deprecated and will be removed in a future release. "
-        "Call get_measurement() on each variable with a BatchedBackend, "
-        "then call backend.dispatch() directly.",
-        QrispDeprecationWarning,
-        stacklevel=2,
-    )
-
-    results = [var.get_measurement(backend=backend, shots=shots) for var in variables]
-    backend.dispatch()
-    return results

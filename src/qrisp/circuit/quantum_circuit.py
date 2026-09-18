@@ -3350,3 +3350,35 @@ def unlock(qubits):
                 unlock(item)
             continue
         qb.lock = False
+
+
+def render_qc(qc: QuantumCircuit) -> None:
+    """Render a QuantumCircuit as a LaTeX-typeset image and display it inline (e.g. in a Jupyter notebook)."""
+    latex_str = qc.to_latex()
+    import os.path
+    import subprocess
+    import tempfile
+
+    from IPython.display import Image, display
+
+    with tempfile.TemporaryDirectory(prefix="texinpy_") as tmpdir:
+        path = os.path.join(tmpdir, "document.tex")
+        with open(path, "w") as fp:
+            fp.write(latex_str)
+        subprocess.run(["lualatex", path], cwd=tmpdir)
+        subprocess.run(
+            [
+                "pdftocairo",
+                "-singlefile",
+                "-transp",
+                "-r",
+                "100",
+                "-png",
+                "document.pdf",
+                "document",
+            ],
+            cwd=tmpdir,
+        )
+
+        im = Image(filename=os.path.join(tmpdir, "document.png"))
+        display(im)
