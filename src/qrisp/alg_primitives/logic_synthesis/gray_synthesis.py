@@ -26,7 +26,7 @@ from qrisp.circuit import (
     QuantumCircuit,
     fast_append,
 )
-from qrisp.misc import array_as_int, gate_wrap, int_as_array
+from qrisp.misc import gate_wrap, int_as_array
 
 use_gray_code = False
 try:
@@ -148,6 +148,16 @@ def hamming_tsp(location_list, bit_amount):
         return gray_code(max(bit_amount - 1, 1))
 
     return solution
+
+
+def array_as_int(array: np.ndarray) -> int:
+    """Convert a bit array (as produced by int_as_array) back into an integer."""
+    result = 0
+    for k in range(len(array)):
+        if array[::-1][k]:
+            result += 2**k
+
+    return result
 
 
 def hamming_movement(init, target, bit_amount):

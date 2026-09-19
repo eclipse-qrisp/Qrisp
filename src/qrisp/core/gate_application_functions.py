@@ -16,16 +16,61 @@
 
 """Defines gate application functions (cx, h, mcx, rz, measure, ...) that append operations to circuits."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import jax
 import sympy
 
 import qrisp.circuit.standard_operations as std_ops
-from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen
+from qrisp.circuit import Operation, Qubit
+from qrisp.core.quantum_array import QuantumArray
+from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.jasp import DynamicQubitArray, TracingQuantumSession, check_for_tracing_mode, jlen
 
 
-def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
-    from qrisp import find_qs
+class _QuantumSessionNotFoundError(Exception):
+    """Raised internally by find_qs when no QuantumSession is found in the given input."""
 
+
+def find_qs(args: Any) -> Any:
+    """Recursively search args/kwargs for the QuantumSession they belong to."""
+    if check_for_tracing_mode():
+        return TracingQuantumSession.get_instance()
+
+    if hasattr(args, "qs"):
+        return args.qs()
+
+    for arg in args:
+        if isinstance(arg, (QuantumVariable, QuantumArray)):
+            return arg.qs
+        if isinstance(arg, Qubit):
+            return arg.qs()
+
+    for arg in args:
+        if isinstance(arg, (list, tuple)):
+            try:
+                return find_qs(arg)
+            except _QuantumSessionNotFoundError:
+                pass
+        if isinstance(arg, dict):
+            try:
+                return find_qs(arg.items())
+            except _QuantumSessionNotFoundError:
+                pass
+
+    raise _QuantumSessionNotFoundError(f"Couldn't find QuantumSession in input {args}")
+
+
+def append_operation(operation: Operation, qubits: Any = None, clbits: Any = None, param_tracers: Any = None) -> None:
+    """Append operation to the QuantumSession of qubits, silently no-op'ing on an empty qubit list."""
+    if qubits is None:
+        qubits = []
+    if clbits is None:
+        clbits = []
+    if param_tracers is None:
+        param_tracers = []
     try:
         qs = find_qs(qubits)
         qs.append(operation, qubits, clbits, param_tracers=param_tracers)
@@ -482,7 +527,6 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         jones_toffoli,
         khattar_mcx,
     )
-    from qrisp.core import QuantumVariable
     from qrisp.environments import invert
     from qrisp.misc import bin_rep
     from qrisp.qtypes import QuantumBool
@@ -1215,7 +1259,6 @@ def measure(qubits):
         The Clbit to store the result in. By default, a new Clbit will be created.
 
     """
-    from qrisp import find_qs
     from qrisp.jasp import TracingQuantumSession
 
     qs = find_qs(qubits)
@@ -1236,11 +1279,9 @@ def measure(qubits):
 
         return clbits
     else:
-        from qrisp import QuantumArray, QuantumVariable
         from qrisp.jasp import (
             AbstractQubit,
             AbstractQubitArray,
-            DynamicQubitArray,
             Measurement_p,
         )
 
@@ -1282,7 +1323,6 @@ def reset(qubits):
         The Qubit to measure.
 
     """
-    from qrisp import QuantumArray, find_qs
     from qrisp.jasp import TracingQuantumSession, jrange
 
     qs = find_qs(qubits)
@@ -1291,7 +1331,6 @@ def reset(qubits):
         append_operation(std_ops.Reset(), [qubits])
         return None
     else:
-        from qrisp import QuantumVariable
         from qrisp.jasp import AbstractQubit, AbstractQubitArray, reset_p
 
         if isinstance(qubits, QuantumVariable):
@@ -1350,8 +1389,6 @@ def barrier(qubits):
         QuantumVariable qv
 
     """
-    from qrisp import Qubit
-
     if isinstance(qubits, Qubit):
         qubits = [qubits]
 

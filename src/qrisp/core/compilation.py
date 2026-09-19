@@ -26,9 +26,10 @@ from qrisp.circuit import (
     Qubit,
     decompose,
     fast_append,
+    get_depth_dic,
 )
 from qrisp.circuit.pass_management.passes.fuse_adjacents import fuse_adjacents
-from qrisp.misc import get_depth_dic, retarget_instructions
+from qrisp.misc import retarget_instructions
 from qrisp.permeability import lightcone_reduction, optimize_allocations, parallelize_qc
 
 # The purpose of this function is to dynamically (de)allocate qubits when they are

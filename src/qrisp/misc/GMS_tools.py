@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from qrisp.circuit import Operation
+from qrisp.circuit import Operation, QuantumCircuit
 
 
 class GXX_wrapper(Operation):
@@ -32,7 +32,6 @@ class GXX_wrapper(Operation):
 
         self.chi = chi
         self.n = n
-        from qrisp.circuit import QuantumCircuit
 
         qc = QuantumCircuit(n)
 
@@ -369,7 +368,6 @@ class GZZ_wrapper(Operation):
 
         self.chi = chi
         self.n = n
-        from qrisp.circuit import QuantumCircuit
 
         qc = QuantumCircuit(n)
 

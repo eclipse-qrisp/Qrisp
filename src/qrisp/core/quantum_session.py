@@ -16,9 +16,14 @@
 
 """Defines the QuantumSession class managing QuantumVariable lifecycles, environments, and compilation."""
 
+from __future__ import annotations
+
 import weakref
+from typing import Any, Callable, cast
 
 import numpy as np
+import sympy
+from sympy.physics.quantum import OrthogonalKet
 
 from qrisp.circuit import (
     Clbit,
@@ -28,10 +33,12 @@ from qrisp.circuit import (
     Qubit,
     QubitAlloc,
     QubitDealloc,
+    cnot_count,
+    get_depth_dic,
 )
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import multi_session_merge
-from qrisp.misc import get_depth_dic
+from qrisp.misc import bin_rep
 
 
 class QuantumSession(QuantumCircuit):
@@ -272,8 +279,11 @@ class QuantumSession(QuantumCircuit):
 
         return res
 
-    def get_depth_dic(self):
-        return get_depth_dic(self)
+    def get_depth_dic(self) -> dict[Qubit, int]:
+        """Return the depth of each qubit in this QuantumSession. See QuantumCircuit.get_depth_dic."""
+        # get_depth_dic's return type is dict[Qubit, float] to accommodate custom
+        # depth_indicator callables; with the default used here, values are always int.
+        return cast("dict[Qubit, int]", get_depth_dic(self))
 
     def add_qubit(self, qubit=None):
         qb = super().add_qubit(qubit)
@@ -395,7 +405,6 @@ class QuantumSession(QuantumCircuit):
         """
         if len(self.env_stack) != 0:
             raise Exception("Tried to count CNOT gates with open if environments")
-        from qrisp.misc import cnot_count
 
         return cnot_count(self)
 
@@ -688,8 +697,6 @@ class QuantumSession(QuantumCircuit):
         """
         if len(self.env_stack):
             raise Exception("Tried to evaluate statevector within open QuantumEnvironments")
-
-        from qrisp import get_statevector_function, get_sympy_state
 
         if return_type == "array":
             from qrisp.simulator import statevector_sim
@@ -1231,6 +1238,266 @@ class QuantumSession(QuantumCircuit):
         self.qs_tracker = [weakref.ref(qs) for qs in qs_list]
 
         return list(self.qs_tracker)
+
+
+def get_statevector_function(qs: QuantumSession, decimals: int | None = None) -> Callable[..., Any]:
+    """Build the ``return_type="function"`` result for :meth:`QuantumSession.statevector`."""
+    if len(qs.qv_list) == 0:
+        return lambda x: 0
+
+    from qrisp.simulator import statevector_sim
+
+    compiled_qc = qs.compile()
+    sv_array = statevector_sim(compiled_qc)
+
+    if decimals is not None:
+        sv_array = np.round(sv_array, decimals)
+
+    def statevector(label_constellation, ndigits=None):
+        qs = list(label_constellation.keys())[0].qs
+
+        if len(label_constellation) != len(qs.qv_list):
+            missing_variables = {qv.name for qv in qs.qv_list} - {qv.name for qv in label_constellation.keys()}
+            raise ValueError(
+                "Tried to invoke statevector debugger without specifying an "
+                "outcome label for each QuantumVariable registered in "
+                "QuantumSession. Missing variables are: " + str(missing_variables)
+            )
+
+        bitstring = len(compiled_qc.qubits) * ["0"]
+
+        for qf in label_constellation.keys():
+            label_int = qf.encoder(label_constellation[qf])
+            bin_label_int = bin_rep(label_int, qf.size)[::-1]
+
+            for i in range(qf.size):
+                qubit_pos = compiled_qc.qubits.index(qf[i])
+                bitstring[qubit_pos] = bin_label_int[i]
+
+        bitstring = "".join(bitstring)
+        state_index = int(bitstring, base=2)
+
+        if ndigits is None:
+            return sv_array[state_index]
+        return np.around(sv_array[state_index], ndigits)
+
+    return statevector
+
+
+def _resolve_symbolic_amplitude(amplitude: Any, nnz: int) -> Any:
+    """Reduce a symbolic amplitude expression to sin/cos-of-simplified-angle terms via trigify_amp."""
+    process_stack: list[Any] = [amplitude]
+    while process_stack:
+        a = process_stack.pop(0)
+        if isinstance(a, (sympy.core.add.Add, sympy.core.mul.Mul)) and len(a.free_symbols) != 0:
+            process_stack.extend(a.args)
+
+        elif len(a.free_symbols) == 0:
+            # a is a concrete (non-symbolic) sympy number here; .evalf() supports
+            # complex() via duck typing, but sympy ships no type stubs for pyright to see that.
+            sub_float = np.round(complex(a.evalf()), 5)  # pyright: ignore[reportCallIssue, reportArgumentType]
+
+            if np.abs(sub_float - 1) < 10**-5:
+                abs_amp = 1
+                continue
+            if np.abs(sub_float) < 10**-5:
+                continue
+            if np.abs(sub_float) > 1:
+                continue
+            abs_amp = trigify_amp(sub_float, nnz)
+
+            if np.angle(complex(a.evalf())) / np.pi == 1:  # pyright: ignore[reportCallIssue, reportArgumentType]
+                phase = -1
+            else:
+                phase = sympy.exp(
+                    sympy.I
+                    * sympy.nsimplify(
+                        np.angle(complex(a.evalf())) / np.pi,  # pyright: ignore[reportCallIssue, reportArgumentType]
+                        tolerance=10**-5,
+                    )
+                    * sympy.Symbol("pi")
+                )
+
+            expr = abs_amp * phase
+
+            amplitude = amplitude.subs(a, expr)
+
+    return amplitude.subs(1j, sympy.I)
+
+
+# Above this many operations, a simplified symbolic phase is considered too
+# unwieldy and the raw numeric angle is used instead.
+_MAX_PHASE_OP_COUNT = 5
+
+
+def _sympy_ket_expr_for_index(
+    sv_array: np.ndarray, ind: int, decimals: int | None, nnz: int, angles: np.ndarray | None
+) -> Any:
+    """Compute the symbolic ket-expression contribution of the nonzero amplitude at index ind."""
+    amplitude = sv_array[ind]
+
+    if not sv_array.dtype == np.dtype("O"):
+        # angles is only None when sv_array.dtype == object (see _prepare_sympy_statevector).
+        assert angles is not None
+        if decimals is None:
+            try:
+                abs_amp = trigify_amp(amplitude, nnz)
+            except TypeError:
+                abs_amp = amplitude
+
+            # For some reason there is a sympy error, when the angle is equal to 1
+            if angles[ind] == 1:
+                phase = 1
+            else:
+                phase = sympy.nsimplify(float(angles[ind]), tolerance=10**-5)
+
+            if sympy.count_ops(phase) > _MAX_PHASE_OP_COUNT:
+                phase = angles[ind]
+
+            return sympy.exp(sympy.I * phase * sympy.pi) * abs_amp * nnz**0.5
+        return sympy.N(amplitude, decimals)
+
+    amplitude = _resolve_symbolic_amplitude(amplitude, nnz)
+    return sympy.trigsimp(amplitude) * nnz**0.5
+
+
+def _prepare_sympy_statevector(
+    sv_array: np.ndarray, decimals: int | None
+) -> tuple[np.ndarray, np.ndarray | None, list[int] | np.ndarray, int]:
+    """Round (numeric) or simplify (symbolic) sv_array and find its nonzero-amplitude indices.
+
+    Returns (sv_array, angles, nz_indices, nnz). angles is None for symbolic
+    statevectors, where it is never read by _sympy_ket_expr_for_index.
+    """
+    if not sv_array.dtype == np.dtype("O"):
+        angles = np.angle(sv_array) % (2 * np.pi) / (np.pi)
+
+        if decimals is not None:
+            sv_array = np.round(sv_array, decimals)
+            angles = np.round(angles, decimals)
+        else:
+            sv_array = np.round(sv_array, 5)
+            angles = np.round(angles, 5)
+
+        nz_indices = np.nonzero(sv_array)[0]
+
+    else:
+        angles = None
+        nz_indices = []
+
+        for i, val in enumerate(sv_array):
+            entry = sympy.simplify(val)
+
+            for a in sympy.preorder_traversal(entry):
+                if isinstance(a, sympy.Float):
+                    entry = entry.subs(a, round(a, 5))
+
+            sv_array[i] = entry
+
+            if not sv_array[i] == 0:
+                nz_indices.append(i)
+
+    return sv_array, angles, nz_indices, len(nz_indices)
+
+
+def _ket_with_variable_labels(
+    ket_expr: Any, qv_list: list[QuantumVariable], int_string: str, compiled_qc: QuantumCircuit
+) -> Any:
+    """Multiply ket_expr by each registered QuantumVariable's decoded-label OrthogonalKet for this basis state."""
+    for qv in qv_list:
+        # get_sympy_state only runs on a compiled, concrete circuit, so reg is
+        # always a plain Qubit list here, never None or a tracing-mode DynamicQubitArray.
+        assert isinstance(qv.reg, list)
+        bit_string = ""
+        for qb in qv.reg:
+            bit_string += int_string[compiled_qc.qubits.index(qb)]
+
+        label = qv.decoder(int(bit_string[::-1], 2))
+        ket_expr = ket_expr * OrthogonalKet(label)
+
+    return ket_expr
+
+
+def get_sympy_state(qs: QuantumSession, decimals: int | None) -> Any:
+    """Build the ``return_type="sympy"`` result for :meth:`QuantumSession.statevector`."""
+    from qrisp.simulator import statevector_sim
+
+    qv_list = list(qs.qv_list)
+
+    compiled_qc = qs.compile()
+
+    sv_array = statevector_sim(compiled_qc)
+    sv_array, angles, nz_indices, nnz = _prepare_sympy_statevector(sv_array, decimals)
+
+    res: Any = 0
+    for ind in list(nz_indices):
+        ket_expr = _sympy_ket_expr_for_index(sv_array, ind, decimals, nnz, angles)
+        int_string = bin_rep(ind, len(compiled_qc.qubits))
+        ket_expr = _ket_with_variable_labels(ket_expr, qv_list, int_string, compiled_qc)
+        res += ket_expr
+
+    if decimals is None or sv_array.dtype == np.dtype("O"):
+        res = sympy.cancel(sympy.nsimplify(1 / nnz**0.5) * res)
+
+    if isinstance(res, sympy.core.mul.Mul):
+        temp: Any = 1
+        for arg in res.args[:-1]:
+            temp *= sympy.nsimplify(arg.subs({sympy.Symbol("pi"): sympy.pi}))
+
+        res = temp * res.args[-1]
+
+    res = res.subs({sympy.Symbol("pi"): sympy.pi})
+    return res
+
+
+# Above this many rendered LaTeX characters, a simplified sin/cos/nsimplify
+# expression is considered too unwieldy and a plainer fallback is used instead.
+_MAX_TRIGIFY_LATEX_LEN = 20
+
+
+def trigify_amp(amplitude: Any, nnz: int) -> Any:
+    """Express ``amplitude`` as a sin/cos of a simplified angle, for use in :func:`get_sympy_state`."""
+    cos_expr = sympy.nsimplify(float(np.arccos(np.abs(amplitude)) / np.pi), tolerance=10**-5)
+    sin_expr = sympy.nsimplify(float(np.arcsin(np.abs(amplitude)) / np.pi), tolerance=10**-5)
+
+    # if count_ops(sin_expr) > count_ops(cos_expr):
+    if len(sympy.latex(sin_expr)) > len(sympy.latex(cos_expr)):
+        expr = "cos"
+        temp = cos_expr
+    # elif count_ops(sin_expr) < count_ops(cos_expr):
+    elif len(sympy.latex(sin_expr)) < len(sympy.latex(cos_expr)):
+        expr = "sin"
+        temp = sin_expr
+    elif len(sin_expr.free_symbols) == 0:
+        if sin_expr.evalf() > cos_expr.evalf():
+            expr = "cos"
+            temp = cos_expr
+        else:
+            expr = "sin"
+            temp = sin_expr
+    else:
+        # Neither a cos- nor sin-based representation was clearly simpler;
+        # fall back to using the plain simplified magnitude below.
+        expr = None
+        temp = sympy.nsimplify(np.abs(amplitude) * nnz**0.5, tolerance=10**-5) / nnz**0.5
+
+    # if count_ops(temp) > 4:
+    if len(sympy.latex(temp)) > _MAX_TRIGIFY_LATEX_LEN:
+        temp = sympy.nsimplify(float(np.abs(amplitude) * nnz**0.5), tolerance=10**-5) / nnz**0.5
+        if len(sympy.latex(temp)) > _MAX_TRIGIFY_LATEX_LEN:
+            magnitude = np.abs(amplitude)
+
+        else:
+            magnitude = temp
+
+    elif expr == "cos":
+        magnitude = sympy.cos(cos_expr * sympy.Symbol("pi"))
+    elif expr == "sin":
+        magnitude = sympy.sin(sin_expr * sympy.Symbol("pi"))
+    else:
+        magnitude = temp
+
+    return magnitude
 
 
 class QuantumVariableNamingError(Exception):

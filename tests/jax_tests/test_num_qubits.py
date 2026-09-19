@@ -27,9 +27,9 @@ from qrisp import (
     x,
 )
 from qrisp.jasp import jrange, qache
-from qrisp.jasp.interpreter_tools.interpreters.utilities import (
-    always_one,
-    always_zero,
+from qrisp.jasp.evaluation_tools.profiler import (
+    _always_one as always_one,
+    _always_zero as always_zero,
 )
 
 
