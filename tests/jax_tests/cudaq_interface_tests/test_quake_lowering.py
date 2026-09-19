@@ -31,6 +31,7 @@ Sections
 """
 
 import warnings
+import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
@@ -41,7 +42,6 @@ import cudaq
 from qrisp import (
     QuantumVariable,
     QuantumFloat,
-    QuantumModulus,
     h,
     x,
     y,
@@ -217,17 +217,21 @@ def test_cudaq_kernel_attribute():
 
 
 def test_only_quantum_functions_are_marked_as_kernels():
-    """A function is marked a kernel iff it threads quantum state, not merely exists.
+    """A function is marked a kernel if and only if it threads quantum state."""
 
-    The marking used to double as an already-visited flag, which tagged every
-    function in the module -- tracers and integer arithmetic helpers included --
-    as a CUDA-Q kernel.
-    """
+    @qache
+    def flip(qv):
+        x(qv[0])
+
+    @jax.jit
+    def jitted_inner_func():
+        return 1.0
 
     def circuit():
-        qf = QuantumModulus(5)
-        qf += 2
-        return measure(qf)
+        qv = QuantumVariable(2)
+        flip(qv)  # a qached subroutine: lowered to a quantum callee
+        value = jitted_inner_func()  # jitted: lowered to a classical callee
+        return measure(qv[0]) + value
 
     xdsl_module = _lower(circuit)
 
@@ -235,8 +239,8 @@ def test_only_quantum_functions_are_marked_as_kernels():
     for func_op in xdsl_module.body.block.ops:
         if not isinstance(func_op, FuncOp):
             continue
-        # Quantum either by taking qubit operands (a forwarder such as
-        # jasp_gidney_mcx applies no gates of its own) or by applying gates.
+        # Quantum either by taking qubit operands (a forwarder may apply no
+        # gates of its own) or by applying gates.
         signature = list(func_op.function_type.inputs.data) + list(func_op.function_type.outputs.data)
         touches_qubits = any(getattr(t, "name", "").startswith("quake.") for t in signature) or any(
             op.name.startswith("quake.") for op in func_op.walk()
@@ -244,13 +248,15 @@ def test_only_quantum_functions_are_marked_as_kernels():
         bucket = marked if "cudaq-kernel" in func_op.attributes else unmarked
         bucket.append((func_op.sym_name.data, touches_qubits))
 
-    assert marked, "no function was marked as a kernel"
-    assert unmarked, "no classical helper in the module; the test proves nothing"
-
+    # The classification checks come first, so an over-marking regression is
+    # reported by name rather than as an empty-bucket premise failure.
     for name, touches_qubits in marked:
         assert touches_qubits, f"{name} is marked a kernel but never touches a qubit"
     for name, touches_qubits in unmarked:
         assert not touches_qubits, f"{name} touches qubits but is not marked a kernel"
+
+    assert marked, "no function was marked a kernel; the test proves nothing"
+    assert unmarked, "no classical helper in the module; the test proves nothing"
 
 
 # ---------------------------------------------------------------------------
