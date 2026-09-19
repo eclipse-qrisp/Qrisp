@@ -1182,5 +1182,3 @@ def lifted(*args, verify=False):
 
     else:
         return gate_wrap(permeability="args", is_qfree=True)(args[0])
-
-
