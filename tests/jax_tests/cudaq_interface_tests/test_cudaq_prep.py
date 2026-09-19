@@ -167,6 +167,18 @@ def test_sample_mode_strips_returns_and_adds_no_run_variant():
     assert FUNC_NAME + ".run.entry" not in funcs
 
 
+def test_unique_name_uses_cudaqs_own_attribute():
+    """The unique kernel name must go under the name CUDA-Q reads it from.
+
+    CUDA-Q spells this quake.python_uniqued (cudaq.kernel.utils
+    cudaq__unique_attr_name); anything else is an attribute it never looks at.
+    """
+    module = _prepare(_simple)
+
+    assert "quake.python_uniqued" in module.attributes
+    assert module.attributes["quake.python_uniqued"].data == "probe"
+
+
 def test_mangled_name_map_covers_exactly_the_entry_points():
     """The name map lists @main and .run in run mode, and only @main in sample mode."""
     run_map = _prepare(_simple, "run").attributes["quake.mangled_name_map"].data

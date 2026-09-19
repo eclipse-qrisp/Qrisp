@@ -234,7 +234,7 @@ def _pass_inject_module_attrs(
     launches it through, including the ``.run`` variant when one was
     synthesized.
     """
-    module.attributes["cc.python_uniqued"] = StringAttr(config.unique_name)
+    module.attributes["quake.python_uniqued"] = StringAttr(config.unique_name)
 
     name_map = {config.func_name: StringAttr(config.entry_point)}
     if run_func_name and run_entry_name:
