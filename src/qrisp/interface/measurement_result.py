@@ -505,12 +505,10 @@ def get_measurement_from_qc(
         Population is deferred until the first access.
 
     """
-    cl = []
-    for i in range(len(qubits)):
-        cl.append(qc.add_clbit())
+    cl = [qc.add_clbit() for _ in qubits]
 
-    for i in range(len(qubits)):
-        qc.measure(qubits[i], cl[i])
+    for qubit, clbit in zip(qubits, cl):
+        qc.measure(qubit, clbit)
 
     raw = backend.run(qc, shots=shots)
     if not isinstance(raw, MeasurementResult):

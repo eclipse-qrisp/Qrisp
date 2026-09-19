@@ -23,7 +23,7 @@ from numba import njit
 
 from qrisp.core import QuantumArray, QuantumVariable
 from qrisp.core.compilation import qompiler
-from qrisp.interface import BatchedBackend
+from qrisp.interface import BatchedBackend, get_measurement_from_qc
 
 
 def get_measurement(
@@ -187,8 +187,6 @@ class QubitOperatorMeasurement:
         self.shots_list = [N * s for s in self.stds]
 
     def get_measurement(self, qc, qubit_list, precision, backend):
-
-        from qrisp.interface import get_measurement_from_qc
 
         results = []
         meas_coeffs = []

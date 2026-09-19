@@ -18,6 +18,9 @@
 
 from __future__ import annotations
 
+import os.path
+import subprocess
+import tempfile
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -3116,10 +3119,9 @@ def _single_axis_rotation_t_depth(par: FloatLike, epsilon: float) -> float:
     """T-depth of a single-axis rotation given its rotation angle normalized to [0, 1) turns."""
     if par in [0, 1 / 2]:
         return 0
-    elif par in [1 / 4, 3 / 4]:
+    if par in [1 / 4, 3 / 4]:
         return 1
-    else:
-        return 3 * np.log2(1 / epsilon)
+    return 3 * np.log2(1 / epsilon)
 
 
 def t_depth_indicator(op: Operation, epsilon: float) -> float:
@@ -3145,9 +3147,9 @@ def t_depth_indicator(op: Operation, epsilon: float) -> float:
     """
     if isinstance(op, ClControlledOperation):
         return t_depth_indicator(op.base_op, epsilon)
-    elif op.definition is not None:
+    if op.definition is not None:
         return op.definition.t_depth(epsilon)
-    elif op.name in [
+    if op.name in [
         "cx",
         "cx",
         "cz",
@@ -3167,19 +3169,18 @@ def t_depth_indicator(op: Operation, epsilon: float) -> float:
         "gphase",
     ]:
         return 0
-    elif op.name in ["rx", "ry", "rz", "p", "u1"]:
+    if op.name in ["rx", "ry", "rz", "p", "u1"]:
         par = cast(float, op.params[0]) / np.pi % 1
         return _single_axis_rotation_t_depth(par, epsilon)
-    elif op.name in ["t", "t_dg"]:
+    if op.name in ["t", "t_dg"]:
         return 1
-    elif op.name == "u3":
+    if op.name == "u3":
         res = 0
         for _ in range(3):
             par = cast(float, op.params[0]) / np.pi % 1
             res += _single_axis_rotation_t_depth(par, epsilon)
         return res
-    else:
-        raise Exception(f"Gate {op.name} not implemented")
+    raise NotImplementedError(f"Gate {op.name} not implemented")
 
 
 def cnot_depth_indicator(op: Operation) -> float:
@@ -3202,14 +3203,13 @@ def cnot_depth_indicator(op: Operation) -> float:
     """
     if isinstance(op, ClControlledOperation):
         return cnot_depth_indicator(op.base_op)
-    elif op.definition is not None:
+    if op.definition is not None:
         return op.definition.cnot_depth()
     if op.num_qubits == 1 or op.name == "barrier":
         return 0
-    elif op.name in ["cx", "cx", "cz"]:
+    if op.name in ["cx", "cx", "cz"]:
         return 1
-    else:
-        raise Exception(f"Gate {op.name} not implemented")
+    raise NotImplementedError(f"Gate {op.name} not implemented")
 
 
 def perm_lock(qubits: Any) -> None:
@@ -3360,15 +3360,11 @@ def unlock(qubits: Any) -> None:
 def render_qc(qc: QuantumCircuit) -> None:
     """Render a QuantumCircuit as a LaTeX-typeset image and display it inline (e.g. in a Jupyter notebook)."""
     latex_str = qc.to_latex()
-    import os.path
-    import subprocess
-    import tempfile
-
     from IPython.display import Image, display
 
     with tempfile.TemporaryDirectory(prefix="texinpy_") as tmpdir:
         path = os.path.join(tmpdir, "document.tex")
-        with open(path, "w") as fp:
+        with open(path, "w", encoding="utf-8") as fp:
             fp.write(latex_str)
         subprocess.run(["lualatex", path], cwd=tmpdir, check=True)
         subprocess.run(

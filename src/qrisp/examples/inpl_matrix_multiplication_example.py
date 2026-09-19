@@ -20,12 +20,11 @@ import numpy as np
 
 from qrisp import QuantumArray
 from qrisp.alg_primitives.arithmetic import QuantumFloat, inplace_matrix_app
+from qrisp.alg_primitives.arithmetic.arithmetic_tools import is_inv
 
 
 def generate_random_inv_matrix(n, bit):
     import random
-
-    from qrisp.alg_primitives.arithmetic.arithmetic_tools import is_inv
 
     found = False
 
