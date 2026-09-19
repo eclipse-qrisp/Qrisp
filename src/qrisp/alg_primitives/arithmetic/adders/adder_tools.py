@@ -16,9 +16,14 @@
 
 """Decorator adapting a raw in-place adder to QuantumFloat alignment and classical/list operands."""
 
+from __future__ import annotations
+
+from typing import Callable, cast
+
 import numpy as np
 
 from qrisp.core.gate_application_functions import h
+from qrisp.core.quantum_session import QuantumSession
 from qrisp.environments import control
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.misc import multi_measurement
@@ -212,7 +217,7 @@ _PHASE_TOLERANCE = 0.1
 _CQ_TEST_SIZE_LIMIT = 6
 
 
-def _check_qq_adder(inpl_adder, i, j):
+def _check_qq_adder(inpl_adder: Callable, i: int, j: int) -> None:
     """Check a quantum-quantum in-place addition a += c for QuantumFloat sizes j, i."""
     a = QuantumFloat(j)
     b = QuantumFloat(i)
@@ -225,7 +230,7 @@ def _check_qq_adder(inpl_adder, i, j):
 
     inpl_adder(a, c)
 
-    statevector_arr = a.qs.compile().statevector_array()
+    statevector_arr = cast(QuantumSession, a.qs).compile().statevector_array()
     angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)])
 
     # Test correct phase behavior
@@ -237,12 +242,11 @@ def _check_qq_adder(inpl_adder, i, j):
 
     for a, b, c in mes_res.keys():
         assert (a + b) % (2**i) == c, (
-            f"Quantum-quantum addition result was incorrect for input values "
-            f"{a} += {c} on input sizes, {i},{j}."
+            f"Quantum-quantum addition result was incorrect for input values {a} += {c} on input sizes, {i},{j}."
         )
 
 
-def _check_cq_adder(inpl_adder, i, j):
+def _check_cq_adder(inpl_adder: Callable, i: int, j: int) -> None:
     """Check a classical-quantum in-place addition a += j for QuantumFloat size i."""
     a = QuantumFloat(i)
     b = QuantumFloat(i)
@@ -253,7 +257,7 @@ def _check_cq_adder(inpl_adder, i, j):
 
     inpl_adder(j, a)
 
-    statevector_arr = a.qs.compile().statevector_array()
+    statevector_arr = cast(QuantumSession, a.qs).compile().statevector_array()
     angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)])
     assert np.sum(np.abs(angles)) < _PHASE_TOLERANCE, (
         f"Classical-quantum adder produced a faulty phase shift on input size {i}."
@@ -267,7 +271,7 @@ def _check_cq_adder(inpl_adder, i, j):
         )
 
 
-def _check_controlled_qq_adder(inpl_adder, i, j):
+def _check_controlled_qq_adder(inpl_adder: Callable, i: int, j: int) -> None:
     """Check a controlled quantum-quantum in-place addition a += c for QuantumFloat sizes j, i."""
     a = QuantumFloat(j)
     b = QuantumFloat(i)
@@ -283,7 +287,7 @@ def _check_controlled_qq_adder(inpl_adder, i, j):
     with control(qbl):
         inpl_adder(a, c)
 
-    statevector_arr = a.qs.compile().statevector_array()
+    statevector_arr = cast(QuantumSession, a.qs).compile().statevector_array()
     angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size + b.size) / 2 + 1)])
     assert np.sum(np.abs(angles)) < _PHASE_TOLERANCE, (
         f"Controlled quantum-quantum adder produced a faulty phase shift on input sizes, {i},{j}."
@@ -304,7 +308,7 @@ def _check_controlled_qq_adder(inpl_adder, i, j):
             )
 
 
-def _check_controlled_cq_adder(inpl_adder, i, j):
+def _check_controlled_cq_adder(inpl_adder: Callable, i: int, j: int) -> None:
     """Check a controlled classical-quantum in-place addition a += j for QuantumFloat size i."""
     a = QuantumFloat(i)
     b = QuantumFloat(i)
@@ -318,7 +322,7 @@ def _check_controlled_cq_adder(inpl_adder, i, j):
     with control(qbl):
         inpl_adder(j, a)
 
-    statevector_arr = a.qs.compile().statevector_array()
+    statevector_arr = cast(QuantumSession, a.qs).compile().statevector_array()
     angles = np.angle(statevector_arr[np.abs(statevector_arr) > 1 / 2 ** ((a.size) / 2 + 1)])
     assert np.sum(np.abs(angles)) < _PHASE_TOLERANCE, (
         f"Controlled classical-quantum adder produced a faulty phase shift on input size {i}."
@@ -339,7 +343,7 @@ def _check_controlled_cq_adder(inpl_adder, i, j):
             )
 
 
-def inpl_adder_test(inpl_adder):
+def inpl_adder_test(inpl_adder: Callable) -> None:
     """This function runs tests on a desired inplace addition function.
 
     An inplace addition function is a function mapping (a, b) to (a, a+b),
