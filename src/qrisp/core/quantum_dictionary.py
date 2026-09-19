@@ -25,8 +25,7 @@ from qrisp.misc import bin_rep, int_as_array
 
 
 class QuantumDictionary(dict):
-    r"""This class can be used for loading data relations into the quantum computer which
-    are not based on a quantum algorithm.
+    r"""This class can be used for loading non-algorithmic data relations into the quantum computer.
 
     As an inheritor of the Python dictionary it has all the functionality we are used to
 
