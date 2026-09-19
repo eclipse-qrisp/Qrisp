@@ -28,6 +28,7 @@
 # - Synthesizes .run variant (quake.log_output + void return)
 # - Synthesizes .run.entry
 # - Injects module-level attributes (quake.mangled_name_map, etc.)
+# - Rejects Quake-valued returns for the .run variant
 
 from dataclasses import dataclass
 from typing import Literal
@@ -48,7 +49,12 @@ from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcStructType,
     CcUndefOp,
 )
-from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import QuakeLogOutputOp
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
+    QuakeLogOutputOp,
+    QuakeMeasureType,
+    QuakeRefType,
+    QuakeVeqType,
+)
 
 # ===========================================================================
 # Internal helpers
@@ -108,6 +114,24 @@ def _rewrite_return_as_log_output(func_op: func.FuncOp) -> None:
         block.erase_op(return_op)
 
     _set_result_types(func_op, [])
+
+
+def _contains_quake_type(attribute: Attribute) -> bool:
+    """Return whether an attribute is a Quake type, including packed fields."""
+    if isinstance(attribute, (QuakeMeasureType, QuakeRefType, QuakeVeqType)):
+        return True
+    if isinstance(attribute, CcStructType):
+        return any(_contains_quake_type(field_type) for field_type in attribute.field_types.data)
+    return False
+
+
+def _validate_run_return_types(func_op: func.FuncOp) -> None:
+    """Reject Quake-valued returns, which CUDA-Q cannot expose through ``run``."""
+    for result_type in func_op.function_type.outputs.data:
+        if _contains_quake_type(result_type):
+            raise ValueError(
+                "Kernels used with CUDA-Q run mode must return only classical values; a quantum value was returned."
+            )
 
 
 # ===========================================================================
@@ -180,6 +204,7 @@ def _pass_pack_multi_return(func_op: func.FuncOp) -> None:
 def _pass_synthesize_run(module: ModuleOp, source_func: func.FuncOp, run_func_name: str) -> None:
     """Create the .run function: clone source, replace return with log_output + void return."""
     source_output_types = list(source_func.function_type.outputs.data)
+    _validate_run_return_types(source_func)
 
     run_func = source_func.clone()
     run_func.properties["sym_name"] = StringAttr(run_func_name)

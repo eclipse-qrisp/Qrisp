@@ -119,6 +119,8 @@ def _cudaq_kernel_from_xdsl_module(
           measurement results across repeated executions. Use this mode when
           you need to retrieve computed classical values (e.g., expectation
           values, bit-strings with post-processing) from the quantum kernel.
+          Kernels used with this mode must return only classical values;
+          returning a quantum value raises ``ValueError`` during preparation.
 
         - ``"sample"`` — Prepares the kernel for use with ``cudaq.sample()``.
           This mode strips all return values from the kernel (making it

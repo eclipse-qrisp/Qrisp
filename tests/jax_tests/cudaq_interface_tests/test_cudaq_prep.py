@@ -158,6 +158,30 @@ def test_run_mode_synthesizes_run_variants():
     assert "sym_visibility" not in run_entry.properties
 
 
+def test_run_mode_rejects_quake_return():
+    """Run mode must reject a kernel returning a quantum register."""
+
+    def returns_qubits():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        return qv
+
+    with pytest.raises(ValueError, match="must return only classical values"):
+        _prepare(returns_qubits, "run")
+
+
+def test_run_mode_rejects_quake_type_nested_in_struct():
+    """Run mode must reject Quake values inside packed return types."""
+
+    def returns_qubits_and_classical_value():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        return qv, measure(qv[0])
+
+    with pytest.raises(ValueError, match="must return only classical values"):
+        _prepare(returns_qubits_and_classical_value, "run")
+
+
 def test_sample_mode_strips_returns_and_adds_no_run_variant():
     """Sample mode voids the entry point and synthesizes no .run functions."""
     funcs = _funcs(_prepare(_simple, "sample"))
