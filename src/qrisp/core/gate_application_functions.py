@@ -16,17 +16,21 @@
 
 """Defines gate application functions (cx, h, mcx, rz, measure, ...) that append operations to circuits."""
 
+from __future__ import annotations
+
+from typing import Any
+
 import jax
 import sympy
 
 import qrisp.circuit.standard_operations as std_ops
-from qrisp.circuit import Qubit
+from qrisp.circuit import Operation, Qubit
 from qrisp.core.quantum_array import QuantumArray
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen
 
 
-def find_qs(args):
+def find_qs(args: Any) -> Any:
     """Recursively search args/kwargs for the QuantumSession they belong to."""
     from qrisp.jasp import TracingQuantumSession
 
@@ -57,7 +61,7 @@ def find_qs(args):
     raise Exception(f"Couldn't find QuantumSession in input {args}")
 
 
-def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
+def append_operation(operation: Operation, qubits: Any = [], clbits: Any = [], param_tracers: Any = []) -> None:
     """Append operation to the QuantumSession of qubits, silently no-op'ing on an empty qubit list."""
     try:
         qs = find_qs(qubits)
