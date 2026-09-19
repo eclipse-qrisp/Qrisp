@@ -956,6 +956,33 @@ def test_prep_amplitudes_are_real_and_non_negative(name, coefficients):
     assert np.all(np.real(amplitudes) >= 0)
 
 
+def test_block_encoding_linear_combination_product_ancillae_quantumfloat():
+    """Ancillae returned by a linear combination or product of block encodings are of type QuantumFloat.
+
+    This is not strictly required: QuantumVariable decodes to bitstings in static mode.
+    This may cause confusion when post-selecting.
+    """
+
+    def unitary1(anc, operand):
+        x(operand[0])
+
+    def unitary2(anc, operand):
+        z(operand[0])
+
+    be1 = BlockEncoding(1, [QuantumBool()], unitary1)
+    be2 = BlockEncoding(1, [QuantumFloat(3)], unitary2)
+
+    combination = BlockEncoding.linear_combination([be1, be2], coefficients=[1.0, 1.0])
+    ancs = combination.apply(QuantumFloat(3))
+    for anc in ancs:
+        assert isinstance(anc, QuantumFloat)
+
+    product = be1 @ be2
+    ancs = product.apply(QuantumFloat(3))
+    for anc in ancs:
+        assert isinstance(anc, QuantumFloat)
+
+
 #
 # Coefficients are detached from the caller
 #

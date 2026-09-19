@@ -275,7 +275,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         else:
             templates = (
                 _template_of_size(QuantumFloat(selector_size), selector_size),
-                _template_of_size(QuantumVariable(workspace_size), workspace_size),
+                _template_of_size(QuantumFloat(workspace_size), workspace_size),
             )
         if _is_trace_independent(templates):
             object.__setattr__(self, "_cached_anc_templates", templates)

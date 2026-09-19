@@ -45,7 +45,7 @@ from qrisp.block_encodings.block_encoding_base import (
     _ProductFactors,
     _ProductStrategy,
 )
-from qrisp.core import QuantumVariable, mcx
+from qrisp.core import mcx
 from qrisp.environments import conjugate, control
 from qrisp.jasp import qache
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
@@ -259,7 +259,7 @@ class ProductBlockEncoding(BlockEncoding):
                 workspace_size = _maximum_layout_size(layouts)
                 templates = (
                     _template_of_size(QuantumFloat(shift_size), shift_size),
-                    _template_of_size(QuantumVariable(workspace_size), workspace_size),
+                    _template_of_size(QuantumFloat(workspace_size), workspace_size),
                 )
                 cacheable = _is_trace_independent(templates)
         else:
