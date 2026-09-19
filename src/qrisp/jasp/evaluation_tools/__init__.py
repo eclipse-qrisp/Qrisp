@@ -23,3 +23,12 @@ from qrisp.jasp.evaluation_tools.catalyst_qjit import *
 from qrisp.jasp.evaluation_tools.profiler import *
 from qrisp.jasp.evaluation_tools.stim_extraction import *
 from qrisp.jasp.evaluation_tools.backend_sampling import *
+
+# Optional CUDA-Q backend — only exposed when cudaq is installed.
+try:
+    from qrisp.jasp.cudaq_interface import (
+        FixedShapeNDArray,
+        cudaq_kernel,
+    )
+except ImportError:
+    pass
