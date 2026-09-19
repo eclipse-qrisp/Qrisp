@@ -16,8 +16,10 @@
 
 """Defines the QuantumVariable class, the quantum analogue of a classical variable."""
 
+from __future__ import annotations
+
 import copy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,6 +28,7 @@ from jax import tree_util
 from qrisp.core.compilation import qompiler
 
 if TYPE_CHECKING:
+    from qrisp.core.quantum_session import QuantumSession
     from qrisp.interface.measurement_result import DecodedMeasurementResult
 
 
@@ -1487,7 +1490,12 @@ class QuantumVariable:
         return QuantumVariableTemplate(self)
 
 
-def custom_qv(labels, decoder=None, qs=None, name=None):
+def custom_qv(
+    labels: list,
+    decoder: Callable | None = None,
+    qs: QuantumSession | None = None,
+    name: str | None = None,
+) -> QuantumVariable:
     """Create a QuantumVariable with a custom outcome-label list and/or decoder.
 
     See :meth:`QuantumVariable.custom <qrisp.QuantumVariable.custom>` for the
@@ -1507,14 +1515,14 @@ def custom_qv(labels, decoder=None, qs=None, name=None):
         def __init__(self, qs=None, name=None):
             super().__init__(n, qs=qs, name=name)
 
-        def decoder(self, x):
+        def decoder(self, i):
             if decoder is None:
-                if x < len(labels):
-                    return labels[x]
+                if i < len(labels):
+                    return labels[i]
                 else:
-                    return "undefined_label_" + str(x)
+                    return "undefined_label_" + str(i)
 
-            return decoder(x)
+            return decoder(i)
 
     return CustomQuantumVariable(qs=qs, name=name)
 
