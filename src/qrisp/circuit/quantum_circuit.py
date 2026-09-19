@@ -818,7 +818,10 @@ class QuantumCircuit:
             (i.e. the maximum value in this dictionary).
 
         """
-        return get_depth_dic(self)
+        # get_depth_dic's return type is dict[Qubit, float] to accommodate
+        # custom depth_indicator callables (e.g. t_depth_indicator); with the
+        # default depth_indicator used here, values are always int.
+        return cast("dict[Qubit, int]", get_depth_dic(self))
 
     def cnot_count(self) -> int:
         """Returns the number of two-qubit Pauli-axis controlled gates (CX, CY, CZ) in
@@ -1269,7 +1272,7 @@ class QuantumCircuit:
 
     def depth(
         self,
-        depth_indicator: Callable[[Operation], int] = lambda _: 1,
+        depth_indicator: Callable[[Operation], float] = lambda _: 1,
         transpile: bool = True,
     ) -> int:
         """Returns the depth of the QuantumCircuit.
@@ -1281,7 +1284,7 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        depth_indicator : Callable[[Operation], int], optional
+        depth_indicator : Callable[[Operation], float], optional
             A function that receives an :ref:`Operation` instance and returns
             the time or logical depth that operation takes. By default every
             operation contributes a depth of 1.
@@ -1420,6 +1423,7 @@ class QuantumCircuit:
             # Set epsilon based on the maximum precision across all parameters
             epsilon = 2 ** (-max_circuit_prec - 3)
 
+        assert epsilon is not None
         return self.depth(depth_indicator=lambda x: t_depth_indicator(x, epsilon))
 
     def cnot_depth(self) -> int:
@@ -3051,7 +3055,11 @@ def cnot_count(qc: QuantumCircuit) -> int:
 
 # TODO: This should be fixed/improved (for example, it should always return a dict
 # and the type hint should be updated accordingly).
-def get_depth_dic(qc: QuantumCircuit, transpile_qc: bool = True, depth_indicator=lambda x: 1) -> dict:
+def get_depth_dic(
+    qc: QuantumCircuit,
+    transpile_qc: bool = True,
+    depth_indicator: Callable[[Operation], float] = lambda x: 1,
+) -> dict[Qubit, float]:
     """Compute the per-qubit circuit depth by stacking each instruction onto the qubits/clbits it acts on."""
     if len(qc.qubits) == 0:
         return {}
@@ -3061,11 +3069,8 @@ def get_depth_dic(qc: QuantumCircuit, transpile_qc: bool = True, depth_indicator
 
     # Assign each bit in the circuit a unique integer
     # to index into op_stack.
+    # qc.qubits is non-empty here (checked above), so bit_indices always is too.
     bit_indices = {bit: idx for idx, bit in enumerate(qc.qubits + qc.clbits)}
-
-    # If no bits, return 0
-    if not bit_indices:
-        return 0
 
     # A list that holds the height of each qubit
     # and classical bit.
@@ -3107,7 +3112,7 @@ def get_depth_dic(qc: QuantumCircuit, transpile_qc: bool = True, depth_indicator
     return {qc.qubits[i]: op_stack[i] for i in range(len(qc.qubits))}
 
 
-def _single_axis_rotation_t_depth(par, epsilon):
+def _single_axis_rotation_t_depth(par: FloatLike, epsilon: float) -> float:
     """T-depth of a single-axis rotation given its rotation angle normalized to [0, 1) turns."""
     if par in [0, 1 / 2]:
         return 0
@@ -3117,7 +3122,7 @@ def _single_axis_rotation_t_depth(par, epsilon):
         return 3 * np.log2(1 / epsilon)
 
 
-def t_depth_indicator(op, epsilon):
+def t_depth_indicator(op: Operation, epsilon: float) -> float:
     r"""This function returns the T-depth of an :ref:`Operation` object.
 
     According to `this paper <https://arxiv.org/abs/1403.2975>`_, the synthesis of an $RZ(\phi)$
@@ -3163,21 +3168,21 @@ def t_depth_indicator(op, epsilon):
     ]:
         return 0
     elif op.name in ["rx", "ry", "rz", "p", "u1"]:
-        par = op.params[0] / (np.pi) % 1
+        par = cast(float, op.params[0]) / np.pi % 1
         return _single_axis_rotation_t_depth(par, epsilon)
     elif op.name in ["t", "t_dg"]:
         return 1
     elif op.name == "u3":
         res = 0
         for _ in range(3):
-            par = op.params[0] / (np.pi) % 1
+            par = cast(float, op.params[0]) / np.pi % 1
             res += _single_axis_rotation_t_depth(par, epsilon)
         return res
     else:
         raise Exception(f"Gate {op.name} not implemented")
 
 
-def cnot_depth_indicator(op):
+def cnot_depth_indicator(op: Operation) -> float:
     r"""This function returns the CNOT-depth of an :ref:`Operation` object.
 
     In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum
@@ -3207,7 +3212,7 @@ def cnot_depth_indicator(op):
         raise Exception(f"Gate {op.name} not implemented")
 
 
-def perm_lock(qubits):
+def perm_lock(qubits: Any) -> None:
     """Locks a list of qubits such that only permeable gates can be executed on these qubits.
 
     This means that an error will be raised if the user attempts to perform any
@@ -3256,7 +3261,7 @@ def perm_lock(qubits):
         qb.perm_lock = True
 
 
-def perm_unlock(qubits):
+def perm_unlock(qubits: Any) -> None:
     """Reverses the effect of "perm_lock".
 
     Parameters
@@ -3288,7 +3293,7 @@ def perm_unlock(qubits):
         qb.perm_lock = False
 
 
-def lock(qubits):
+def lock(qubits: Any) -> None:
     """Locks a list of qubits, raising an error if any operation is performed on them.
 
     This can be reversed by calling unlock.
@@ -3318,7 +3323,7 @@ def lock(qubits):
         qb.lock = True
 
 
-def unlock(qubits):
+def unlock(qubits: Any) -> None:
     """Reverses the effect of "lock".
 
     Parameters
