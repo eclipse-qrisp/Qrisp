@@ -244,9 +244,9 @@ class QuantumVariable:
     """
 
     name: str
-    # Whether `name` is fixed and can't be renamed.
-    # See `generate_name` in quantum_session.py, and
-    # `resolve_naming_collisions` in session_merging_tools.py.
+    # Whether `name` is fixed and can't be renamed, mainly for static
+    # QuantumSessions.
+    # See `generate_name` `resolve_naming_collisions` in session_merging_tools.py.
     is_fixed_name: bool
     reg: Any  # pyright: ignore[reportExplicitAny, reportUninitializedInstanceVariable]
     creation_time: int  # pyright: ignore[reportUninitializedInstanceVariable]
