@@ -16,7 +16,10 @@
 
 """Defines the QuantumSession class managing QuantumVariable lifecycles, environments, and compilation."""
 
+from __future__ import annotations
+
 import weakref
+from typing import Any, Callable, cast
 
 import numpy as np
 import sympy
@@ -274,8 +277,11 @@ class QuantumSession(QuantumCircuit):
 
         return res
 
-    def get_depth_dic(self):
-        return get_depth_dic(self)
+    def get_depth_dic(self) -> dict[Qubit, int]:
+        """Return the depth of each qubit in this QuantumSession. See QuantumCircuit.get_depth_dic."""
+        # get_depth_dic's return type is dict[Qubit, float] to accommodate custom
+        # depth_indicator callables; with the default used here, values are always int.
+        return cast("dict[Qubit, int]", get_depth_dic(self))
 
     def add_qubit(self, qubit=None):
         qb = super().add_qubit(qubit)
@@ -1232,7 +1238,7 @@ class QuantumSession(QuantumCircuit):
         return list(self.qs_tracker)
 
 
-def get_statevector_function(qs, decimals=None):
+def get_statevector_function(qs: QuantumSession, decimals: int | None = None) -> Callable[..., Any]:
     """Build the ``return_type="function"`` result for :meth:`QuantumSession.statevector`."""
     if len(qs.qv_list) == 0:
         return lambda x: 0
@@ -1281,18 +1287,20 @@ def get_statevector_function(qs, decimals=None):
         return statevector
 
 
-def _resolve_symbolic_amplitude(amplitude, nnz):
+def _resolve_symbolic_amplitude(amplitude: Any, nnz: int) -> Any:
     """Reduce a symbolic amplitude expression to sin/cos-of-simplified-angle terms via trigify_amp."""
     from sympy import Symbol, nsimplify
 
-    process_stack = [amplitude]
+    process_stack: list[Any] = [amplitude]
     while process_stack:
         a = process_stack.pop(0)
         if isinstance(a, (sympy.core.add.Add, sympy.core.mul.Mul)) and len(a.free_symbols) != 0:
             process_stack.extend(a.args)
 
         elif len(a.free_symbols) == 0:
-            sub_float = np.round(complex(a.evalf()), 5)
+            # a is a concrete (non-symbolic) sympy number here; .evalf() supports
+            # complex() via duck typing, but sympy ships no type stubs for pyright to see that.
+            sub_float = np.round(complex(a.evalf()), 5)  # pyright: ignore[reportCallIssue, reportArgumentType]
 
             if np.abs(sub_float - 1) < 10**-5:
                 abs_amp = 1
@@ -1304,13 +1312,13 @@ def _resolve_symbolic_amplitude(amplitude, nnz):
             else:
                 abs_amp = trigify_amp(sub_float, nnz)
 
-            if np.angle(complex(a.evalf())) / np.pi == 1:
+            if np.angle(complex(a.evalf())) / np.pi == 1:  # pyright: ignore[reportCallIssue, reportArgumentType]
                 phase = -1
             else:
                 phase = sympy.exp(
                     sympy.I
                     * nsimplify(
-                        np.angle(complex(a.evalf())) / np.pi,
+                        np.angle(complex(a.evalf())) / np.pi,  # pyright: ignore[reportCallIssue, reportArgumentType]
                         tolerance=10**-5,
                     )
                     * Symbol("pi")
@@ -1328,13 +1336,17 @@ def _resolve_symbolic_amplitude(amplitude, nnz):
 _MAX_PHASE_OP_COUNT = 5
 
 
-def _sympy_ket_expr_for_index(sv_array, ind, decimals, nnz, angles):
+def _sympy_ket_expr_for_index(
+    sv_array: np.ndarray, ind: int, decimals: int | None, nnz: int, angles: np.ndarray | None
+) -> Any:
     """Compute the symbolic ket-expression contribution of the nonzero amplitude at index ind."""
     from sympy import I, count_ops, exp, nsimplify, pi
 
     amplitude = sv_array[ind]
 
     if not sv_array.dtype == np.dtype("O"):
+        # angles is only None when sv_array.dtype == object (see _prepare_sympy_statevector).
+        assert angles is not None
         if decimals is None:
             try:
                 abs_amp = trigify_amp(amplitude, nnz)
@@ -1359,7 +1371,9 @@ def _sympy_ket_expr_for_index(sv_array, ind, decimals, nnz, angles):
         return sympy.trigsimp(amplitude) * nnz**0.5
 
 
-def _prepare_sympy_statevector(sv_array, decimals):
+def _prepare_sympy_statevector(
+    sv_array: np.ndarray, decimals: int | None
+) -> tuple[np.ndarray, np.ndarray | None, list[int] | np.ndarray, int]:
     """Round (numeric) or simplify (symbolic) sv_array and find its nonzero-amplitude indices.
 
     Returns (sv_array, angles, nz_indices, nnz). angles is None for symbolic
@@ -1398,7 +1412,7 @@ def _prepare_sympy_statevector(sv_array, decimals):
     return sv_array, angles, nz_indices, len(nz_indices)
 
 
-def get_sympy_state(qs, decimals):
+def get_sympy_state(qs: QuantumSession, decimals: int | None) -> Any:
     """Build the ``return_type="sympy"`` result for :meth:`QuantumSession.statevector`."""
     from sympy import Symbol, cancel, nsimplify, pi
     from sympy.physics.quantum import OrthogonalKet
@@ -1417,7 +1431,7 @@ def get_sympy_state(qs, decimals):
     sv_array = statevector_sim(compiled_qc)
     sv_array, angles, nz_indices, nnz = _prepare_sympy_statevector(sv_array, decimals)
 
-    res = 0
+    res: Any = 0
     for ind in list(nz_indices):
         ket_expr = _sympy_ket_expr_for_index(sv_array, ind, decimals, nnz, angles)
 
@@ -1438,7 +1452,7 @@ def get_sympy_state(qs, decimals):
         res = cancel(nsimplify(1 / nnz**0.5) * res)
 
     if isinstance(res, sympy.core.mul.Mul):
-        temp = 1
+        temp: Any = 1
         for arg in res.args[:-1]:
             temp *= nsimplify(arg.subs({Symbol("pi"): pi}))
 
@@ -1453,7 +1467,7 @@ def get_sympy_state(qs, decimals):
 _MAX_TRIGIFY_LATEX_LEN = 20
 
 
-def trigify_amp(amplitude, nnz):
+def trigify_amp(amplitude: Any, nnz: int) -> Any:
     """Express ``amplitude`` as a sin/cos of a simplified angle, for use in :func:`get_sympy_state`."""
     from sympy import (
         Symbol,
@@ -1482,6 +1496,9 @@ def trigify_amp(amplitude, nnz):
             expr = "sin"
             temp = sin_expr
     else:
+        # Neither a cos- nor sin-based representation was clearly simpler;
+        # fall back to using the plain simplified magnitude below.
+        expr = None
         temp = nsimplify(np.abs(amplitude) * nnz**0.5, tolerance=10**-5) / nnz**0.5
 
     # if count_ops(temp) > 4:
@@ -1495,8 +1512,10 @@ def trigify_amp(amplitude, nnz):
 
     elif expr == "cos":
         abs = cos(cos_expr * Symbol("pi"))
-    else:
+    elif expr == "sin":
         abs = sin(sin_expr * Symbol("pi"))
+    else:
+        abs = temp
 
     return abs
 
