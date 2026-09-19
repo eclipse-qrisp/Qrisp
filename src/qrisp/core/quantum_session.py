@@ -39,7 +39,6 @@ from qrisp.circuit import (
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import multi_session_merge
 from qrisp.misc import bin_rep
-from qrisp.simulator import statevector_sim
 
 
 class QuantumSession(QuantumCircuit):
@@ -1246,6 +1245,8 @@ def get_statevector_function(qs: QuantumSession, decimals: int | None = None) ->
     if len(qs.qv_list) == 0:
         return lambda x: 0
 
+    from qrisp.simulator import statevector_sim
+
     compiled_qc = qs.compile()
     sv_array = statevector_sim(compiled_qc)
 
@@ -1419,6 +1420,8 @@ def _ket_with_variable_labels(
 
 def get_sympy_state(qs: QuantumSession, decimals: int | None) -> Any:
     """Build the ``return_type="sympy"`` result for :meth:`QuantumSession.statevector`."""
+    from qrisp.simulator import statevector_sim
+
     qv_list = list(qs.qv_list)
 
     compiled_qc = qs.compile()
