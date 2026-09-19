@@ -81,7 +81,9 @@ def test_sampling():
 
         return res
 
-    assert main().shape == (10, 3)
+    res = main()
+    assert isinstance(res, tuple) and len(res) == 3
+    assert all(r.shape == (10,) for r in res)
 
     @jaspify
     def main():
@@ -90,7 +92,9 @@ def test_sampling():
 
         return res
 
-    assert main().shape == (10, 3)
+    res = main()
+    assert isinstance(res, tuple) and len(res) == 3
+    assert all(r.shape == (10,) for r in res)
 
     @jaspify(terminal_sampling=True)
     def main():
@@ -99,7 +103,9 @@ def test_sampling():
 
         return res
 
-    assert main().shape == (10, 3)
+    res = main()
+    assert isinstance(res, tuple) and len(res) == 3
+    assert all(r.shape == (10,) for r in res)
 
     @jaspify(terminal_sampling=True)
     def main():
@@ -108,7 +114,9 @@ def test_sampling():
 
         return res
 
-    assert main().shape == (10, 3)
+    res = main()
+    assert isinstance(res, tuple) and len(res) == 3
+    assert all(r.shape == (10,) for r in res)
 
     @sample
     def main():
@@ -345,7 +353,8 @@ class TestClassicalAndMixedReturns:
             return sample(_sp_classical_tuple, shots=20)()
 
         res = main()
-        assert res.shape == (20, 2)
+        assert isinstance(res, tuple) and len(res) == 2
+        assert all(r.shape == (20,) for r in res)
 
     def test_sample_classical_tuple_rejected_by_ts(self):
         @jaspify(terminal_sampling=True)
@@ -386,7 +395,8 @@ class TestClassicalAndMixedReturns:
             return sample(_sp_mixed, shots=20)()
 
         res = main()
-        assert res.shape == (20, 2)
+        assert isinstance(res, tuple) and len(res) == 2
+        assert all(r.shape == (20,) for r in res)
 
     def test_sample_mixed_rejected_by_ts(self):
         @jaspify(terminal_sampling=True)
