@@ -19,12 +19,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 if TYPE_CHECKING:
+    from qrisp.circuit import QuantumCircuit, Qubit
     from qrisp.interface.backend import BackendLike
 
 
@@ -473,7 +474,9 @@ class _IntKeyedResult(LazyDict):
         self._data = new_counts
 
 
-def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "_IntKeyedResult":
+def get_measurement_from_qc(
+    qc: QuantumCircuit, qubits: Sequence[Qubit], backend: BackendLike, shots: int | None = None
+) -> _IntKeyedResult:
     """Run *qc*, measure *qubits*, and return a lazy int-keyed probability mapping.
 
     Appends measurement gates for each qubit in *qubits*, submits the circuit

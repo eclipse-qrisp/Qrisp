@@ -20,12 +20,16 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Mapping, Sequence
-from typing import overload
+from typing import TYPE_CHECKING, overload
 
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.interface.backend import Backend
 from qrisp.interface.measurement_result import MeasurementResult
 from qrisp.misc.exceptions import QrispDeprecationWarning
+
+if TYPE_CHECKING:
+    from qrisp.core import QuantumVariable
+    from qrisp.interface.measurement_result import DecodedMeasurementResult
 
 
 # NOTE: ``BatchedBackend`` intentionally does not inherit from
@@ -306,7 +310,9 @@ class BatchedBackend:
         self._queries = []
 
 
-def batched_measurement(variables, backend, shots=None):
+def batched_measurement(
+    variables: list[QuantumVariable], backend: BatchedBackend, shots: int | None = None
+) -> list[DecodedMeasurementResult]:
     """Measure multiple QuantumVariables in a single batched execution.
 
     Uses a :class:`~qrisp.interface.BatchedBackend`. All ``get_measurement``
