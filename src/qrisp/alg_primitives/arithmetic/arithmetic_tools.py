@@ -25,7 +25,7 @@ from qrisp.jasp import jnp, jrange
 from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
-def is_inv(x, bit):
+def is_inv(x: int, bit: int) -> bool:
     """Check whether ``x`` is invertible modulo ``2**bit``.
 
     The only divisors of ``2**bit`` are powers of 2, so ``x`` is invertible

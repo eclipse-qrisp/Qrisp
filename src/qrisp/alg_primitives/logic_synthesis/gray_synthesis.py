@@ -150,7 +150,7 @@ def hamming_tsp(location_list, bit_amount):
     return solution
 
 
-def array_as_int(array):
+def array_as_int(array: np.ndarray) -> int:
     """Convert a bit array (as produced by int_as_array) back into an integer."""
     result = 0
     for k in range(len(array)):
