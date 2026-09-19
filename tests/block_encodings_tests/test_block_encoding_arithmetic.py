@@ -29,6 +29,7 @@ from qrisp import (
     jaspify,
     make_jaspr,
     measure,
+    multi_measurement,
     s_dg,
     terminal_sampling,
     x,
@@ -294,6 +295,23 @@ def test_block_encoding_linear_combination_validates_inputs():
         BlockEncoding.linear_combination([block_encoding, two_operand_block_encoding])
 
 
+def test_block_encoding_linear_combination_with_no_workspace():
+    """Verify that a linear combination with no workspace still applies correctly."""
+
+    def unitary(qv):
+        qv += 1
+
+    BE1 = BlockEncoding(1, [], unitary)
+    BE2 = BlockEncoding(1, [], unitary)
+    BE = BE1 + BE2
+
+    qv = QuantumFloat(3)
+    ancs = BE.apply(qv)
+
+    assert len(ancs) == 1  # Exactly one ancilla for the selector.
+    assert multi_measurement([qv] + ancs) == {(1, 0): 1.0}
+
+
 def test_block_encoding_product_is_flattened_and_keeps_separate_ancillas():
     """Verify that nested products preserve factor order and ancilla ownership."""
     first = BlockEncoding(2, [QuantumFloat(2)], lambda ancilla, operand: None)
@@ -438,7 +456,7 @@ def test_linear_combination_block_encoding_has_immutable_derived_representation(
     assert isinstance(combination.terms, tuple)
     assert combination.alpha == 11
     assert combination.num_ops == 1
-    assert combination.num_ancs == 2
+    assert combination.num_ancs == 1
     assert combination.is_hermitian
 
     with pytest.raises(TypeError):

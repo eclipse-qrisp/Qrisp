@@ -270,10 +270,13 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         layouts = self._lcu_layouts
         selector_size = self._lcu_selector_size
         workspace_size = _maximum_layout_size(layouts)
-        templates = (
-            _template_of_size(QuantumFloat(selector_size), selector_size),
-            _template_of_size(QuantumVariable(workspace_size), workspace_size),
-        )
+        if _is_statically_zero(workspace_size):
+            templates = (_template_of_size(QuantumFloat(selector_size), selector_size),)
+        else:
+            templates = (
+                _template_of_size(QuantumFloat(selector_size), selector_size),
+                _template_of_size(QuantumVariable(workspace_size), workspace_size),
+            )
         if _is_trace_independent(templates):
             object.__setattr__(self, "_cached_anc_templates", templates)
         return list(templates)
@@ -304,12 +307,23 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         else:
             applies_phase = not _is_non_negative_real(effective_coefficient)
 
-        def branch(shared_ancilla, *operands):
-            child_unitary(*layout.construct_views(shared_ancilla), *operands)
-            if applies_phase:
-                # Anchored on an operand qubit: the shared workspace is empty whenever
-                # no child carries ancillas, and a global phase needs some qubit.
-                gphase(self._lcu_phases[term_index], operands[0][0])
+        workspace_size = _maximum_layout_size(self._lcu_layouts)
+        if _is_statically_zero(workspace_size):
+
+            def branch(*operands):
+                child_unitary(*operands)
+                if applies_phase:
+                    # Anchored on an operand qubit: the shared workspace is empty whenever
+                    # no child carries ancillas, and a global phase needs some qubit.
+                    gphase(self._lcu_phases[term_index], operands[0][0])
+        else:
+
+            def branch(shared_ancilla, *operands):
+                child_unitary(*layout.construct_views(shared_ancilla), *operands)
+                if applies_phase:
+                    # Anchored on an operand qubit: the shared workspace is empty whenever
+                    # no child carries ancillas, and a global phase needs some qubit.
+                    gphase(self._lcu_phases[term_index], operands[0][0])
 
         branch.__name__ = f"lcu_branch_{term_index}"
         # Caching the branch body is what keeps the repeated tracing of q_switch cheap:
