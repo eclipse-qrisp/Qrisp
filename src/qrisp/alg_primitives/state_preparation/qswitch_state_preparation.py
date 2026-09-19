@@ -25,18 +25,17 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import lax
-from jax.typing import ArrayLike
 
 from qrisp.misc.utility import EPSILON
 
 if TYPE_CHECKING:
     from qrisp.core import QuantumVariable
-    from qrisp.typing import NDArrayLike
+    from qrisp.typing import ArrayLike, NDArrayLike
 
 
 # This is required in the qswitch-based state preparation, where it is called
 # inside jrange loops, because DynamicQubitArray does not support reverse iteration.
-def bit_reverse(i, width):
+def bit_reverse(i: ArrayLike, width: ArrayLike) -> jax.Array:
     """Jasp-compatible bit-reversal function.
 
     Interprets ``i`` as a ``width``-bit binary integer
@@ -75,8 +74,8 @@ def bit_reverse(i, width):
     12
 
     """
-    i = jnp.asarray(i, dtype=jnp.uint64)
-    width = jnp.asarray(width, dtype=jnp.uint64)
+    i_arr: jax.Array = jnp.asarray(i, dtype=jnp.uint64)
+    width_arr: jax.Array = jnp.asarray(width, dtype=jnp.uint64)
 
     m1 = jnp.uint64(0x5555555555555555)
     m2 = jnp.uint64(0x3333333333333333)
@@ -85,35 +84,35 @@ def bit_reverse(i, width):
     m5 = jnp.uint64(0x0000FFFF0000FFFF)
     m6 = jnp.uint64(0x00000000FFFFFFFF)
 
-    i = ((i >> 1) & m1) | ((i & m1) << 1)
-    i = ((i >> 2) & m2) | ((i & m2) << 2)
-    i = ((i >> 4) & m3) | ((i & m3) << 4)
-    i = ((i >> 8) & m4) | ((i & m4) << 8)
-    i = ((i >> 16) & m5) | ((i & m5) << 16)
-    i = ((i >> 32) & m6) | ((i & m6) << 32)
+    i_arr = ((i_arr >> 1) & m1) | ((i_arr & m1) << 1)
+    i_arr = ((i_arr >> 2) & m2) | ((i_arr & m2) << 2)
+    i_arr = ((i_arr >> 4) & m3) | ((i_arr & m3) << 4)
+    i_arr = ((i_arr >> 8) & m4) | ((i_arr & m4) << 8)
+    i_arr = ((i_arr >> 16) & m5) | ((i_arr & m5) << 16)
+    i_arr = ((i_arr >> 32) & m6) | ((i_arr & m6) << 32)
 
-    return i >> jnp.asarray(64, jnp.uint64) - width
+    return i_arr >> jnp.asarray(64, jnp.uint64) - width_arr
 
 
-def _bitrev_indices(n: ArrayLike) -> jax.Array:
+def _bitrev_indices(n: int) -> jax.Array:
     """Return array r where r[j] = bitreverse(j) over n bits."""
     idx = jnp.arange(1 << n, dtype=jnp.uint32)
-    rev = jnp.zeros_like(idx)
+    rev: jax.Array = jnp.zeros_like(idx)
     for k in range(n):
         rev = (rev << 1) | ((idx >> k) & 1)
     return rev
 
 
-def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jax.Array:
+def swap_endianness(vec: jax.Array, n: int) -> jax.Array:
     """Convert between big-endian and little-endian qubit ordering.
 
     This transformation is its own inverse, so it works in both directions.
 
     Parameters
     ----------
-    vec : ArrayLike
+    vec : jax.Array
         The state vector to convert.
-    n : ArrayLike
+    n : int
         The number of qubits.
 
     Returns
