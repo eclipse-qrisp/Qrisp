@@ -77,7 +77,7 @@
 import jax.numpy as jnp
 from jax import jit, make_jaxpr
 from jax.extend.core import Literal
-from jax.lax import fori_loop
+from jax.lax import cond, fori_loop
 from jax.lax import while_loop as jax_while_loop
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
@@ -104,6 +104,7 @@ from qrisp.jasp.primitives import (
     create_qubits_p,
     delete_qubits_p,
     get_qubit_p,
+    get_size_p,
     quantum_gate_p,
 )
 
@@ -523,20 +524,46 @@ def _process_parity(eqn, context_dic, _register_size, _evaluator):
 # ---------------------------------------------------------------------------
 
 
-def _process_reset(eqn, context_dic, _register_size, evaluator):
-    """Reset a QubitArray to |0> by measuring each qubit and conditionally applying X.
+# Duplicate of the reset logic in catalyst_interpreter.py to avoid catalyst import.
+def _reset_qubit_array(qb_array, abs_qst):
+    """Reset every qubit in ``qb_array`` to the ``|0>`` state."""
+    from qrisp.circuit import XGate
 
-    Re-uses the reset_jaxpr from catalyst_interpreter but evaluates it with
-    *our* evaluator so the static-register representation is threaded through
-    correctly.
-    """
-    # Lazy import to avoid a hard dependency on Catalyst at module load time.
-    from qrisp.jasp.interpreter_tools.interpreters.catalyst_interpreter import (
-        reset_jaxpr,
+    def body_func(arg_tuple):
+        qb_array, i, abs_qst = arg_tuple
+
+        abs_qb = get_qubit_p.bind(qb_array, i)
+        meas_bl, abs_qst = Measurement_p.bind(abs_qb, abs_qst)
+
+        def true_fun(arg_tuple):
+            qb, abs_qst = arg_tuple
+            abs_qst = quantum_gate_p.bind(qb, abs_qst, gate=XGate())
+            return qb, abs_qst
+
+        def false_fun(arg_tuple):
+            return arg_tuple
+
+        _, abs_qst = cond(meas_bl, true_fun, false_fun, (abs_qb, abs_qst))
+        return qb_array, i + 1, abs_qst
+
+    def cond_fun(arg_tuple):
+        return arg_tuple[-2] < get_size_p.bind(arg_tuple[0])
+
+    _, _, abs_qst = jax_while_loop(
+        cond_fun,
+        body_func,
+        (qb_array, jnp.array(0, dtype=jnp.int64), abs_qst),
     )
+    return abs_qst
 
+
+_reset_jaxpr = make_jaxpr(_reset_qubit_array)(AbstractQubitArray(), AbstractQuantumState())
+
+
+def _process_reset(eqn, context_dic, _register_size, evaluator):
+    """Reset a QubitArray to |0> by measuring each qubit and conditionally applying X."""
     invalues = extract_invalues(eqn, context_dic)
-    outvalues = eval_jaxpr(reset_jaxpr.jaxpr, eqn_evaluator=evaluator)(*invalues)
+    outvalues = eval_jaxpr(_reset_jaxpr.jaxpr, eqn_evaluator=evaluator)(*invalues)
     insert_outvalues(eqn, context_dic, outvalues)
 
 
