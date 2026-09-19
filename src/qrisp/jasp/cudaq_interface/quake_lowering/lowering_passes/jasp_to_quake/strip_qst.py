@@ -52,7 +52,7 @@ from xdsl.dialects.builtin import (
     DenseIntOrFPElementsAttr,
     FunctionType,
     ModuleOp,
-    StringAttr,
+    UnitAttr,
 )
 from xdsl.dialects.scf import ConditionOp, ForOp, IfOp, IndexSwitchOp, WhileOp, YieldOp
 from xdsl.ir import (
@@ -380,13 +380,15 @@ class StripQSTFromFunc(RewritePattern):
         """Remove QuantumState values from a function signature."""
         old_ftype: FunctionType = op.function_type
 
-        # Check if there's anything to do
+        # A function is a CUDA-Q kernel exactly when it threads a QuantumState
+        # through its signature; Jasp's purely classical helpers (tracers,
+        # remainder, floor_divide, ...) never do. Returning here also
+        # terminates the rewrite: once the QuantumState has been stripped, a
+        # second visit has nothing left to match on.
         has_qst_in_sig = any(_is_qst(t) for t in old_ftype.inputs.data) or any(
             _is_qst(t) for t in old_ftype.outputs.data
         )
-        needs_attrs = "cudaq.kernel" not in op.attributes
-
-        if not has_qst_in_sig and not needs_attrs:
+        if not has_qst_in_sig:
             return
 
         # Update entry block args
@@ -416,6 +418,15 @@ class StripQSTFromFunc(RewritePattern):
             new_outputs = [_quake_type_for(t) or t for t in old_ftype.outputs.data if not _is_qst(t)]
 
         op.function_type = FunctionType.from_lists(new_inputs, new_outputs)
-        op.attributes["cudaq.kernel"] = StringAttr("true")
+
+        # Emit CUDA-Q's own spelling: unit attributes, entrypoint before kernel.
+        # CUDA-Q marks every kernel with cudaq-kernel and adds cudaq-entrypoint
+        # only for the one the host launches, so a called kernel is marked
+        # cudaq-kernel alone. The entry point also sheds its visibility, since
+        # CUDA-Q prints its own entry points without one while leaving callees
+        # private.
         if op.sym_name.data == "main":
-            op.attributes["cudaq.entrypoint"] = StringAttr("true")
+            op.attributes["cudaq-entrypoint"] = UnitAttr()
+            if "sym_visibility" in op.properties:
+                del op.properties["sym_visibility"]
+        op.attributes["cudaq-kernel"] = UnitAttr()
