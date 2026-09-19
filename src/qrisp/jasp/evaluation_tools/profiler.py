@@ -85,21 +85,21 @@ METRIC_DISPATCH = {
 }
 
 
-def _always_zero(_):
+def _always_zero(_: Any) -> bool:
     """Return False for all inputs, simulating measurements that always yield 0."""
     return False
 
 
-def _always_one(_):
+def _always_one(_: Any) -> bool:
     """Return True for all inputs, simulating measurements that always yield 1."""
     return True
 
 
-def _simulation():
+def _simulation() -> None:
     """Simulate measurements normally without any forced behavior."""
 
 
-def _meas_rng(key):
+def _meas_rng(key: jax.Array) -> jax.Array:
     """Simulate measurements using the provided random key (deterministic for every key)."""
     return jax.numpy.bool_(jax.random.randint(key, (1,), 0, 2)[0])
 
