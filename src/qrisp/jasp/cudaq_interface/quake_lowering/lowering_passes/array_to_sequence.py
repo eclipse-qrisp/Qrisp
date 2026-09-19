@@ -129,7 +129,4 @@ class EntrypointArrayToSequencePattern(RewritePattern):
 
 def _is_entrypoint(func_op: func_dialect.FuncOp) -> bool:
     """Check if the function has the CUDA-Q entrypoint attribute."""
-    if "cudaq.entrypoint" in func_op.attributes:
-        val = func_op.attributes["cudaq.entrypoint"]
-        return getattr(val, "data", str(val)).strip('"') == "true"
-    return False
+    return "cudaq-entrypoint" in func_op.attributes

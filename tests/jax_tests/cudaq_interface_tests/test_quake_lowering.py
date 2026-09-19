@@ -31,6 +31,7 @@ Sections
 """
 
 import warnings
+import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
@@ -71,6 +72,8 @@ from qrisp.jasp import (
     qache,
     quantum_kernel,
 )
+from xdsl.dialects.func import FuncOp
+
 from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import _jaspr_to_quake_mlir
 from qrisp.jasp.cudaq_interface.quake_lowering.validation_tools import _validate_quake_mlir
 from qrisp.jasp.cudaq_interface import cudaq_kernel
@@ -191,7 +194,7 @@ def test_no_jasp_types_in_output():
 
 
 def test_cudaq_kernel_attribute():
-    """Lowered function should carry cudaq.kernel and cudaq.entrypoint attributes."""
+    """Lowered function should carry CUDA-Q's cudaq-kernel/cudaq-entrypoint unit attrs."""
 
     def simple():
         qv = QuantumVariable(1)
@@ -201,9 +204,59 @@ def test_cudaq_kernel_attribute():
     xdsl_module = _lower(simple)
 
     mlir = str(xdsl_module)
-    assert "cudaq.kernel" in mlir, "Expected cudaq.kernel attribute on function"
-    assert "cudaq.entrypoint" in mlir, "Expected cudaq.entrypoint attribute on function"
+    assert '"cudaq-kernel"' in mlir, "Expected cudaq-kernel attribute on function"
+    assert '"cudaq-entrypoint"' in mlir, "Expected cudaq-entrypoint attribute on function"
+
+    # CUDA-Q prints its entry points without a visibility, callees as private
+    main_func = next(
+        op for op in xdsl_module.body.block.ops if isinstance(op, FuncOp) and "cudaq-entrypoint" in op.attributes
+    )
+    assert "sym_visibility" not in main_func.properties
+
     _validate_quake_mlir(mlir)
+
+
+def test_only_quantum_functions_are_marked_as_kernels():
+    """A function is marked a kernel if and only if it threads quantum state."""
+
+    @qache
+    def flip(qv):
+        x(qv[0])
+
+    @jax.jit
+    def jitted_inner_func():
+        return 1.0
+
+    def circuit():
+        qv = QuantumVariable(2)
+        flip(qv)  # a qached subroutine: lowered to a quantum callee
+        value = jitted_inner_func()  # jitted: lowered to a classical callee
+        return measure(qv[0]) + value
+
+    xdsl_module = _lower(circuit)
+
+    marked, unmarked = [], []
+    for func_op in xdsl_module.body.block.ops:
+        if not isinstance(func_op, FuncOp):
+            continue
+        # Quantum either by taking qubit operands (a forwarder may apply no
+        # gates of its own) or by applying gates.
+        signature = list(func_op.function_type.inputs.data) + list(func_op.function_type.outputs.data)
+        touches_qubits = any(getattr(t, "name", "").startswith("quake.") for t in signature) or any(
+            op.name.startswith("quake.") for op in func_op.walk()
+        )
+        bucket = marked if "cudaq-kernel" in func_op.attributes else unmarked
+        bucket.append((func_op.sym_name.data, touches_qubits))
+
+    # The classification checks come first, so an over-marking regression is
+    # reported by name rather than as an empty-bucket premise failure.
+    for name, touches_qubits in marked:
+        assert touches_qubits, f"{name} is marked a kernel but never touches a qubit"
+    for name, touches_qubits in unmarked:
+        assert not touches_qubits, f"{name} touches qubits but is not marked a kernel"
+
+    assert marked, "no function was marked a kernel; the test proves nothing"
+    assert unmarked, "no classical helper in the module; the test proves nothing"
 
 
 # ---------------------------------------------------------------------------
@@ -416,8 +469,8 @@ def test_bell_circuit_full_format():
     mlir = str(xdsl_module)
 
     # Function attributes
-    assert 'cudaq.kernel = "true"' in mlir
-    assert 'cudaq.entrypoint = "true"' in mlir
+    assert '"cudaq-kernel"' in mlir
+    assert '"cudaq-entrypoint"' in mlir
 
     # Alloca (constant size 2 -> statically-sized veq)
     assert "quake.alloca !quake.veq<2>" in mlir
@@ -922,7 +975,7 @@ def test_quantum_kernel_lowering():
     xdsl_module = _lower(main)
 
     mlir = str(xdsl_module)
-    assert "cudaq.kernel" in mlir
+    assert '"cudaq-kernel"' in mlir
     _validate_quake_mlir(mlir)
 
 

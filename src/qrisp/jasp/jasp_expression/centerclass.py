@@ -1136,7 +1136,7 @@ class Jaspr(ClosedJaxpr):
         .. code-block:: none
 
             builtin.module @jasp_module {
-              func.func public @main(%0: i64) -> (f64) attributes {cudaq.kernel = "true", cudaq.entrypoint = "true"} {
+              func.func public @main(%0: i64) -> (f64) attributes {"cudaq-entrypoint", "cudaq-kernel"} {
                 %1 = quake.alloca !quake.veq<?>[%0 : i64]
                 %2 = arith.constant 0 : i64
                 %3 = quake.veq_size %1 : (!quake.veq<?>) -> i64

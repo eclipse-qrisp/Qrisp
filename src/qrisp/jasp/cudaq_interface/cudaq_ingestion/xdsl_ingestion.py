@@ -16,7 +16,6 @@
 
 """Compile normalized xDSL MLIR into native CUDA-Q kernels."""
 
-import re
 from typing import Literal
 
 import cudaq
@@ -38,36 +37,31 @@ from qrisp.jasp.cudaq_interface.cudaq_ingestion.cudaq_prep import (
 
 
 def _normalize_xdsl_to_cudaq(mlir_str: str) -> str:
-    """Normalize xDSL's generic printing format to what CUDA-Q's parser expects.
+    """Rename the two ops xDSL prints under names CUDA-Q's parser rejects.
 
-    This handles purely syntactic differences between xDSL's printer output
-    and MLIR's standard format that CUDA-Q uses:
+    xDSL prints every op with its dialect prefix, while MLIR's custom syntax
+    drops it for these two. The difference is in the printing only -- the IR
+    itself is already what CUDA-Q expects -- so there is nothing to correct
+    at an earlier stage.
 
-    1. `builtin.module` → `module`
-    2. `func.return` → `return`  (bare return, not qualified)
-    3. `-> (T)` → `-> T`  (single return type without parens)
+    1. ``builtin.module`` → ``module``, at the top level only
+    2. ``func.return`` → ``return``, which is always a standalone op
 
-    These are safe textual substitutions because:
-    - `builtin.module` only appears at the top level
-    - `func.return` is always a standalone op (never inside a string/attr)
-    - Single-element return type parens are redundant in MLIR syntax
+    Note that xDSL also parenthesizes single-result function signatures
+    (``-> (i64)`` where MLIR writes ``-> i64``). That needs no rewriting:
+    MLIR's parser accepts both spellings, and packed ``!cc.struct`` returns
+    have always reached CUDA-Q with their parentheses intact.
     """
-    # 1. builtin.module → module
-    mlir_str = mlir_str.replace("builtin.module", "module", 1)
 
-    # 2. func.return → return
-    mlir_str = mlir_str.replace("func.return", "return")
+    def _rename(line: str) -> str:
+        stripped = line.lstrip()
+        if stripped.startswith("builtin.module"):
+            return line.replace("builtin.module", "module", 1)
+        if stripped.startswith("func.return"):
+            return line.replace("func.return", "return", 1)
+        return line
 
-    # 3. -> (T) → -> T  (only for single return types, not tuples)
-    # Match `-> (` followed by a type (no comma) followed by `)`
-    # This regex is safe: it only matches single-type returns
-    mlir_str = re.sub(
-        r"->\s*\(([^,\)]+)\)",
-        r"-> \1",
-        mlir_str,
-    )
-
-    return mlir_str
+    return "\n".join(_rename(line) for line in mlir_str.splitlines())
 
 
 # ------------------------------------------------------------------ #

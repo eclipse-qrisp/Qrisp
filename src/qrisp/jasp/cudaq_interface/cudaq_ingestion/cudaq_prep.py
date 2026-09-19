@@ -17,29 +17,17 @@
 """Prepare lowered xDSL modules for execution by CUDA-Q."""
 
 # CUDA-Q module preparation.
-# =============================
+# ==========================
 #
-# Transforms a Quake+CC xDSL module (output of jaspr_to_quake_mlir) into the structure
+# Transforms a Quake+CC xDSL module (output of _jaspr_to_quake_mlir) into the structure
 # that CUDA-Q's Module.parse expects:
 #
 # - Strips module sym_name (anonymous module)
 # - Renames @main -> @__nvqpp__mlirgen__<uuid>
-# - Removes old-style attrs, strips visibility
-# - Adds cudaq-entrypoint / cudaq-kernel unit attrs
 # - Packs multiple return values into !cc.struct
 # - Synthesizes .run variant (quake.log_output + void return)
 # - Synthesizes .run.entry
 # - Injects module-level attributes (quake.mangled_name_map, etc.)
-#
-# The host-specific llvm.data_layout attribute is deliberately not set here.
-# It is applied by xdsl_ingestion once the module has been parsed into CUDA-Q,
-# using CUDA-Q's own cudaq_runtime.set_data_layout.
-#
-# Implementation note
-# --------------------
-# xDSL stores inherent attributes (sym_name, function_type, sym_visibility)
-# in op.properties (a dict). Discardable attributes (cudaq-kernel, no_this, etc.)
-# live in op.attributes.
 
 from dataclasses import dataclass
 from typing import Literal
@@ -53,7 +41,7 @@ from xdsl.dialects.builtin import (
     StringAttr,
     UnitAttr,
 )
-from xdsl.ir import Block, Region
+from xdsl.ir import Attribute, Block, Region
 
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
     CcInsertValueOp,
@@ -86,19 +74,40 @@ def _find_func_by_name(module: ModuleOp, name: str):
 
 
 def _find_entry_return(func_op: func.FuncOp):
-    """Find the func.ReturnOp op in the entry block (last op)."""
-    entry_block = func_op.body.blocks[0]
-    ops_list = list(entry_block.ops)
-    if ops_list:
-        last_op = ops_list[-1]
-        if isinstance(last_op, func.ReturnOp):
-            return last_op
-    # Fallback: walk all blocks
-    for block in func_op.body.blocks:
-        for op in block.ops:
-            if isinstance(op, func.ReturnOp):
-                return op
+    """Return the func.ReturnOp terminating the entry block, if there is one.
+
+    Every block must end in a terminator, and the lowering only ever emits
+    structured control flow (``cc.loop``/``cc.scope``, which carry their own
+    terminators), so a ``func.return`` can only appear as the last op of the
+    function's entry block.
+    """
+    ops_list = list(func_op.body.blocks[0].ops)
+    if ops_list and isinstance(ops_list[-1], func.ReturnOp):
+        return ops_list[-1]
     return None
+
+
+def _set_result_types(func_op: func.FuncOp, result_types: list[Attribute]) -> None:
+    """Rewrite the function's signature to return *result_types*, keeping its inputs."""
+    input_types = list(func_op.function_type.inputs.data)
+    func_op.properties["function_type"] = FunctionType.from_lists(input_types, result_types)
+
+
+def _rewrite_return_as_log_output(func_op: func.FuncOp) -> None:
+    """Make the function void-returning, logging each value it used to return.
+
+    ``quake.log_output`` is the mechanism CUDA-Q uses to capture and aggregate
+    per-shot results, so this is how a returned value survives ``cudaq.run``.
+    """
+    return_op = _find_entry_return(func_op)
+    if return_op is not None:
+        block = return_op.parent_block()
+        for val in list(return_op.operands):
+            block.insert_op_before(QuakeLogOutputOp(val), return_op)
+        block.insert_op_before(func.ReturnOp(), return_op)
+        block.erase_op(return_op)
+
+    _set_result_types(func_op, [])
 
 
 # ===========================================================================
@@ -127,59 +136,19 @@ def _pass_rename_main(module: ModuleOp, new_name: str):
 
 
 # ===========================================================================
-# Pass: Add cudaq function attributes
-# ===========================================================================
-
-
-def _pass_add_func_attrs(
-    func_op: func.FuncOp,
-    *,
-    entrypoint: bool = False,
-    kernel: bool = False,
-    no_this: bool = False,
-    run_types=None,
-) -> None:
-    """Set CUDA-Q-specific function attributes.
-
-    Also strips old-style attrs and removes visibility.
-    """
-    # Remove old-style string attrs from passes 1–5
-    for key in ("cudaq.kernel", "cudaq.entrypoint"):
-        if key in func_op.attributes:
-            del func_op.attributes[key]
-
-    # Remove visibility so it doesn't print `public`
-    if "sym_visibility" in func_op.properties:
-        del func_op.properties["sym_visibility"]
-
-    # Set unit attrs
-    if entrypoint:
-        func_op.attributes["cudaq-entrypoint"] = UnitAttr()
-    if kernel:
-        func_op.attributes["cudaq-kernel"] = UnitAttr()
-    if no_this:
-        func_op.attributes["no_this"] = UnitAttr()
-    if run_types is not None:
-        func_op.attributes["quake.cudaq_run"] = ArrayAttr(run_types)
-
-
-# ===========================================================================
 # Pass: Pack multiple return values into !cc.struct
 # ===========================================================================
 
 
-def _pass_pack_multi_return(func_op: func.FuncOp):
-    """If func returns >1 value, pack into a cc.struct.
-
-    Returns the struct type if packing occurred, else None.
-    """
+def _pass_pack_multi_return(func_op: func.FuncOp) -> None:
+    """If func returns >1 value, pack them into a single cc.struct."""
     return_op = _find_entry_return(func_op)
     if return_op is None:
-        return None
+        return
 
     operands = list(return_op.operands)
     if len(operands) <= 1:
-        return None
+        return
 
     field_types = [v.type for v in operands]
     struct_type = CcStructType("tuple", field_types)
@@ -200,10 +169,7 @@ def _pass_pack_multi_return(func_op: func.FuncOp):
     block.insert_op_before(new_return, return_op)
     block.erase_op(return_op)
 
-    # Update function type
-    input_types = list(func_op.function_type.inputs.data)
-    func_op.properties["function_type"] = FunctionType.from_lists(input_types, [struct_type])
-    return struct_type
+    _set_result_types(func_op, [struct_type])
 
 
 # ===========================================================================
@@ -211,37 +177,22 @@ def _pass_pack_multi_return(func_op: func.FuncOp):
 # ===========================================================================
 
 
-def _pass_synthesize_run(module: ModuleOp, source_func: func.FuncOp, run_func_name: str):
+def _pass_synthesize_run(module: ModuleOp, source_func: func.FuncOp, run_func_name: str) -> None:
     """Create the .run function: clone source, replace return with log_output + void return."""
     source_output_types = list(source_func.function_type.outputs.data)
-    input_types = list(source_func.function_type.inputs.data)
 
     run_func = source_func.clone()
     run_func.properties["sym_name"] = StringAttr(run_func_name)
 
-    # Replace return with quake.log_output + void return
-    return_op = _find_entry_return(run_func)
-    if return_op is not None:
-        block = return_op.parent_block()
-        for val in list(return_op.operands):
-            block.insert_op_before(QuakeLogOutputOp(val), return_op)
-        block.insert_op_before(func.ReturnOp(), return_op)
-        block.erase_op(return_op)
+    _rewrite_return_as_log_output(run_func)
 
-    # Set void return type
-    run_func.properties["function_type"] = FunctionType.from_lists(input_types, [])
-
-    # Set attributes
-    _pass_add_func_attrs(
-        run_func,
-        entrypoint=True,
-        kernel=True,
-        no_this=True,
-        run_types=source_output_types if source_output_types else None,
-    )
+    # cudaq-entrypoint / cudaq-kernel and the stripped visibility come along
+    # with the clone; only these two are specific to the .run variant.
+    run_func.attributes["no_this"] = UnitAttr()
+    if source_output_types:
+        run_func.attributes["quake.cudaq_run"] = ArrayAttr(source_output_types)
 
     module.body.block.add_op(run_func)
-    return run_func
 
 
 # ===========================================================================
@@ -249,7 +200,7 @@ def _pass_synthesize_run(module: ModuleOp, source_func: func.FuncOp, run_func_na
 # ===========================================================================
 
 
-def _pass_synthesize_run_entry(module: ModuleOp, source_func: func.FuncOp, run_entry_name: str):
+def _pass_synthesize_run_entry(module: ModuleOp, source_func: func.FuncOp, run_entry_name: str) -> None:
     """Create the .run.entry stub: same params, empty body, void return."""
     input_types = list(source_func.function_type.inputs.data)
 
@@ -262,28 +213,8 @@ def _pass_synthesize_run_entry(module: ModuleOp, source_func: func.FuncOp, run_e
         Region([entry_block]),
     )
     entry_func.attributes["no_this"] = UnitAttr()
-    if "sym_visibility" in entry_func.properties:
-        del entry_func.properties["sym_visibility"]
 
     module.body.block.add_op(entry_func)
-    return entry_func
-
-
-# ===========================================================================
-# Pass: Sample mode — strip returns
-# ===========================================================================
-
-
-def _pass_strip_returns(func_op: func.FuncOp) -> None:
-    """Replace func.ReturnOp %vals with void func.ReturnOp. Update signature."""
-    return_op = _find_entry_return(func_op)
-    if return_op is not None and list(return_op.operands):
-        block = return_op.parent_block()
-        block.insert_op_before(func.ReturnOp(), return_op)
-        block.erase_op(return_op)
-
-    input_types = list(func_op.function_type.inputs.data)
-    func_op.properties["function_type"] = FunctionType.from_lists(input_types, [])
 
 
 # ===========================================================================
@@ -297,14 +228,13 @@ def _pass_inject_module_attrs(
     run_func_name=None,
     run_entry_name=None,
 ) -> None:
-    """Set module-level attributes required by CUDA-Q.
+    """Set the module-level attributes CUDA-Q registers the kernel under.
 
-    ``llvm.data_layout`` is not set here; xdsl_ingestion applies it via
-    ``cudaq_runtime.set_data_layout`` after the module has been parsed
-    into CUDA-Q, so that the layout always matches the CUDA-Q build that
-    will execute the kernel.
+    ``quake.mangled_name_map`` pairs each entry point with the symbol CUDA-Q
+    launches it through, including the ``.run`` variant when one was
+    synthesized.
     """
-    module.attributes["cc.python_uniqued"] = StringAttr(config.unique_name)
+    module.attributes["quake.python_uniqued"] = StringAttr(config.unique_name)
 
     name_map = {config.func_name: StringAttr(config.entry_point)}
     if run_func_name and run_entry_name:
@@ -328,20 +258,17 @@ def _prepare_module_for_cudaq(
     module : ModuleOp
         xDSL module containing a @main function.
     config : _CudaqPreparationConfig
-        Kernel names, LLVM metadata, and execution mode for the preparation.
+        Kernel names and execution mode for the preparation.
 
     """
     _pass_strip_module_name(module)
     main_func = _pass_rename_main(module, config.func_name)
 
     if config.execution_mode == "sample":
-        _pass_add_func_attrs(main_func, entrypoint=True, kernel=True)
-        _pass_strip_returns(main_func)
         _pass_inject_module_attrs(module, config)
 
     elif config.execution_mode == "run":
         _pass_pack_multi_return(main_func)
-        _pass_add_func_attrs(main_func, entrypoint=True, kernel=True)
 
         run_func_name = config.func_name + ".run"
         run_entry_name = config.func_name + ".run.entry"
