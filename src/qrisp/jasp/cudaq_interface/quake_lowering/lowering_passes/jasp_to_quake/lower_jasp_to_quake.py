@@ -83,6 +83,7 @@ from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.hel
     _is_qubit,
     _is_qubit_array,
     _normalize_index_for_veq_rewriter,
+    _normalize_slice_bounds_for_veq_rewriter,
     _split_gate_operands,
     _wrap_scalar_for_rewriter,
 )
@@ -233,9 +234,13 @@ class LowerSlice(RewritePattern):
     jasp.slice uses exclusive upper bound (Python-style: [start, end)),
     while quake.subveq uses inclusive bounds [lo, hi].
 
-    Assumptions:
-    - start index is already a non-negative absolute index.
-    - end index may be negative (Python slice semantics).
+    Bound normalization:
+    Both bounds carry full Python slice semantics -- either may be negative,
+    and either may lie outside the register -- so both are folded against the
+    register size and clamped by
+    ``_normalize_slice_bounds_for_veq_rewriter`` before use.  Without that,
+    ``qv[-2:]`` would reach ``quake.subveq`` with a negative lower bound and
+    ``qv[:50]`` on a 10-qubit register with an upper bound past the end.
 
     Empty-slice guard:
     Whenever ``end_norm <= start`` the slice is empty (e.g. ``x[:]`` on a
@@ -258,18 +263,18 @@ class LowerSlice(RewritePattern):
         start_t = op.operands[1]
         end_t = op.operands[2]
 
-        lo = _extract_scalar_for_rewriter(start_t, i64, rewriter)
-        hi_raw = _extract_scalar_for_rewriter(end_t, i64, rewriter)
-        hi_norm = _normalize_index_for_veq_rewriter(arr, hi_raw, rewriter)
+        start = _extract_scalar_for_rewriter(start_t, i64, rewriter)
+        stop = _extract_scalar_for_rewriter(end_t, i64, rewriter)
+        lo, hi = _normalize_slice_bounds_for_veq_rewriter(arr, start, stop, rewriter)
 
         # All of the following is pure arithmetic (no runtime side effects),
         # so it is safe to hoist above the branch: scf.if regions are not
         # isolated-from-above and may reference these values directly.
-        is_empty = arith.CmpiOp(hi_norm, lo, "sle")
+        is_empty = arith.CmpiOp(hi, lo, "sle")
         c0 = arith.ConstantOp(IntegerAttr(0, 64))
         one = arith.ConstantOp(IntegerAttr(1, 64))
-        # Exclusive → inclusive: hi_inclusive = hi_norm - 1
-        hi_inclusive = arith.SubiOp(hi_norm, one.result)
+        # Exclusive → inclusive: hi_inclusive = hi - 1
+        hi_inclusive = arith.SubiOp(hi, one.result)
         rewriter.insert_op([is_empty, c0, one, hi_inclusive], InsertPoint.before(rewriter.current_operation))
 
         # Only the effectful quake ops need to be branch-local: the empty

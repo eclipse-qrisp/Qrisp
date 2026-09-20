@@ -156,34 +156,86 @@ def _try_get_constant_int(value: SSAValue) -> int | None:
     return None
 
 
-def _normalize_index_for_veq_rewriter(veq: SSAValue, idx: SSAValue, rewriter: PatternRewriter) -> SSAValue:
+def _normalize_index_for_veq_rewriter(
+    veq: SSAValue,
+    idx: SSAValue,
+    rewriter: PatternRewriter,
+    size: SSAValue | None = None,
+) -> SSAValue:
     """Python-style negative indexing: if idx < 0, return idx + size(veq).
 
     When ``idx`` is already a compile-time constant, its sign is known
     statically, so the cmpi/select scaffold is skipped: a non-negative
     constant is used as-is, and a negative one only needs the addi (no
     cmpi/select needed since the branch is resolved).
+
+    ``size`` is an already-emitted ``quake.veq_size`` result for *veq*. A
+    caller that normalizes several indices against the same register passes
+    it so that only one ``quake.veq_size`` is emitted.
     """
     const_idx = _try_get_constant_int(idx)
+    if const_idx is not None and const_idx >= 0:
+        return idx
+
+    size_ops = []
+    if size is None:
+        size_op = VeqSizeOp(veq)
+        size_ops.append(size_op)
+        size = size_op.result
+
+    idx_plus_size = arith.AddiOp(idx, size)
     if const_idx is not None:
-        if const_idx >= 0:
-            return idx
-        size = VeqSizeOp(veq)
-        idx_plus_size = arith.AddiOp(idx, size.result)
-        rewriter.insert_op([size, idx_plus_size], InsertPoint.before(rewriter.current_operation))
+        rewriter.insert_op([*size_ops, idx_plus_size], InsertPoint.before(rewriter.current_operation))
         return idx_plus_size.result
 
-    size = VeqSizeOp(veq)
     zero = arith.ConstantOp(IntegerAttr(0, 64))
     is_neg = arith.CmpiOp(idx, zero.result, "slt")
-    idx_plus_size = arith.AddiOp(idx, size.result)
     norm = arith.SelectOp(is_neg.result, idx_plus_size.result, idx)
 
     rewriter.insert_op(
-        [size, zero, is_neg, idx_plus_size, norm],
+        [*size_ops, zero, is_neg, idx_plus_size, norm],
         InsertPoint.before(rewriter.current_operation),
     )
     return norm.result
+
+
+def _normalize_slice_bounds_for_veq_rewriter(
+    veq: SSAValue, start: SSAValue, stop: SSAValue, rewriter: PatternRewriter
+) -> tuple[SSAValue, SSAValue]:
+    """Python slice-bound normalization for ``veq[start:stop]``.
+
+    Both bounds get negative-index folding against the register size, the
+    start is then clamped up to 0 and the (still exclusive) stop clamped down
+    to the size. A caller that treats ``hi <= lo`` as an empty slice therefore
+    only ever reaches ``quake.subveq`` with ``0 <= lo < hi <= size``, making
+    the inclusive upper bound ``hi - 1`` a valid qubit index.
+
+    Out-of-range in the other direction needs no clamp: a start past the end
+    and a stop still negative after folding both produce ``hi <= lo``, which
+    is the empty case.
+    """
+    size = VeqSizeOp(veq)
+    rewriter.insert_op(size, InsertPoint.before(rewriter.current_operation))
+
+    lo = _normalize_index_for_veq_rewriter(veq, start, rewriter, size=size.result)
+    hi = _normalize_index_for_veq_rewriter(veq, stop, rewriter, size=size.result)
+
+    start_const = _try_get_constant_int(start)
+    if start_const is None or start_const < 0:
+        # A start that was non-negative to begin with needs no lower clamp.
+        zero = arith.ConstantOp(IntegerAttr(0, 64))
+        lo_clamped = arith.MaxSIOp(lo, zero.result)
+        rewriter.insert_op([zero, lo_clamped], InsertPoint.before(rewriter.current_operation))
+        lo = lo_clamped.result
+
+    stop_const = _try_get_constant_int(stop)
+    if stop_const is None or stop_const >= 0:
+        # A negative stop folds to ``stop + size``, which is below the size.
+        hi_clamped = arith.MinSIOp(hi, size.result)
+        rewriter.insert_op(hi_clamped, InsertPoint.before(rewriter.current_operation))
+        hi = hi_clamped.result
+
+    return lo, hi
 
 
 # ---------------------------------------------------------------------------

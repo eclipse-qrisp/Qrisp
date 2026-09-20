@@ -23,6 +23,7 @@ Sections
 - MLIR assembly-format validity (exact CUDA-Q Quake dialect printed syntax).
 - Gate mapping and lowering: single/multi-qubit, parameterized, decomposed, controlled gates.
 - Qubit indexing (constant/dynamic/negative indices).
+- Register slicing (static/dynamic bounds, Python slice normalization).
 - Classical math lowering (arith/math ops mixed with quantum control flow).
 - Measurement.
 - QuantumVariable-wide gate application (while-loop lowering).
@@ -905,6 +906,30 @@ def test_single_gate_application_quantum_variable():
     assert result == 10 * [1023], f"Expected all qubits measured as 1 (1023), got {result}"
 
 
+def test_gate_application_quantum_variable():
+    """Gate application functions (h,x,y,z,s,t) applied to QuantumVariable"""
+
+    def circuit():
+        qv = QuantumVariable(4)
+        h(qv)
+        x(qv)
+        y(qv)
+        z(qv)
+        s(qv)
+        t(qv)
+        return measure(qv)
+
+    xdsl_module = _lower(circuit)
+
+    mlir = str(xdsl_module)
+    for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
+        assert gate in mlir, f"Expected {gate!r} in output"
+    _validate_quake_mlir(mlir)
+
+    kernel = cudaq_kernel(circuit)
+    result = cudaq.run(kernel, shots_count=10)
+
+
 def test_gate_application_quantum_variable_slice():
     """Gate application function (x) applied to a slice of QuantumVariable"""
 
@@ -943,28 +968,184 @@ def test_gate_application_quantum_variable_slice():
     assert result == 10 * [31], f"Expected lower 5 qubits measured as 1 (31), got {result}"
 
 
-def test_gate_application_quantum_variable():
-    """Gate application functions (h,x,y,z,s,t) applied to QuantumVariable"""
+# ---------------------------------------------------------------------------
+# Register slicing (static / dynamic bounds, Python slice normalization)
+# ---------------------------------------------------------------------------
+
+
+def _measured_int(bits):
+    """Prepare a QuantumFloat holding ``sum(2**b for b in bits)`` and measure it.
+
+    The result is deterministic at runtime but opaque to the compiler (it comes
+    out of a ``quake.mz``), so slice bounds derived from it take the fully
+    dynamic lowering path instead of being constant-folded.
+    """
+    qf = QuantumFloat(max(bits) + 1)
+    for b in bits:
+        x(qf[b])
+    return measure(qf).astype(jnp.int64)
+
+
+def test_slice_static_bounds_skip_sign_check():
+    """Compile-time-constant bounds need no runtime sign check.
+
+    The gate is applied to a single qubit of the slice so that the only
+    index normalization in the kernel is the slice's own — a gate on the
+    whole slice would add a loop whose induction variable is dynamic.
+    """
 
     def circuit():
-        qv = QuantumVariable(4)
-        h(qv)
-        x(qv)
-        y(qv)
-        z(qv)
-        s(qv)
-        t(qv)
+        qv = QuantumVariable(10)
+        x(qv[2:7][0])
         return measure(qv)
 
-    xdsl_module = _lower(circuit)
-
-    mlir = str(xdsl_module)
-    for gate in ("quake.h", "quake.x", "quake.y", "quake.z", "quake.s", "quake.t"):
-        assert gate in mlir, f"Expected {gate!r} in output"
+    mlir = str(_lower(circuit))
+    assert "arith.select" not in mlir, "constant bounds need no runtime sign check"
     _validate_quake_mlir(mlir)
 
-    kernel = cudaq_kernel(circuit)
-    result = cudaq.run(kernel, shots_count=10)
+    result = cudaq.run(cudaq_kernel(circuit), shots_count=10)
+    assert result == 10 * [0b100], f"Expected qubit 2 flipped, got {result}"
+
+
+def test_slice_dynamic_bounds_emit_sign_check():
+    """A measurement-derived bound has an unknown sign, so the check is emitted."""
+
+    def circuit():
+        k = _measured_int([0, 1])
+        qv = QuantumVariable(10)
+        x(qv[k:][0])
+        return measure(qv)
+
+    mlir = str(_lower(circuit))
+    assert "arith.select" in mlir, "a dynamic bound needs the runtime sign check"
+    _validate_quake_mlir(mlir)
+
+    result = cudaq.run(cudaq_kernel(circuit), shots_count=10)
+    assert result == 10 * [0b1000], f"Expected qubit 3 flipped, got {result}"
+
+
+def test_slice_static_negative_start():
+    """qv[-4:] addresses the last four qubits (start + veq_size)."""
+
+    def circuit():
+        qv = QuantumVariable(10)
+        x(qv[-4:])
+        return measure(qv)
+
+    mlir = str(_lower(circuit))
+    _validate_quake_mlir(mlir)
+
+    result = cudaq.run(cudaq_kernel(circuit), shots_count=10)
+    assert result == 10 * [0b1111000000], f"Expected the last 4 qubits flipped, got {result}"
+
+
+def test_slice_static_stop_beyond_size():
+    """qv[:50] on a 10-qubit register clamps the stop to the register size."""
+
+    def circuit():
+        qv = QuantumVariable(10)
+        x(qv[:50])
+        return measure(qv)
+
+    mlir = str(_lower(circuit))
+    _validate_quake_mlir(mlir)
+
+    result = cudaq.run(cudaq_kernel(circuit), shots_count=10)
+    assert result == 10 * [1023], f"Expected all 10 qubits flipped, got {result}"
+
+
+def test_slice_static_start_below_negative_size():
+    """qv[-50:] clamps a start that is still negative after normalization to 0."""
+
+    def circuit():
+        qv = QuantumVariable(10)
+        x(qv[-50:])
+        return measure(qv)
+
+    mlir = str(_lower(circuit))
+    _validate_quake_mlir(mlir)
+
+    result = cudaq.run(cudaq_kernel(circuit), shots_count=10)
+    assert result == 10 * [1023], f"Expected all 10 qubits flipped, got {result}"
+
+
+def test_slice_static_start_beyond_size_is_empty():
+    """qv[20:] on a 10-qubit register is an empty slice."""
+
+    def circuit():
+        qv = QuantumVariable(10)
+        x(qv[20:])
+        return measure(qv)
+
+    mlir = str(_lower(circuit))
+    _validate_quake_mlir(mlir)
+
+    result = cudaq.run(cudaq_kernel(circuit), shots_count=10)
+    assert result == 10 * [0], f"Expected no qubit flipped, got {result}"
+
+
+def test_slice_dynamic_start():
+    """A measurement-derived start (k=3) selects qubits 3..9."""
+
+    def circuit():
+        k = _measured_int([0, 1])
+        qv = QuantumVariable(10)
+        x(qv[k:])
+        return measure(qv)
+
+    mlir = str(_lower(circuit))
+    _validate_quake_mlir(mlir)
+
+    result = cudaq.run(cudaq_kernel(circuit), shots_count=10)
+    assert result == 10 * [0b1111111000], f"Expected qubits 3..9 flipped, got {result}"
+
+
+def test_slice_dynamic_stop():
+    """A measurement-derived stop (k=3) selects qubits 0..2."""
+
+    def circuit():
+        k = _measured_int([0, 1])
+        qv = QuantumVariable(10)
+        x(qv[:k])
+        return measure(qv)
+
+    mlir = str(_lower(circuit))
+    _validate_quake_mlir(mlir)
+
+    result = cudaq.run(cudaq_kernel(circuit), shots_count=10)
+    assert result == 10 * [0b111], f"Expected qubits 0..2 flipped, got {result}"
+
+
+def test_slice_dynamic_stop_beyond_size():
+    """A measurement-derived stop (k=18) is clamped to the register size."""
+
+    def circuit():
+        k = _measured_int([1, 4])
+        qv = QuantumVariable(10)
+        x(qv[:k])
+        return measure(qv)
+
+    mlir = str(_lower(circuit))
+    _validate_quake_mlir(mlir)
+
+    result = cudaq.run(cudaq_kernel(circuit), shots_count=10)
+    assert result == 10 * [1023], f"Expected all 10 qubits flipped, got {result}"
+
+
+def test_slice_dynamic_negative_start():
+    """A measurement-derived start that is negative even after adding the size is clamped to 0."""
+
+    def circuit():
+        k = _measured_int([0, 1])
+        qv = QuantumVariable(10)
+        x(qv[k - 20 :])
+        return measure(qv)
+
+    mlir = str(_lower(circuit))
+    _validate_quake_mlir(mlir)
+
+    result = cudaq.run(cudaq_kernel(circuit), shots_count=10)
+    assert result == 10 * [1023], f"Expected all 10 qubits flipped, got {result}"
 
 
 # ---------------------------------------------------------------------------
