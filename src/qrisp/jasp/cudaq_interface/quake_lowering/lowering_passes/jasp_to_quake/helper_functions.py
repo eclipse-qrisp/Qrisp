@@ -125,7 +125,10 @@ def _coerce_to_f64_for_rewriter(val: SSAValue, rewriter: PatternRewriter) -> SSA
         return cast.result
 
     if isinstance(scalar.type, IntegerType):
-        cast = arith.SIToFPOp(scalar, f64)
+        if scalar.type == IntegerType(1):
+            cast = arith.UIToFPOp(scalar, f64)
+        else:
+            cast = arith.SIToFPOp(scalar, f64)
         rewriter.insert_op(cast, InsertPoint.before(rewriter.current_operation))
         return cast.result
 
