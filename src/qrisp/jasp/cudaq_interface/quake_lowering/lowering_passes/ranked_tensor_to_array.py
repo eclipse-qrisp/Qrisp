@@ -34,10 +34,9 @@
 #    a boundary: function arguments and results, call results, and the
 #    arguments and results of structured control flow.
 # 2. Convert the remaining tensor types. One TypeConversionPattern rewrites
-#    operation result types and the block arguments of nested regions, and a
-#    second pattern rewrites function signatures. Operand types need no handling
-#    of their own, because an operand's type is the type of the result that
-#    defines it.
+#    operation result types, function signatures and the block arguments of
+#    nested regions. Operand types need no handling of their own, because an
+#    operand's type is the type of the result that defines it.
 # 3. Lower tensor operations again. Element accesses on values that only became
 #    CC array pointers in stage 2 - a function's array argument, say - can be
 #    lowered once their definition has been converted.
@@ -47,10 +46,11 @@
 # CUDA-Q parses the module: since 0.16 it no longer registers the upstream
 # tensor dialect, so a residual tensor operation fails at ingestion.
 
+from dataclasses import dataclass
+
 from xdsl.dialects import arith, tensor
 from xdsl.dialects import func as func_dialect
 from xdsl.dialects.builtin import (
-    FunctionType,
     IndexType,
     ModuleOp,
     TensorType,
@@ -199,9 +199,9 @@ class LowerSlicedTensorExtract(RewritePattern):
 def _convert_tensor_types(module: ModuleOp) -> None:
     """Convert rank-1 tensor types at every boundary that carries a value."""
     PatternRewriteWalker(TensorToArrayPointer(), apply_recursively=False).rewrite_module(module)
-    PatternRewriteWalker(ConvertFuncSignature(), apply_recursively=False).rewrite_module(module)
 
 
+@dataclass
 class TensorToArrayPointer(TypeConversionPattern):
     """Convert rank-1 tensor types to CC array pointers.
 
@@ -215,10 +215,19 @@ class TensorToArrayPointer(TypeConversionPattern):
     than the storage it is materialized into. Stage 1 has already replaced every
     dense constant that can be materialized, and one that could not be keeps a
     consistent type rather than being handed a pointer it cannot describe.
+
+    Both flags are dataclass fields of TypeConversionPattern, so they are declared
+    here as annotated fields: a plain class attribute would be overwritten with the
+    inherited default when the pattern is instantiated.
     """
 
-    recursive = True
-    ops = (func_dialect.FuncOp, func_dialect.CallOp, CcLoopOp, CcIfOp)
+    recursive: bool = True
+    ops: tuple[type[Operation], ...] | None = (
+        func_dialect.FuncOp,
+        func_dialect.CallOp,
+        CcLoopOp,
+        CcIfOp,
+    )
 
     @attr_type_rewrite_pattern
     def convert_type(self, typ: TensorType) -> Attribute | None:
@@ -228,37 +237,9 @@ class TensorToArrayPointer(TypeConversionPattern):
         return _array_pointer_type(typ)
 
 
-class ConvertFuncSignature(RewritePattern):
-    """Convert rank-1 tensor types in a function signature to CC array pointers.
-
-    This is not folded into TensorToArrayPointer because xDSL's recursive type
-    conversion does not descend into a FunctionType's parameters (checked against
-    xdsl 0.59), so a function's declared argument and result types are the one
-    boundary it leaves untouched. Both patterns map types through
-    :func:`_converted_type`, so they stay in agreement.
-    """
-
-    @op_type_rewrite_pattern
-    def match_and_rewrite(self, op: func_dialect.FuncOp, rewriter: PatternRewriter) -> None:
-        """Rewrite a function's declared argument and result types."""
-        function_type = op.function_type
-        inputs = [_converted_type(t) for t in function_type.inputs]
-        outputs = [_converted_type(t) for t in function_type.outputs]
-
-        if inputs == list(function_type.inputs) and outputs == list(function_type.outputs):
-            return
-
-        op.function_type = FunctionType.from_lists(inputs, outputs)
-
-
 # ===================================================================
 # Types
 # ===================================================================
-
-
-def _converted_type(t: Attribute) -> Attribute:
-    """Return the CC array pointer replacing *t*, or *t* itself if it is not a rank-1 tensor."""
-    return _array_pointer_type(t) if _is_rank_1_tensor(t) else t
 
 
 def _array_pointer_type(tensor_type: TensorType) -> CcPtrType:
