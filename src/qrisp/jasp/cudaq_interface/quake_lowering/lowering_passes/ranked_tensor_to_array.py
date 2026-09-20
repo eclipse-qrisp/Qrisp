@@ -1,0 +1,342 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Lower ranked tensors to CUDA-Q classical-control arrays."""
+
+# Ranked Tensor → CC Array Lowering
+# ===================================
+#
+# Lowers rank-1 tensors (tensor<NxT>) and their element accesses to CC memory
+# operations (cc.alloca, cc.compute_ptr, cc.load), matching native CUDA-Q
+# output. A tensor is an immutable value, a CC array is a pointer to storage,
+# so the lowering is a type conversion:
+#
+#     tensor<NxT>  →  !cc.ptr<!cc.array<T x N>>
+#
+# Approach
+# --------
+# 1. Lower tensor operations. Dense tensor constants become a cc.alloca filled
+#    by element stores, and element accesses become cc.compute_ptr + cc.load.
+#    After this stage the only tensor-typed values left are the ones that cross
+#    a boundary: function arguments and results, call results, and the
+#    arguments and results of structured control flow.
+# 2. Convert the remaining tensor types. One TypeConversionPattern rewrites
+#    operation result types, function signatures and the block arguments of
+#    nested regions. Operand types need no handling of their own, because an
+#    operand's type is the type of the result that defines it.
+# 3. Lower tensor operations again. Element accesses on values that only became
+#    CC array pointers in stage 2 - a function's array argument, say - can be
+#    lowered once their definition has been converted.
+#
+# Handles both static and dynamic array indexing. Anything this pass cannot
+# express is left in place rather than lowered incorrectly, and surfaces when
+# CUDA-Q parses the module: since 0.16 it no longer registers the upstream
+# tensor dialect, so a residual tensor operation fails at ingestion.
+
+from dataclasses import dataclass
+
+from xdsl.dialects import arith, tensor
+from xdsl.dialects import func as func_dialect
+from xdsl.dialects.builtin import (
+    IndexType,
+    ModuleOp,
+    TensorType,
+    i64,
+)
+from xdsl.ir import Attribute, Operation, SSAValue
+from xdsl.pattern_rewriter import (
+    GreedyRewritePatternApplier,
+    PatternRewriter,
+    PatternRewriteWalker,
+    RewritePattern,
+    TypeConversionPattern,
+    attr_type_rewrite_pattern,
+    op_type_rewrite_pattern,
+)
+
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
+    CcAllocaOp,
+    CcArrayType,
+    CcCastOp,
+    CcComputePtrOp,
+    CcIfOp,
+    CcLoadOp,
+    CcLoopOp,
+    CcPtrType,
+    CcStoreOp,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.ir_helpers import (
+    _MLIR_DYNAMIC,
+    _dense_values,
+    _is_array_pointer,
+    _is_rank_1_tensor,
+    _scalar_attr,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.safeguard_no_ranked_tensor_linalg import (
+    CudaqUnsupportedArrayOperationError,
+)
+
+# ===================================================================
+# Public entry point
+# ===================================================================
+
+
+def _lower_ranked_tensors(module: ModuleOp) -> None:
+    """In-place pass: lower rank-1 tensor constants and accesses to CC arrays.
+
+    Runs the three stages described at the top of this module: lower tensor
+    operations, convert the tensor types that cross a boundary, then lower the
+    operations that became lowerable as a result.
+    """
+    _lower_tensor_operations(module)
+    _convert_tensor_types(module)
+    _lower_tensor_operations(module)
+
+
+# ===================================================================
+# Stage 1 and 3: operation lowering
+# ===================================================================
+
+
+def _lower_tensor_operations(module: ModuleOp) -> None:
+    """Materialize tensor constants and lower element accesses to CC memory ops."""
+    PatternRewriteWalker(
+        GreedyRewritePatternApplier(
+            [
+                MaterializeDenseArrayConstant(),
+                LowerTensorExtract(),
+                LowerSlicedTensorExtract(),
+            ]
+        ),
+        apply_recursively=False,
+    ).rewrite_module(module)
+
+
+class MaterializeDenseArrayConstant(RewritePattern):
+    """Replace a dense rank-1 tensor constant with a cc.alloca and element stores."""
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: arith.ConstantOp, rewriter: PatternRewriter) -> None:
+        """Materialize a tensor literal into CC array storage."""
+        tensor_type = op.result.type
+        if not _is_rank_1_tensor(tensor_type) or not any(op.result.uses):
+            return
+
+        values = _dense_values(op.value)
+        if values is None:
+            return
+
+        element_type = tensor_type.element_type
+        alloca = CcAllocaOp(CcArrayType(element_type, tensor_type.get_shape()[0]))
+
+        new_ops: list[Operation] = [alloca]
+        for index, value in enumerate(values):
+            scalar = _scalar_constant(value, element_type)
+            pointer = _element_pointer_op(alloca.result, index, element_type)
+            new_ops += [scalar, pointer, CcStoreOp(scalar.result, pointer.results[0])]
+
+        rewriter.replace_matched_op(new_ops, [alloca.result])
+
+
+class LowerTensorExtract(RewritePattern):
+    """Rewrite tensor.extract on a CC array pointer to cc.compute_ptr + cc.load."""
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
+        """Lower a direct element access."""
+        indices = list(op.indices)
+        if not indices or not _is_array_pointer(op.tensor.type):
+            return
+
+        new_ops, loaded = _emit_element_load(op.tensor, indices[0])
+        rewriter.replace_matched_op(new_ops, [loaded])
+
+
+class LowerSlicedTensorExtract(RewritePattern):
+    """Rewrite extract(collapse_shape(extract_slice(array))) to a single element load.
+
+    JAX lowers a runtime index into an array to a unit-size slice followed by a
+    reshape to a scalar tensor. The slice offset is the index being read, so the
+    whole chain collapses to one cc.compute_ptr + cc.load on the CC array.
+    """
+
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: tensor.ExtractOp, rewriter: PatternRewriter) -> None:
+        """Lower an element access that reaches the array through a slice."""
+        collapse_op = op.tensor.owner
+        if not isinstance(collapse_op, tensor.CollapseShapeOp):
+            return
+
+        slice_op = collapse_op.operands[0].owner
+        if not isinstance(slice_op, tensor.ExtractSliceOp):
+            return
+
+        if not _is_array_pointer(slice_op.source.type):
+            return
+
+        new_ops, loaded = _emit_element_load(slice_op.source, _slice_index(slice_op))
+        rewriter.replace_matched_op(new_ops, [loaded])
+
+
+# ===================================================================
+# Stage 2: type conversion
+# ===================================================================
+
+
+def _convert_tensor_types(module: ModuleOp) -> None:
+    """Convert rank-1 tensor types at every boundary that carries a value."""
+    PatternRewriteWalker(TensorToArrayPointer(), apply_recursively=False).rewrite_module(module)
+
+
+@dataclass
+class TensorToArrayPointer(TypeConversionPattern):
+    """Convert rank-1 tensor types to CC array pointers.
+
+    ``recursive`` makes the conversion reach into structured attributes, which is
+    what rewrites a ``func.func`` signature: its function type holds the input and
+    output types as parameters, so both directions are converted together.
+
+    ``ops`` restricts the conversion to the operations that carry a value across a
+    boundary. ``arith.constant`` is deliberately absent, because its dense value
+    attribute carries a tensor type that has to keep describing the literal rather
+    than the storage it is materialized into. Stage 1 has already replaced every
+    dense constant that can be materialized, and one that could not be keeps a
+    consistent type rather than being handed a pointer it cannot describe.
+
+    Both flags are dataclass fields of TypeConversionPattern, so they are declared
+    here as annotated fields: a plain class attribute would be overwritten with the
+    inherited default when the pattern is instantiated.
+    """
+
+    recursive: bool = True
+    ops: tuple[type[Operation], ...] | None = (
+        func_dialect.FuncOp,
+        func_dialect.CallOp,
+        CcLoopOp,
+        CcIfOp,
+    )
+
+    @attr_type_rewrite_pattern
+    def convert_type(self, typ: TensorType) -> Attribute | None:
+        """Map a rank-1 tensor type onto the CC array pointer that replaces it."""
+        if not _is_rank_1_tensor(typ):
+            return None
+        return _array_pointer_type(typ)
+
+
+# ===================================================================
+# Types
+# ===================================================================
+
+
+def _array_pointer_type(tensor_type: TensorType) -> CcPtrType:
+    """Return the CC array pointer type that replaces *tensor_type*."""
+    return CcPtrType(CcArrayType(tensor_type.element_type, tensor_type.get_shape()[0]))
+
+
+def _pointee_element_type(pointer: SSAValue) -> Attribute:
+    """Return the element type of the CC array *pointer* refers to."""
+    return pointer.type.element_type.element_type
+
+
+# ===================================================================
+# Emission
+# ===================================================================
+
+
+def _element_pointer_op(base: SSAValue, index: int, element_type: Attribute) -> Operation:
+    """Return the operation addressing element *index* of the array *base*.
+
+    Element 0 is addressed with cc.cast and the remaining elements with
+    cc.compute_ptr, mirroring what native CUDA-Q emits when it fills an array.
+    """
+    if index == 0:
+        return CcCastOp(base, CcPtrType(element_type))
+    return CcComputePtrOp(base, index, element_type)
+
+
+def _emit_element_load(pointer: SSAValue, index: int | SSAValue) -> tuple[list[Operation], SSAValue]:
+    """Return the operations loading element *index* of *pointer*, and the loaded value."""
+    element_type = _pointee_element_type(pointer)
+    new_ops: list[Operation] = []
+
+    if isinstance(index, SSAValue) and isinstance(index.type, IndexType):
+        index_cast = arith.IndexCastOp(index, i64)
+        new_ops.append(index_cast)
+        index = index_cast.result
+
+    element_pointer = CcComputePtrOp(pointer, index, element_type)
+    load = CcLoadOp(element_pointer.result)
+    new_ops += [element_pointer, load]
+
+    return new_ops, load.result
+
+
+def _scalar_constant(value, element_type: Attribute) -> arith.ConstantOp:
+    """Return a scalar arith.constant holding *value* at *element_type*."""
+    attr = _scalar_attr(value, element_type)
+    if attr is None:
+        raise CudaqUnsupportedArrayOperationError(
+            f"This @cudaq_kernel function uses a classical array of {element_type}, "
+            "which CUDA-Q cannot compile.\n\n"
+            "Use an array of integers or floating point numbers instead."
+        )
+    return arith.ConstantOp(attr)
+
+
+# ===================================================================
+# Slices
+# ===================================================================
+
+
+def _slice_index(slice_op: tensor.ExtractSliceOp) -> int | SSAValue:
+    """Return the element index a unit slice selects, static or dynamic."""
+    _require_unit_slice(slice_op)
+
+    static_offsets = list(slice_op.static_offsets.get_values())
+    if static_offsets and static_offsets[0] != _MLIR_DYNAMIC:
+        return int(static_offsets[0])
+
+    offsets = list(slice_op.offsets)
+    if not offsets:
+        raise CudaqUnsupportedArrayOperationError(
+            "This @cudaq_kernel function reads an array slice whose offset is "
+            "neither a constant nor a runtime value, which CUDA-Q cannot compile."
+        )
+    return offsets[0]
+
+
+def _require_unit_slice(slice_op: tensor.ExtractSliceOp) -> None:
+    """Reject any slice that reads more than a single element.
+
+    A CC array access loads one element, so only a one-dimensional slice of size
+    one and stride one can be expressed. Wider slices are rejected rather than
+    silently lowered to a read of their first element.
+    """
+    sizes = _static_values(slice_op.static_sizes)
+    strides = _static_values(slice_op.static_strides)
+
+    if sizes != [1] or strides != [1]:
+        raise CudaqUnsupportedArrayOperationError(
+            "This @cudaq_kernel function reads a range of a classical array "
+            f"(sizes {sizes}, strides {strides}), which CUDA-Q cannot compile.\n\n"
+            "Read individual array elements instead of slicing the array."
+        )
+
+
+def _static_values(dense_array) -> list[int]:
+    """Return the integers held by a dense array property."""
+    return [int(value) for value in dense_array.get_values()]

@@ -150,14 +150,22 @@ def evaluate_scan_under_trace(scan_eq: JaxprEqn, context_dic: ContextDict, eqn_e
     consts = invalues[:num_consts]
     init = invalues[num_consts : num_consts + num_carry]
     xs = invalues[num_consts + num_carry :]
+    num_xs = len(xs)
 
     scan_body = eval_jaxpr(scan_eq.params["jaxpr"], eqn_evaluator=eqn_evaluator)
 
+    # NOTE: whether a carry/x is expanded into multiple positional args must be
+    # decided by the Jaxpr arity (num_carry/num_xs), not by ``isinstance(...,
+    # tuple)``. A *single* logical carry can itself be represented at runtime
+    # as a plain Python tuple (e.g. the (pre_alloc_array, free_indices,
+    # abs_qst) state used by the static-register interpreter, or catalyst's
+    # (qreg, Jlist)); such a value must be passed to the body as one argument,
+    # not unpacked into several.
     if num_consts > 0:
 
         def wrapped_body(carry: Any, x: Any) -> tuple[Any, tuple]:
-            carry_args = list(carry) if isinstance(carry, tuple) else [carry]
-            x_args = list(x) if isinstance(x, tuple) else [x]
+            carry_args = [carry] if num_carry == 1 else list(carry)
+            x_args = [x] if num_xs == 1 else list(x)
             args = consts + carry_args + x_args
             result = scan_body(*args)
             if not isinstance(result, tuple):
@@ -168,8 +176,8 @@ def evaluate_scan_under_trace(scan_eq: JaxprEqn, context_dic: ContextDict, eqn_e
     else:
 
         def wrapped_body(carry: Any, x: Any) -> tuple[Any, tuple]:
-            carry_args = list(carry) if isinstance(carry, tuple) else [carry]
-            x_args = list(x) if isinstance(x, tuple) else [x]
+            carry_args = [carry] if num_carry == 1 else list(carry)
+            x_args = [x] if num_xs == 1 else list(x)
             args = carry_args + x_args
             result = scan_body(*args)
             if not isinstance(result, tuple):
