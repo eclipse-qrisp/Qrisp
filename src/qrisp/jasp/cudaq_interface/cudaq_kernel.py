@@ -216,22 +216,24 @@ def cudaq_kernel(
 
     sig = inspect.signature(func)
     params = list(sig.parameters.values())
+    annotations = inspect.get_annotations(func, eval_str=True)
     _supported = list(_ANNOTATION_TO_DUMMY.keys()) + ["FixedShapeNDArray[dtype, size]"]
 
     dummy_args = []
     for p in params:
-        if p.annotation is inspect.Parameter.empty:
+        annotation = annotations.get(p.name, inspect.Parameter.empty)
+        if annotation is inspect.Parameter.empty:
             raise RuntimeError(
                 f"@cudaq_kernel: parameter '{p.name}' of "
                 f"'{func.__name__}' requires a type annotation. "
                 f"Supported: {_supported}."
             )
-        if isinstance(p.annotation, FixedShapeNDArray):
-            dummy_args.append(p.annotation.make_dummy())
-        elif p.annotation in _ANNOTATION_TO_DUMMY:
-            dummy_args.append(_ANNOTATION_TO_DUMMY[p.annotation])
+        if isinstance(annotation, FixedShapeNDArray):
+            dummy_args.append(annotation.make_dummy())
+        elif annotation in _ANNOTATION_TO_DUMMY:
+            dummy_args.append(_ANNOTATION_TO_DUMMY[annotation])
         else:
-            ann_name = getattr(p.annotation, "__name__", repr(p.annotation))
+            ann_name = getattr(annotation, "__name__", repr(annotation))
             raise RuntimeError(
                 f"@cudaq_kernel: unsupported annotation "
                 f"'{ann_name}' for parameter '{p.name}' of "
