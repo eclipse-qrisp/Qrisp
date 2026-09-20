@@ -95,13 +95,13 @@ def _jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
             Targets ``cudaq.sample``.  Every ``quake.mz`` is emitted on the
             full operand (``!quake.ref`` or ``!quake.veq<?>``), leaving the
             ``!quake.measure`` / ``!cc.sequence<!quake.measure>`` result for the
-            CUDAQ runtime to collect across shots.  To keep SSA valid through
-            all intermediate passes, a zero dummy constant (``tensor<i1>``
-            for single qubits, ``tensor<i64>`` for arrays) is substituted
-            wherever the classical measurement result would otherwise be used.
-            All classical return values are then stripped from ``func.return``
-            and the function signature so that the kernel has a ``void``
-            return type, as required by ``cudaq.sample``.
+            CUDAQ runtime to collect across shots.  No classical measurement
+            value exists inside the kernel, so a measurement that feeds
+            anything other than the entry function's return raises
+            :exc:`NotImplementedError`.  All classical return values are
+            stripped from ``func.return`` and the function signature so that
+            the kernel has a ``void`` return type, as required by
+            ``cudaq.sample``.
 
     Returns
     -------
@@ -110,14 +110,15 @@ def _jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
 
     Raises
     ------
-    ImportError
-        If the ``xdsl`` package is not installed.
     CudaqUnsupportedArrayOperationError
         If the emitted module contains an unsupported array operation.
+    NotImplementedError
+        If ``execution_mode="sample"`` and a measurement result is used
+        classically inside the kernel.
 
     """
     if execution_mode not in ("run", "sample"):
-        raise ValueError(f"Unknown execution_mode: {execution_mode!r}")
+        raise ValueError(f"Unknown execution_mode: {execution_mode!r}. Supported: 'run', 'sample'.")
 
     # Step 0 – Produce the initial xDSL module with Jasp IR.
     module: ModuleOp = jaspr_to_mlir(jaspr, lower_stableHLO=True)

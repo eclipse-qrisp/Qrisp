@@ -16,7 +16,7 @@
 
 """Provide helper functions for Jasp-to-Quake lowering."""
 
-from xdsl.dialects import arith, tensor
+from xdsl.dialects import arith, func, tensor
 from xdsl.dialects.builtin import (
     DenseIntOrFPElementsAttr,
     IntegerAttr,
@@ -26,12 +26,14 @@ from xdsl.dialects.builtin import (
 )
 from xdsl.ir import (
     Attribute,
+    Operation,
     SSAValue,
 )
 from xdsl.pattern_rewriter import (
     PatternRewriter,
 )
 from xdsl.rewriter import InsertPoint
+from xdsl.traits import Pure
 
 from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
     QuakeRefType,
@@ -257,3 +259,37 @@ def _emit_gate(
     if gate_op is None:
         raise RuntimeError(f"Gate '{gate_name}' not in Quake gate class table.")
     rewriter.insert_op(gate_op, InsertPoint.before(rewriter.current_operation))
+
+
+# ---------------------------------------------------------------------------
+# Sample-mode measurement helpers
+# ---------------------------------------------------------------------------
+
+
+def _is_entry_return(op: Operation) -> bool:
+    """Return whether *op* is the ``func.return`` of the entry function."""
+    if not isinstance(op, func.ReturnOp):
+        return False
+    parent = op.parent_op()
+    return isinstance(parent, func.FuncOp) and parent.sym_name.data == "main"
+
+
+def _first_impure_consumer(value: SSAValue) -> Operation | None:
+    """Return the first side-effecting consumer of *value*, following pure ops.
+
+    The entry function's ``func.return`` is not a consumer here: sample mode
+    strips it together with every classical value flowing into it, so pure
+    computation that ends there dies with it.
+    """
+    seen: set[Operation] = set()
+    worklist = [value]
+    while worklist:
+        for use in worklist.pop().uses:
+            user = use.operation
+            if user in seen or _is_entry_return(user):
+                continue
+            seen.add(user)
+            if not user.has_trait(Pure):
+                return user
+            worklist.extend(user.results)
+    return None

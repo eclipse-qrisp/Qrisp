@@ -843,6 +843,43 @@ def test_measure_single_qubit_quantum_variable():
     assert result == 10 * [1]
 
 
+def test_measure_returned_lowers_in_sample_mode():
+    """A returned measurement is dropped with the void return, not computed with."""
+
+    def circuit():
+        qv = QuantumFloat(2)
+        x(qv[0])
+        return measure(qv)
+
+    jaspr = make_jaspr(circuit)()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        mlir = str(jaspr.to_quake_mlir(execution_mode="sample"))
+
+    assert "quake.mz" in mlir, "Expected quake.mz in output"
+    assert "quake.discriminate" not in mlir, "sample mode must not discriminate"
+    assert "func.func @main() attributes" in mlir, "Expected a void entry point"
+    _validate_quake_mlir(mlir)
+
+
+def test_measure_feeding_classical_control_raises_in_sample_mode():
+    """Sample mode has no measurement value, so feed-forward must be rejected."""
+
+    def circuit():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        b = measure(qv[0])
+        with control(b):
+            x(qv[1])
+        return b
+
+    jaspr = make_jaspr(circuit)()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        with pytest.raises(NotImplementedError, match="execution_mode='sample'"):
+            jaspr.to_quake_mlir(execution_mode="sample")
+
+
 # ---------------------------------------------------------------------------
 # QuantumVariable-wide gate application (while-loop lowering)
 # ---------------------------------------------------------------------------
@@ -996,7 +1033,7 @@ def test_parity_raises_not_implemented_error():
         m1 = measure(qv[1])
         return parity(m0, m1)
 
-    with pytest.raises(NotImplementedError, match="jasp.parity"):
+    with pytest.raises(NotImplementedError, match=r"uses the 'parity'"):
         _lower(circuit)
 
 
@@ -1014,7 +1051,7 @@ def test_unsupported_gate_raises_not_implemented_error():
         "qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.lower_jasp_to_quake._get_gate_info",
         return_value=None,
     ):
-        with pytest.raises(NotImplementedError, match="Unsupported Jasp gate"):
+        with pytest.raises(NotImplementedError, match=r"uses the gate 'h'"):
             _lower(circuit)
 
 

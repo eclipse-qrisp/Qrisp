@@ -303,4 +303,6 @@ def _prepare_module_for_cudaq(
         _pass_inject_module_attrs(module, config, run_func_name, run_entry_name)
 
     else:
-        raise ValueError(f"Unknown execution_mode: {config.execution_mode!r}")
+        raise ValueError(
+            f"Unknown execution_mode: {config.execution_mode!r}. Supported: 'run', 'sample'."
+        )

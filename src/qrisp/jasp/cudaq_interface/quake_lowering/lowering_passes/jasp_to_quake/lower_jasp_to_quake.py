@@ -78,6 +78,7 @@ from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.hel
     _classify_gate_operands,
     _emit_gate,
     _extract_scalar_for_rewriter,
+    _first_impure_consumer,
     _is_qst,
     _is_qubit,
     _is_qubit_array,
@@ -335,7 +336,9 @@ class LowerQuantumGate(RewritePattern):
         gate_name = op.gate_type.data
         gate_info = _get_gate_info(gate_name)
         if gate_info is None:
-            raise NotImplementedError(f"Lowering failed: Unsupported Jasp gate '{gate_name}'.")
+            raise NotImplementedError(
+                f"This Qrisp function uses the gate '{gate_name}', which cannot be compiled to CUDA-Q."
+            )
 
         qubit_operands, param_operands = _classify_gate_operands(op, rewriter)
         controls, targets = _split_gate_operands(qubit_operands, gate_info)
@@ -355,21 +358,20 @@ class LowerMeasure(RewritePattern):
         ``quake.mz %ref → !quake.measure`` followed by
         ``quake.discriminate → i1``, wrapped back to ``tensor<i1>``.
 
-    Single qubit, ``"sample"`` mode
-        ``quake.mz %ref → !quake.measure`` only.  The classical result is
-        replaced by a zero ``tensor<i1>`` placeholder so that downstream SSA
-        uses remain valid; the placeholder is stripped from the function
-        return by :func:`_fix_return_op`.
-
     Qubit array, ``"run"`` mode
         A ``scf.for`` loop extracts each qubit, applies ``quake.mz`` +
         ``quake.discriminate``, and bit-packs the results into a single
         ``i64`` (little-endian), which is wrapped to ``tensor<i64>``.
 
-    Qubit array, ``"sample"`` mode
-        ``quake.mz %veq → !cc.sequence<!quake.measure>`` only.  The classical
-        result is replaced by a zero ``tensor<i64>`` placeholder; stripped
-        from the return by :func:`_fix_return_op`.
+    ``"sample"`` mode
+        ``quake.mz`` on the whole operand (``!quake.ref`` or ``!quake.veq<?>``)
+        and nothing else, since ``cudaq.sample`` collects the outcomes in the
+        runtime.  The kernel therefore has no classical measurement value: the
+        result is replaced by a zero placeholder, which is only sound as long
+        as it reaches nothing but pure computation feeding the entry function's
+        return, all of which the strip_qst stage drops along with that return.
+        A result reaching any side-effecting operation — classical control over
+        a gate, a call, a non-entry return — raises :exc:`NotImplementedError`.
     """
 
     def __init__(self, execution_mode: str = "run"):
@@ -384,17 +386,34 @@ class LowerMeasure(RewritePattern):
         meas_result = op.results[0]
         is_array = _is_qubit_array(qubit_val.type) or isinstance(qubit_val.type, QuakeVeqType)
 
-        if not is_array and self.execution_mode != "sample":
-            self._lower_single_qubit_run(qubit_val, meas_result, rewriter)
-        elif not is_array and self.execution_mode == "sample":
-            self._lower_single_qubit_sample(qubit_val, meas_result, rewriter)
-        elif self.execution_mode == "sample":
-            self._lower_array_sample(qubit_val, meas_result, rewriter)
-        else:
+        if self.execution_mode == "sample":
+            self._lower_sample(qubit_val, meas_result, rewriter)
+        elif is_array:
             self._lower_array_run(qubit_val, meas_result, rewriter)
+        else:
+            self._lower_single_qubit_run(qubit_val, meas_result, rewriter)
 
         _thread_qst(op)
         rewriter.erase_op(op)
+
+    def _lower_sample(self, qubit_val, meas_result, rewriter):
+        consumer = _first_impure_consumer(meas_result)
+        if consumer is not None:
+            raise NotImplementedError(
+                "This Qrisp function uses a measurement result for computation, which cannot be "
+                "compiled to CUDA-Q when execution_mode='sample'.\n\n"
+                "cudaq.sample collects measurement outcomes at runtime, making them unavailable for "
+                "classical control flow or computation. Remove the use of the measure(...) result, or "
+                "compile with execution_mode='run'.\n\n"
+                f"(Unsupported use: '{consumer.name}')"
+            )
+
+        # Everything left reaching the measurement result is pure and dies with the
+        # entry function's return, so a zero placeholder keeps SSA valid until then.
+        mz = MzOp(qubit_val)
+        zero_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(meas_result.type, [0]))
+        rewriter.insert_op([mz, zero_const], InsertPoint.before(rewriter.current_operation))
+        meas_result.replace_all_uses_with(zero_const.result)
 
     def _lower_single_qubit_run(self, qubit_val, meas_result, rewriter):
         mz = MzOp(qubit_val)
@@ -402,18 +421,6 @@ class LowerMeasure(RewritePattern):
         rewriter.insert_op([mz, disc], InsertPoint.before(rewriter.current_operation))
         wrapped = _wrap_scalar_for_rewriter(disc.result, meas_result.type, rewriter)
         meas_result.replace_all_uses_with(wrapped)
-
-    def _lower_single_qubit_sample(self, qubit_val, meas_result, rewriter):
-        mz = MzOp(qubit_val)
-        zero_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(meas_result.type, [0]))
-        rewriter.insert_op([mz, zero_const], InsertPoint.before(rewriter.current_operation))
-        meas_result.replace_all_uses_with(zero_const.result)
-
-    def _lower_array_sample(self, qubit_val, meas_result, rewriter):
-        mz = MzOp(qubit_val)
-        zero_const = arith.ConstantOp(DenseIntOrFPElementsAttr.from_list(meas_result.type, [0]))
-        rewriter.insert_op([mz, zero_const], InsertPoint.before(rewriter.current_operation))
-        meas_result.replace_all_uses_with(zero_const.result)
 
     def _lower_array_run(self, qubit_val, meas_result, rewriter):
         veq_size = VeqSizeOp(qubit_val)
@@ -461,4 +468,6 @@ class LowerParity(RewritePattern):
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: ParityOp, rewriter: PatternRewriter) -> None:
         """Reject unsupported JASP parity operations."""
-        raise NotImplementedError("Lowering failed: 'jasp.parity' is not supported by the Quake lowering backend.")
+        raise NotImplementedError(
+            "This Qrisp function uses the 'parity' operation, which cannot be compiled to CUDA-Q."
+        )
