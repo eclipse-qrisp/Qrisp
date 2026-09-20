@@ -116,6 +116,9 @@ def _jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
         If the emitted module contains an unsupported array operation.
 
     """
+    if execution_mode not in ("run", "sample"):
+        raise ValueError(f"Unknown execution_mode: {execution_mode!r}")
+
     # Step 0 – Produce the initial xDSL module with Jasp IR.
     module: ModuleOp = jaspr_to_mlir(jaspr, lower_stableHLO=True)
 
