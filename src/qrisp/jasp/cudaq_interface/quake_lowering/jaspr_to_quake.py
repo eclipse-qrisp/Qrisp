@@ -77,13 +77,13 @@ def _jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
 
     Parameters
     ----------
-    jaspr: Jaspr
+    jaspr : Jaspr
         A :class:`~qrisp.jasp.Jaspr` (closed-form JAX trace) to lower.
-    execution_mode:
+    execution_mode : {"run", "sample"}, default "run"
         Controls how quantum measurements are lowered and how the function
         signature is generated.  Two values are accepted:
 
-        ``"run"`` *(default)*
+        ``"run"``
             Targets ``cudaq.run``.  Array measurements are lowered to a
             ``cc.loop`` that extracts each qubit, calls ``quake.mz`` +
             ``quake.discriminate``, and packs the resulting bits into an
@@ -94,14 +94,15 @@ def _jaspr_to_quake_mlir(jaspr: Jaspr, execution_mode: str = "run") -> ModuleOp:
         ``"sample"``
             Targets ``cudaq.sample``.  Every ``quake.mz`` is emitted on the
             full operand (``!quake.ref`` or ``!quake.veq<?>``), leaving the
-            ``!quake.measure`` / ``!cc.sequence<!quake.measure>`` result for the
-            CUDAQ runtime to collect across shots.  No classical measurement
-            value exists inside the kernel, so a measurement that feeds
-            anything other than the entry function's return raises
-            :exc:`NotImplementedError`.  All classical return values are
-            stripped from ``func.return`` and the function signature so that
-            the kernel has a ``void`` return type, as required by
-            ``cudaq.sample``.
+            ``!cc.measure_handle`` / ``!cc.sequence<!cc.measure_handle>`` result for the
+            CUDA-Q runtime to collect across shots.  A zero dummy constant
+            (``i1`` for single qubits, ``i64`` for arrays)
+            keeps SSA valid only for pure computation that feeds the entry
+            function's return and is subsequently stripped.  If a measurement
+            result reaches classical control or another side-effecting operation,
+            lowering raises ``NotImplementedError``.  All classical return values
+            are stripped from ``func.return`` and the function signature so that
+            the kernel has a ``void`` return type, as required by ``cudaq.sample``.
 
     Returns
     -------
