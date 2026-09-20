@@ -117,6 +117,7 @@ def cudaq_kernel(
           as a ``SampleResult`` histogram.
     register_size : int, optional
         If specified, the kernel will be compiled with a fixed register size.
+        Only applicable when ``execution_mode`` is ``"sample"``.
 
     Returns
     -------
@@ -129,7 +130,7 @@ def cudaq_kernel(
         If a parameter is missing a type annotation or has an unsupported
         annotation type.
     RuntimeError
-        If tracing or lowering the function to CUDA-Q fails. This can
+        If tracing or compiling the function to CUDA-Q fails. This can
         happen when the kernel uses unsupported traced array arithmetic.
 
     Examples
@@ -219,6 +220,9 @@ def cudaq_kernel(
     annotations = inspect.get_annotations(func, eval_str=True)
     _supported = list(_ANNOTATION_TO_DUMMY.keys()) + ["FixedShapeNDArray[dtype, size]"]
 
+    if execution_mode not in ("run", "sample"):
+        raise ValueError(f"Unknown execution_mode: {execution_mode!r}. Supported: 'run', 'sample'.")
+
     dummy_args = []
     for p in params:
         annotation = annotations.get(p.name, inspect.Parameter.empty)
@@ -242,7 +246,7 @@ def cudaq_kernel(
 
     jaspr = make_jaspr(func)(*dummy_args)
 
-    if register_size is not None:
+    if register_size is not None and execution_mode == "sample":
         new_jaspr = jaspr_to_static_register_jaspr(jaspr, register_size)
     else:
         new_jaspr = jaspr
@@ -250,6 +254,6 @@ def cudaq_kernel(
     try:
         mlir_module = _jaspr_to_quake_mlir(new_jaspr, execution_mode=execution_mode)
     except Exception as e:
-        raise RuntimeError(f"Failed to compile Qrisp function '{func.__name__}' to MLIR: {e}") from e
+        raise RuntimeError(f"Failed to compile Qrisp function '{func.__name__}' to CUDA-Q: {e}") from e
 
     return _cudaq_kernel_from_xdsl_module(mlir_module, execution_mode=execution_mode)

@@ -523,6 +523,16 @@ def test_fixed_shape_ndarray_float_size():
 # ---------------------------------------------------------------------------
 
 
+def test_unsupported_execution_mode_raises():
+    """@cudaq_kernel raises ValueError for an unsupported execution_mode."""
+    with pytest.raises(ValueError, match="Unknown execution_mode"):
+
+        @cudaq_kernel(execution_mode="invalid_mode")
+        def bad_mode():
+            qv = QuantumFloat(1)
+            return measure(qv[0])
+
+
 def test_missing_annotation_raises():
     """@cudaq_kernel raises RuntimeError when a parameter lacks a type annotation."""
     with pytest.raises(RuntimeError, match="requires a type annotation"):
