@@ -136,14 +136,15 @@ class ScalarList:
                 start = jnp.asarray(0, dtype=jnp.int64)
             else:
                 start = key.start + (key.start < 0) * self.counter
+            start = jnp.clip(start, 0, self.counter)
 
             if key.stop is None:
                 stop = self.counter
             else:
-                stop = jnp.minimum(key.stop, self.counter)
-                stop = stop + (stop < 0) * self.counter
+                stop = key.stop + (key.stop < 0) * self.counter
+            stop = jnp.clip(stop, 0, self.counter)
 
-            length = stop - start
+            length = jnp.maximum(stop - start, 0)
 
             new_slots = []
             for k in range(self.max_size):
