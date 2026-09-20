@@ -52,7 +52,7 @@ def test_cudaq_memory_management():
 def test_cudaq_memory_management_arithmetic():
     """Test for CUDA-Q quantum memory management using Qrisp's QuantumFloat arithmetic.
     Each inplace addition allocates auxiliary qubits, which are uncomputed, and must be deallocated properly.
-    Oterwise, the total number of allocated qubits grows, leading to prohibitive simulation costs."""
+    Otherwise, the total number of allocated qubits grows, leading to prohibitive simulation costs."""
 
     @cudaq_kernel
     def main():
