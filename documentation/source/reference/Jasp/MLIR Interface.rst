@@ -265,3 +265,34 @@ The :meth:`to_mlir` method returns an ``xdsl.ir.ModuleOp`` object, which can be:
 - Exported to standard MLIR format
 - Integrated with other MLIR-based compilation pipelines
 
+Textual Formats and Interoperability
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``str(mlir_module)`` prints the Jasp operations in their **custom assembly
+format**, for instance::
+
+    %0, %1 = jasp.create_qubits %arg0, %arg1 : tensor<i64>, !jasp.QuantumState -> !jasp.QubitArray, !jasp.QuantumState
+
+A consumer that wants to parse this needs a dialect that declares the same
+syntax. The TableGen definitions Qrisp builds its Python bindings from are
+shipped in ``qrisp/jasp/mlir/dialect_definition`` (``JaspDialect.td``,
+``JaspOps.td``) and declare exactly that format, so an MLIR-based tool can be
+built from them. ``tests/jax_tests/jasp_dialect_syntax.mlir`` contains one
+instance of every operation and serves as a reference to check such a parser
+against.
+
+Alternatively, the **generic format** is always available and requires no
+knowledge of the dialect's custom syntax at all::
+
+    from xdsl.printer import Printer
+
+    Printer(print_generic_format=True).print_op(mlir_module)
+
+which prints the same module as::
+
+    %0, %1 = "jasp.create_qubits"(%arg0, %arg1) : (tensor<i64>, !jasp.QuantumState) -> (!jasp.QubitArray, !jasp.QuantumState)
+
+This is the more robust choice for interoperability, since it only depends on
+the operand and result signatures of the operations rather than on their
+printing syntax.
+
