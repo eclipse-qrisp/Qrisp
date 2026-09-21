@@ -329,6 +329,7 @@ Development
   as documentation. Existing rich module-level documentation was preserved
   verbatim, only reformatted to satisfy ``D205``
   (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+  (`PR #866 <https://github.com/eclipse-qrisp/Qrisp/pull/866>`_).
 
 * Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
   style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
