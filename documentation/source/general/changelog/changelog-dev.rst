@@ -22,20 +22,120 @@ New Features
   rejects kernels that return classical values with a descriptive 
   error — use ``terminal_sampling=False`` (the default) for those cases.
 
+- **Backend-based sampling via** ``@backend_sampler``
+  The new :func:`~qrisp.jasp.backend_sampler` decorator routes
+  :func:`~qrisp.jasp.sample` and :func:`~qrisp.jasp.expectation_value`
+  calls through a real quantum backend instead of the Jaspify simulator.
+  The quantum circuit is extracted once, executed on the backend for all
+  shots, and the classical post-processing (decoding, accumulator updates,
+  expectation-value computation) is replayed via the Jaspr's own while-loop
+  — compiled through :func:`jax.jit`.
+
+  Key capabilities:
+
+  * Supports any backend implementing the :ref:`Backend Interface <BackendInterface>`.
+  * Handles multiple ``sample()`` / ``expectation_value()`` calls in the
+    same decorated function, each independently routed.
+  * Propagates the backend interception through JAX control-flow
+    primitives (``fori_loop``, ``while_loop``, ``cond``, ``scan``,
+    nested ``jit`` / ``pjit``).
+  * Raises ``RuntimeError`` for kernels containing real-time feedback
+    (mid-circuit measurements whose outcomes control subsequent gates).
+  * Raises ``RuntimeError`` when quantum operations are used without a
+    surrounding ``sample()`` / ``expectation_value()`` call.
+  * Raises ``ValueError`` for a non-positive shot count — including a
+    dynamic one, which only becomes concrete once the backend runs.
+
 Improvements
 ------------
+
+- :class:`~qrisp.interface.QiskitJob` and :class:`~qrisp.interface.AQTJob`
+  now skip the live provider query and return the cached status once a job
+  is done, cancelled, or errored. The :class:`~qrisp.interface.Job` base
+  class docstring for ``status()``/``refresh()`` now consistently describes
+  this as an optional optimization implementations may take advantage of,
+  rather than a guarantee
+  (`PR #806 <https://github.com/eclipse-qrisp/Qrisp/pull/806>`_).
 
 - Updated docstrings for ``sample()``, ``expectation_value()``, and
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
 
+- **Faster COLD/LCD circuit compilation and Hamiltonian construction**
+  :meth:`compile_U_cold <qrisp.cold.DCQOProblem.compile_U_cold>` and
+  :meth:`~qrisp.cold.DCQOProblem.run` no longer recompute Trotter term
+  grouping on every timestep, and Ising-type Hamiltonians (identity,
+  single-qubit Pauli, or :math:`Z \otimes Z` terms only — the case for every
+  built-in QUBO Hamiltonian) are now Trotterized via a new native-gate fast
+  path (``fast_trotterization``), falling back automatically for any other
+  operator. Separately, a new ``QubitOperator.sum`` classmethod builds large
+  QUBO Hamiltonians (``create_COLD_instance``, ``create_LCD_instance``) in a
+  single pass instead of via Python's built-in ``sum()``, which no longer
+  costs :math:`\mathcal{O}(N^4)` for a dense :math:`N`-qubit QUBO.
+
+- Improved the simulator's circuit preprocessing: circuit reordering is
+  faster, and gate grouping for circuits with 63+ qubits now stays on the
+  fast Numba-jitted path (via chunked qubit bitmasks) instead of falling
+  back to a slower, non-jitted implementation. All functions and classes
+  used for simulator preprocessing are strictly internal and marked with a
+  leading underscore.
+  (`PR #704 <https://github.com/eclipse-qrisp/Qrisp/pull/704>`_)
+
+- Added type hints across :class:`~qrisp.QuantumFloat`, fixed stale
+  docstring examples, and sped up ``significant()``, ``init_from()``, and
+  ``encode(..., rounding=True)`` (now O(1))
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
+
 Other New Features
 ------------------
+
+- Added an ``RYYGate`` for Ising-YY couplings to accompany the existing ``RXXGate``
+  and ``RZZGate``
+  (`PR #797 <https://github.com/eclipse-qrisp/Qrisp/pull/797>`_).
+  
+- **Dicke state preparation via divide-and-conquer**
+  :func:`~qrisp.dicke_state` now accepts a ``method`` keyword argument.  In
+  addition to the existing ``"deterministic"`` method
+  (`arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_), the new
+  ``"divide-and-conquer"`` method
+  (`arXiv:2112.12435 <https://arxiv.org/abs/2112.12435>`_) prepares the two
+  halves of the variable on disjoint qubits, roughly halving the circuit
+  depth.  It requires the input to have Hamming weight exactly ``k``, whereas
+  ``"deterministic"`` implements the full Dicke state unitary and therefore
+  also accepts any input weight ``l <= k``, preparing ``D(n, l)``.  The
+  default is ``"deterministic"``, so existing code is unaffected
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
+- **Added an AI policy note to the issue templates**
+  All issue templates now state that the project does not accept
+  AI-generated pull requests and that automated agents should not submit PRs
+  or post comments. Human contributors may use LLMs as an aid, provided they
+  fully understand and take responsibility for the changes implemented
+  (`PR #816 <https://github.com/eclipse-qrisp/Qrisp/pull/816>`_).
 
 .. Add other new features above this line
 
 Bug Fixes
 ---------
+
+* Fixed a failure when a function decorated with
+  :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
+  raised ``Automatic loop inversion is only supported for jrange-based loops``.
+  An inverted Jaspr keeps a back-pointer to the Jaspr it inverts, and the second
+  inversion follows it instead of deriving an inverse. Inverting can reclassify
+  arguments as constants, and folding them back rewrapped the Jaspr without
+  carrying the back-pointer over, so the second inversion fell back to inverting
+  the body, which is the derivation ``custom_inversion`` exists to avoid. This
+  affected, for instance, inverting a :func:`prepare <qrisp.prepare>` whose
+  amplitudes are only known at run time, as produced by a
+  :class:`~qrisp.block_encodings.BlockEncoding` simulation with traced
+  coefficients.
+
+* Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
+  Unitary matrices are now computed in ``complex128`` precision, removing the
+  spurious ~1e-7 off-diagonal entries that previously appeared where a
+  unitary should vanish exactly (e.g. phase-tolerant controlled gates).
+  (`PR #787 <https://github.com/eclipse-qrisp/Qrisp/pull/787>`_).
 
 * Fixed a bug where :func:`dot <qrisp.dot>` failed with a
   ``TypeError: 'QuantumArrayIterator' object is not iterable``
@@ -49,6 +149,11 @@ Bug Fixes
   in ``CircuitOperation`` calls
   (`PR #709 <https://github.com/eclipse-qrisp/Qrisp/pull/709>`_).
 
+* Fixed jasp-mode crashes when tracing a ``while``/``scan`` loop with a
+  single carried value, uncovered while removing duplicated interpreter
+  code across four execution backends
+  (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
+  
 * Fixed :class:`~qrisp.interface.QiskitBackend` failing with
   ``OverflowError: int too big to convert`` — or, for small classical
   registers, silently returning wrong counts — on providers that report
@@ -84,14 +189,88 @@ Bug Fixes
   the same declarative assembly format as the remaining operations, which also
   removes the stray whitespace around ``(`` and ``,`` those printers emitted
   and stops attributes from being dropped.
+* Removed reduant imports in the top-level ``qrisp`` package.
+  (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
+
+* Fixed a bug where :class:`~qrisp.QuantumModulus` constructed with a traced
+  (Jasp-dynamic) modulus leaked a stale JAX tracer into subsequent, independent
+  ``jaspify``/``make_jaspr`` calls, raising
+  ``jax.errors.UnexpectedTracerError`` on the second and later calls. The
+  modulus is now threaded through the ``QuantumVariable`` pytree as a proper
+  traced attribute instead of being passed into static auxiliary data
+  (`PR #802 <https://github.com/eclipse-qrisp/Qrisp/pull/802>`_).
+
+* Updated broken link in TSP tutorial to point to the
+  correct archived Qiskit textbook.
+  (`PR #804 <https://github.com/eclipse-qrisp/Qrisp/pull/804>`_).
+  
+* Fixed :func:`dicke_state <qrisp.dicke_state>` for ``k = 0``, which emitted a
+  ladder of identity-acting *Split & Cyclic Shift* blocks and traced a
+  negative-length loop range under Jasp
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
+* Fix a code typo in the Jasp tutorial which printed the wrong variable
+  when checking which variables are dynamic.
+  (`PR #828 <https://github.com/eclipse-qrisp/Qrisp/pull/828>`_).
+
+* Removed a stray double blank line in ``QubitOperator.simulate``, left behind
+  by an import-hoisting cleanup, which broke ``ruff format --check`` on
+  ``main`` right after merge.
+
+* Fixed two AGP coefficient shape bugs in ``create_LCD_instance`` with
+  ``agp_type="nc"``: the ``uniform`` and non-uniform coefficient builders
+  each wrapped their result one list level too deep, handing a whole
+  per-qubit array where a single coefficient was expected.
+  
+* Fixed a bug where :class:`~qrisp.QuantumFloat` add/sub with different
+  exponents silently produced a ``jax.Array`` exponent instead of a plain
+  ``int`` outside tracing, crashing later negative ``2**exponent`` calls
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
+
+* Fixed a bug where the ``catalyst_interpreter`` failed to compile JAXPRs with
+  constants, by passing the constants to ``eval_jaxpr``
+  (`PR #750 <https://github.com/eclipse-qrisp/Qrisp/pull/750>`_).
+
+* Fixed :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>`'s COLD method
+  with ``objective="exp_value"``, which could be dramatically slower and
+  converge to worse results than in qrisp 0.8: an unused exponential-size
+  cost table was built on every call, the fast statevector path used the
+  wrong cost function, and the optimization-pulse ansatz divided by zero for
+  scheduling functions with vanishing derivative at the domain endpoints.
+
+* :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>`'s COLD method now
+  raises a clear ``ValueError`` for ``N_opt < 1`` or the default ``N_opt=None``,
+  instead of failing deep inside ``range()`` or SciPy with confusing,
+  inconsistent error messages
+  (`#877 <https://github.com/eclipse-qrisp/Qrisp/issues/877>`_).
 
 Compatibility
 -------------
+
+* :func:`~qrisp.dicke_state` now raises a ``ValueError`` for an unrecognized
+  ``method``, and for a ``k`` outside ``0 <= k <= len(qv)`` when both are
+  plain Python integers (i.e. outside of Jasp tracing).  The latter previously
+  produced an incorrect state silently
+  (`PR #767 <https://github.com/eclipse-qrisp/Qrisp/pull/767>`_).
+
+* :class:`~qrisp.QuantumFloat` methods now raise specific exception types
+  (``TypeError``, ``ValueError``, ``NotImplementedError``) instead of a
+  generic ``Exception``. Code using ``except Exception:`` is unaffected
+  (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 .. Add compatibility notes above this line
 
 New Tutorials/ Updated Documentation
 -------------------------------------
+
+- Fixed outdated or inaccurate docstrings and examples across the Jasp
+  module (control flow, sampling, simulators, optimization tools,
+  ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
+  (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
+
+- Added a :ref:`Community Day <community_day>` page announcing the first
+  Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
+  link and agenda.
 
 .. Add new tutorials above this line
 
@@ -105,6 +284,14 @@ API Changes
   helpful ``ImportError`` when the ``iqm-client[qrisp]`` package is
   not installed.
   (`PR #757 <https://github.com/eclipse-qrisp/Qrisp/pull/757>`_).
+
+* Renamed the *Split & Cyclic Shift* helper used by
+  :func:`~qrisp.dicke_state` from ``split_cycle_shift`` to
+  ``_split_cycle_shift``, marking it private.  Its parameters were renamed
+  from ``highIndex``/``lowIndex`` to ``n``/``k`` to match the notation of
+  `arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_.  The unitary
+  implemented is unchanged
+  (`PR #814 <https://github.com/eclipse-qrisp/Qrisp/pull/814>`_).
 
 .. Add API changes above this line
 
@@ -130,6 +317,54 @@ Development
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
+* Performed a large-scale refactoring of the jasp (JAX-tracing) interpreter
+  subsystem, consolidating control-flow, equation-copying, and caching logic
+  that had been independently duplicated across the Catalyst,
+  classical-simulation, profiling, and post-processing backends into shared
+  helper functions
+  (`PR #770 <https://github.com/eclipse-qrisp/Qrisp/pull/770>`_).
+
+* Added an ``all`` optional dependency group that installs the base package
+  plus every other extra except ``aqt`` (``qiskit``, ``iqm``, ``catalyst``,
+  ``xdsl``, ``docs``, and ``dev``) and updated the Development Guide's
+  installation instructions to reference it
+  (`PR #807 <https://github.com/eclipse-qrisp/Qrisp/pull/807>`_).
+* Added a ``reviewdog``-based CI workflow that runs ``ruff`` on pull requests
+  and surfaces lint findings as annotations on the GitHub Checks tab of
+  newly added lines instead of as inline review comments on the PR
+  (`PR #639 <https://github.com/eclipse-qrisp/Qrisp/pull/639>`_,
+  `PR #812 <https://github.com/eclipse-qrisp/Qrisp/pull/812>`_).
+
+* Converted every source file's Eclipse Public License header from a
+  module-level docstring into a ``#``-prefixed comment block, and gave
+  every file that lacked one a real one-line module docstring. The header
+  had been written as a docstring, which pydocstyle interpreted as the
+  module's documentation and flagged for style violations (``D205``,
+  ``D212``, ...) on essentially every file; it was never meant to be read
+  as documentation. Existing rich module-level documentation was preserved
+  verbatim, only reformatted to satisfy ``D205``
+  (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+
+* Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
+  style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
+  (relaxing pydocstyle conventions), plus ``PLC0415`` (function-level imports
+  used to avoid circular imports) and ``E402`` (module-level imports placed
+  after a module docstring)
+  (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
+
+* Added type hints across ``BlockEncoding`` and the ``QubitOperator``/
+  ``Hamiltonian`` operator algebra. This exposed two latent bugs:
+  ``BlockEncoding``'s constructor methods (``from_lcu``, ``from_operator``,
+  etc.) had their ``cls`` parameter typed as an instance rather than
+  ``type[BlockEncoding]``, and ``Hamiltonian``'s abstract methods were
+  typed as returning ``None``, breaking every subclass override
+  (`PR #817 <https://github.com/eclipse-qrisp/Qrisp/pull/817>`_).
+
+* Consolidated the ``ruff`` ``reviewdog.yml`` and ``ruff_checks.yml``
+  workflows into a single ``code_style.yml``, with the ``ruff format --check``
+  gate now running on both pull requests and pushes to ``main``
+  (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
+
 Dependency Upgrades
 -------------------
 
@@ -149,6 +384,20 @@ Dependency Upgrades
 * Bumped ``actions/setup-python`` from 6 to 7
   (`PR #760 <https://github.com/eclipse-qrisp/Qrisp/pull/760>`_).
 
+* Pinned ``ruff`` to ``0.15.18`` in the ``dev-code-style`` dependency group
+  and updated the ``reviewdog`` CI workflow to install the version specified
+  in ``pyproject.toml``
+  (`PR #819 <https://github.com/eclipse-qrisp/Qrisp/pull/819>`_).
+
+* Bumped ``ruff`` from ``0.15.18`` to ``0.16.4``. On ``0.15.x``,
+  ``ruff format --check --output-format=rdjson`` silently required
+  ``--preview`` mode just to emit structured output at all — an unrelated
+  concern from preview *formatting rules*, which the project does not use —
+  causing the ``reviewdog`` formatter check to crash. ``0.16.0`` stabilized
+  structured output formats for the formatter, fixing this without changing
+  which formatting rules apply
+  (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+
 .. Add dependency upgrades above this line
 
 First Time Contributors 🎉
@@ -157,3 +406,5 @@ First Time Contributors 🎉
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
+* `micpap25 <https://github.com/micpap25>`_
+* `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_

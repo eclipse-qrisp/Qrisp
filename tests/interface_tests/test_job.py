@@ -475,7 +475,7 @@ class TestJobStatusCaching:
         assert job.last_known_status == JobStatus.QUEUED
 
     def test_refresh_returns_current_status(self, backend):
-        """refresh() returns the freshly fetched status."""
+        """refresh() returns the current status."""
         job = MinimalJob(backend=backend)
         job._set_status(JobStatus.RUNNING)
         returned = job.refresh()

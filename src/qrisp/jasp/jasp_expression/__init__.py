@@ -16,6 +16,7 @@
 ********************************************************************************
 """
 
+from qrisp.jasp.jasp_expression.jaxpr_utils import *
 from qrisp.jasp.jasp_expression.inv_transform import *
 from qrisp.jasp.jasp_expression.environment_collection import *
 from qrisp.jasp.jasp_expression.centerclass import *

@@ -1,0 +1,84 @@
+name: Code style checks
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  lint:
+    name: ruff lint (reviewdog)
+    # Runs on PRs only, and the reviewdog step is gated on changes under src/.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned to a full commit SHA, matching the repo's convention for
+      # third-party actions.
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        id: filter
+        with:
+          filters: |
+            src:
+              - 'src/**'
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # Pinned to a full commit SHA instead of a mutable version tag.
+      # In March 2025, attackers moved the v1 tag of this action to a malicious
+      # commit that exfiltrated CI secrets from runner memory. Pinning to a SHA
+      # ensures we always run the exact audited version, immune to tag rewrites.
+      - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f  # v1.5.0
+
+      - name: Install ruff
+        run: |
+          RUFF_VERSION=$(sed -n 's/^.*"ruff==\([^"]*\)".*$/\1/p' pyproject.toml)
+          pip install "ruff==${RUFF_VERSION}"
+
+      - name: Run ruff via reviewdog
+        if: steps.filter.outputs.src == 'true'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ruff check src/ --output-format=rdjson --exit-zero | \
+            reviewdog -f=rdjson \
+                      -reporter=github-pr-annotations \
+                      -filter-mode=added \
+                      -fail-level=any
+
+  format:
+    name: ruff format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: |
+          RUFF_VERSION=$(sed -n 's/^.*"ruff==\([^"]*\)".*$/\1/p' pyproject.toml)
+          pip install "ruff==${RUFF_VERSION}"
+
+      - name: Ruff format check
+        run: ruff format --check

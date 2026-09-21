@@ -25,7 +25,7 @@ trace instead of being evaluated, leading to TracerIntegerConversionError.
 
 import numpy as np
 
-from qrisp import Clbit, QuantumArray, QuantumBool, QuantumVariable, cx, h, measure
+from qrisp import Clbit, QuantumArray, QuantumBool, QuantumVariable, cx, h, measure, parity
 from qrisp.circuit import QuantumCircuit as QC
 from qrisp.jasp import make_jaspr, qache
 
@@ -273,3 +273,41 @@ def test_to_qc_existing_behavior_unchanged():
         gate_names = [instr.op.name for instr in qc.data]
         cx_count = gate_names.count("cx")
         assert cx_count == 2, f"Expected 2 cx, got {cx_count} for n={n}"
+
+
+def test_to_qc_with_parity_convert_element_type():
+    """``to_qc`` must not crash when JAX inserts ``convert_element_type``
+    on a :class:`ParityHandle`.
+
+    During circuit extraction of a sampling kernel that uses
+    :func:`~qrisp.parity`, JAX may trace a ``convert_element_type``
+    primitive whose operand is a :class:`ParityHandle`.  The qc-extraction
+    interpreter must handle this by emitting a
+    :class:`ProcessedMeasurement` placeholder rather than delegating to
+    JAX's default ``exec_eqn`` (which would fail because
+    ``ParityHandle`` is not a JAX array).
+
+    Regression test for the fix in section 4.3 of
+    :func:`make_qc_extraction_eqn_evaluator`.
+    """
+    from qrisp.jasp.interpreter_tools.interpreters.qc_extraction_interpreter import (
+        ParityHandle,
+        ProcessedMeasurement,
+    )
+
+    def parity_kernel():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        return parity(m0, m1)
+
+    jaspr = make_jaspr(parity_kernel)()
+
+    # Must not raise TypeError / TracerIntegerConversionError
+    result = jaspr.to_qc()
+    qc = result[-1]
+
+    assert qc is not None
+    assert len(qc.data) > 0, "Expected non-empty circuit"
