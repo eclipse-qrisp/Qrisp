@@ -199,9 +199,9 @@ class QuantumSession(QuantumCircuit):
         return name not in map(attrgetter("name"), self.qv_list + self.deleted_qv_list)
 
     def _default_name_generator(self, name: str, suffix: int):
+        yield name
         while True:
-            yield name
-            name = name + "_" + str(suffix)
+            yield f"{name}_{suffix}"
             suffix += 1
 
     def _find_valid_name(self, name_generator) -> str:
@@ -1348,6 +1348,21 @@ class QuantumSession(QuantumCircuit):
 
     @classmethod
     def get_active_quantum_sessions(cls):
+        """
+        Returns weak references to all currently active QuantumSessions.
+
+        Every QuantumSession registers itself in the class-level ``qs_tracker``
+        list upon creation (as a :class:`weakref.ref`, so that tracking a
+        session does not keep it alive). This method prunes ``qs_tracker`` of
+        references whose QuantumSession has since been deallocated,
+        deduplicates the remaining references, and returns the cleaned-up list.
+
+        Returns
+        -------
+        list[weakref.ref]
+            A list of weak references to the active QuantumSession instances.
+
+        """
         # Remove potential duplicates
         qs_list = list(set([qs() for qs in cls.qs_tracker if qs() is not None]))
 
