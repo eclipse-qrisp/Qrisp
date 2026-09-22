@@ -165,6 +165,19 @@ def test_cuccaro_adder_static_cout_ctrl():
     assert c_out.get_measurement() == {True: 1.0}
 
 
+def test_cuccaro_adder_static_cout_ctrl_disabled():
+    """c_out remains unchanged when the control is off."""
+    a = QuantumFloat(3)
+    b = QuantumFloat(3)
+    a[:] = 6
+    b[:] = 6
+    c_out = QuantumBool()
+    ctrl = QuantumBool()
+    cuccaro_adder(a, b, c_out=c_out, ctrl=ctrl)
+    assert b.get_measurement() == {6: 1.0}
+    assert c_out.get_measurement() == {False: 1.0}
+
+
 def test_cuccaro_adder_static_inputs_unmodified():
     """Input QuantumFloat sizes are unchanged after addition."""
     a = QuantumFloat(5)
