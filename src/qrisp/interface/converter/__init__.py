@@ -16,9 +16,32 @@
 ********************************************************************************
 """
 
-from qrisp.interface.converter.qiskit_converter import *
-from qrisp.interface.converter.pytket_converter import *
-from qrisp.interface.converter.pennylane_converter import *
-from qrisp.interface.converter.qulacs_converter import *
-from qrisp.interface.converter.stim_converter import *
-from qrisp.interface.converter.cirq_converter import *
+from importlib import import_module
+
+
+_CONVERTER_EXPORTS = {
+    "convert_to_qiskit": "qiskit_converter",
+    "create_qiskit_instruction": "qiskit_converter",
+    "convert_from_qiskit": "qiskit_converter",
+    "create_tket_instruction": "pytket_converter",
+    "pytket_converter": "pytket_converter",
+    "qml_converter": "pennylane_converter",
+    "qulacs_converter": "qulacs_converter",
+    "qrisp_to_stim": "stim_converter",
+    "convert_to_cirq": "cirq_converter",
+    "convert_from_cirq": "cirq_converter",
+}
+
+__all__ = list(_CONVERTER_EXPORTS)
+
+
+def __getattr__(name):
+    """Load a converter only when one of its public symbols is requested."""
+    module_name = _CONVERTER_EXPORTS.get(name)
+    if module_name is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    module = import_module(f"{__name__}.{module_name}")
+    value = getattr(module, name)
+    globals()[name] = value
+    return value
