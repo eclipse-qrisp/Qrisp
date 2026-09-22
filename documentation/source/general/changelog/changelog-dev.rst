@@ -177,6 +177,13 @@ Bug Fixes
 * Removed reduant imports in the top-level ``qrisp`` package.
   (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
 
+* Fixed the top-level ``qrisp`` import eagerly loading circuit converter
+  modules and their optional dependencies. Converter modules, including the
+  PennyLane, PyTKET, Qulacs, Stim, and Cirq converters, are now loaded only
+  when their converter functions are requested. Existing converter exports
+  from ``qrisp.interface`` remain available
+  (`PR #901 <https://github.com/eclipse-qrisp/Qrisp/pull/901>`_).
+
 * Fixed a bug where :class:`~qrisp.QuantumModulus` constructed with a traced
   (Jasp-dynamic) modulus leaked a stale JAX tracer into subsequent, independent
   ``jaspify``/``make_jaspr`` calls, raising
