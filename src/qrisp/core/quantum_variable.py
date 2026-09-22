@@ -306,7 +306,12 @@ class QuantumVariable:
             declaration_stack_level = 1 if type(self) is QuantumVariable else 2
             (self.name, self.is_fixed_name) = self.qs.generate_name(name, self, declaration_stack_level + 1)
         else:
-            self.name = name if name is not None else self.get_unique_name()
+            if name is None:
+                self.name = self.get_unique_name()
+                self.is_fixed_name = False
+            else:
+                self.is_fixed_name = not name.endswith("*")
+                self.name = name.removesuffix("*")
         self.qs.register_qv(self, size)
 
         from qrisp.jasp.tracing_logic import flatten_qv, unflatten_qv
@@ -485,13 +490,13 @@ class QuantumVariable:
             If set to True, the :meth:`init_from <qrisp.QuantumVariable.init_from>`
             method of the result will be called on self. The default is False.
         qubits: list[Qubit] | DynamicQubitArray, optional
-            Qubits to inialize the duplicated quantum variable from.
+            Qubits to initialize the duplicated quantum variable from.
             If not provided ``self.size`` is used for qubits extraction.
 
         Raises
         ------
-        QuantumVariableNamingError
-            Name of qv is already used in this QuantumSession.
+        Exception
+            If merging the duplicate's quantum session with ``qs`` fails.
 
         Returns
         -------
@@ -1385,13 +1390,14 @@ class QuantumVariable:
 
 
         """
-        if self.is_deleted():
-            raise Exception("Tried to uncompute deleted QuantumVariable")
 
         from qrisp.jasp import TracingQuantumSession
 
         if isinstance(self.qs, TracingQuantumSession):
             raise Exception("Tried to uncompute a QuantumVariable in tracing mode")
+
+        if self.is_deleted():
+            raise Exception("Tried to uncompute deleted QuantumVariable")
 
         if do_it:
             from qrisp.permeability import uncompute
