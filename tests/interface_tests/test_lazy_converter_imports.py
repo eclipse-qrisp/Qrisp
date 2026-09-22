@@ -100,6 +100,27 @@ assert "qrisp.interface.converter.pennylane_converter" in sys.modules
     )
 
 
+def test_interface_star_import_exposes_converter_names():
+    """Star imports preserve the public converter API."""
+    _run_isolated(
+        """
+from qrisp.interface import *
+
+for name in (
+    "convert_to_qiskit",
+    "convert_from_qiskit",
+    "pytket_converter",
+    "qml_converter",
+    "qulacs_converter",
+    "qrisp_to_stim",
+    "convert_to_cirq",
+    "convert_from_cirq",
+):
+    assert callable(globals()[name])
+"""
+    )
+
+
 def test_missing_optional_converter_dependencies_raise_import_error():
     """Converters report missing optional dependencies when they are used."""
     _run_isolated(
