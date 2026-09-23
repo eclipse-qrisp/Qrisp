@@ -705,6 +705,8 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
+        return
+
     return mcz_inner(qubits, method, ctrl_state)
 
 
