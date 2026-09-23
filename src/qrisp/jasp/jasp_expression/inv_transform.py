@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Implements Jaspr/equation inversion (daggering), including while-loop inversion for jrange loops."""
 
 import numpy as np
 from jax import make_jaxpr
@@ -120,7 +121,17 @@ def invert_eqn(eqn):
 
         normalized = fold_extra_constvars_into_invars(inv_jaxpr, len(orig_jaxpr.constvars))
         if normalized is not inv_jaxpr:
+            # Wrapping the normalized jaxpr creates a fresh Jaspr, which starts out
+            # without the inv_jaspr back-pointer custom_inversion registered on the
+            # one being replaced. Carry it over: dropping it makes a second
+            # inversion fall back to inverting the body structurally, which for a
+            # custom_inversion user is exactly the derivation that does not apply.
+            # Folding restores the reclassified constvars to invars, so the
+            # normalized Jaspr's signature matches the wrapping equation and
+            # the original Jaspr referenced by the back-pointer.
+            preserved_inv_jaspr = inv_jaxpr.inv_jaspr
             inv_jaxpr = Jaspr(normalized)
+            inv_jaxpr.inv_jaspr = preserved_inv_jaspr
 
         params["jaxpr"] = inv_jaxpr
 
@@ -410,6 +421,7 @@ def invert_loop_eqn(eqn):
 
         def swapped_cond(*carries):
             return carries[pos_b] >= carries[pos_a]
+
     else:
 
         def swapped_cond(*carries):

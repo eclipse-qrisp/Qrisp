@@ -1,3 +1,5 @@
+"""Example QUBO matrices and their known optimal solutions, indexed by problem size N."""
+
 import numpy as np
 
 # N = 3
