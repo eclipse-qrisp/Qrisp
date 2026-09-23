@@ -23,9 +23,27 @@ from qrisp.interface.measurement_result import (
     DecodedMeasurementResult,
     MultiMeasurementResult,
 )
-from qrisp.interface.converter import *
 from qrisp.interface.backend import *
 from qrisp.interface.job import *
 from qrisp.interface.simulators import *
 from qrisp.interface.virtual_backend import *
 from qrisp.interface.provider_backends import *
+
+from qrisp.interface.converter import __all__ as _converter_exports
+
+__all__ = [name for name in globals() if not name.startswith("_")] + _converter_exports
+
+
+def __getattr__(name):
+    """Load a converter only when one of its public symbols is requested."""
+    from importlib import import_module
+
+    converter = import_module(f"{__name__}.converter")
+
+    if name in converter.__all__:
+        return converter.__getattr__(name)
+
+    try:
+        return getattr(converter, name)
+    except AttributeError as exc:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
