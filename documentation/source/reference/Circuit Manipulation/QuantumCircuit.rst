@@ -67,6 +67,8 @@ Interfacing
    QuantumCircuit.from_qasm_file
    QuantumCircuit.to_cirq
    QuantumCircuit.from_cirq
+   QuantumCircuit.to_pyzx
+   QuantumCircuit.from_pyzx
    
 
 
