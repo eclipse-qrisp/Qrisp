@@ -211,9 +211,8 @@ class BosonicOperator(Hamiltonian):
             new_terms_dict[sorted_term] = coeff + new_terms_dict.get(sorted_term, 0)
 
         for term, coeff in list(new_terms_dict.items()):
-            if isinstance(coeff, (int, float)):
-                if coeff == 0:
-                    del new_terms_dict[term]
+            if abs(coeff) < threshold:
+                del new_terms_dict[term]
 
         return BosonicOperator(new_terms_dict)
 
@@ -329,7 +328,7 @@ class BosonicOperator(Hamiltonian):
             return False
 
         for term, coeff in reduced_self.terms_dict.items():
-            if term not in other.terms_dict:
+            if term not in reduced_other.terms_dict:
                 daggered_sorted_term = term.dagger().sort()
                 if daggered_sorted_term not in reduced_other.terms_dict:
                     return False
@@ -576,6 +575,8 @@ class BosonicOperator(Hamiltonian):
                 res_terms_dict[curr_ladder_term] = res_terms_dict.get(curr_ladder_term, 0) + coeff1 * coeff2
 
         self.terms_dict = res_terms_dict
+
+        return self
 
     #
     # Miscellaneous

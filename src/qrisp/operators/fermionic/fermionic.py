@@ -45,7 +45,7 @@ def a(arg: int):
 
 def c(arg: int):
     warnings.warn(
-        "Using 'c' for the fermionic annihilation operator is deprecated; use 'c_f' instead.",
+        "Using 'c' for the fermionic creation operator is deprecated; use 'c_f' instead.",
         DeprecationWarning,
         stacklevel=2,
     )
