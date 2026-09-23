@@ -1,32 +1,32 @@
-"""********************************************************************************
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+"""This module provides functionalities for converting between Qrisp and PyZX quantum circuits."""
 
 from fractions import Fraction
 from functools import partial
 
 import numpy as np
 
-from qrisp import HGate, QuantumCircuit, RYGate, RZGate, SwapGate, SXGate, ZGate, u3Gate
+from qrisp import GPhaseGate, HGate, QuantumCircuit, RYGate, RZGate, SwapGate, SXGate, ZGate, u3Gate
 
 
 def _transpile(qrisp_circuit, gate_map):
-    """
-    Helper function that transpiles a qrisp_circuit such that only gates from gate_map remain in the circuit.
+    """Helper function that transpiles a qrisp_circuit such that only gates from gate_map remain in the circuit.
+
     To that end, it repeatedly transpiles unknown gates until only known ones remain.
     Used in the conversion from Qrisp to PyZX.
     The code was adapted from the Cirq converter.
@@ -97,9 +97,6 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
         from pyzx import Circuit
     except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError("PyZX must be installed to be able to use the Qrisp to PyZX converter.") from exc
-    from pyzx import settings
-
-    settings.strict_phase_types = False  # this enables PyZX to (approximately) convert float phases to a Fraction
 
     gate_map = {
         "cx": "CNOT",
@@ -154,7 +151,9 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
             **dict.fromkeys(["id", "gphase", "qb_alloc", "qb_dealloc"], lambda: None),
             "s_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 2)),
             "t_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 4)),
-            "p": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, params[0] / np.pi),
+            "p": lambda: pyzx_circuit.add_gate(
+                "U3", *pyxz_op_qubits, 0, 0, Fraction.from_float(float(params[0] / np.pi))
+            ),
             "sx_dg": lambda: pyzx_circuit.add_gate("XPhase", *pyxz_op_qubits, Fraction(-1, 2)),
         }
 
@@ -170,7 +169,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
             continue
 
         if params:
-            pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, *[p / np.pi for p in params])
+            pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, *[Fraction.from_float(float(p / np.pi)) for p in params])
         else:
             pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits)
 
@@ -210,6 +209,10 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
     """
     qc = QuantumCircuit(pyzx_circuit.qubits)
 
+    def _CSX_gate(x, y):
+        qc.append(SXGate().control(), [x, y])
+        qc.append(GPhaseGate(np.pi / 4).control(), [x, y])
+
     gate_map = {
         # single-qubit gates
         "NOT": qc.x,
@@ -231,7 +234,7 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
         "CRX": qc.crx,
         "CRY": lambda phase, x, y: qc.append(RYGate(phase).control(), [x, y]),
         "CRZ": lambda phase, x, y: qc.append(RZGate(phase).control(), [x, y]),
-        "CSX": lambda x, y: qc.append(SXGate().control(), [x, y]),
+        "CSX": _CSX_gate,
         "CPhase": qc.cp,
         "ParityPhase": None,
         "PhaseGadget": None,

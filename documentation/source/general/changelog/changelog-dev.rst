@@ -173,7 +173,7 @@ API Changes
 Development
 -----------
 
-* Added a PyZX bidirectional conversion interace
+* Added a PyZX bidirectional conversion interface
   (`PR #782 <https://github.com/eclipse-qrisp/Qrisp/pull/782>`_).
 
 * Added Dependabot configuration for automated dependency updates

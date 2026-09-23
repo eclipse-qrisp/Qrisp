@@ -16,8 +16,7 @@ def test_import_error():
 
 
 def _build_single_qubit_qrisp_circuit():
-    """Qrisp circuit with single-qubit gates.
-    Example adapted from cirq converter test"""
+    """Qrisp circuit with single-qubit gates. Example adapted from cirq converter test"""
     qc = QuantumCircuit(4)
     qc.h(0)
     qc.x(1)
@@ -85,9 +84,7 @@ def _build_multi_qubit_pyzx_circuit():
     c.add_gate("CPhase", 0, 1, Fraction(4, 5))
     c.add_gate("ParityPhase", Fraction(6, 5), 0, 2, 3)
     c.add_gate("XCX", 0, 1)
-    # SX gate has a different phase definition in PyZX, hence CSX gives a unitary that is equivalent, but does not only differ in a global phase
-    # leave out for now
-    # c.add_gate("CSX", 0, 1)
+    c.add_gate("CSX", 0, 1)
     c.add_gate("SWAP", 0, 2)
     c.add_gate("CSWAP", 0, 1, 3)
     c.add_gate("CHAD", 0, 1)
@@ -187,8 +184,7 @@ def test_multi_qubit_circuit_roundtrip_reverse():
 
 
 def test_qrisp_transpilation():
-    """Test transpilation capability of converter for a circuit that has to be transpiled.
-    Example taken from test_cirq_converter.py"""
+    """Test transpilation capability of converter for a circuit that has to be transpiled. Example taken from test_cirq_converter.py"""
     from qrisp import p, h, QPE
 
     def U(qv):
