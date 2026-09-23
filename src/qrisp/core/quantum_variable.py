@@ -452,9 +452,6 @@ class QuantumVariable:
                 del QuantumVariable.live_qvs[i]
                 continue
 
-            if not live_qv.name:
-                continue
-
             if live_qv.name == self.name:
                 del QuantumVariable.live_qvs[i]
                 break

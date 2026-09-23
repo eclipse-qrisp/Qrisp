@@ -18,6 +18,7 @@
 import pytest
 
 from qrisp import QuantumSession, QuantumVariable, QuantumVariableNamingError
+from qrisp.core.session_merging_tools import resolve_naming_collisions
 
 
 # Utilized to fail code-introspection when generating name.
@@ -179,3 +180,51 @@ def test_name_generation_falls_back_retries_past_a_deleted_variables_name():
     name, is_fixed_name = qs.generate_name(None, placeholder, 0)
     assert name == f"qv_{next_number + 1}"
     assert is_fixed_name is False
+
+
+def _make_colliding_pair(qv_0_fixed: bool, qv_1_fixed: bool, qv_0_newer: bool):
+    """Create same-named QuantumVariables in two separate QuantumSessions.
+
+    Returns ``(qs_0, qv_0, qs_1, qv_1)``; which variable is created first
+    determines which one has the older ``creation_time``.
+    """
+    qs_0, qs_1 = QuantumSession(), QuantumSession()
+    name_0 = "alice" if qv_0_fixed else "alice*"
+    name_1 = "alice" if qv_1_fixed else "alice*"
+    if qv_0_newer:
+        qv_1 = QuantumVariable(1, qs=qs_1, name=name_1)
+        qv_0 = QuantumVariable(1, qs=qs_0, name=name_0)
+    else:
+        qv_0 = QuantumVariable(1, qs=qs_0, name=name_0)
+        qv_1 = QuantumVariable(1, qs=qs_1, name=name_1)
+    return qs_0, qv_0, qs_1, qv_1
+
+
+# The newer variable is renamed unless its name is fixed, in which case the
+# older one is renamed instead. A fixed name is never renamed.
+@pytest.mark.parametrize(
+    ("qv_0_fixed", "qv_1_fixed", "qv_0_newer", "renamed"),
+    [
+        pytest.param(False, False, True, "qv_0", id="neither_fixed-qv_0_newer"),
+        pytest.param(False, False, False, "qv_1", id="neither_fixed-qv_1_newer"),
+        pytest.param(False, True, True, "qv_0", id="qv_1_fixed-qv_0_newer"),
+        pytest.param(False, True, False, "qv_0", id="qv_1_fixed-qv_1_newer"),
+        pytest.param(True, False, True, "qv_1", id="qv_0_fixed-qv_0_newer"),
+        pytest.param(True, False, False, "qv_1", id="qv_0_fixed-qv_1_newer"),
+    ],
+)
+def test_resolve_naming_collisions_renames_expected_variable(
+    qv_0_fixed: bool, qv_1_fixed: bool, qv_0_newer: bool, renamed: str
+):
+    qs_0, qv_0, qs_1, qv_1 = _make_colliding_pair(qv_0_fixed, qv_1_fixed, qv_0_newer)
+    resolve_naming_collisions(qs_0, qs_1)
+    renamed_qv, kept_qv = (qv_0, qv_1) if renamed == "qv_0" else (qv_1, qv_0)
+    assert kept_qv.name == "alice"
+    assert renamed_qv.name == "alice_1"
+    assert renamed_qv.reg[0].identifier == "alice_1.0"
+
+
+def test_resolve_naming_collisions_both_fixed_raises():
+    qs_0, _, qs_1, _ = _make_colliding_pair(qv_0_fixed=True, qv_1_fixed=True, qv_0_newer=True)
+    with pytest.raises(Exception, match="identically named QuantumVariables alice"):
+        resolve_naming_collisions(qs_0, qs_1)
