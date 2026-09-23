@@ -278,6 +278,15 @@ API Changes
   implemented is unchanged
   (`PR #814 <https://github.com/eclipse-qrisp/Qrisp/pull/814>`_).
 
+* Gate-application functions (``cx``, ``cy``, ``cz``, ``h``, ``x``, ``y``,
+  ``z``, ``mcx``, ``mcz``, ``mcp``, ``p``, ``cp``, ``rx``, ``ry``, ``rz``,
+  ``crz``, ``s``, ``t``, ``s_dg``, ``t_dg``, ``sx``, ``sx_dg``, ``gphase``,
+  ``xxyy``, ``rzz``, ``rxx``, ``ryy``, ``u3``, ``barrier``, and ``swap``) no
+  longer return the qubits/``QuantumVariable``\ s they were applied to; they
+  now consistently return ``None``, reflecting that they act by side effect.
+  Code relying on the previous return values (e.g. ``result = h(qv)``) must
+  use the original argument instead.
+
 .. Add API changes above this line
 
 Development
