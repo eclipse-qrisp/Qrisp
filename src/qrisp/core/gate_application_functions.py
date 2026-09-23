@@ -495,7 +495,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         n = len(qubits_0)
 
         if n == 0:
-            return controls, target
+            return
         elif n == 1:
             method = "gray"
             append_operation(
