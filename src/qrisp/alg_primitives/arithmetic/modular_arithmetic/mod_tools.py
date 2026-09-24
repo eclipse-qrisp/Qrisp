@@ -50,9 +50,10 @@ def montgomery_decoder(y: int | float, R: int | float, N: int) -> int | float:
     42
 
     """
-    # TODO: this whole function crashes under jax.jit tracing (Python `if`/`int()`
-    # on a value that can be a tracer here, and mixed int/float dtypes reaching
-    # modinv's lax.while_loop). This needs a tracing-safe rewrite.
+    # This function is intentionally static-only (see docstring above): every
+    # Jasp-aware caller (e.g. QuantumModulus) imports the tracing-safe
+    # counterpart from jasp_mod_tools instead, so a tracer reaching here
+    # indicates a caller bug elsewhere, not a gap in this function.
     if 0 < R < 1:
         R = int(modinv(int(R**-1), N))
     return (y * modinv(R, N)) % N  # type: ignore[return-value]

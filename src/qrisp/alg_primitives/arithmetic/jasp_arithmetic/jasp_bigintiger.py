@@ -1555,7 +1555,6 @@ def bi_montgomery_decode(x_mon: BigInteger, R: BigInteger, modulus: BigInteger) 
     return BigInteger(rem2.digits[:n])
 
 
-@jax.jit
 def _bi_all_ones(n_limbs: int) -> BigInteger:
     """Internal: BigInteger with all digits set to 0xFFFFFFFF (acts like +infinity bound).
 

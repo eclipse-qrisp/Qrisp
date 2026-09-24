@@ -29,7 +29,12 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic import (
     bi_montgomery_decode,
     bi_montgomery_encode,
 )
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BASE, bi_contfrac_convergents
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+    BASE,
+    bi_contfrac_best_approx,
+    bi_contfrac_convergents,
+    bi_shor_recover_denominator,
+)
 
 # ----------------- Global parameter lists -----------------
 SEEDS = [0, 1, 2]
@@ -515,3 +520,49 @@ def test_bi_contfrac_convergents_last_is_exact_rational():
     convergents = list(bi_contfrac_convergents(a, b))
     last_p, last_q = convergents[-1]
     assert (to_int(last_p), to_int(last_q)) == (1, 4)
+
+
+def test_bi_contfrac_best_approx_exact_rational_unbounded():
+    """`bi_contfrac_best_approx` must recover an exact rational when max_den is left unbounded.
+
+    Also guards against a regression where the default (max_den=None) path
+    crashed: it used to route the unbounded-bound construction through a
+    jitted helper that traced its limb-width argument as a dynamic shape.
+    """
+    a = BigInteger.create_static(64, 4)
+    b = BigInteger.create_static(256, 4)
+    p, q = bi_contfrac_best_approx(a, b)
+    assert (to_int(p), to_int(q)) == (1, 4)
+
+
+@pytest.mark.parametrize(
+    ("num", "den", "max_den", "expected"),
+    [
+        # 3/8's continued-fraction convergents are 0/1, 1/2, 1/3, 3/8; none
+        # has denominator 5, so the best approximation with den <= 5 is the
+        # semiconvergent 2/5, not the plain previous convergent 1/3.
+        # Cross-checked against Python's Fraction(3, 8).limit_denominator(5).
+        (3, 8, 5, (2, 5)),
+        # Cross-checked against Fraction(19, 100).limit_denominator(9).
+        (19, 100, 9, (1, 5)),
+    ],
+)
+def test_bi_contfrac_best_approx_semiconvergent_bounded(num, den, max_den, expected):
+    """`bi_contfrac_best_approx` must return the semiconvergent when the exact rational's denominator exceeds max_den."""
+    a = BigInteger.create_static(num, 4)
+    b = BigInteger.create_static(den, 4)
+    p, q = bi_contfrac_best_approx(a, b, max_den=BigInteger.create_static(max_den, 4))
+    assert (to_int(p), to_int(q)) == expected
+
+
+def test_bi_shor_recover_denominator_matches_docstring_example():
+    """`bi_shor_recover_denominator` must recover order r=4 from the exact 64/256 (=1/4) measurement, for both a BigInteger and a plain-int N_bound."""
+    a = BigInteger.create_static(64, 4)
+    b = BigInteger.create_static(256, 4)
+    expected_order = 4
+
+    r_bi_bound = bi_shor_recover_denominator(a, b, N_bound=BigInteger.create_static(15, 4))
+    assert to_int(r_bi_bound) == expected_order
+
+    r_int_bound = bi_shor_recover_denominator(a, b, N_bound=15)
+    assert to_int(r_int_bound) == expected_order

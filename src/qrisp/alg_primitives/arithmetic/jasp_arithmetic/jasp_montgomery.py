@@ -163,6 +163,10 @@ def cq_montgomery_multiply(
     # Build R = 2^m with width matching X if BigInteger
     R = _montgomery_radix(X, m)
 
+    # TODO (pre-existing, not related to this PR): under @boolean_simulation,
+    # x_is_montgomery is traced instead of staying a static Python bool, so
+    # this branch raises TracerBoolConversionError when called with
+    # x_is_montgomery=True (e.g. via cq_montgomery_multiply_inplace).
     if not x_is_montgomery:
         X = montgomery_encoder(X, R, N)
 

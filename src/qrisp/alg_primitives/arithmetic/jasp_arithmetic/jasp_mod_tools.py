@@ -218,9 +218,9 @@ def montgomery_encoder(
     """
     if isinstance(x, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
         width = _bigint_width(x, R, N)
-        x_bi = x if isinstance(x, BigInteger) else BigInteger.create(x, width)
-        r_bi = R if isinstance(R, BigInteger) else BigInteger.create(R, width)
-        n_bi = N if isinstance(N, BigInteger) else BigInteger.create(N, width)
+        x_bi = BigInteger.coerce(x, width)
+        r_bi = BigInteger.coerce(R, width)
+        n_bi = BigInteger.coerce(N, width)
         return bi_montgomery_encode(x_bi, r_bi, n_bi)
     return ((x % N) * (R % N)) % N
 
@@ -290,9 +290,9 @@ def montgomery_decoder(
     """
     if isinstance(y, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
         width = _bigint_width(y, R, N)
-        y_bi = y if isinstance(y, BigInteger) else BigInteger.create(y, width)
-        r_bi = R if isinstance(R, BigInteger) else BigInteger.create(R, width)
-        n_bi = N if isinstance(N, BigInteger) else BigInteger.create(N, width)
+        y_bi = BigInteger.coerce(y, width)
+        r_bi = BigInteger.coerce(R, width)
+        n_bi = BigInteger.coerce(N, width)
         return bi_montgomery_decode(y_bi, r_bi, n_bi)
     # Handle fractional R (from negative Montgomery shifts)
     effective_R = modinv(int(R**-1), N) if isinstance(R, float) and 0 < R < 1 else R
@@ -362,8 +362,8 @@ def modinv(a: int | BigInteger | Array, m: int | BigInteger | Array) -> int | Bi
     """
     if isinstance(a, BigInteger) or isinstance(m, BigInteger):
         width = _bigint_width(a, m)
-        a_bi = a if isinstance(a, BigInteger) else BigInteger.create(a, width)
-        m_bi = m if isinstance(m, BigInteger) else BigInteger.create(m, width)
+        a_bi = BigInteger.coerce(a, width)
+        m_bi = BigInteger.coerce(m, width)
         return bi_modinv(a_bi, m_bi)
 
     if check_for_tracing_mode():
@@ -415,8 +415,15 @@ def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
 
     """
     if isinstance(n, BigInteger):
-        # bit_size already yields ceil(log2(n)) with 0 for n==0
-        return n.bit_size()
+        # bit_size() is floor(log2(n)) + 1, which equals ceil(log2(n)) except
+        # at exact powers of two, where it overcounts by one; mirror the int
+        # path below (computed on n - 1) to get ceil(log2(n)) exactly, with
+        # 0 for n <= 1. jnp.where evaluates (n - one) unconditionally, which
+        # wraps to the all-ones value for n == 0, but that branch is always
+        # discarded in favor of the literal 0 below.
+        width = n.digits.shape[0]
+        one = BigInteger.create(1, width)
+        return jnp.where(n <= one, jnp.int64(0), (n - one).bit_size())
 
     if isinstance(n, (int, np.integer)):
         n = int(n)
