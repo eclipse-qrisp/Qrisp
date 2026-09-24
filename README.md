@@ -55,7 +55,7 @@ The full documentation, alongside with many tutorials and examples, is available
 
 Shor's algorithm is among the most famous quantum algorithm since it provides a provably exponential speed-up for a practically relevant problem: Facotrizing integers. This is an important application because much of modern cryptography is based on RSA, which heavily relies on integer factorization being insurmountable.
 
-Despite this importance, the amount of software that is actually able to compile the algorithm to the circuit level is extremely limited. This is because a key operation within the algorithm (modular in-place multiplication) is difficult to implement and has strong requirements for the underlying compiler. These problems highlight how the Qrisp programming-model delivers significant advantages to quantum programmers because the quantum part of the algorithm can be expressend within a few lines of code:
+Despite this importance, the amount of software that is actually able to compile the algorithm to the circuit level is extremely limited. This is because a key operation within the algorithm (modular in-place multiplication) is difficult to implement and has strong requirements for the underlying compiler. These problems highlight how the Qrisp programming-model delivers significant advantages to quantum programmers because the quantum part of the algorithm can be expressed within a few lines of code:
 
 ```python
 from qrisp import QuantumFloat, QuantumModulus, h, QFT, control
@@ -79,7 +79,7 @@ To find out how this can be used to break encryption be sure to check the [tutor
 Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://qrisp.eu/general/tutorial/index.html).
 
 ## Feedback and Contact
-If you have comments, questions or love letters, here is how you can engange with the Qrisp Community and Developers:
+If you have comments, questions or love letters, here is how you can engage with the Qrisp Community and Developers:
 
 - Join the Discussions on [Discord](https://discord.gg/v5np7DeBaq).
 - Join the bi-weekly [Developer Call](https://github.com/eclipse-qrisp/Qrisp/wiki/Eclipse-Qrisp-Developer-Meetings).
