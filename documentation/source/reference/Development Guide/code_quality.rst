@@ -86,6 +86,12 @@ bugs:
 - **Pylance** (VS Code) — inline, zero-configuration
 - **mypy** (command line): https://mypy.readthedocs.io/
 
+Pull requests are checked by an advisory ``mypy`` job in CI, which reports
+type errors on changed lines only and does not fail the build because of
+them. It uses the pinned version and the configuration under ``[tool.mypy]``
+in ``pyproject.toml``, so running that ``mypy`` version from the repository
+root gives the same results locally.
+
 Useful references:
 
 - Python typing module: https://docs.python.org/3/library/typing.html
