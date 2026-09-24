@@ -358,7 +358,7 @@ Development
   ``[tool.mypy]`` in ``pyproject.toml``. It does not require annotations: it
   only checks code that already has them, and treats third-party libraries
   as untyped
-  (`#876 <https://github.com/eclipse-qrisp/Qrisp/issues/876>`_).
+  (`PR #902 <https://github.com/eclipse-qrisp/Qrisp/pull/902>`_).
 
 Dependency Upgrades
 -------------------
