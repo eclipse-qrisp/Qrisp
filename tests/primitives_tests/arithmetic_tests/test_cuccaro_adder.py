@@ -60,24 +60,18 @@ def test_cuccaro_adder_static_classical_a():
     assert b.get_measurement() == {8: 1.0}  # 5 + 3
 
 
-def test_cuccaro_adder_static_cin():
-    """c_in with classical a."""
+@pytest.mark.parametrize("c_in_kind", ["qbool", "qubit"])
+def test_cuccaro_adder_static_cin(c_in_kind):
+    """c_in as a QuantumBool or a bare Qubit, with classical a."""
     b = QuantumFloat(3)
     b[:] = 2
-    c_in = QuantumBool()
-    x(c_in[0])
-    cuccaro_adder(3, b, c_in=c_in)
-    assert b.get_measurement() == {6: 1.0}  # 2 + 3 + 1
-
-
-def test_cuccaro_adder_static_cin_qubit():
-    """c_in of type Qubit."""
-    b = QuantumFloat(3)
-    b[:] = 2
-    qv = QuantumVariable(1)
-    c_in = qv[0]
-    assert isinstance(c_in, Qubit)
-    x(c_in)
+    if c_in_kind == "qubit":
+        c_in = QuantumVariable(1)[0]
+        assert isinstance(c_in, Qubit)
+        x(c_in)
+    else:
+        c_in = QuantumBool()
+        c_in.flip()
     cuccaro_adder(3, b, c_in=c_in)
     assert b.get_measurement() == {6: 1.0}  # 2 + 3 + 1
 
@@ -103,72 +97,42 @@ def test_cuccaro_adder_static_cout_overflow():
     assert c_out.get_measurement() == {True: 1.0}
 
 
-def test_cuccaro_adder_static_ctrl():
-    """Controlled addition (ctrl kwarg)."""
+@pytest.mark.parametrize("ctrl_on, expected", [(True, {8: 1.0}), (False, {5: 1.0})])
+def test_cuccaro_adder_static_ctrl(ctrl_on, expected):
+    """Addition is applied iff the control is |1>."""
     a = QuantumFloat(4)
     b = QuantumFloat(4)
     a[:] = 3
     b[:] = 5
     ctrl = QuantumBool()
-    x(ctrl[0])
+    if ctrl_on:
+        x(ctrl[0])
     cuccaro_adder(a, b, ctrl=ctrl)
-    assert b.get_measurement() == {8: 1.0}  # 5 + 3
+    assert b.get_measurement() == expected
 
 
-def test_cuccaro_adder_static_no_addition_ctrl():
-    """No addition when ctrl is off."""
-    a = QuantumFloat(3)
-    b = QuantumFloat(3)
-    a[:] = 3
-    b[:] = 5
-    ctrl = QuantumBool()
-    cuccaro_adder(a, b, ctrl=ctrl)
-    assert b.get_measurement() == {5: 1.0}
-
-
-def test_cuccaro_adder_static_cin_cout():
-    """c_in + c_out together."""
+@pytest.mark.parametrize("c_in_kind", ["qbool", "qubit"])
+def test_cuccaro_adder_static_cin_cout(c_in_kind):
+    """c_in + c_out together, for both c_in types."""
     b = QuantumFloat(3)
     b[:] = 6
-    c_in = QuantumBool()
-    x(c_in[0])
+    if c_in_kind == "qubit":
+        c_in = QuantumVariable(1)[0]
+        assert isinstance(c_in, Qubit)
+        x(c_in)
+    else:
+        c_in = QuantumBool()
+        c_in.flip()
     c_out = QuantumBool()
     cuccaro_adder(3, b, c_in=c_in, c_out=c_out)
     assert b.get_measurement() == {2: 1.0}  # (6 + 3 + 1) % 8
-    assert c_out.get_measurement() == {True: 1.0}
-
-
-def test_cuccaro_adder_static_cin_qubit_cout():
-    """c_in of type Qubit with c_out together."""
-    b = QuantumFloat(3)
-    b[:] = 6
-    qv = QuantumVariable(1)
-    c_in = qv[0]
-    assert isinstance(c_in, Qubit)
-    x(c_in)
-    c_out = QuantumBool()
-    cuccaro_adder(3, b, c_in=c_in, c_out=c_out)
-    assert b.get_measurement() == {2: 1.0}  # (6 + 3 + 1) % 8
-    assert c_out.get_measurement() == {True: 1.0}
-
-
-def test_cuccaro_adder_static_cout_ctrl():
-    """c_out + ctrl (ctrl=on) — exercises the MAJ-phase cx(a[-1], c_out) path."""
-    a = QuantumFloat(3)
-    b = QuantumFloat(3)
-    a[:] = 6
-    b[:] = 6
-    c_out = QuantumBool()
-    ctrl = QuantumBool()
-    x(ctrl[0])
-    cuccaro_adder(a, b, c_out=c_out, ctrl=ctrl)
-    assert b.get_measurement() == {4: 1.0}  # (6 + 6) % 8
     assert c_out.get_measurement() == {True: 1.0}
 
 
 @pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
-def test_cuccaro_adder_static_cout_ctrl_disabled(ctrl_kind):
-    """c_out remains unchanged when the control is off, for both entry points.
+@pytest.mark.parametrize("ctrl_on", [True, False])
+def test_cuccaro_adder_static_cout_ctrl(ctrl_kind, ctrl_on):
+    """c_out tracks the true carry only when the control is |1>.
 
     ``6 + 6`` overflows the 3-qubit register, so the true carry is ``1``. With
     the control left in ``|0>`` the addition is suppressed and the carry-out
@@ -181,13 +145,17 @@ def test_cuccaro_adder_static_cout_ctrl_disabled(ctrl_kind):
     b[:] = 6
     c_out = QuantumBool()
     ctrl = QuantumBool()
+    if ctrl_on:
+        x(ctrl[0])
     if ctrl_kind == "kwarg":
         cuccaro_adder(a, b, c_out=c_out, ctrl=ctrl)
     else:
         with control(ctrl):
             cuccaro_adder(a, b, c_out=c_out)
-    assert b.get_measurement() == {6: 1.0}
-    assert c_out.get_measurement() == {False: 1.0}
+    expected_b = {4: 1.0} if ctrl_on else {6: 1.0}
+    expected_cout = {True: 1.0} if ctrl_on else {False: 1.0}
+    assert b.get_measurement() == expected_b
+    assert c_out.get_measurement() == expected_cout
 
 
 @pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
@@ -546,31 +514,19 @@ def test_cuccaro_adder_dynamic_basic():
     _sweep(_mk_add(("quantum", "variable")), range(2, 6), range(2, 6), _check_qq())
 
 
-def test_cuccaro_adder_dynamic_cin():
-    """Exhaustive addition with a QuantumBool carry-in."""
+@pytest.mark.parametrize("c_in_kind", ["qbool", "qubit"])
+def test_cuccaro_adder_dynamic_cin(c_in_kind):
+    """Exhaustive addition with a QuantumBool or bare-Qubit carry-in."""
     for c_in_val in (0, 1):
-        add = _mk_add(("quantum", "variable"), c_in_kind="qbool", c_in_val=c_in_val)
+        add = _mk_add(("quantum", "variable"), c_in_kind=c_in_kind, c_in_val=c_in_val)
         _sweep(add, range(2, 6), range(2, 6), _check_qq(c_in_val))
 
 
-def test_cuccaro_adder_dynamic_cin_qubit():
-    """Exhaustive addition with a bare Qubit carry-in."""
-    for c_in_val in (0, 1):
-        add = _mk_add(("quantum", "variable"), c_in_kind="qubit", c_in_val=c_in_val)
-        _sweep(add, range(2, 6), range(2, 6), _check_qq(c_in_val))
-
-
-def test_cuccaro_adder_dynamic_cout():
+@pytest.mark.parametrize("c_in_kind", ["qbool", "qubit"])
+def test_cuccaro_adder_dynamic_cout(c_in_kind):
     """Exhaustive classical-a addition capturing the carry-out overflow."""
     for c_in_val in (0, 1):
-        add = _mk_add(("classical", "variable"), c_in_kind="qbool", c_out=True, c_in_val=c_in_val)
-        _sweep_equal(add, range(2, 6), _check_cout_cq(c_in_val))
-
-
-def test_cuccaro_adder_dynamic_cout_qubit():
-    """Exhaustive classical-a addition with a bare Qubit carry-in and carry-out."""
-    for c_in_val in (0, 1):
-        add = _mk_add(("classical", "variable"), c_in_kind="qubit", c_out=True, c_in_val=c_in_val)
+        add = _mk_add(("classical", "variable"), c_in_kind=c_in_kind, c_out=True, c_in_val=c_in_val)
         _sweep_equal(add, range(2, 6), _check_cout_cq(c_in_val))
 
 
@@ -581,19 +537,12 @@ def test_cuccaro_adder_dynamic_cout_equal_sizes():
         _sweep_equal(add, range(2, 6), _check_cout_qq(c_in_val))
 
 
-def test_cuccaro_adder_dynamic_ctrl():
+@pytest.mark.parametrize("c_in_kind", ["qbool", "qubit"])
+def test_cuccaro_adder_dynamic_ctrl(c_in_kind):
     """Exhaustive controlled addition via ctrl kwarg and control environment."""
     for c_in_val in (0, 1):
         for ctrl_kind in ("kwarg", "env"):
-            add = _mk_add(("quantum", "variable"), c_in_kind="qbool", ctrl_kind=ctrl_kind, c_in_val=c_in_val)
-            _sweep(add, range(2, 5), range(2, 5), _check_qq(c_in_val))
-
-
-def test_cuccaro_adder_dynamic_ctrl_qubit():
-    """Exhaustive controlled addition with a bare Qubit carry-in."""
-    for c_in_val in (0, 1):
-        for ctrl_kind in ("kwarg", "env"):
-            add = _mk_add(("quantum", "variable"), c_in_kind="qubit", ctrl_kind=ctrl_kind, c_in_val=c_in_val)
+            add = _mk_add(("quantum", "variable"), c_in_kind=c_in_kind, ctrl_kind=ctrl_kind, c_in_val=c_in_val)
             _sweep(add, range(2, 5), range(2, 5), _check_qq(c_in_val))
 
 
