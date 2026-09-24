@@ -88,9 +88,11 @@ bugs:
 
 Pull requests are checked by an advisory ``mypy`` job in CI, which reports
 type errors on changed lines only and does not fail the build because of
-them. It uses the pinned version and the configuration under ``[tool.mypy]``
-in ``pyproject.toml``, so running that ``mypy`` version from the repository
-root gives the same results locally.
+them. The job installs only the ``mypy`` version pinned in ``pyproject.toml``
+and uses the configuration under ``[tool.mypy]``. Qrisp's dependencies are not
+installed, so third-party libraries such as ``jax`` and ``numpy`` are treated
+as untyped. Running ``mypy`` locally in an environment where these libraries
+are installed therefore reports more findings than the CI job.
 
 Useful references:
 
