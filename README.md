@@ -8,7 +8,7 @@
 [![Discord](https://img.shields.io/discord/1471858163908214870?style=plastic&logo=Discord&label=discord)](https://discord.gg/v5np7DeBaq)
 [![Pytest](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml)
 [![Downloads](https://img.shields.io/pypi/dm/qrisp.svg)](https://pypi.org/project/qrisp/)
-[![CodeFactor](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/badge/main)](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/overview/main)
+[![CodeFactor](https://img.codefactor.io/repository/github/eclipse-qrisp/qrisp/badge/main)](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/overview/main)
 
 [![Paper](https://img.shields.io/badge/DOI-10.1038%2Fs41586--020--2649--2-brightgreen)](https://doi.org/10.48550/arXiv.2406.14792)
 [![Forks](https://img.shields.io/github/forks/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/network/members)
@@ -32,80 +32,3 @@ Qrisp is a high-level quantum programming framework that allows for intuitive de
 ## Installation
 
 You can install Qrisp using pip:
-
-```bash
-pip install qrisp
-```
-
-Qrisp requires Python 3.11 or later, up to and including Python 3.13 (`>=3.11, <3.14`).
-
-Qrisp is compatible with any QASM-capable quantum backend! In particular, it offers convenient interfaces for using IBM, IQM and AQT quantum computers, and any quantum backend provider is invited to reach out for a tight integration! 
-
-Additional backends require extra dependencies:
-```bash
-pip install qrisp[aqt]     # AQT quantum hardware
-pip install qrisp[iqm]     # IQM quantum hardware
-pip install qrisp[qiskit]  # Qiskit Aer simulator + IBM Quantum Runtime
-```
-
-## Documentation
-The full documentation, alongside with many tutorials and examples, is available under [Qrisp Documentation](https://www.qrisp.eu/).
-
-## Shor's Algorithm with Qrisp
-
-Shor's algorithm is among the most famous quantum algorithm since it provides a provably exponential speed-up for a practically relevant problem: Facotrizing integers. This is an important application because much of modern cryptography is based on RSA, which heavily relies on integer factorization being insurmountable.
-
-Despite this importance, the amount of software that is actually able to compile the algorithm to the circuit level is extremely limited. This is because a key operation within the algorithm (modular in-place multiplication) is difficult to implement and has strong requirements for the underlying compiler. These problems highlight how the Qrisp programming-model delivers significant advantages to quantum programmers because the quantum part of the algorithm can be expressend within a few lines of code:
-
-```python
-from qrisp import QuantumFloat, QuantumModulus, h, QFT, control
-
-
-def find_order(a, N):
-    qg = QuantumModulus(N)
-    qg[:] = 1
-    qpe_res = QuantumFloat(2 * qg.size + 1, exponent=-(2 * qg.size + 1))
-    h(qpe_res)
-    for i in range(len(qpe_res)):
-        with control(qpe_res[i]):
-            qg *= a
-        a = (a * a) % N
-    QFT(qpe_res, inv=True)
-    return qpe_res.get_measurement()
-```
-
-To find out how this can be used to break encryption be sure to check the [tutorial](https://qrisp.eu/general/tutorial/Shor.html).
-
-Qrisp offers much more than just factoring! More examples, like simulating molecules at the quantum level or how to solve the Travelling Salesman Problem, can be found [here](https://qrisp.eu/general/tutorial/index.html).
-
-## Feedback and Contact
-If you have comments, questions or love letters, here is how you can engange with the Qrisp Community and Developers:
-
-- Join the Discussions on [Discord](https://discord.gg/v5np7DeBaq).
-- Join the bi-weekly [Developer Call](https://github.com/eclipse-qrisp/Qrisp/wiki/Eclipse-Qrisp-Developer-Meetings).
-- Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-qrisp/qrisp/issues/new/choose).
-- Vote on existing GitHub issues by reacting with a 👍. We regularly check issues with votes!
-- Star the repository to show your support.
-
-
-## Authors and Citation
-Qrisp is the work of [many people](https://projects.eclipse.org/projects/technology.qrisp/who).
-
-If you want to cite Qrisp in your work, please use:
-
-```
-@misc{seidel2024qrisp,
-      title={Qrisp: A Framework for Compilable High-Level Programming of Gate-Based Quantum Computers}, 
-      author={Raphael Seidel and Sebastian Bock and René Zander and Matic Petrič and Niklas Steinmann and Nikolay Tcholtchev and Manfred Hauswirth},
-      year={2024},
-      eprint={2406.14792},
-      archivePrefix={arXiv},
-      primaryClass={quant-ph},
-      url={https://arxiv.org/abs/2406.14792}, 
-}
-```
-
-
-## License
-[Eclipse Public License 2.0](https://github.com/fraunhoferfokus/Qrisp/blob/main/LICENSE)
-
