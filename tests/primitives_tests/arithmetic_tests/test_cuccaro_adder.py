@@ -28,6 +28,7 @@ from qrisp import (
     boolean_simulation,
     control,
     cuccaro_adder,
+    h,
     measure,
     x,
 )
@@ -165,17 +166,54 @@ def test_cuccaro_adder_static_cout_ctrl():
     assert c_out.get_measurement() == {True: 1.0}
 
 
-def test_cuccaro_adder_static_cout_ctrl_disabled():
-    """c_out remains unchanged when the control is off."""
+@pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
+def test_cuccaro_adder_static_cout_ctrl_disabled(ctrl_kind):
+    """c_out remains unchanged when the control is off, for both entry points.
+
+    ``6 + 6`` overflows the 3-qubit register, so the true carry is ``1``. With
+    the control left in ``|0>`` the addition is suppressed and the carry-out
+    copy must be suppressed as well. The ``ctrl=`` keyword and the
+    ``with control(...)`` environment (``custom_control``) are both checked.
+    """
     a = QuantumFloat(3)
     b = QuantumFloat(3)
     a[:] = 6
     b[:] = 6
     c_out = QuantumBool()
     ctrl = QuantumBool()
-    cuccaro_adder(a, b, c_out=c_out, ctrl=ctrl)
+    if ctrl_kind == "kwarg":
+        cuccaro_adder(a, b, c_out=c_out, ctrl=ctrl)
+    else:
+        with control(ctrl):
+            cuccaro_adder(a, b, c_out=c_out)
     assert b.get_measurement() == {6: 1.0}
     assert c_out.get_measurement() == {False: 1.0}
+
+
+@pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
+def test_cuccaro_adder_static_cout_ctrl_superposition(ctrl_kind):
+    """A control in superposition must not flip c_out on the ``|0>`` branch.
+
+    The control is prepared in ``|+>`` and the addends overflow the register,
+    so the carry-out has to be perfectly correlated with the control. While the
+    carry-out copy was unconditional the true carry leaked into ``c_out``
+    regardless of the control, entangling ``c_out`` with the addends on the
+    branch where no addition happened.
+    """
+    a = QuantumFloat(3)
+    b = QuantumFloat(3)
+    a[:] = 6
+    b[:] = 6
+    c_out = QuantumBool()
+    ctrl = QuantumBool()
+    h(ctrl[0])
+    if ctrl_kind == "kwarg":
+        cuccaro_adder(a, b, c_out=c_out, ctrl=ctrl)
+    else:
+        with control(ctrl):
+            cuccaro_adder(a, b, c_out=c_out)
+    assert ctrl.get_measurement() == {False: 0.5, True: 0.5}
+    assert c_out.get_measurement() == {False: 0.5, True: 0.5}
 
 
 def test_cuccaro_adder_static_inputs_unmodified():
@@ -357,7 +395,9 @@ def test_cuccaro_adder_quantum_modulus_multiply():
 # ---------------------------------------------------------------------------
 
 
-def _mk_add(inputs, c_in_kind=None, c_out=False, ctrl_kind=None, c_in_val=0):
+def _mk_add(  # noqa: PLR0913 -- test factory, keyword-callable API shape
+    inputs, c_in_kind=None, c_out=False, ctrl_kind=None, c_in_val=0, ctrl_val=1
+):
     """Factory for a ``@boolean_simulation`` ``cuccaro_adder`` wrapper.
 
     - inputs: (a_kind, b_kind), with a_kind in {"quantum", "classical", "list"}
@@ -367,6 +407,7 @@ def _mk_add(inputs, c_in_kind=None, c_out=False, ctrl_kind=None, c_in_val=0):
     - ctrl_kind: None | "kwarg" | "env" — optional control, via ``ctrl=`` or
       ``with control()``.
     - c_in_val: value (0/1) of the carry-in.
+    - ctrl_val: value (0/1) of the control qubit.
     """
     a_kind, b_kind = inputs
 
@@ -386,7 +427,8 @@ def _mk_add(inputs, c_in_kind=None, c_out=False, ctrl_kind=None, c_in_val=0):
             cuccaro_adder(a_arg, b_arg, **kwargs)
         else:
             qbl = QuantumBool()
-            qbl.flip()  # ctrl is always |1>
+            if ctrl_val:
+                qbl.flip()
             if ctrl_kind == "kwarg":
                 cuccaro_adder(a_arg, b_arg, ctrl=qbl, **kwargs)
             else:
@@ -461,6 +503,18 @@ def _check_cout_qq(c_in_val=0):
         assert A == j
         assert B == total % (1 << L)
         assert cout == (total >= (1 << L))
+
+    return check
+
+
+def _check_cout_qq_ctrl_off():
+    """Check factory: disabled control leaves B and c_out untouched."""
+
+    def check(add, N, L, j, k):
+        A, B, cout = add(N, L, j, k)
+        assert A == j
+        assert B == k
+        assert not cout
 
     return check
 
@@ -548,6 +602,29 @@ def test_cuccaro_adder_dynamic_cout_ctrl():
     for c_in_val in (0, 1):
         add = _mk_add(("quantum", "variable"), c_in_kind="qbool", c_out=True, ctrl_kind="kwarg", c_in_val=c_in_val)
         _sweep_equal(add, range(2, 5), _check_cout_qq(c_in_val))
+
+
+@pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
+@pytest.mark.parametrize("c_in_val", [0, 1])
+def test_cuccaro_adder_dynamic_cout_ctrl_disabled(ctrl_kind, c_in_val):
+    """No sum or carry-out is produced when the control is ``|0>``.
+
+    This is the dynamic-mode counterpart of the static ctrl-disabled regression
+    test. It previously went unnoticed because the control was always flipped
+    to ``|1>`` in the dynamic sweeps, so the carry-out copy never had to be
+    suppressed. Both the ``ctrl=`` keyword and the ``with control(...)``
+    environment are exercised, and the carry-out is requested even for inputs
+    that would overflow, so an ungated copy would be observed.
+    """
+    add = _mk_add(
+        ("quantum", "variable"),
+        c_in_kind="qbool",
+        c_out=True,
+        ctrl_kind=ctrl_kind,
+        c_in_val=c_in_val,
+        ctrl_val=0,
+    )
+    _sweep_equal(add, range(2, 5), _check_cout_qq_ctrl_off())
 
 
 def test_cuccaro_adder_dynamic_list_target():
