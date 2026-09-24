@@ -296,7 +296,7 @@ def test_pow2_mod_n_traced_matches_python_pow():
 
 
 def test_smallest_power_of_two_bigint_matches_int_at_powers_of_two():
-    """`smallest_power_of_two` must agree between the int and BigInteger paths, including at exact powers of two.""" # {1, 2, 4, 8, 16, 1024} in addition to non-power-of-two values and n=0.
+    """`smallest_power_of_two` must agree between the int and BigInteger paths, including at exact powers of two."""  # {1, 2, 4, 8, 16, 1024} in addition to non-power-of-two values and n=0.
     for n in [0, 1, 2, 3, 4, 7, 8, 15, 16, 100, 1023, 1024]:
         expected = smallest_power_of_two(n)
         assert int(smallest_power_of_two(BigInteger.create(n, 4))) == expected
