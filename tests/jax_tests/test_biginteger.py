@@ -523,12 +523,7 @@ def test_bi_contfrac_convergents_last_is_exact_rational():
 
 
 def test_bi_contfrac_best_approx_exact_rational_unbounded():
-    """`bi_contfrac_best_approx` must recover an exact rational when max_den is left unbounded.
-
-    Also guards against a regression where the default (max_den=None) path
-    crashed: it used to route the unbounded-bound construction through a
-    jitted helper that traced its limb-width argument as a dynamic shape.
-    """
+    """`bi_contfrac_best_approx` must recover an exact rational when max_den is left unbounded."""
     a = BigInteger.create_static(64, 4)
     b = BigInteger.create_static(256, 4)
     p, q = bi_contfrac_best_approx(a, b)
@@ -548,7 +543,7 @@ def test_bi_contfrac_best_approx_exact_rational_unbounded():
     ],
 )
 def test_bi_contfrac_best_approx_semiconvergent_bounded(num, den, max_den, expected):
-    """`bi_contfrac_best_approx` must return the semiconvergent when the exact rational's denominator exceeds max_den."""
+    """`bi_contfrac_best_approx` must fall back to the semiconvergent once the exact denominator exceeds max_den."""
     a = BigInteger.create_static(num, 4)
     b = BigInteger.create_static(den, 4)
     p, q = bi_contfrac_best_approx(a, b, max_den=BigInteger.create_static(max_den, 4))
@@ -556,7 +551,7 @@ def test_bi_contfrac_best_approx_semiconvergent_bounded(num, den, max_den, expec
 
 
 def test_bi_shor_recover_denominator_matches_docstring_example():
-    """`bi_shor_recover_denominator` must recover order r=4 from the exact 64/256 (=1/4) measurement, for both a BigInteger and a plain-int N_bound."""
+    """`bi_shor_recover_denominator` must recover order r=4 from the exact 64/256 (=1/4) measurement."""
     a = BigInteger.create_static(64, 4)
     b = BigInteger.create_static(256, 4)
     expected_order = 4
