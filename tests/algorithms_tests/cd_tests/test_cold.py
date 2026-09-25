@@ -31,7 +31,7 @@ from qrisp.operators.qubit.qubit_term import QubitTerm
 
 def test_cold_uniform_magnitude():
     """COLD with uniform AGP coefficients, magnitude objective, finds the known solution."""
-
+    np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"
@@ -46,7 +46,7 @@ def test_cold_uniform_magnitude():
 
 def test_cold_nonuniform_magnitude():
     """COLD with non-uniform AGP coefficients, magnitude objective, finds the known solution."""
-
+    np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"
@@ -61,7 +61,7 @@ def test_cold_nonuniform_magnitude():
 
 def test_cold_uniform_cost():
     """COLD with uniform AGP coefficients, expectation-value objective, finds the known solution."""
-
+    np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"
@@ -76,7 +76,7 @@ def test_cold_uniform_cost():
 
 def test_cold_nonuniform_cost():
     """COLD with non-uniform AGP coefficients, expectation-value objective, finds the known solution."""
-
+    np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"
@@ -91,7 +91,6 @@ def test_cold_nonuniform_cost():
 
 def test_coldcrab_uniform_cost():
     """COLD with CRAB-randomized pulses, uniform AGP, expectation-value objective, finds the known solution."""
-
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     np.random.seed(42)  # Deterministic for reproducible test results
@@ -107,7 +106,7 @@ def test_coldcrab_uniform_cost():
 
 def test_coldcrab_uniform_magnitude():
     """COLD with CRAB-randomized pulses, uniform AGP, magnitude objective, finds the known solution."""
-
+    np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"
@@ -122,7 +121,7 @@ def test_coldcrab_uniform_magnitude():
 
 def test_cold_expvalue_method_backend():
     """COLD's expectation-value objective runs against an explicit measurement backend, not just the default statevector path."""
-
+    np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
     problem_args = {"method": "COLD", "uniform": True}  # , "agp_type": "order1"}
     backend = QiskitBackend()
@@ -141,7 +140,7 @@ def test_cold_expvalue_method_backend():
 
 def test_cold_full_example():
     """End-to-end COLD run built directly via DCQOProblem (not solve_QUBO's factory helpers)."""
-
+    np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array(
         [
             [-1.1, 0.6, 0.4, 0.0, 0.0, 0.0],
@@ -195,6 +194,7 @@ def test_cold_full_example():
 
 
 def test_cold_expvalue_fast_path_matches_hprob():
+    np.random.seed(42)  # Deterministic for reproducible test results
     # The exp_value fast path's cost table must be derived from H_prob's own diagonal
     # terms, not hand-rolled from Q (a past regression did, computing a different
     # function). N_steps/maxiter stay minimal: only the objective's correctness matters.
@@ -256,6 +256,7 @@ def test_cold_expvalue_fast_path_matches_hprob():
 
 
 def test_cold_expvalue_fast_path_handles_projectors():
+    np.random.seed(42)  # Deterministic for reproducible test results
     # The fast path's per-term eigenvalue must account for each factor's actual type
     # (Z, P0, P1), not treat every factor as Z -- a P0/P1 term evaluated as Z gives a
     # different (wrong) value at every basis state.
@@ -307,6 +308,7 @@ def test_cold_expvalue_fast_path_handles_projectors():
 
 
 def test_cold_expvalue_falls_back_for_nondiagonal_hprob():
+    np.random.seed(42)  # Deterministic for reproducible test results
     # H_prob with a non-diagonal factor (X here) has no well-defined per-basis-state
     # eigenvalue, so the fast path must disable itself and fall back to
     # expectation_value() instead of silently treating X as Z.
@@ -357,6 +359,7 @@ def test_cold_expvalue_falls_back_for_nondiagonal_hprob():
 
 
 def test_cold_no_exponential_precompute_for_non_expvalue_objective():
+    np.random.seed(42)  # Deterministic for reproducible test results
     # A past regression built the exp_value fast path's 2**n_qubits cost table
     # unconditionally. A wall-clock ceiling at n_qubits=24 catches that regression
     # without ever materializing such a table itself.

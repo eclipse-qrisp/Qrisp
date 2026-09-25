@@ -15,9 +15,9 @@
 # ********************************************************************************
 
 import numpy as np
+from qubo_problems import Q6
 
 from qrisp.algorithms.cold.problems.QUBO import create_COLD_instance, create_LCD_instance
-from qrisp.algorithms.cold.problems.qubo_problems import Q6
 from qrisp.operators.qubit import Y, Z
 from qrisp.operators.qubit.qubit_operator import QubitOperator
 

@@ -255,6 +255,40 @@ Bug Fixes
   inconsistent error messages
   (`#877 <https://github.com/eclipse-qrisp/Qrisp/issues/877>`_).
 
+* Corrected the adiabatic gauge potential (AGP) coefficients used by COLD and
+  LCD. Every closed form deviated from the minimal-action solution
+  :math:`S = \mathrm{Tr}[G_\lambda^2]`,
+  :math:`G_\lambda = \partial_\lambda H + i[A_\lambda, H]`, that they are meant
+  to solve, through a mix of wrong exponents, sums used where sums of squares
+  belong, a dropped sign, and a sign convention mismatch between
+  ``AGP_params`` and the evolving circuit. All forms now reproduce an exact
+  minimal-action calculation to machine precision for ``N = 3`` through ``N = 10``.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
+
+* Fixed the inverse scheduling function ``g(lam)`` in
+  :class:`~qrisp.cold.DCQOProblem`, which stored the dimensionful time ``t``
+  rather than the normalised ``t/T`` of Eq. (18) of
+  `COLD <https://doi.org/10.1103/PRXQuantum.4.010312>`_, and its derivative as
+  ``dt/dlambda`` rather than ``dg/dlambda``. Both feed the chain rule for the
+  control-pulse derivative, so it ran at a frequency ``T`` times too high with an
+  amplitude ``T`` times too large. The two errors cancel exactly at ``T = 1``,
+  at any other ``T`` the AGP drive alternated sign between timesteps.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
+
+* Fixed the ``agp_coeff_magnitude`` objective, which summed the AGP coefficients
+  without weighting by ``lamdot``. Since the coefficients diverge as
+  ``1/lamdot`` through the control-pulse derivative while the circuit applies
+  them as ``dt * lamdot * alpha``, the sum was dominated by the first and last
+  timestep and grew as ``N_steps**3``. It also hardcoded ``uniform=True`` when
+  scoring, so a non-uniform problem was evaluated against a uniform ansatz.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
+
+* :func:`~qrisp.cold.solve_QUBO` now raises a ``ValueError`` for an unrecognised
+  ``method`` instead of failing with an ``UnboundLocalError``, and the
+  ``ValueError`` rejecting an unknown ``objective`` no longer prints a literal
+  ``{objective}`` from a missing f-string prefix.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
+
 Compatibility
 -------------
 
@@ -308,6 +342,29 @@ API Changes
   `arXiv:1904.07358 <https://arxiv.org/abs/1904.07358>`_.  The unitary
   implemented is unchanged
   (`PR #814 <https://github.com/eclipse-qrisp/Qrisp/pull/814>`_).
+
+* :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>` now defaults to
+  ``objective="exp_value"`` instead of ``"agp_coeff_magnitude"``. The latter is a
+  proxy that minimises the magnitude of the AGP coefficients without running the
+  circuit; with the scheduling function corrected it selects controls that can
+  perform worse than no control at all, placing the optimum at mean rank 3.83
+  across six 4x4 QUBOs against rank 1 for ``exp_value``. It remains available as
+  an opt-in for cases where the simulation cost of ``exp_value`` is prohibitive.
+  The undocumented and never-implemented ``agp_coeff_amplitude`` option has been
+  removed from the docstrings.
+
+* :func:`~qrisp.cold.create_COLD_instance` and :func:`~qrisp.cold.solve_QUBO`
+  now accept ``agp_type`` for the COLD method, which previously only reached
+  LCD, so the nested-commutator ansatz was unreachable from COLD. COLD requires
+  ``uniform_AGP_coeffs=True`` for ``agp_type="nc"`` and raises
+  ``NotImplementedError`` otherwise: the non-uniform coefficients have no closed
+  form and their solver cannot consume the symbolic control pulse COLD compiles
+  into the circuit. LCD still supports the combination.
+
+* ``qrisp.algorithms.cold`` no longer exports the QUBO test fixtures
+  ``Q3``--``Q10`` and ``solution3``--``solution10``. These were leaked into the
+  public namespace by a star import and were consumed only by the test suite;
+  they now live alongside it.
 
 .. Add API changes above this line
 
