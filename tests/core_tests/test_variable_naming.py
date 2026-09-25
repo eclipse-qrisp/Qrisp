@@ -1,17 +1,17 @@
 """********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# Copyright (c) 2026 the Qrisp authors
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0.
+#
+# This Source Code may also be made available under the following Secondary
+# Licenses when the conditions for such availability set forth in the Eclipse
+# Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# with the GNU Classpath Exception which is
+# available at https://www.gnu.org/software/classpath/license.html.
+#
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 ********************************************************************************
 """
 
@@ -19,6 +19,7 @@ import pytest
 
 from qrisp import QuantumSession, QuantumVariable, QuantumVariableNamingError
 from qrisp.core.session_merging_tools import resolve_naming_collisions
+from qrisp.jasp import make_jaspr
 
 
 # Utilized to fail code-introspection when generating name.
@@ -43,12 +44,10 @@ def _isolated_quantum_variable_naming_state():
     QuantumVariable.name_tracker = {}
     QuantumVariable.live_qvs = []
     QuantumVariable.creation_counter = 0
-    try:
-        yield
-    finally:
-        QuantumVariable.name_tracker = original_name_tracker
-        QuantumVariable.live_qvs = original_live_qvs
-        QuantumVariable.creation_counter = original_creation_counter
+    yield
+    QuantumVariable.name_tracker = original_name_tracker
+    QuantumVariable.live_qvs = original_live_qvs
+    QuantumVariable.creation_counter = original_creation_counter
 
 
 def test_name_generation_explicit_fresh_is_fixed():
@@ -222,6 +221,29 @@ def test_resolve_naming_collisions_renames_expected_variable(
     assert kept_qv.name == "alice"
     assert renamed_qv.name == "alice_1"
     assert renamed_qv.reg[0].identifier == "alice_1.0"
+
+
+@pytest.mark.parametrize(
+    ("requested_name", "expected_name", "expected_is_fixed_name"),
+    [
+        pytest.param(None, "alice_dupl", False, id="no_name"),
+        pytest.param("bob", "bob", True, id="explicit_name"),
+        pytest.param("bob*", "bob", False, id="wildcard_name"),
+    ],
+)
+def test_duplicate_naming_in_tracing_mode(requested_name: str | None, expected_name: str, expected_is_fixed_name: bool):
+    observed = {}
+
+    def main():
+        qv = QuantumVariable(2, name="alice")
+        duplicate = qv.duplicate(name=requested_name)
+        observed["name"] = duplicate.name
+        observed["is_fixed_name"] = duplicate.is_fixed_name
+        return 0
+
+    make_jaspr(main)()
+    assert observed["name"] == expected_name
+    assert observed["is_fixed_name"] is expected_is_fixed_name
 
 
 def test_resolve_naming_collisions_both_fixed_raises():
