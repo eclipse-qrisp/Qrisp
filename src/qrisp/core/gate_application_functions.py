@@ -57,10 +57,6 @@ def cx(control, target):
     """
     append_operation(std_ops.CXGate(), [control, target])
 
-    # std_ops.CXGate().append([qubits_0, qubits_1])
-
-    return control, target
-
 
 def cy(control, target):
     """Applies a CY gate.
@@ -74,7 +70,6 @@ def cy(control, target):
 
     """
     append_operation(std_ops.CYGate(), [control, target])
-    return control, target
 
 
 def cz(control, target):
@@ -89,7 +84,6 @@ def cz(control, target):
 
     """
     append_operation(std_ops.CZGate(), [control, target])
-    return control, target
 
 
 def h(qubits):
@@ -103,8 +97,6 @@ def h(qubits):
     """
     append_operation(std_ops.HGate(), [qubits])
 
-    return qubits
-
 
 def x(qubits):
     """Applies an X gate.
@@ -116,8 +108,6 @@ def x(qubits):
 
     """
     append_operation(std_ops.XGate(), [qubits])
-
-    return qubits
 
 
 def y(qubits):
@@ -131,8 +121,6 @@ def y(qubits):
     """
     append_operation(std_ops.YGate(), [qubits])
 
-    return qubits
-
 
 def z(qubits):
     """Applies a Z gate.
@@ -144,8 +132,6 @@ def z(qubits):
 
     """
     append_operation(std_ops.ZGate(), [qubits])
-
-    return qubits
 
 
 def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
@@ -509,7 +495,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         n = len(qubits_0)
 
         if n == 0:
-            return controls, target
+            return
         elif n == 1:
             method = "gray"
             append_operation(
@@ -624,8 +610,6 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     else:
         raise Exception(f"Don't know mcx method {method}")
 
-    return controls, target
-
 
 def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
     """Applies a multi-controlled Z gate.
@@ -667,8 +651,6 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
-        return qubits
-
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
     def jasp_mcz_inner(qubits, method="balauca", ctrl_state=-1):
         import jax.numpy as jnp
@@ -694,8 +676,6 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
         with control((ctrl_state >> (n - 1)) & 1 == 0):
             x(qubits[-1])
-
-        return qubits
 
     n = jlen(qubits)
     if not check_for_tracing_mode():
@@ -725,7 +705,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
-        return qubits
+        return
 
     return mcz_inner(qubits, method, ctrl_state)
 
@@ -805,7 +785,6 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
         if ctrl_state[-1] == "0":
             x(qubits[-1])
-        return qubits
 
     elif method == "balauca":
         if check_for_tracing_mode():
@@ -813,7 +792,6 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
             return
         else:
             balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
-        return qubits
 
     elif method == "khattar":
         khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
@@ -845,10 +823,6 @@ def p(phi, qubits):
     else:
         append_operation(std_ops.PGate(phi), [qubits])
 
-    # std_ops.PGate(phi).append([qubits])
-
-    return qubits
-
 
 def cp(phi, qubits_0, qubits_1):
     """Applies a controlled phase gate.
@@ -870,8 +844,6 @@ def cp(phi, qubits_0, qubits_1):
         cp_gate = std_ops.CPGate(phi)
         append_operation(cp_gate, [qubits_0, qubits_1])
 
-    return qubits_0, qubits_1
-
 
 def rx(phi, qubits):
     """Applies an RX gate.
@@ -888,8 +860,6 @@ def rx(phi, qubits):
         append_operation(std_ops.RXGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
     else:
         append_operation(std_ops.RXGate(phi), [qubits])
-
-    return qubits
 
 
 def ry(phi, qubits):
@@ -908,8 +878,6 @@ def ry(phi, qubits):
     else:
         append_operation(std_ops.RYGate(phi), [qubits])
 
-    return qubits
-
 
 def rz(phi, qubits):
     """Applies an RZ gate.
@@ -926,8 +894,6 @@ def rz(phi, qubits):
         append_operation(std_ops.RZGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
     else:
         append_operation(std_ops.RZGate(phi), [qubits])
-
-    return qubits
 
 
 def crz(phi, qubits_0, qubits_1):
@@ -950,8 +916,6 @@ def crz(phi, qubits_0, qubits_1):
         crz_gate = std_ops.RZGate(phi).control(1)
         append_operation(crz_gate, [qubits_0, qubits_1])
 
-    return qubits_0, qubits_1
-
 
 def s(qubits):
     """Applies an S gate.
@@ -963,7 +927,6 @@ def s(qubits):
 
     """
     append_operation(std_ops.SGate(), [qubits])
-    return qubits
 
 
 def t(qubits):
@@ -976,7 +939,6 @@ def t(qubits):
 
     """
     append_operation(std_ops.TGate(), [qubits])
-    return qubits
 
 
 def s_dg(qubits):
@@ -989,7 +951,6 @@ def s_dg(qubits):
 
     """
     append_operation(std_ops.SGate().inverse(), [qubits])
-    return qubits
 
 
 def t_dg(qubits):
@@ -1002,7 +963,6 @@ def t_dg(qubits):
 
     """
     append_operation(std_ops.TGate().inverse(), [qubits])
-    return qubits
 
 
 def sx(qubits):
@@ -1016,8 +976,6 @@ def sx(qubits):
     """
     append_operation(std_ops.SXGate(), [qubits])
 
-    return qubits
-
 
 def sx_dg(qubits):
     """Applies a daggered SX gate.
@@ -1029,7 +987,6 @@ def sx_dg(qubits):
 
     """
     append_operation(std_ops.SXDGGate().inverse(), [qubits])
-    return qubits
 
 
 def gphase(phi, qubits):
@@ -1047,7 +1004,6 @@ def gphase(phi, qubits):
         append_operation(std_ops.GPhaseGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
     else:
         append_operation(std_ops.GPhaseGate(phi), [qubits])
-    return qubits
 
 
 def xxyy(phi, beta, qubits_0, qubits_1):
@@ -1073,8 +1029,6 @@ def xxyy(phi, beta, qubits_0, qubits_1):
         xxyy_gate = std_ops.XXYYGate(phi, beta)
         append_operation(xxyy_gate, [qubits_0, qubits_1])
 
-    return qubits_0, qubits_1
-
 
 def rzz(phi, qubits_0, qubits_1):
     """Applies an RZZ gate.
@@ -1095,7 +1049,6 @@ def rzz(phi, qubits_0, qubits_1):
     else:
         rzz_gate = std_ops.RZZGate(phi)
         append_operation(rzz_gate, [qubits_0, qubits_1])
-    return qubits_0, qubits_1
 
 
 def rxx(phi, qubits_0, qubits_1):
@@ -1117,7 +1070,6 @@ def rxx(phi, qubits_0, qubits_1):
     else:
         rxx_gate = std_ops.RXXGate(phi)
         append_operation(rxx_gate, [qubits_0, qubits_1])
-    return qubits_0, qubits_1
 
 
 def ryy(phi, qubits_0, qubits_1):
@@ -1139,7 +1091,6 @@ def ryy(phi, qubits_0, qubits_1):
     else:
         ryy_gate = std_ops.RYYGate(phi)
         append_operation(ryy_gate, [qubits_0, qubits_1])
-    return qubits_0, qubits_1
 
 
 def u3(theta, phi, lam, qubits):
@@ -1165,8 +1116,6 @@ def u3(theta, phi, lam, qubits):
         )
     else:
         append_operation(std_ops.U3Gate(theta, phi, lam), [qubits])
-
-    return qubits
 
 
 def unitary(unitary_array, qubits):
@@ -1357,8 +1306,6 @@ def barrier(qubits):
 
     append_operation(std_ops.Barrier(len(qubits)), qubits)
 
-    return qubits
-
 
 def swap(qubits_0, qubits_1):
     """Applies a SWAP gate.
@@ -1372,5 +1319,3 @@ def swap(qubits_0, qubits_1):
 
     """
     append_operation(std_ops.SwapGate(), [qubits_0, qubits_1])
-
-    return qubits_0, qubits_1
