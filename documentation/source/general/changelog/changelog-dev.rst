@@ -351,7 +351,7 @@ Development
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
-  * GitHub Actions pinned to commit SHA in CI workflows
+* GitHub Actions pinned to commit SHA in CI workflows
   (`PR #829 <https://github.com/eclipse-qrisp/Qrisp/pull/829>`_).
 
 Dependency Upgrades
