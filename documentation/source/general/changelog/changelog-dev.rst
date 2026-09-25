@@ -86,6 +86,10 @@ Improvements
   ``encode(..., rounding=True)`` (now O(1))
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+- ``import qrisp`` no longer imports PennyLane. The PennyLane converter
+  :func:`~qrisp.interface.qml_converter` now imports it on first use, so
+  importing Qrisp is faster when PennyLane is installed.
+
 Other New Features
 ------------------
 
