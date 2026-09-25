@@ -68,7 +68,7 @@ docs = [
 ]
 dev-code-style = [
     "ruff==0.16.5",
-    "codespell",
+    "codespell==2.4.3",
 ]
 dev-testing = [
     "pytest==9.1.1",
