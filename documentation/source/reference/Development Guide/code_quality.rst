@@ -86,6 +86,14 @@ bugs:
 - **Pylance** (VS Code) — inline, zero-configuration
 - **mypy** (command line): https://mypy.readthedocs.io/
 
+Pull requests are checked by an advisory ``mypy`` job in CI, which reports
+type errors on changed lines only and does not fail the build because of
+them. The job installs only the ``mypy`` version pinned in ``pyproject.toml``
+and uses the configuration under ``[tool.mypy]``. Qrisp's dependencies are not
+installed, so third-party libraries such as ``jax`` and ``numpy`` are treated
+as untyped. Running ``mypy`` locally in an environment where these libraries
+are installed therefore reports more findings than the CI job.
+
 Useful references:
 
 - Python typing module: https://docs.python.org/3/library/typing.html

@@ -82,3 +82,58 @@ jobs:
 
       - name: Ruff format check
         run: ruff format --check
+
+  mypy:
+    name: mypy (reviewdog)
+    # Separate job so type findings show up as their own check, apart from ruff.
+    # Advisory only: -fail-level=none keeps the job green even when it reports
+    # findings. Config (incl. the pinned version) lives in pyproject.toml.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        id: filter
+        with:
+          filters: |
+            src:
+              - 'src/**'
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # Pinned to a full commit SHA, see the ruff lint job above.
+      - uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f  # v1.5.0
+
+      - name: Install mypy
+        run: |
+          MYPY_VERSION=$(sed -n 's/^.*"mypy==\([^"]*\)".*$/\1/p' pyproject.toml)
+          pip install "mypy==${MYPY_VERSION}"
+
+      # -efm parses mypy's plain text output. -f=mypy is not used because its
+      # findings are not matched against the PR diff, so -filter-mode=added
+      # would drop them all.
+      - name: Run mypy via reviewdog
+        if: steps.filter.outputs.src == 'true'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mypy --show-column-numbers --no-pretty --no-error-summary 2>&1 | \
+            tee mypy.log | \
+            reviewdog -efm="%f:%l:%c: %t%*[^:]: %m" \
+                      -efm="%f:%l: %t%*[^:]: %m" \
+                      -efm="%f: %t%*[^:]: %m" \
+                      -name=mypy \
+                      -reporter=github-pr-annotations \
+                      -filter-mode=added \
+                      -fail-level=none
+          # mypy exits 1 when it finds type errors (expected, reported above) and
+          # 2 when it crashes or the config is broken. Without this check a
+          # crash would be swallowed by the pipe and the job would stay green.
+          MYPY_RC=${PIPESTATUS[0]}
+          if [ "$MYPY_RC" -ge 2 ]; then
+            cat mypy.log
+            exit "$MYPY_RC"
+          fi

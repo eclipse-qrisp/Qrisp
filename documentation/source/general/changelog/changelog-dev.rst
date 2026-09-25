@@ -381,6 +381,16 @@ Development
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
+* Added an advisory ``mypy`` job to the ``code_style.yml`` workflow that runs
+  on pull requests via ``reviewdog`` and reports type errors on newly added
+  lines only, as annotations separate from ``ruff``. The job does not fail on
+  findings, only when ``mypy`` itself crashes or is misconfigured. ``mypy`` is
+  pinned in the ``dev-code-style`` dependency group and configured under
+  ``[tool.mypy]`` in ``pyproject.toml``. It does not require annotations: it
+  only checks code that already has them, and treats third-party libraries
+  as untyped
+  (`PR #902 <https://github.com/eclipse-qrisp/Qrisp/pull/902>`_).
+
 Dependency Upgrades
 -------------------
 
@@ -424,3 +434,4 @@ First Time Contributors 🎉
 * `Shanwis <https://github.com/Shanwis>`_
 * `micpap25 <https://github.com/micpap25>`_
 * `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_
+* `moneytosms <https://github.com/moneytosms>`_
