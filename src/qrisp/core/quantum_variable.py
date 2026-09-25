@@ -22,11 +22,16 @@ import copy
 from typing import TYPE_CHECKING, Any, Self
 from weakref import ReferenceType
 
+import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 from jax import tree_util
 
+from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 from qrisp.core.compilation import qompiler
+from qrisp.misc import app_phase_function, bin_rep, check_if_fresh, custom_qv, get_measurement_from_qc, int_encoder
+from qrisp.misc.utility import redirect_qfunction
+from qrisp.permeability import uncompute
 
 if TYPE_CHECKING:
     from qrisp.core.quantum_session import QuantumSession
@@ -37,7 +42,7 @@ if TYPE_CHECKING:
 def extract_quantum_session(qs: QuantumSession | None) -> QuantumSession | TracingQuantumSession:
     """Determine the QuantumSession a new QuantumVariable should be registered in.
 
-    While tracing (e.g. within jasp), the active :class:`TracingQuantumSession`
+    While tracing (e.g. within jasp), the active :class:`~qrisp.jasp.TracingQuantumSession`
     is always used, regardless of ``qs``. Otherwise, ``qs`` is used if given, and
     a fresh :class:`QuantumSession` is created if not.
 
@@ -300,20 +305,22 @@ class QuantumVariable:
         # Store quantum session
         self.qs = extract_quantum_session(qs)
 
+        # Imported locally: qrisp.core.quantum_session imports QuantumVariable from this module.
         from qrisp.core.quantum_session import QuantumSession
 
         if isinstance(self.qs, QuantumSession):
             declaration_stack_level = 1 if type(self) is QuantumVariable else 2
             (self.name, self.is_fixed_name) = self.qs.generate_name(name, self, declaration_stack_level + 1)
+        elif name is None:
+            self.name = self.get_unique_name()
+            self.is_fixed_name = False
         else:
-            if name is None:
-                self.name = self.get_unique_name()
-                self.is_fixed_name = False
-            else:
-                self.is_fixed_name = not name.endswith("*")
-                self.name = name.removesuffix("*")
+            self.is_fixed_name = not name.endswith("*")
+            self.name = name.removesuffix("*")
         self.qs.register_qv(self, size)
 
+        # Imported locally to avoid a circular import: qrisp.jasp.tracing_logic
+        # imports QuantumVariable from this module at load time.
         from qrisp.jasp.tracing_logic import flatten_qv, unflatten_qv
 
         # This attribute tracks the created QuantumVariables for the
@@ -326,6 +333,7 @@ class QuantumVariable:
             pass
 
     def __or__(self, other):
+        # Imported locally: the qrisp package imports this module before defining these names.
         from qrisp import cx, mcx, x
 
         if len(self) > len(other):
@@ -346,6 +354,7 @@ class QuantumVariable:
         return or_res
 
     def __and__(self, other):
+        # Imported locally: the qrisp package imports this module before defining these names.
         from qrisp import mcx
 
         if len(self) > len(other):
@@ -359,6 +368,7 @@ class QuantumVariable:
         return and_res
 
     def __xor__(self, other):
+        # Imported locally: the qrisp package imports this module before defining these names.
         from qrisp import cx
 
         if len(self) > len(other):
@@ -375,8 +385,6 @@ class QuantumVariable:
     def __lshift__(self, other):
         if not callable(other):
             raise Exception("Tried to inject QuantumVariable into non-callable")
-
-        from qrisp.misc.utility import redirect_qfunction
 
         def return_function(*args, **kwargs):
             return redirect_qfunction(other)(*args, target=self, **kwargs)
@@ -438,6 +446,7 @@ class QuantumVariable:
         Exception: Tried to perform operation x on unallocated qubit qv_1.0.
 
         """
+        # Imported locally: qrisp.jasp imports QuantumVariable from this module.
         from qrisp.jasp import TracingQuantumSession
 
         if not isinstance(self.qs, TracingQuantumSession) and self.is_deleted():
@@ -494,6 +503,12 @@ class QuantumVariable:
         ------
         Exception
             If merging the duplicate's quantum session with ``qs`` fails.
+        TracingModeError
+            If ``init`` is True while tracing, since initializing from another
+            QuantumVariable is not supported in a :class:`TracingQuantumSession
+            <qrisp.jasp.TracingQuantumSession>`.
+        Exception
+            If ``init`` is True and the provided ``qubits`` are not fresh.
 
         Returns
         -------
@@ -513,6 +528,7 @@ class QuantumVariable:
         4
 
         """
+        # Imported locally: qrisp.core.quantum_session and qrisp.jasp import QuantumVariable from this module.
         from qrisp.core.quantum_session import QuantumSession
         from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
@@ -536,12 +552,13 @@ class QuantumVariable:
                 name is None,
             )
         else:
-            duplicate.name = name if name is not None else self.name + "_dupl"
-            duplicate.is_fixed_name = False
+            duplicate.name = name.removesuffix("*") if name is not None else self.name + "_dupl"
+            duplicate.is_fixed_name = not (name is None or name.endswith("*"))
 
         # Register duplicate variable in session.
         new_qs.register_qv(duplicate, size)
 
+        # Imported locally: the qrisp package imports this module before defining these names.
         from qrisp import merge
 
         duplicate.qs = new_qs
@@ -585,8 +602,6 @@ class QuantumVariable:
         001, this outcome corresponds to the value 0.5.
 
         """
-        from qrisp.misc import bin_rep
-
         return bin_rep(i, self.size)[::-1]
 
     def jdecoder(self, i):
@@ -668,8 +683,8 @@ class QuantumVariable:
         {2.5: 1.0}
 
         """
+        # Imported locally: qrisp.jasp imports QuantumVariable from this module.
         from qrisp.jasp import TracingQuantumSession
-        from qrisp.misc import check_if_fresh, int_encoder
 
         if not isinstance(self.qs, TracingQuantumSession):
             if not permit_dirtyness:
@@ -783,8 +798,6 @@ class QuantumVariable:
 
         """
         # Imports here to avoid circular dependencies
-        import jax.numpy as jnp
-
         from qrisp.alg_primitives.state_preparation import (
             prepare,
         )
@@ -841,6 +854,7 @@ class QuantumVariable:
 
         """
         insertion_qubits = self.qs.request_qubits(amount)
+        # Imported locally: qrisp.jasp imports QuantumVariable from this module.
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
@@ -959,13 +973,20 @@ class QuantumVariable:
             after compilation and parameter substitution. The default is None.
         filename : string, optional
             The location of where to save a generated plot. The default is None.
+        precompiled_qc : QuantumCircuit, optional
+            A circuit that has already been compiled from the containing
+            QuantumSession. If given, it is used (as a copy) instead of compiling
+            the session, and ``compile`` and ``compilation_kwargs`` are ignored.
+            Parameter binding and ``circuit_preprocessor`` are still applied. The
+            circuit must contain the qubits of this QuantumVariable. The default
+            is None.
 
         Raises
         ------
         Exception
             If the containing QuantumSession is in a quantum environment, it is not
             possible to execute measurements.
-        Exception
+        TracingModeError
             If the QuantumVariable is registered in a :class:`TracingQuantumSession
             <qrisp.jasp.TracingQuantumSession>` (i.e. while tracing), measurements
             are not supported.
@@ -986,18 +1007,20 @@ class QuantumVariable:
         >>> qf = QuantumFloat(3,-1)
         >>> qf[:] = 1
         >>> h(qf[2])
-        >>> mes_results = qf.get_measurement(transpilation_kwargs = {"basis_gates" : ["cx", "u"]})  # noqa:501
+        >>> mes_results = qf.get_measurement(circuit_preprocessor=lambda qc: qc.transpile(basis_gates=["cx", "u"]))
         >>> print(mes_results)
         {1.0: 0.5, 3.0: 0.5}
 
         """
-        from qrisp.jasp import TracingQuantumSession
+        # Imported locally: qrisp.jasp imports QuantumVariable from this module.
+        from qrisp.jasp import TracingModeError, TracingQuantumSession
 
         if isinstance(self.qs, TracingQuantumSession):
-            raise Exception("Tried to get measurement of a QuantumVariable in tracing mode")
+            raise TracingModeError("Tried to get measurement of a QuantumVariable in tracing mode")
 
         if backend is None:
             if self.qs.backend is None:
+                # Imported locally: qrisp.default_backend imports from qrisp.core, which is still loading this module.
                 from qrisp.default_backend import def_backend
 
                 backend = def_backend
@@ -1025,8 +1048,6 @@ class QuantumVariable:
         # Bind parameters
         if subs_dic:
             qc = qc.bind_parameters(subs_dic)
-            from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
-
             qc = combine_single_qubit_gates(qc)
 
         # Copy circuit in over to prevent modification
@@ -1042,8 +1063,9 @@ class QuantumVariable:
 
         # qc = qc.transpile()
 
+        # Imported locally: qrisp.interface.measurement_result imports from qrisp.core,
+        # which is still loading this module.
         from qrisp.interface.measurement_result import DecodedMeasurementResult
-        from qrisp.misc import get_measurement_from_qc
 
         counts = get_measurement_from_qc(qc, self.reg, backend, shots)
         result = DecodedMeasurementResult(counts, self.decoder)
@@ -1087,6 +1109,7 @@ class QuantumVariable:
         return self.reg[key]
 
     def __str__(self):
+        # Imported locally: qrisp.jasp imports QuantumVariable from this module.
         from qrisp.jasp import check_for_tracing_mode
 
         if check_for_tracing_mode():
@@ -1163,6 +1186,7 @@ class QuantumVariable:
         {False: 0.5, True: 0.5}
 
         """
+        # Imported locally: qrisp.environments imports QuantumVariable from this module.
         from qrisp.environments import q_eq
 
         return q_eq(self, other)
@@ -1211,6 +1235,7 @@ class QuantumVariable:
         {False: 0.5, True: 0.5}
 
         """
+        # Imported locally: qrisp.environments imports QuantumVariable from this module.
         from qrisp.environments import q_eq
 
         return q_eq(self, other, invert=True)
@@ -1296,8 +1321,6 @@ class QuantumVariable:
 
 
         """
-        from qrisp.misc import app_phase_function
-
         app_phase_function([self], phi)
 
     def uncompute(self, do_it=True, recompute=False):
@@ -1323,7 +1346,7 @@ class QuantumVariable:
 
         Raises
         ------
-        Exception
+        TracingModeError
             If the QuantumVariable is registered in a :class:`TracingQuantumSession
             <qrisp.jasp.TracingQuantumSession>` (i.e. while tracing), uncomputation
             is not supported.
@@ -1388,17 +1411,16 @@ class QuantumVariable:
 
         """
 
-        from qrisp.jasp import TracingQuantumSession
+        # Imported locally: qrisp.jasp imports QuantumVariable from this module.
+        from qrisp.jasp import TracingModeError, TracingQuantumSession
 
         if isinstance(self.qs, TracingQuantumSession):
-            raise Exception("Tried to uncompute a QuantumVariable in tracing mode")
+            raise TracingModeError("Tried to uncompute a QuantumVariable in tracing mode")
 
         if self.is_deleted():
             raise Exception("Tried to uncompute deleted QuantumVariable")
 
         if do_it:
-            from qrisp.permeability import uncompute
-
             uncompute(self.qs, self.qs.uncomp_stack + [self], recompute)
             self.qs.uncomp_stack = []
         else:
@@ -1406,6 +1428,7 @@ class QuantumVariable:
 
     def get_unique_name(self, name=None):
         if name is None:
+            # Imported locally: the qrisp package imports this module before defining these names.
             from qrisp import QuantumBool, QuantumChar, QuantumFloat
 
             if isinstance(self, QuantumBool):
@@ -1442,7 +1465,10 @@ class QuantumVariable:
 
     def __iter__(self):
         if not isinstance(self.reg, list):
-            raise Exception("Tried to perform a static iteration on a dynamic QuantumVariable")
+            # Imported locally: qrisp.jasp imports QuantumVariable from this module.
+            from qrisp.jasp import TracingModeError
+
+            raise TracingModeError("Tried to perform a static iteration on a dynamic QuantumVariable")
         else:
             return self.reg.__iter__()
 
@@ -1479,7 +1505,7 @@ class QuantumVariable:
         ------
         Exception
             Tried to initialize qubits which are not fresh anymore.
-        Exception
+        TracingModeError
             If the QuantumVariable is registered in a :class:`TracingQuantumSession
             <qrisp.jasp.TracingQuantumSession>` (i.e. while tracing), initializing
             from another QuantumVariable is not supported.
@@ -1517,11 +1543,11 @@ class QuantumVariable:
         if not type(self) == type(other):
             raise Exception("Tried to initialize " + str(type(self)) + " from " + str(type(other)))
 
-        from qrisp.jasp import TracingQuantumSession
-        from qrisp.misc import check_if_fresh
+        # Imported locally: qrisp.jasp imports QuantumVariable from this module.
+        from qrisp.jasp import TracingModeError, TracingQuantumSession
 
         if isinstance(self.qs, TracingQuantumSession):
-            raise Exception("Tried to initialize a QuantumVariable from another in tracing mode")
+            raise TracingModeError("Tried to initialize a QuantumVariable from another in tracing mode")
 
         if not check_if_fresh(self.reg, self.qs):
             raise Exception("Tried to initialize qubits which are not fresh anymore")
@@ -1568,8 +1594,6 @@ class QuantumVariable:
         (1, 2, 3): 0.125, 'undefined_label_6': 0.125, 'undefined_label_7': 0.125}
 
         """
-        from qrisp.misc import custom_qv
-
         return custom_qv(label_list, decoder=decoder, qs=qs, name=name)
 
     def ensure_reg(self):
@@ -1579,6 +1603,7 @@ class QuantumVariable:
         return self.jdecoder(self.reg.measure())
 
     def template(self):
+        # Imported locally: qrisp.jasp imports QuantumVariable from this module.
         from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 
         return QuantumVariableTemplate(self)
