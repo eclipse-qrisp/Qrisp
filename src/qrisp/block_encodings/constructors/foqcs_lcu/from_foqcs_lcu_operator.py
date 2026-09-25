@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Builds a BlockEncoding from a QubitOperator using the FOQCS-LCU algorithm with automatic PREP selection."""
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.operators import QubitOperator
@@ -22,9 +23,14 @@ from .foqcs_analysis import build_foqcs_lcu_prep_from_analysis, foqcs_analyze_op
 from .from_foqcs_lcu_prep import build_from_foqcs_lcu_prep
 
 
-def build_from_foqcs_lcu_operator(cls: BlockEncoding, O: QubitOperator, tol: float = 1e-12) -> BlockEncoding:
-    r"""Constructs a :class:`BlockEncoding` from a compatible :class:`QubitOperator` using the
-    Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU) algorithm
+def build_from_foqcs_lcu_operator(
+    cls: type[BlockEncoding],
+    O: QubitOperator,  # noqa: E741 -- public, keyword-callable API name
+    tol: float = 1e-12,
+) -> BlockEncoding:
+    r"""Constructs a :class:`BlockEncoding` from a compatible :class:`QubitOperator` using the FOQCS-LCU algorithm.
+
+    Fast One-Qubit-Controlled Select Linear Combination of Unitaries (FOQCS-LCU),
     specified in https://arxiv.org/abs/2507.20887.
 
     The input operator is analyzed automatically. If it matches the more
@@ -39,6 +45,8 @@ def build_from_foqcs_lcu_operator(cls: BlockEncoding, O: QubitOperator, tol: flo
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     O : QubitOperator
         Operator to encode, supported operators are covered in `Notes`, e.g.
         ``O = X(0) + X(1) + 0.5 * Y(0) + 0.5 * Y(1) + 0.2 * Z(0) * Z(1)``
