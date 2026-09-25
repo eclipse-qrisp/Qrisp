@@ -64,10 +64,10 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
 
             nom = np.sum(A + 4 * B * C)
             denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-            alpha = nom / denom
-            alpha = [alpha] * N
+            coeffs = nom / denom
+            coeffs = [coeffs] * N
 
-            return alpha
+            return coeffs
 
     else:
 
@@ -78,8 +78,8 @@ def create_COLD_instance(Q, uniform_AGP_coeffs):
                 for i in range(N)
             ]
 
-            alpha = [nom[i] / denom[i] for i in range(N)]
-            return alpha
+            coeffs = [nom[i] / denom[i] for i in range(N)]
+            return coeffs
 
     # Initial Hamiltonian
     H_init = 1 * sum([X(i) for i in range(N)])
@@ -154,9 +154,9 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
                 B = 1 - lam
                 nom = np.sum(A + 4 * B * h)
                 denom = 2 * (np.sum(A**2) + N * (B**2)) + 4 * (lam**2) * np.sum(np.tril(J, -1).sum(axis=1))
-                alpha = nom / denom
-                alpha = [alpha] * N
-                return alpha
+                coeffs = nom / denom
+                coeffs = [coeffs] * N
+                return coeffs
 
             return alpha
 
@@ -166,8 +166,8 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
                     2 * ((lam * h[i]) ** 2 + (1 - lam) ** 2 + lam**2 * sum([J[i][j] for j in range(N) if j != i]))
                     for i in range(N)
                 ]
-                alpha = [h[i] / denom[i] for i in range(N)]
-                return alpha
+                coeffs = [h[i] / denom[i] for i in range(N)]
+                return coeffs
 
             return alpha
 
@@ -188,16 +188,16 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
                     + (1 - lam) ** 2 * (N + 8 * S_2)
                 )
 
-                alpha = -nom / denom
-                alpha = [alpha] * N
-                return alpha
+                coeffs = -nom / denom
+                coeffs = [coeffs] * N
+                return coeffs
 
             return alpha
 
         def nc_nonuniform(J, h):
             def alpha(lam):
-                alpha = solve_alpha(h, J, lam)
-                return alpha
+                coeffs = solve_alpha(h, J, lam)
+                return coeffs
 
             return alpha
 
@@ -307,7 +307,7 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     elif method == "COLD":
         problem_operators = create_COLD_instance(Q, uniform_AGP_coeffs=problem_args["uniform"])
 
-    # Create qarg and problem instrance
+    # Create qarg and problem instance
     qarg = QuantumVariable(Q.shape[0])
     prob = DCQOProblem(*problem_operators)
 
