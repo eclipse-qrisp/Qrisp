@@ -31,6 +31,7 @@ from qrisp.circuit import transpile
 from qrisp.core import QuantumSession, QuantumVariable, merge, qompiler
 from qrisp.jasp import (
     DynamicQubitArray,
+    TracingModeError,
     TracingQuantumSession,
     check_for_tracing_mode,
     create_qubits,
@@ -646,6 +647,8 @@ class QuantumArray:
         ------
         Exception
             Tried to get measurement within open environment.
+        TracingModeError
+            Tried to get measurement in tracing mode.
 
         Returns
         -------
@@ -665,7 +668,7 @@ class QuantumArray:
 
         """
         if check_for_tracing_mode():
-            raise Exception("Tried to get_measurement from QuantumArray in tracing mode")
+            raise TracingModeError("Tried to get_measurement from QuantumArray in tracing mode")
 
         for qv in self.flatten():
             if qv.is_deleted():

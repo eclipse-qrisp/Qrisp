@@ -19,6 +19,7 @@ import pytest
 
 from qrisp import QuantumSession, QuantumVariable, QuantumVariableNamingError
 from qrisp.core.session_merging_tools import resolve_naming_collisions
+from qrisp.jasp import make_jaspr
 
 
 # Utilized to fail code-introspection when generating name.
@@ -222,6 +223,31 @@ def test_resolve_naming_collisions_renames_expected_variable(
     assert kept_qv.name == "alice"
     assert renamed_qv.name == "alice_1"
     assert renamed_qv.reg[0].identifier == "alice_1.0"
+
+
+@pytest.mark.parametrize(
+    ("requested_name", "expected_name", "expected_is_fixed_name"),
+    [
+        pytest.param(None, "alice_dupl", False, id="no_name"),
+        pytest.param("bob", "bob", True, id="explicit_name"),
+        pytest.param("bob*", "bob", False, id="wildcard_name"),
+    ],
+)
+def test_duplicate_naming_in_tracing_mode(
+    requested_name: str | None, expected_name: str, expected_is_fixed_name: bool
+):
+    observed = {}
+
+    def main():
+        qv = QuantumVariable(2, name="alice")
+        duplicate = qv.duplicate(name=requested_name)
+        observed["name"] = duplicate.name
+        observed["is_fixed_name"] = duplicate.is_fixed_name
+        return 0
+
+    make_jaspr(main)()
+    assert observed["name"] == expected_name
+    assert observed["is_fixed_name"] is expected_is_fixed_name
 
 
 def test_resolve_naming_collisions_both_fixed_raises():

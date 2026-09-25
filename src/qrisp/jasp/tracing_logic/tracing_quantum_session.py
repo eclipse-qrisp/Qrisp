@@ -50,6 +50,15 @@ _LOST_TRACK_MSG = (
 )
 
 
+class TracingModeError(RuntimeError):
+    """Raised when an operation is not supported while tracing a Jasp program.
+
+    The call itself is valid, but cannot be carried out because the involved
+    QuantumVariables are registered in a :class:`TracingQuantumSession` rather
+    than a :class:`~qrisp.QuantumSession`.
+    """
+
+
 class TracingQuantumSession:
     """Manage tracing-time state for building quantum circuits in Jasp mode.
 
@@ -158,12 +167,14 @@ class TracingQuantumSession:
         Exception
             If the abstract quantum state has gone out of scope, or if classical
             bits are provided, or if mixed qubit types or incompatible shapes are used.
+        TracingModeError
+            If classical bits are provided.
 
         """
         self._check_in_scope()
 
         if clbits:
-            raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
+            raise TracingModeError("Tried to append Operation with non-zero classical bits in JAX mode.")
 
         if qubits is None:
             qubits = ()
@@ -275,12 +286,14 @@ class TracingQuantumSession:
         Exception
             If *verify* is ``True``, if the abstract quantum state is out of scope,
             or if *qv* is not registered in this session.
+        TracingModeError
+            If *verify* is ``True``.
 
         """
         self._check_in_scope()
 
         if verify:
-            raise Exception("Tried to verify deletion in tracing mode.")
+            raise TracingModeError("Tried to verify deletion in tracing mode.")
 
         try:
             idx = next(i for i, existing_qv in enumerate(self.qv_list) if existing_qv.name == qv.name)
