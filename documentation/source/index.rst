@@ -58,7 +58,7 @@
 
             <a href="./general/tutorial/Shor.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Factor integers using abitrary quantum adders with Shor's algorithm</p>
+            <p class="sd-card-text">Factor integers using arbitrary quantum adders with Shor's algorithm</p>
             </div>
             </a>
 

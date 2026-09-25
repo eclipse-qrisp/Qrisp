@@ -9,7 +9,7 @@ QuantumFloat
 Methods
 =======
 
-As an inheritor, addtionally to the methods listed here, QuantumFloats support all methods of :ref:`QuantumVariable`.
+As an inheritor, additionally to the methods listed here, QuantumFloats support all methods of :ref:`QuantumVariable`.
 
 .. autosummary::
    :toctree: generated/

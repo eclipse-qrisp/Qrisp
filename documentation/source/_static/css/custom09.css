@@ -22,7 +22,7 @@ html[data-theme="dark"] {
   --pst-color-plot-background: rgb(218, 219, 220);
 }
 
-/* PyDataSphinx link underlining overide */
+/* PyDataSphinx link underlining override */
 .bd-header .navbar-nav li a.nav-link:hover {
   text-decoration: none !important;
   color: var(--pst-color-primary);

@@ -19,7 +19,7 @@ The core module of Qrisp provides fundamental functionality that is essential fo
 ----------------------------------------
 
 QuantumVariables are the central building block of Qrisp algorithms. Using QuantumVariables, many of the nitty-gritty management tasks such as choosing a suited set of qubits within a complex algorithm are automated.
-Furthermore the class provides features such as human readable in- and outputs, quantum typing via class inheritance or infix arithmetics.
+Furthermore the class provides features such as human readable in- and outputs, quantum typing via class inheritance or infix arithmetic.
 A :ref:`QuantumFloat<QuantumFloat>` is an example for a subclass of QuantumVariable, which can represent numbers.
 
 

@@ -31,7 +31,7 @@ True
 
 **Automated session merging**
 
-It is however rarely the case that this is actually required as the neccesity for merging can be automatically inferred from the context in many cases. For instance executing any multiqubit gate on two QuantumVariables with disjoint QuantumSessions results in a merge.
+It is however rarely the case that this is actually required as the necessity for merging can be automatically inferred from the context in many cases. For instance executing any multiqubit gate on two QuantumVariables with disjoint QuantumSessions results in a merge.
 
 >>> from qrisp import cx
 >>> a = QuantumVariable(1)
@@ -56,7 +56,7 @@ Another situation where automatic merging happens is in QuantumEnvironments ::
 >>> a.qs == b.qs
 True
    
-Note that there has been no explicit entangling operation. The quantum variables get merged into the enviroments session as soon as any quantum operation is applied to them.
+Note that there has been no explicit entangling operation. The quantum variables get merged into the environments session as soon as any quantum operation is applied to them.
 This is however not the case for QuantumSessions that get created inside this environment. This ensures that QuantumSessions which are created only temporarily, do not get merged ::
 
    

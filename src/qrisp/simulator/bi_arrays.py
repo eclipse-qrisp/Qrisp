@@ -149,7 +149,7 @@ class SparseBiArray(BiArray):
     # - a numpy array
     # - a tuple of arrays where init_object[0] is an array of non-zero indices
     #     and init_object[1] the corresponding data
-    # - a sparse array in coo format
+    # - a sparse array in coup format
     def __init__(self, init_object, shape=None, contraction_counter=0):
         # This attribute tracks how many sparse matrix contractions, this object has
         # been through
@@ -394,8 +394,8 @@ class SparseBiArray(BiArray):
     def elim_zeros(self):
         self.nz_indices, self.data = hlp.elim_zeros(self.nz_indices, self.data)
 
-    # Builds up the sparse matrix in coo format
-    # The coo format saves an array of row/column indices and the corresponding entries
+    # Builds up the sparse matrix in coup format
+    # The coup format saves an array of row/column indices and the corresponding entries
     # Shape is the shape the sparse matrix should have
     def build_sr_matrix(self, shape, transpose=False):
         if prod(shape) != self.size:
@@ -720,7 +720,7 @@ class DenseBiArray(BiArray):
 
         # If not given, estimate sparsity. In many situations the sparsity
         # of a contraction result can be estimated (and then given to the constructor),
-        # so it is helpfull to track it
+        # so it is helpful to track it
         if sparsity is None:
             self.sparsity = np.count_nonzero(array) / array.size
         else:
@@ -950,7 +950,7 @@ class DenseBiArray(BiArray):
 
         # p_nz = self.sparsity*other.sparsity
 
-        # The probabilty for the product being zero is therefore
+        # The probability for the product being zero is therefore
         # p_z = 1 - self.sparsity*other.sparsity
 
         # p_z = 1 - self.sparsity*other.sparsity

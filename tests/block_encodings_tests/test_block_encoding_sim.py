@@ -34,7 +34,7 @@ def test_block_encoding_sim():
     H = create_ising_hamiltonian(L, 0.25, 0.5)
     BE = BlockEncoding.from_operator(H)
 
-    # Prepare inital system state |psi> = |0>
+    # Prepare initial system state |psi> = |0>
     def operand_prep():
         return QuantumFloat(L)
 
@@ -56,7 +56,7 @@ def test_block_encoding_sim():
 
     # Prepare state|psi(t)> = e^{itH} |psi>
     def psi_(t):
-        # Prepare inital system state |psi> = |0>
+        # Prepare initial system state |psi> = |0>
         psi0 = np.zeros(2 ** H.find_minimal_qubit_amount())
         psi0[0] = 1
 

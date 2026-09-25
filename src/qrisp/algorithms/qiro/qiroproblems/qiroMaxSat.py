@@ -35,7 +35,7 @@ def create_maxsat_replacement_routine(res, problem_updated):
     res : dict
         Result dictionary of QAOA optimization procedure.
     problem_updated : List
-        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
+        Updates that happened during the QIRO routine. Consists of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
         and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.
 
     Returns
@@ -134,7 +134,7 @@ def create_maxsat_cost_operator_reduced(problem_updated):
     Parameters
     ----------
     problem_updated : List
-        Updates that happened during the QIRO routine. Consits of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
+        Updates that happened during the QIRO routine. Consists of the updated problem, a list of Qubits which were found to be positively correlated, i.e. part of the problem solution,
         and a list Qubits which were found to be negatively correlated, i.e. they contradict solution qubits in accordance with the update rules.
 
     Returns

@@ -41,7 +41,7 @@ def test_sudoku_checker():
                     else:
                         continue
 
-                # If atleast one of the elements is quantum, do a comparison
+                # If at least one of the elements is quantum, do a comparison
                 comparison_list.append(iterable[i] != iterable[j])
 
         if len(comparison_list) == 0:

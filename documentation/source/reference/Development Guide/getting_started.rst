@@ -121,7 +121,7 @@ rest of this guide:
 Further reading 
 ---------------
 
-If you are completly new to open source development of scientific software, please give the resources below a read. 
+If you are completely new to open source development of scientific software, please give the resources below a read. 
 
 * `pythonpackaging.info <https://pythonpackaging.info/>`_
 

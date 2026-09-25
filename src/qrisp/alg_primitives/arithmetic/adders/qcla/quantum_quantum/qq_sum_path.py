@@ -59,7 +59,7 @@ def qq_sum_path(a, b, c, R):
 
         # This loop treats the case that len(a) != len(b)
         # In this case we need to perform the increment function on the remaining
-        # qubits of b (incase the carry is True)
+        # qubits of b (in case the carry is True)
         # We start at the index the last loop finished at
         for j in range(i + 1, len(b) // R + 1)[::-1]:
             b_block = b[R * j : R * (j + 1)]
@@ -87,7 +87,7 @@ def qq_sum_path(a, b, c, R):
 # parts that need to wait, the overall T-depth is still logarithmic.
 
 
-# To understand this function it can be helpfull to first understand the regular
+# To understand this function it can be helpful to first understand the regular
 # qq_sum_path. A lot of this function is executed here in reversed order.
 # This is because the i-th Gidney-adder needs to wait until the i+1-th finished.
 # Therefore if we append the instructions of the i-th after the i+1-th, this
@@ -109,7 +109,7 @@ def qq_sum_path_direct_uncomputation(a, b, c, R):
 
     # This loop treats the case that len(a) != len(b)
     # In this case we need to perform the increment function on the remaining
-    # qubits of b (incase the carry is True)
+    # qubits of b (in case the carry is True)
     # #We start at the index the last loop finished at
     if len(a) != len(b):
         # Perform the loop in reverse
