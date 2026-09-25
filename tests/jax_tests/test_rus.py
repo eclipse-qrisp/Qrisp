@@ -177,3 +177,29 @@ def test_rus():
 
     for k, v in res_dict.items():
         assert abs(expected_res[k] - v) < 1e-3
+
+
+def test_rus_keyword_arguments():
+
+    def trial_function(size, value, offset=0):
+        qf = QuantumFloat(size)
+        qf[:] = value + offset
+        qbl = QuantumBool()
+        h(qbl)
+        return measure(qbl), qf
+
+    static_argnums_rus = RUS(static_argnums=0)(trial_function)
+    static_argnames_rus = RUS(static_argnames=["size"])(trial_function)
+
+    def main(rus_function):
+        # The value is only known at runtime
+        value_qf = QuantumFloat(3)
+        value_qf[:] = 3
+        value = measure(value_qf)
+        a = rus_function(4, value=value)
+        b = rus_function(size=4, value=value, offset=2)
+        c = rus_function(4, offset=1, value=value)
+        return measure(a), measure(b), measure(c)
+
+    for rus_function in [static_argnums_rus, static_argnames_rus]:
+        assert make_jaspr(main)(rus_function)(rus_function) == (3, 5, 4)

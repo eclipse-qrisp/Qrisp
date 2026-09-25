@@ -276,7 +276,14 @@ def RUS(*trial_function, **jit_kwargs):
     # From the infered output signature the q_while_loop is constructed
 
     @functools.wraps(trial_function)
-    def return_function(*trial_args):
+    def return_function(*trial_args, **trial_kwargs):
+
+        # Bind keyword arguments to their positions so that static_argnums
+        # and the loop-carried dynamic arguments refer to the same indices.
+        bound_args = inspect.signature(trial_function).bind(*trial_args, **trial_kwargs)
+        bound_args.apply_defaults()
+        trial_args = bound_args.args
+        trial_kwargs = bound_args.kwargs
 
         # Filter out the static arguments
         if "static_argnums" in jit_kwargs:
@@ -299,7 +306,7 @@ def RUS(*trial_function, **jit_kwargs):
 
         # Execute the function
         qached_function = qache(trial_function, **jit_kwargs)
-        first_iter_res = qached_function(*trial_args)
+        first_iter_res = qached_function(*trial_args, **trial_kwargs)
 
         dynamic_args = []
 
@@ -343,7 +350,7 @@ def RUS(*trial_function, **jit_kwargs):
                 else:
                     new_trial_args.append(trial_args[i])
 
-            trial_res = qached_function(*new_trial_args)
+            trial_res = qached_function(*new_trial_args, **trial_kwargs)
 
             # Update the tuple with initial args and the new results
             combined_args = tuple(list(args[:n_arg_vals]) + list(trial_res))

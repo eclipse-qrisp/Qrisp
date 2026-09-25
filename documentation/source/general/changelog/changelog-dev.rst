@@ -64,7 +64,8 @@ Improvements
 - Decorators ``qache``, ``custom_inversion``, ``custom_control``,
   ``RUS``, ``auto_uncompute`` now propagate the wrapped function's
   docstring, name, and signature via ``functools.wraps``, removing the need
-  for manual docstring-copy workarounds at call sites.
+  for manual docstring-copy workarounds at call sites. Functions decorated
+  with ``RUS`` can now also be called with keyword arguments.
   (`PR #803 <https://github.com/eclipse-qrisp/Qrisp/pull/803>`_).
 
 - **Faster COLD/LCD circuit compilation and Hamiltonian construction**
