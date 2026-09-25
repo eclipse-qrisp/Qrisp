@@ -345,6 +345,7 @@ Development
   ``xdsl``, ``docs``, and ``dev``) and updated the Development Guide's
   installation instructions to reference it
   (`PR #807 <https://github.com/eclipse-qrisp/Qrisp/pull/807>`_).
+
 * Added a ``reviewdog``-based CI workflow that runs ``ruff`` on pull requests
   and surfaces lint findings as annotations on the GitHub Checks tab of
   newly added lines instead of as inline review comments on the PR
@@ -380,6 +381,9 @@ Development
   workflows into a single ``code_style.yml``, with the ``ruff format --check``
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
+
+* GitHub Actions pinned to commit SHA in CI workflows
+  (`PR #829 <https://github.com/eclipse-qrisp/Qrisp/pull/829>`_).
 
 Dependency Upgrades
 -------------------
