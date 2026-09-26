@@ -2160,27 +2160,18 @@ class QubitOperator(Hamiltonian):
         Examples
         --------
         Applying a Hamiltonian operator via Linear Combination of Unitaries.
+        Note that all coefficients are nonnegative. The unitaries are $P_0=XX$, and $P_1=-ZZ$ where the minus sign is accounted for by a phase shift. They can be applied to a :ref:`QuantumVariable`:
 
-        ::
-
-            from qrisp import QuantumVariable, barrier
-            from qrisp.operators import X,Y,Z
-
-            H = 2*X(0)*X(1)-Z(0)*Z(1)
-
-            unitaries, coeffs = H.unitaries()
-            print(coeffs)
-            # [2. 1.]
-
-        Note that all coefficients are nonnegative. The unitaries are $P_0=XX$, and $P_1=-ZZ$ where the minus sign is accounted for by a phase shift:
-
-        ::
-
-            qv = QuantumVariable(2)
-            unitaries[0](qv)
-            barrier(qv)
-            unitaries[1](qv)
-
+        >>> from qrisp import QuantumVariable, barrier
+        >>> from qrisp.operators import X, Y, Z
+        >>> H = 2*X(0)*X(1) - Z(0)*Z(1)
+        >>> unitaries, coeffs = H.unitaries()
+        >>> print(coeffs)
+        [2. 1.]
+        >>> qv = QuantumVariable(2)
+        >>> unitaries[0](qv)
+        >>> barrier(qv)
+        >>> unitaries[1](qv)
         >>> print(qv.qs)
         QuantumCircuit:
         ---------------
