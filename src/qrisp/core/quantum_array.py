@@ -1903,7 +1903,8 @@ class QuantumArray:
         if isinstance(other, QuantumArray):
             if self.shape != other.shape:
                 raise ValueError(
-                    f"Tried to perform element-wise function call with mismatching array shapes ({self.shape} vs {other.shape})"
+                    "Tried to perform element-wise function call with mismatching "
+                    f"array shapes ({self.shape} vs {other.shape})"
                 )
             other_view = other.flatten()
             if check_for_tracing_mode():
@@ -1915,7 +1916,8 @@ class QuantumArray:
         elif isinstance(other, (np.ndarray, jnp.ndarray)):
             if self.shape != other.shape:
                 raise ValueError(
-                    f"Tried to perform element-wise function call with mismatching array shapes ({self.shape} vs {other.shape})"
+                    "Tried to perform element-wise function call with mismatching "
+                    f"array shapes ({self.shape} vs {other.shape})"
                 )
             flattened_other = other.flatten()
             if isinstance(other, np.ndarray):

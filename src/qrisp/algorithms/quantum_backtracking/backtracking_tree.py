@@ -172,8 +172,8 @@ A node which has height 4 in a some tree T, still has height 4 in a subtree of T
 
 The initial state of branch_qa is |0>|0>|0>...
 
-Because we use the height instead of the path length, the path to the node is 
-specified by the reversed array. Ie. the path [1,1,0,1]  in a depth 7 tree is 
+Because we use the height instead of the path length, the path to the node is
+specified by the reversed array. Ie. the path [1,1,0,1]  in a depth 7 tree is
 specified by the branch_qa state
 
 |0>|0>|0>|1>|0>|1>|1>
@@ -746,7 +746,8 @@ class QuantumBacktrackingTree:
         mcz_list.append(oddity_qbl)
         ctrl_state += "0"
 
-        # Check if |x> is root. Otherwise, if the reject functions returns "True" on the lift of the root a wrong phase (-1) may be applied to the root.
+        # Check if |x> is root. Otherwise, if the reject functions returns "True" on
+        # the lift of the root a wrong phase (-1) may be applied to the root.
         # mcz_list.append(is_root)
         # ctrl_state += "0"
 

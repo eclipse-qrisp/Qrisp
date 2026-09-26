@@ -234,7 +234,8 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
 
     Examples
     --------
-    We calculate the fermionic Hamiltonian for the Hydrogen molecule, and transform it to a Pauli Hamiltonian via Jordan-Wigner transform.
+        We calculate the fermionic Hamiltonian for the Hydrogen molecule, and transform it
+        to a Pauli Hamiltonian via Jordan-Wigner transform.
 
     ::
 

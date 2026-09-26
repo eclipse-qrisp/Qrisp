@@ -48,7 +48,6 @@ def plot_reconstruction_vs_target(
 
     Examples
     -------
-
     ::
 
         import numpy as np

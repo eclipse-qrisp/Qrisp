@@ -807,7 +807,8 @@ class BlockEncoding:
         - $\ket{\phi_1} = \ket{0}_a\ket{\lambda}$
         - $\ket{\phi_2} = \frac{(W-\lambda/\alpha\mathbb I)\ket{\phi_1}}{\sqrt{1-(\lambda/\alpha)^2}}$
 
-        In this subspace, $W$ implements a Pauli-Y rotation by angle $\theta=-2\arccos(\lambda/\alpha)$, i.e., $W=e^{i\arccos(\lambda/\alpha)Y}$.
+            In this subspace, $W$ implements a Pauli-Y rotation by angle
+            $\theta=-2\arccos(\lambda/\alpha)$, i.e., $W=e^{i\arccos(\lambda/\alpha)Y}$.
 
         If the block-encoding unitary $U$ is Hermitian (i.e., $U^2=\mathbb I$), then $W=R U$ where $R = (2\ket{0}_a\bra{0}_a - \mathbb I)$
         is the reflection around the state $\ket{0}_a$ of the ancilla variables.

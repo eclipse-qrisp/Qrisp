@@ -1328,7 +1328,8 @@ def app_phase_polynomial(qf_list, poly, symbol_list=None, t=1):
 
         sv_function = qf.qs.statevector("function")
 
-    This function receives a dictionary of QuantumVariables specifying the desired label constellation and returns its complex amplitude.
+        This function receives a dictionary of QuantumVariables specifying the desired label
+        constellation and returns its complex amplitude.
     We calculate the phases corresponding to the complex amplitudes, and compare the results with the values of the function $P(x)$.
 
     ::

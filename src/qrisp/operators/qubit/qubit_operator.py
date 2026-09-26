@@ -1292,7 +1292,9 @@ class QubitOperator(Hamiltonian):
                     #
                     # Consider product of stabilizers S_{i_1}*S_{i_2}*...*S_{i_m} with (w.l.o.g.) i_1<i_2<...<i_m
                     # For each i: Swap X_i with all Z_i's from stabilizers if index > i such that all Z_i's are on the left of X_i
-                    # Calculate the parity n1 of the sum of the numbers of 1's with position j>i for each row of the square submatrix A defined by z_vector
+                    # Calculate the parity n1 of the sum of the numbers of 1's with
+                    # position j>i for each row of the square submatrix A defined by
+                    # z_vector
                     # Yields a factor (-1)^n1
 
                     n1 = sum((z_vector @ A_low) * z_vector) % 2
@@ -1779,7 +1781,8 @@ class QubitOperator(Hamiltonian):
             Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
             The default is ``commuting_qw``.
         forward_evolution : bool, optional
-            If set to False $U(t)^\dagger = e^{itH}$ will be executed (useful for quantum phase estimation). The default is ``True``.
+                If set to False $U(t)^\dagger = e^{itH}$ will be executed (useful for
+                quantum phase estimation). The default is ``True``.
 
         Returns
         -------
@@ -1961,7 +1964,8 @@ class QubitOperator(Hamiltonian):
         Parameters
         ----------
         forward_evolution : bool, optional
-            If set to False, $U(t)^\dagger = e^{itH}$ will be executed (useful for quantum phase estimation). The default is True.
+                If set to False, $U(t)^\dagger = e^{itH}$ will be executed (useful for
+                quantum phase estimation). The default is True.
 
         Returns
         -------
@@ -2071,7 +2075,6 @@ class QubitOperator(Hamiltonian):
         making it a powerful tool for large-scale quantum simulations with bounded resources.
 
         """
-
         # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
         # We create a list of term.simulate functions for all terms in the operator
         # and use the q_switch with classical index to apply the j-th function
@@ -2120,7 +2123,9 @@ class QubitOperator(Hamiltonian):
 
             H = \sum_{i=0}^{M-1}\alpha_iP_i
 
-        where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corresponding to a phase shift).
+            where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are
+            Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries
+            a $\pm1$ sign (corresponding to a phase shift).
 
         Returns
         -------

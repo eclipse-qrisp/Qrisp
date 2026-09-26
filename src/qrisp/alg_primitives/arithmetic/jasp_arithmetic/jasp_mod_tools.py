@@ -211,7 +211,7 @@ def montgomery_encoder(
     Mixing a ``BigInteger`` operand with plain Python ints also works; the
     others are promoted to match its limb width:
 
-    >>> from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    >>> from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import BigInteger
     >>> montgomery_encoder(BigInteger.create(42, 4), 1024, 97)()
     37
 

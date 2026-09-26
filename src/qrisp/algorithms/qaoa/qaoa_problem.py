@@ -704,7 +704,8 @@ class QAOAProblem:
 
         Examples
         --------
-        We create a :ref:`MaxIndepSet <maxIndepSetQAOA>` instance and train a circuit with the :ref:`QAOAProblem` instance.
+            We create a :ref:`MaxIndepSet <maxIndepSetQAOA>` instance and train a circuit
+            with the :ref:`QAOAProblem` instance.
 
         ::
 

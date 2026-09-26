@@ -150,7 +150,8 @@ def initial_state_maxcut(qarg):
 
 
 # Define the initial state
-# instate = initial_state_maxcut(qarg) # the initial state is not necessary in this case since it's automatically set to a superposition
+# instate = initial_state_maxcut(qarg) # the initial state is not necessary in this
+# case since it's automatically set to a superposition
 
 # Creates an unitary MaxCut cost operator
 cost_operator = create_maxcut_cost_operator(G)

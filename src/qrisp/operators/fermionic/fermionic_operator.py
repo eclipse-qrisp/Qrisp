@@ -737,7 +737,8 @@ class FermionicOperator(Hamiltonian):
         Parameters
         ----------
         forward_evolution, bool, optional
-            If set to False $U(t)^\dagger = e^{itH}$ will be executed (useful for quantum phase estimation). The default is True.
+                If set to False $U(t)^\dagger = e^{itH}$ will be executed (useful for
+                quantum phase estimation). The default is True.
 
         Returns
         -------

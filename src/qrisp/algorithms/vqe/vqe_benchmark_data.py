@@ -69,7 +69,8 @@ class VQEBenchmark:
 
             \text{OQV} = \text{circuit_depth} \times \text{qubits} \times \text{shots} \times \text{iterations}
 
-        where $\text{shots} = 1/\text{precision}^2$. The actual number of shots exhibits a scaling factor that depends on the Hamiltonian.
+            where $\text{shots} = 1/\text{precision}^2$. The actual number of shots exhibits
+            a scaling factor that depends on the Hamiltonian.
         For different Hamiltonians, the results for the OQV metric are not comparable.
 
         **Gain metric**

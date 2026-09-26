@@ -58,7 +58,8 @@ def dalzell_inversion(A: BlockEncoding, prep_b: Callable, t: float, eps: float, 
     
         G_tx_t=(\mathbb{I} - \ket{b'}\bra{b'})A_t x_t = (\mathbb{I} - \ket{b'}\bra{b'})\ket{b'} = 0
     
-    Hence, the solution state $\ket{x_t}$ is a kernel state (singular value 0) of the operator $G_t=(\mathbb{I} - \ket{b'}\bra{b'})A_t$.
+        Hence, the solution state $\ket{x_t}$ is a kernel state (singular value 0) of the
+        operator $G_t=(\mathbb{I} - \ket{b'}\bra{b'})A_t$.
     The **kernel reflection** operator $K(G_t)$ reflects about the solution state $\ket{x_t}$ to the augmented system, 
     and can be implemented via QSVT using a polynomial approximation of the kernel reflection function 
     $K(\sigma)\colon [0,1] \to [-1,1]$ which maps the singular value 0 to 1 and all other singular values to -1.
