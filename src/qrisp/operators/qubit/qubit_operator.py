@@ -980,7 +980,6 @@ class QubitOperator(Hamiltonian):
         -1.4142135623730951
 
         """
-
         hamiltonian = self.hermitize()
         hamiltonian = hamiltonian.eliminate_ladder_conjugates()
         hamiltonian = hamiltonian.apply_threshold(0)
@@ -2136,6 +2135,7 @@ class QubitOperator(Hamiltonian):
 
     def unitaries(self):
         r"""Returns unitiaries and coefficients for the Pauli representation of the operator.
+
         Note that this method will always consider the **hermitized** operator, i.e.
 
         .. math::
@@ -2160,7 +2160,9 @@ class QubitOperator(Hamiltonian):
         Examples
         --------
         Applying a Hamiltonian operator via Linear Combination of Unitaries.
-        Note that all coefficients are nonnegative. The unitaries are $P_0=XX$, and $P_1=-ZZ$ where the minus sign is accounted for by a phase shift. They can be applied to a :ref:`QuantumVariable`:
+        Note that all coefficients are nonnegative. The unitaries are $P_0=XX$ and
+        $P_1=-ZZ$, where the minus sign is accounted for by a phase shift. They can
+        be applied to a :ref:`QuantumVariable`:
 
         >>> from qrisp import QuantumVariable, barrier
         >>> from qrisp.operators import X, Y, Z

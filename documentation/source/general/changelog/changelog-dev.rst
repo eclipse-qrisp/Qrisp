@@ -283,6 +283,9 @@ New Tutorials/ Updated Documentation
   Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
   link and agenda.
 
+- Minor fixes to :class:`~qrisp.operators.qubit.QubitOperator`
+  (`PR #911 <https://github.com/eclipse-qrisp/Qrisp/pull/911>`_).
+
 .. Add new tutorials above this line
 
 API Changes
