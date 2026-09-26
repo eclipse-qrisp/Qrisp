@@ -15,26 +15,19 @@
 ********************************************************************************
 """
 
-from qrisp import *
+from qrisp.operators.bosonic import a_b as a, c_b as c
 
 
-def test_fermionic_term():
-    from qrisp.operators.fermionic import a_f as a, c_f as c
-
+def test_bosonic_term():
     O_0 = a(0) * c(1)
     O_1 = c(1) * a(0)
-
-    assert (O_0 == O_1) == False
-
-    O_0 = a(0) * c(1)
-    O_1 = -c(1) * a(0)
 
     assert (O_0.hermitize() == O_1.hermitize()) == True
 
     O_0 = a(0) * c(1)
     O_1 = -1 * c(1) * a(0)
 
-    assert (O_0.hermitize() == O_1.hermitize()) == True
+    assert (O_0 == O_1) == False
 
     O_0 = a(0) * c(1) * a(2)
     O_1 = c(2) * a(1) * c(0)
@@ -43,7 +36,7 @@ def test_fermionic_term():
 
     O = 3 * a(0) * c(1) + c(1) * a(0)
     O = O.reduce()
-    assert str(O) == "2*a0*c1"
+    assert str(O) == "4*a0*c1"
 
     O = a(0) * a(1) - c(1) * c(0)
     O = O.reduce(assume_hermitian=True)
