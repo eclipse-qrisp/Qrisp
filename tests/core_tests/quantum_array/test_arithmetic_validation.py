@@ -18,6 +18,7 @@
 import operator
 
 import numpy as np
+import jax.numpy as jnp
 import pytest
 
 from qrisp import QuantumArray, QuantumBool, QuantumChar, QuantumFloat, QuantumModulus
@@ -85,6 +86,8 @@ class TestArithmeticValidation:
             # Validation happens before execution
             qa._validate_arithmetic(5)
             qa._validate_arithmetic(3.14)
+            qa._validate_arithmetic(np.array(2))  # Scalar numpy array
+            qa._validate_arithmetic(jnp.array(2))  # Scalar jax array
         except (TypeError, ValueError):
             pytest.fail("Scalar validation should not raise errors")
 
