@@ -46,6 +46,7 @@ Development
 -----------
 
 * Added a BosonicOperator class analogous to the FermionicOperator one
+  (`PR #799 <https://github.com/eclipse-qrisp/Qrisp/pull/799>`_)
 
 * Added Dependabot configuration for automated dependency updates
   (grouped by type, with labels applied automatically).
