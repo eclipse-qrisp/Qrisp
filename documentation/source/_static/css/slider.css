@@ -61,6 +61,14 @@
   background: linear-gradient(to left, var(--theme-bg, white) 0%, rgba(255, 255, 255, 0) 100%);
 }
 
+html[data-theme="dark"] .logo-slider::before {
+  background: linear-gradient(to right, #14181e 0%, rgba(20, 24, 30, 0) 100%);
+}
+
+html[data-theme="dark"] .logo-slider::after {
+  background: linear-gradient(to left, #14181e 0%, rgba(20, 24, 30, 0) 100%);
+}
+
 /* --- 4. The Moving Track --- */
 .logo-track {
   display: flex;
