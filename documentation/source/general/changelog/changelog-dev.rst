@@ -129,6 +129,15 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed :func:`cuccaro_adder <qrisp.cuccaro_adder>` to support arbitrary
+  quantum inputs, in particular ``list[Qubit]`` and ``DynamicQubitArray``
+  targets. Previously, a classical addend with a ``list[Qubit]`` target raised
+  ``AttributeError: 'list' object has no attribute 'duplicate'``, so
+  ``QuantumModulus(..., inpl_adder=cuccaro_adder)`` failed. Classical addends
+  larger than the target register are now truncated modulo ``2**len(b)``
+  (`PR #848 <https://github.com/eclipse-qrisp/Qrisp/pull/848>`_,
+  `issue #839 <https://github.com/eclipse-qrisp/Qrisp/issues/839>`_).
+
 * Fixed a failure when a function decorated with
   :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
   raised ``Automatic loop inversion is only supported for jrange-based loops``.
