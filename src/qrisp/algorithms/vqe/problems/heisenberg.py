@@ -171,6 +171,7 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
     QuantumVariable qv
 
     """
+
     # per hamiltonian
     def ansatz(qv, theta):
         # apply H
@@ -264,6 +265,7 @@ def create_heisenberg_init_function(M):
     QuantumVariable qv
 
     """
+
     def init_function(qv):
 
         # tensor product of singlet states

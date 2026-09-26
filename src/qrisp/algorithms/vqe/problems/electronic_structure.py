@@ -135,9 +135,10 @@ def spacial_to_spin(one_int, two_int):
 
 
 def electronic_data(mol):
-    """A function that utilizes `restricted Hartree-Fock (RHF) <https://pyscf.org/user/scf.html>`_
-    calculation in the `PySCF <https://pyscf.org>`_ quantum chemistry package to obtain the electronic data for
-    defining an electronic structure problem.
+    """Gets the electronic data needed to define an electronic structure problem.
+
+    The data is obtained from a `restricted Hartree-Fock (RHF) <https://pyscf.org/user/scf.html>`_
+    calculation with the `PySCF <https://pyscf.org>`_ package.
 
     Parameters
     ----------
@@ -511,6 +512,7 @@ def create_hartree_fock_init_function(M, N):
     QuantumVariable qv
 
     """
+
     def init_function(qv):
         for i in range(N):
             x(qv[i])
