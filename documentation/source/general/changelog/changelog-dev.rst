@@ -72,6 +72,13 @@ Improvements
   ``jaspification`` module (``jaspify``, ``simulate_jaspr``, ``stimulate``)
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
+- Decorators ``qache``, ``custom_inversion``, ``custom_control``,
+  ``RUS``, ``auto_uncompute`` now propagate the wrapped function's
+  docstring, name, and signature via ``functools.wraps``, removing the need
+  for manual docstring-copy workarounds at call sites. Functions decorated
+  with ``RUS`` can now also be called with keyword arguments.
+  (`PR #803 <https://github.com/eclipse-qrisp/Qrisp/pull/803>`_).
+
 - **Faster COLD/LCD circuit compilation and Hamiltonian construction**
   :meth:`compile_U_cold <qrisp.cold.DCQOProblem.compile_U_cold>` and
   :meth:`~qrisp.cold.DCQOProblem.run` no longer recompute Trotter term

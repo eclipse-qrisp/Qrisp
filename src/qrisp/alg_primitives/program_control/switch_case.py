@@ -515,6 +515,4 @@ def qswitch(operand, case, case_function, method="auto", case_amount=None, inv=F
         raise Exception(f"Don't know compile method {method} for switch-case structure.")
 
 
-temp = qswitch.__doc__
 qswitch = custom_control(custom_inversion(qswitch))
-qswitch.__doc__ = temp

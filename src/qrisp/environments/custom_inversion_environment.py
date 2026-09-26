@@ -16,6 +16,8 @@
 
 """Defines the custom_inversion decorator for registering explicit inverse implementations of functions."""
 
+import functools
+
 import jax.numpy as jnp
 
 from qrisp.jasp import (
@@ -140,6 +142,7 @@ def custom_inversion(*func, **cusi_kwargs):
 
     qached_func = qache(func, **cusi_kwargs)
 
+    @functools.wraps(func)
     def adaptive_inversion_function(*args, **kwargs):
 
         if not check_for_tracing_mode():
