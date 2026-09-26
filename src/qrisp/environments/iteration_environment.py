@@ -71,7 +71,7 @@ class IterationEnvironment(QuantumEnvironment):
 
     **Precompilation**
 
-    Squaring a :ref:`QuantumFloat` uses the :meth:`qrisp.sbp_mult` function,
+    Squaring a :ref:`QuantumFloat` uses a multiplication algorithm
     which has a high demand of ancilla qubits.
     Therefore many iterations can quickly overload the allocation algorithm.
 
