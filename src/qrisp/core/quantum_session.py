@@ -16,7 +16,9 @@
 
 """Defines the QuantumSession class managing QuantumVariable lifecycles, environments, and compilation."""
 
+import itertools
 import weakref
+from operator import attrgetter
 
 import numpy as np
 
@@ -31,7 +33,11 @@ from qrisp.circuit import (
 )
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import multi_session_merge
-from qrisp.misc import get_depth_dic
+from qrisp.misc import find_calling_line, get_depth_dic
+
+
+class QuantumVariableNamingError(Exception):
+    """The error to be thrown when a QuantumVariable already exists in a QuantumSession"""
 
 
 class QuantumSession(QuantumCircuit):
@@ -180,7 +186,7 @@ class QuantumSession(QuantumCircuit):
         # inside a function after the function finished
         self.uncomp_stack = []
 
-        self.qs_tracker.append(weakref.ref(self))
+        QuantumSession.qs_tracker.append(weakref.ref(self))
 
         self.will_be_uncomputed = False
 
@@ -189,35 +195,146 @@ class QuantumSession(QuantumCircuit):
         # when this session is merged into another session.
         self.shadow_sessions = []
 
-    def register_qv(self, qv, size):
+    def _is_fresh_name(self, name: str):
+        return name not in map(attrgetter("name"), self.qv_list + self.deleted_qv_list)
+
+    def _default_name_generator(self, name: str, suffix: int):
+        yield name
+        while True:
+            yield f"{name}_{suffix}"
+            suffix += 1
+
+    def _find_valid_name(self, name_generator) -> str:
+        name = next(name_generator)
+        while not self._is_fresh_name(name):
+            name = next(name_generator)
+        return name
+
+    def _generate_name_from_code_introspection(self, declaration_stack_level: int):
+
+        line = find_calling_line(declaration_stack_level)
+        split_line = line.split("=")
+        minimum_equality_splits = 2
+        if len(split_line) < minimum_equality_splits or split_line[1].replace(" ", "")[:7] != "Quantum":
+            return None
+        python_var_name = split_line[0].strip()
+        valid_name = self._find_valid_name(self._default_name_generator(python_var_name, 0))
+        return valid_name
+
+    # Returns a pair of a name from provided param ``name`` and
+    # a boolean indicating if name is fixed, i.e: can't be modified later on.
+    # Names with a ``"*"`` suffix can be modified.
+    # If name is fixed and collides with an existing QuantumVariable,
+    # a QuantumVariableNamingError object is returned.
+    def _generate_name_from_provided_name(self, name: str) -> tuple[str, bool] | QuantumVariableNamingError:
+        allows_change_suffix = False
+        if name[-1] == "*":
+            allows_change_suffix = True
+            name = name[:-1]
+
+        # If it's a fresh name return it.
+        if self._is_fresh_name(name):
+            return (name, not allows_change_suffix)
+
+        # If suffixes are not allowed with a '*' return an error.
+        if not allows_change_suffix:
+            return QuantumVariableNamingError(f"Variable name {name} already exists in quantum session")
+
+        # Otherwise append name with a valid numerical suffix.
+        valid_name = self._find_valid_name(self._default_name_generator(name, QuantumVariable.creation_counter))
+        return (valid_name, False)
+
+    def generate_name(
+        self, name: str | None, qv: QuantumVariable, declaration_stack_level: int, is_duplicated_name=False
+    ) -> tuple[str, bool]:
+        """Determine a unique name to register ``qv`` under in this QuantumSession.
+
+        If ``name`` is given, it is used as-is (raising if it collides), unless it
+        ends with ``"*"``, in which case the ``"*"`` is dropped and a numerical
+        suffix is appended on collision instead of raising. If ``name`` is None,
+        the name of the Python variable ``qv`` is being assigned to is inferred via
+        code introspection; if that also fails, a generic unique name is generated
+        (see :meth:`QuantumVariable.get_unique_name <qrisp.QuantumVariable.get_unique_name>`).
+
+        Parameters
+        ----------
+        name : str or None
+            The name to register ``qv`` under, or None to infer/generate one.
+        qv : QuantumVariable
+            The QuantumVariable being named.
+            Used for its type-dependent generic-name generation method
+                in the final fallback case.
+        declaration_stack_level : int
+            How many stack frames above the caller of this method the line
+            declaring ``qv`` is expected to be found, used for code introspection
+            when ``name`` is None.
+        is_duplicated_name : bool, optional
+            If True and ``name`` is given, a ``"_dupl*"`` suffix is appended to
+            ``name`` before resolving it, allowing the duplicate to be renamed on
+            collision instead of raising.
+            Used by  :meth:`QuantumVariable.duplicate <qrisp.QuantumVariable.duplicate>`
+            when no explicit name was requested for the duplicate. The default is
+            False.
+
+        Raises
+        ------
+        QuantumVariableNamingError
+            ``name`` (without a trailing ``"*"``) is already used in this
+            QuantumSession.
+
+        Returns
+        -------
+        tuple[str, bool]
+            The resolved name, and whether that name is fixed (see
+            :attr:`QuantumVariable.is_fixed_name <qrisp.QuantumVariable.is_fixed_name>`).
+
+        """
+        if name is not None:
+            effective_name = name + "_dupl*" if is_duplicated_name else name
+            generated_name_or_err = self._generate_name_from_provided_name(effective_name)
+            if isinstance(generated_name_or_err, QuantumVariableNamingError):
+                raise generated_name_or_err
+            return generated_name_or_err
+
+        # Otherwise attempt to introspect variable name:
+        if (generated_name := self._generate_name_from_code_introspection(declaration_stack_level + 1)) is not None:
+            return (generated_name, False)
+
+        # Finally, if introspection is not possible, fallback to generating a unique name.
+        get_unique_name_generator = (qv.get_unique_name() for _ in itertools.count())
+        return (self._find_valid_name(get_unique_name_generator), False)
+
+    def register_qv(self, qv: QuantumVariable, size: int | None = None):
         """Method to register QuantumVariables
 
         Parameters
         ----------
         qv : QuantumVariable
             QuantumVariable to register.
-
-        Raises
-        ------
-        RuntimeError
-            Name of qv is already used in this QuantumSession.
+        size : int, optional
+            The amount of qubits to request and assign to ``qv.reg``. If None, no
+            qubits are requested and ``qv.reg`` is left untouched - used when
+            ``qv.reg`` has already been assigned before calling this method (e.g. via
+            :meth:`duplicate <qrisp.QuantumVariable.duplicate>` with an explicit
+            ``qubits`` argument). The default is None.
 
         Returns
         -------
         None.
 
         """
-        if qv.name in [temp_qv.name for temp_qv in self.qv_list + self.deleted_qv_list]:
-            raise QuantumVariableNamingError("Variable name " + str(qv.name) + " already exists in quantum session")
+        if not self._is_fresh_name(qv.name):
+            raise QuantumVariableNamingError(f"Variable name {qv.name} already exists in quantum session")
 
-        # Hand qubits to quantum variable
-        qv.reg = self.request_qubits(size, name=qv.name)
+        # Hand qubits to quantum variable if size is provided.
+        if size is not None:
+            qv.reg = self.request_qubits(size, name=qv.name)
 
         # Register in the list of active quantum variable
         self.qv_list.append(qv)
 
         QuantumVariable.live_qvs.append(weakref.ref(qv))
-        qv.creation_time = int(QuantumVariable.creation_counter[0])
+        qv.creation_time = QuantumVariable.creation_counter
         QuantumVariable.creation_counter += 1
 
     def get_qv(self, key):
@@ -1200,10 +1317,16 @@ class QuantumSession(QuantumCircuit):
         )
 
     def __del__(self):
+        # Resolved through type(self) rather than the bare `QuantumSession` name:
+        # during interpreter shutdown, module globals (including the class name
+        # itself) may already be cleared to None by the time this runs, while
+        # type(self) stays valid as long as the instance does.
+        cls = type(self)
         i = 0
-        while i < len(self.qs_tracker):
-            if self.qs_tracker[i]() is None or id(self) == id(self.qs_tracker[i]()):
-                self.qs_tracker.pop(i)
+        while i < len(cls.qs_tracker):
+            qs = cls.qs_tracker[i]()
+            if qs is None or qs is self:
+                cls.qs_tracker.pop(i)
                 continue
             i += 1
 
@@ -1224,14 +1347,25 @@ class QuantumSession(QuantumCircuit):
             QuantumCircuit.__setattr__(self, name, value)
 
     @classmethod
-    def get_active_quantum_sessions(self):
+    def get_active_quantum_sessions(cls):
+        """
+        Returns weak references to all currently active QuantumSessions.
+
+        Every QuantumSession registers itself in the class-level ``qs_tracker``
+        list upon creation (as a :class:`weakref.ref`, so that tracking a
+        session does not keep it alive). This method prunes ``qs_tracker`` of
+        references whose QuantumSession has since been deallocated,
+        deduplicates the remaining references, and returns the cleaned-up list.
+
+        Returns
+        -------
+        list[weakref.ref]
+            A list of weak references to the active QuantumSession instances.
+
+        """
         # Remove potential duplicates
-        qs_list = list(set([qs() for qs in QuantumSession.qs_tracker if qs() is not None]))
+        qs_list = list(set([qs() for qs in cls.qs_tracker if qs() is not None]))
 
-        self.qs_tracker = [weakref.ref(qs) for qs in qs_list]
+        cls.qs_tracker = [weakref.ref(qs) for qs in qs_list]
 
-        return list(self.qs_tracker)
-
-
-class QuantumVariableNamingError(Exception):
-    """The error to be thrown when a QuantumVariable already exists in a QuantumSession"""
+        return list(cls.qs_tracker)
