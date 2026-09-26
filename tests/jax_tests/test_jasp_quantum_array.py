@@ -270,10 +270,6 @@ instances = [
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_ops_qm(op, rhs_type, instance):
     """Test element-wise operations on QuantumArrays of QuantumModulus against their classical counterparts."""
-    if op == operator.mul and rhs_type == "quantum":
-        # qq multiplication fixed in separate pull request, but for now we skip this test to avoid CI failures
-        pytest.skip("Quantum-quantum multiplication for QuantumModulus is currently unsupported in Jasp.")
-
     a_c, b_c, modulus = instance
 
     @jaspify
