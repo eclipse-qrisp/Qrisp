@@ -718,6 +718,16 @@ class QubitOperator(Hamiltonian):
         scipy.sparse.csr_matrix
             The sparse matrix representing the operator.
 
+        Examples
+        --------
+        We convert a simple operator into its sparse matrix representation.
+
+        >>> from qrisp.operators import Z
+        >>> H = Z(0)
+        >>> H.to_sparse_matrix().toarray()
+        array([[ 1.+0.j,  0.+0.j],
+               [ 0.+0.j, -1.+0.j]])
+
         """
         operator_matrices = {
             "I": sp_sparse.csr_matrix([[1, 0], [0, 1]], dtype=complex),
@@ -923,6 +933,15 @@ class QubitOperator(Hamiltonian):
         QubitOperator
             The hermitian part.
 
+        Examples
+        --------
+        We calculate the hermitian part of a non-hermitian operator.
+
+        >>> from qrisp.operators import A, C
+        >>> H = A(0)*C(1)
+        >>> H.hermitize()
+        0.5*A(0)*C(1) + 0.5*C(0)*A(1)
+
         """
         return 0.5 * (self + self.adjoint())
 
@@ -951,8 +970,16 @@ class QubitOperator(Hamiltonian):
         float
             The ground state energy.
 
-        """
+        Examples
+        --------
+        We calculate the ground state energy of $H = Z_0Z_1 + X_0$.
 
+        >>> from qrisp.operators import X, Z
+        >>> H = Z(0)*Z(1) + X(0)
+        >>> H.ground_state_energy()
+        -1.4142135623730951
+
+        """
         hamiltonian = self.hermitize()
         hamiltonian = hamiltonian.eliminate_ladder_conjugates()
         hamiltonian = hamiltonian.apply_threshold(0)
@@ -2108,6 +2135,7 @@ class QubitOperator(Hamiltonian):
 
     def unitaries(self):
         r"""Returns unitiaries and coefficients for the Pauli representation of the operator.
+
         Note that this method will always consider the **hermitized** operator, i.e.
 
         .. math::
@@ -2132,27 +2160,20 @@ class QubitOperator(Hamiltonian):
         Examples
         --------
         Applying a Hamiltonian operator via Linear Combination of Unitaries.
+        Note that all coefficients are nonnegative. The unitaries are $P_0=XX$ and
+        $P_1=-ZZ$, where the minus sign is accounted for by a phase shift. They can
+        be applied to a :ref:`QuantumVariable`:
 
-        ::
-
-            from qrisp import QuantumVariable, barrier
-            from qrisp.operators import X,Y,Z
-
-            H = 2*X(0)*X(1)-Z(0)*Z(1)
-
-            unitaries, coeffs = H.unitaries()
-            print(coeffs)
-            # [2. 1.]
-
-        Note that all coefficients are nonnegative. The unitaries are $P_0=XX$, and $P_1=-ZZ$ where the minus sign is accounted for by a phase shift:
-
-        ::
-
-            qv = QuantumVariable(2)
-            unitaries[0](qv)
-            barrier(qv)
-            unitaries[1](qv)
-
+        >>> from qrisp import QuantumVariable, barrier
+        >>> from qrisp.operators import X, Y, Z
+        >>> H = 2*X(0)*X(1) - Z(0)*Z(1)
+        >>> unitaries, coeffs = H.unitaries()
+        >>> print(coeffs)
+        [2. 1.]
+        >>> qv = QuantumVariable(2)
+        >>> unitaries[0](qv)
+        >>> barrier(qv)
+        >>> unitaries[1](qv)
         >>> print(qv.qs)
         QuantumCircuit:
         ---------------
