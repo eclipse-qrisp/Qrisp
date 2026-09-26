@@ -537,12 +537,27 @@ class FermionicOperator(Hamiltonian):
         return self.to_qubit_operator(mapping_type=mapping_type).to_sparse_matrix()
 
     def ground_state_energy(self):
-        """Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
+        r"""Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
 
         Returns
         -------
         float
             The ground state energy.
+
+        Examples
+        --------
+        We calculate the ground state energy of the two-site Hubbard model
+
+        .. math::
+
+            H = -t(a_0^\dagger a_1 + a_1^\dagger a_0) + U n_0 n_1
+
+        with hopping :math:`t=1` and attractive on-site interaction :math:`U=-3`.
+
+        >>> from qrisp.operators import a, c
+        >>> H = -1*(c(0)*a(1) + c(1)*a(0)) - 3*(c(0)*a(0))*(c(1)*a(1))
+        >>> H.ground_state_energy()
+        -3.0
 
         """
         return self.to_qubit_operator().ground_state_energy()
