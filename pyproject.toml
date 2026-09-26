@@ -146,6 +146,7 @@ omit = ["*/__init__.py"]
 # aer -- "AerSimulator"/qiskit-aer references throughout the codebase (e.g. core/quantum_session.py).
 # anc -- short form for ancilla (e.g. block_encodings/constructors/from_eye.py).
 # bra -- Dirac bra notation (e.g. block_encodings/constructors/from_lcu.py).
+# braket -- Dirac bra-ket notation (permeability/type_checker.py).
 # ket -- Dirac ket notation (e.g. environments/quantum_conditionals.py).
 # mis -- short for Maximum Independent Set (general/tutorial/QIROtutorial.ipynb).
 # tage -- German for "days" (general/imprint.rst).
@@ -153,7 +154,7 @@ omit = ["*/__init__.py"]
 # childs -- surname, e.g. A. Childs citation (reference/Block Encodings/applications.rst).
 # embedd -- deprecated Jaspr method, will be renamed to embed after Qrisp v0.11
 #          (jasp/jasp_expression/centerclass.py).
-ignore-words-list = "aer,anc,bra,childs,embedd,ket,mis,tage,wille"
+ignore-words-list = "aer,anc,bra,braket,childs,embedd,ket,mis,tage,wille"
 # thi appears in the domain thi.uni-hannover.de and should not be corrected in URIs.
 uri-ignore-words-list = "thi"
 # Skip embedded base64 images in Jupyter notebooks (they contain arbitrary data).

@@ -19,7 +19,7 @@ Let's start with a simple example of using Shor's algorithm to factor a number. 
 
 Try running the code on the website yourself and feel free to try the algorithm out factorizing different numbers! The result we obtain is 5, which *checks notes* is indeed one of the factors! 
 
-As we will see in the next example, number 65 is easy to crack in terms of the private and public key pairings, which is used for encryption. However, the bacis principles of encryption remain the same even with using much greater numbers.
+As we will see in the next example, number 65 is easy to crack in terms of the private and public key pairings, which is used for encryption. However, the basic principles of encryption remain the same even with using much greater numbers.
 
 A tale of encryption and decryption
 -----------------------------------

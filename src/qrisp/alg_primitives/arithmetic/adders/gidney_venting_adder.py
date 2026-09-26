@@ -428,7 +428,7 @@ def carry_venting_adder(
             cx(current_carry, target[last_i])
 
         # Fused carry-xor: write the last carry into the next unwritten slot.
-        # Guared by counter vs. dirty count so it naturally skips when all
+        # Guarded by counter vs. dirty count so it naturally skips when all
         # slots are already filled (e.g. n=3 where the first block already
         # wrote the only slot).  No need for a num_qubits > 3 guard.
         if carry_xor_target is not None:
