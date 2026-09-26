@@ -1,0 +1,17 @@
+# Temporary configuration: CodeRabbit has a file-count limit on reviews, so the
+# codespell changes in this PR are reviewed in two batches.
+#
+# Batch 1 (current): documentation + tooling only. src/ and tests/ are excluded.
+#
+# Batch 2: once batch 1 has been reviewed, replace the path_filters below with:
+#   reviews:
+#     path_filters:
+#       - "src/**"
+#       - "tests/**"
+# then re-request a review from CodeRabbit.
+reviews:
+  path_filters:
+    - "documentation/**"
+    - "pyproject.toml"
+    - ".github/**"
+    - "logo/**"
