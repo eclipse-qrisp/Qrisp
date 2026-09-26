@@ -288,6 +288,15 @@ New Tutorials/ Updated Documentation
 API Changes
 -----------
 
+* The PyTket converter has been removed in this release: the
+  ``qrisp.interface.converter.pytket_converter`` module and its exports,
+  the ``pytket`` optional dependency, and the associated tests and
+  documentation are gone. :meth:`~qrisp.QuantumCircuit.to_pytket` is kept
+  only as a stub: it emits a
+  :class:`~qrisp.misc.exceptions.QrispRemovedFunctionWarning` and then raises
+  ``NotImplementedError``
+  (`PR #662 <https://github.com/eclipse-qrisp/Qrisp/pull/662>`_).
+
 * :class:`~qrisp.interface.IQMBackend` is now a delegation shim that
   re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` (IQM client).
   The backend implementation and its tests live in the IQM client
