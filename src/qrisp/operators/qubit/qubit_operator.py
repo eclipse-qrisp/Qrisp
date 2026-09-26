@@ -718,6 +718,16 @@ class QubitOperator(Hamiltonian):
         scipy.sparse.csr_matrix
             The sparse matrix representing the operator.
 
+        Examples
+        --------
+        We convert a simple operator into its sparse matrix representation.
+
+        >>> from qrisp.operators import Z
+        >>> H = Z(0)
+        >>> H.to_sparse_matrix().toarray()
+        array([[ 1.+0.j,  0.+0.j],
+               [ 0.+0.j, -1.+0.j]])
+
         """
         operator_matrices = {
             "I": sp_sparse.csr_matrix([[1, 0], [0, 1]], dtype=complex),
@@ -923,6 +933,15 @@ class QubitOperator(Hamiltonian):
         QubitOperator
             The hermitian part.
 
+        Examples
+        --------
+        We calculate the hermitian part of a non-hermitian operator.
+
+        >>> from qrisp.operators import A, C
+        >>> H = A(0)*C(1)
+        >>> H.hermitize()
+        0.5*A(0)*C(1) + 0.5*C(0)*A(1)
+
         """
         return 0.5 * (self + self.adjoint())
 
@@ -950,6 +969,15 @@ class QubitOperator(Hamiltonian):
         -------
         float
             The ground state energy.
+
+        Examples
+        --------
+        We calculate the ground state energy of $H = Z_0Z_1 + X_0$.
+
+        >>> from qrisp.operators import X, Z
+        >>> H = Z(0)*Z(1) + X(0)
+        >>> H.ground_state_energy()
+        -1.4142135623730951
 
         """
 
