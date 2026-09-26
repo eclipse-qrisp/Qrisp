@@ -190,9 +190,26 @@ class QubitOperator(Hamiltonian):
     """
 
     def __init__(self, terms_dict={}):
+        """Builds an operator from a dictionary of terms and coefficients.
+
+        Parameters
+        ----------
+        terms_dict : dict, optional
+            A dictionary mapping each term to its coefficient. The default is
+            an empty dictionary, which gives the zero operator.
+
+        """
         self.terms_dict = dict(terms_dict)
 
     def len(self):
+        """Returns the number of terms in the operator.
+
+        Returns
+        -------
+        int
+            The number of terms.
+
+        """
         return len(self.terms_dict)
 
     def coeffs(self):
@@ -223,11 +240,13 @@ class QubitOperator(Hamiltonian):
         return f"${sp.latex(expr)}$"
 
     def __str__(self):
+        """Returns the operator as a readable string."""
         # Convert the sympy expression to a string and return it
         expr = self.to_expr()
         return str(expr)
 
     def __repr__(self):
+        """Returns the operator as a readable string."""
         # Convert the sympy expression to a string and return it
         return str(self)
 
@@ -282,6 +301,19 @@ class QubitOperator(Hamiltonian):
         return cls(res_terms_dict)
 
     def __pow__(self, e):
+        """Raises the operator to the power ``e``.
+
+        Parameters
+        ----------
+        e : int
+            The exponent.
+
+        Returns
+        -------
+        QubitOperator
+            The operator multiplied by itself ``e`` times.
+
+        """
         res = 1
         for i in range(e):
             res = res * self
@@ -529,6 +561,14 @@ class QubitOperator(Hamiltonian):
     #
 
     def find_minimal_qubit_amount(self):
+        """Returns the smallest number of qubits the operator fits on.
+
+        Returns
+        -------
+        int
+            The number of qubits needed for the terms of this operator.
+
+        """
         indices = sum([list(term.factor_dict.keys()) for term in self.terms_dict.keys()], [])
         if len(indices) == 0:
             return 0
@@ -596,7 +636,23 @@ class QubitOperator(Hamiltonian):
 
     @classmethod
     def from_numpy_array(cls, numpy_array, threshold=np.inf):
+        """Builds an operator from a matrix given as a NumPy array.
 
+        Parameters
+        ----------
+        numpy_array : numpy.ndarray
+            The matrix to represent as an operator. Its size must be a power
+            of two.
+        threshold : float, optional
+            Currently unused, kept for compatibility. The default is
+            ``numpy.inf``.
+
+        Returns
+        -------
+        QubitOperator
+            The operator represented by the matrix.
+
+        """
         from qrisp.operators import X, Y, Z
 
         n = int(np.log2(numpy_array.shape[0]))
@@ -946,6 +1002,17 @@ class QubitOperator(Hamiltonian):
         return 0.5 * (self + self.adjoint())
 
     def eliminate_ladder_conjugates(self):
+        """Combines terms that are adjoints of each other.
+
+        This reduces the number of terms for operators that are built from
+        raising and lowering operators.
+
+        Returns
+        -------
+        QubitOperator
+            The operator with adjoint term pairs combined.
+
+        """
         new_terms_dict = {}
         for term, coeff in self.terms_dict.items():
             for factor in term.factor_dict.values():
@@ -1036,6 +1103,20 @@ class QubitOperator(Hamiltonian):
         return groups
 
     def group_up(self, group_denominator):
+        """Splits the operator into groups of terms that belong together.
+
+        Parameters
+        ----------
+        group_denominator : callable
+            A function that takes two terms and returns ``True`` if they should
+            be placed in the same group.
+
+        Returns
+        -------
+        list[QubitOperator]
+            The groups, each returned as its own operator.
+
+        """
         term_groups = group_up_iterable(list(self.terms_dict.keys()), group_denominator)
         if len(term_groups) == 0:
             return [self]
@@ -1398,6 +1479,19 @@ class QubitOperator(Hamiltonian):
         return QubitOperator(new_terms_dict)
 
     def get_conjugation_circuit(self):
+        """Returns the circuit that changes to the basis in which the terms are diagonal.
+
+        The circuit is meant to be applied before measuring operators whose
+        terms commute on each qubit.
+
+        Returns
+        -------
+        QuantumCircuit
+            The basis-change circuit.
+        QubitOperator
+            The operator written in the new basis.
+
+        """
         # This method returns a QuantumCircuit that should be applied
         # before a measurement of self is peformed.
         # The method assumes that all terms within this Operator commute qubit-
