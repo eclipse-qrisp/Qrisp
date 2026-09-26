@@ -54,7 +54,6 @@ def qntt(f: QuantumArray, root: int, inv: bool = False) -> None:
 
     Examples
     --------
-
     Compute the NTT of $a=(3,1,4,9)\in\mathbb Z_{13}^4$ with respect to the $4$-th root of unity $\zeta=5$ modulo $13$.
 
     ::
@@ -76,7 +75,6 @@ def qntt(f: QuantumArray, root: int, inv: bool = False) -> None:
         # [10.  7.  9.  8.]
 
     """
-
     if inv:
         return qntt_inv(f, root)
 
@@ -105,7 +103,7 @@ def qntt(f: QuantumArray, root: int, inv: bool = False) -> None:
 
     def cond_fun_outer(val):
         len_, i, f = val
-        return len_ >= 2
+        return len_ >= 2  # noqa: PLR2004
 
     def body_fun_outer(val):
         len_, i, f = val
@@ -132,7 +130,6 @@ def qntt_inv(f: QuantumArray, root: int) -> None:
         An $n$-th root of unity modulo $q$.
 
     """
-
     n = f.shape[0]
     m = smallest_power_of_two(n)
     q = f.qtype.modulus
@@ -178,7 +175,7 @@ def qntt_inv(f: QuantumArray, root: int) -> None:
 
 
 # NIST FIPS 203, Algorithm 12, quantum-classical version
-def _base_case_multipy(
+def _base_case_multipy(  # noqa: PLR0913, PLR0917
     a0: QuantumModulus,
     a1: QuantumModulus,
     b0: ScalarLike,
@@ -211,9 +208,10 @@ def _base_case_multipy(
         The coefficients of $c_0+c_1X$.
     gamma : ScalarLike
         The modulus is $X^2-\gamma$.
+    inv : bool, optional
+        If True, applies the inverse multiplication. Default is False.
 
     """
-
     q = a0.modulus
     aux = QuantumModulus(q)
     injected_mul = aux << (lambda a, b: a * b)
@@ -260,6 +258,10 @@ def multiply_qntts(f_hat: QuantumArray, g_hat: NDArrayLike, root: int, inv: bool
         1-D array of QuantumModulus representing a vector in $\mathbb Z_q^n$ in NTT representation.
     g_hat : NDArrayLike, shape (n,)
         1-D array representing a vector in $\mathbb Z_q^n$ in NTT representation.
+    root : int
+        The n-th primitive root of unity modulo q.
+    inv : bool, optional
+        If True, applies the inverse multiplication. Default is False.
 
     Returns
     -------
@@ -269,8 +271,9 @@ def multiply_qntts(f_hat: QuantumArray, g_hat: NDArrayLike, root: int, inv: bool
 
     Examples
     --------
-
-    Multiply the NTTs $\hat{a}=(3,1,4,9), \hat{b}=(1,2,3,4)\in\mathbb Z_{13}^4$ with respect to the $4$-th root of unity $\zeta=5$ modulo $13$.
+    Multiply the NTTs $\hat{a}=(3,1,4,9)$ and
+    $\hat{b}=(1,2,3,4)\in\mathbb Z_{13}^4$ with respect to the
+    $4$-th root of unity $\zeta=5$ modulo $13$.
 
     ::
 
@@ -292,7 +295,6 @@ def multiply_qntts(f_hat: QuantumArray, g_hat: NDArrayLike, root: int, inv: bool
         # [0. 7. 1. 4.]
 
     """
-
     result = f_hat.duplicate()
     n = f_hat.shape[0]
     m = smallest_power_of_two(n)

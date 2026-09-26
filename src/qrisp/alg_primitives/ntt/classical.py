@@ -20,8 +20,8 @@ import jax
 import jax.numpy as jnp
 from jax import Array, lax
 
-from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
+from qrisp.alg_primitives.arithmetic.modular_arithmetic.mod_tools import modinv
 from qrisp.typing import NDArrayLike, ScalarLike
 
 
@@ -39,6 +39,7 @@ def bitrev7(r: ScalarLike) -> Array:
     -------
     jax.Array
         The bit-reversed integer.
+
     """
     x = jnp.asarray(r, dtype=jnp.uint8)
 
@@ -68,6 +69,7 @@ def bitrevm(r: ScalarLike, m: ScalarLike) -> Array:
     -------
     jax.Array
         The bit-reversed integer.
+
     """
     x = jnp.asarray(r)
 
@@ -111,6 +113,7 @@ def modpow(a: ScalarLike, x: ScalarLike, q: ScalarLike) -> Array:
     - The intermediate multiplications scale up to `(q-1)**2`. Ensure that the
       inferred JAX data type (usually `int32` by default) is large enough to
       hold this value to prevent integer overflow.
+
     """
     a = jnp.asarray(a) % jnp.asarray(q)
     exp = jnp.asarray(x)
@@ -168,7 +171,6 @@ def ntt(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
         The transformed array of coefficients in the NTT domain.
 
     """
-
     # Cast to JAX array (handles np.ndarray, list, or jnp.ndarray seamlessly)
     f = jnp.asarray(f)
     n = f.shape[0]
@@ -176,7 +178,7 @@ def ntt(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
 
     def outer_cond(val):
         len_, i, current_f = val
-        return len_ >= 2
+        return len_ >= 2  # noqa: PLR2004
 
     def outer_body(val):
         len_, i, current_f = val
@@ -299,7 +301,7 @@ def ntt_inv(f: NDArrayLike, q: ScalarLike, root: ScalarLike) -> Array:
 
 # NIST FIPS 203, Algorithm 12
 @jax.jit
-def _base_case_multiply(
+def _base_case_multiply(  # noqa: PLR0913, PLR0917
     a_0: ScalarLike, a_1: ScalarLike, b_0: ScalarLike, b_1: ScalarLike, gamma: ScalarLike, q: ScalarLike
 ) -> Array:
     """
@@ -326,6 +328,7 @@ def _base_case_multiply(
     -------
     jax.Array
         A 2-element array containing the constant and linear coefficients of the result.
+
     """
     c0 = (a_0 * b_0 + ((a_1 * b_1) % q) * gamma) % q
     c1 = (a_0 * b_1 + a_1 * b_0) % q
@@ -356,6 +359,7 @@ def multiply_ntts(f_hat: NDArrayLike, g_hat: NDArrayLike, q: ScalarLike, root: S
     -------
     jax.Array
         A 1-D array representing the product in the NTT domain.
+
     """
     f_hat = jnp.asarray(f_hat)
     g_hat = jnp.asarray(g_hat)
