@@ -64,7 +64,7 @@ def int_encoder(qv, encoding_number):
                 x(qv[i])
 
     else:
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
             BigInteger,
         )
 

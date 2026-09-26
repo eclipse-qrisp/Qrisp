@@ -368,12 +368,8 @@ Development
   after a module docstring)
   (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
 
-* Consolidated the code style workflows: the ``reviewdog`` workflow now runs
-  ``ruff`` as a linter and formatter only on the changed lines of a pull
-  request, and the new ``code_style`` workflow runs ``ruff check``,
-  ``ruff format --check``, and ``codespell`` on the entire project when
-  merging to ``main``. ``codespell`` was also added to the ``dev-code-style``
-  optional dependency group.
+* Added ``codespell`` to the code style CI checks, enabling automated typo
+  checks, and to the ``dev-code-style`` optional dependency group.
   (`PR #789 <https://github.com/eclipse-qrisp/Qrisp/pull/789>`_).
 
 * Added type hints across ``BlockEncoding`` and the ``QubitOperator``/

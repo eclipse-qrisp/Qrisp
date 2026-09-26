@@ -32,7 +32,7 @@ from jax import Array, jit, lax
 
 from qrisp import check_for_tracing_mode
 
-from .jasp_bigintiger import (
+from .jasp_biginteger import (
     BigInteger,
     bi_modinv,
     bi_montgomery_decode,

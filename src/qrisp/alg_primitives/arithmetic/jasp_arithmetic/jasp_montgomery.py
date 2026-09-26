@@ -27,7 +27,7 @@ from qrisp.environments import control, custom_control, invert
 from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange, q_cond
 from qrisp.qtypes import QuantumBool, QuantumFloat, QuantumModulus
 
-from .jasp_bigintiger import BigInteger
+from .jasp_biginteger import BigInteger
 from .jasp_mod_tools import best_montgomery_shift, modinv, montgomery_decoder, montgomery_encoder, smallest_power_of_two
 
 

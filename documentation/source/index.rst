@@ -81,7 +81,7 @@
             </a>
 
     
-        .. image:: ./_static/chebychev_signal_processing.png
+        .. image:: ./_static/chebyshev_signal_processing.png
 
     .. grid-item-card::
         :shadow: none

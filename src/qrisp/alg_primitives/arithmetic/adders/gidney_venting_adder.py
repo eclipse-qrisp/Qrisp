@@ -32,14 +32,14 @@ from qrisp.qtypes import QuantumBool
 # from __future__ import annotations) and never at runtime.
 # Importing it at module level triggers a circular import:
 #
-#   gidney_adder -> BigInteger (from jasp_bigintiger)
+#   gidney_adder -> BigInteger (from jasp_biginteger)
 #     -> jasp_arithmetic/__init__ -> jasp_mod_adder/multipliers/montgomery
 #     -> gidney_adder  (circular!)
 #
 # The TYPE_CHECKING guard keeps the runtime import-free while satisfying
 # static type checkers.
 if TYPE_CHECKING:  # noqa
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
         BigInteger,
     )  # noqa
 
