@@ -176,9 +176,9 @@ def test_cold_full_example():
             for i in range(N)
         ]
 
-        alph = [nom[i] / denom[i] for i in range(N)]
+        coeffs = [nom[i] / denom[i] for i in range(N)]
 
-        return alph
+        return coeffs
 
     def lam():
         t, T = sp.symbols("t T", real=True)

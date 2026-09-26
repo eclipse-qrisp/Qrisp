@@ -16,9 +16,9 @@ the application of phases corresponding to the objective function values.
 
 The application of general Hamiltonian functions can be achieved in the following ways:
 
-- The :ref:`first method <DiagonalHamiltonianApplication>` consists of computing the Hamiltonian function on all outcome labels of the input QuantumVariables, and subsequently applying the classically computed phases using logic synthesis. While this enables a convenient application of arbitray Hamiltonian functions, it does not scale to large systems as all phases have to be computed classically.
+- The :ref:`first method <DiagonalHamiltonianApplication>` consists of computing the Hamiltonian function on all outcome labels of the input QuantumVariables, and subsequently applying the classically computed phases using logic synthesis. While this enables a convenient application of arbitrary Hamiltonian functions, it does not scale to large systems as all phases have to be computed classically.
 
-- The second method is based on evaluating the Hamiltonian function on its input QuantumVariables in superposition into an auxiliary variable of type QuantumFloat, subsequently applying the phases on the auxiliary variable, and finally uncomputing the auxiliary variable. This approch requires additional qubits and performing arithmetic on the quantum computer. Therefore, it introduces an additional burden on simulators, and moreover it is not suitable for NISQ devices.
+- The second method is based on evaluating the Hamiltonian function on its input QuantumVariables in superposition into an auxiliary variable of type QuantumFloat, subsequently applying the phases on the auxiliary variable, and finally uncomputing the auxiliary variable. This approach requires additional qubits and performing arithmetic on the quantum computer. Therefore, it introduces an additional burden on simulators, and moreover it is not suitable for NISQ devices.
 
 In the special case where the Hamiltonian function is given by a polynomial, its application can be achieved by employing (multi-) controlled phase gates accordingly. 
 The following functions facilitate the efficient application of such phase polynomials.

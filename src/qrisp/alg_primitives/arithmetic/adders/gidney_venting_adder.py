@@ -32,14 +32,14 @@ from qrisp.qtypes import QuantumBool
 # from __future__ import annotations) and never at runtime.
 # Importing it at module level triggers a circular import:
 #
-#   gidney_adder -> BigInteger (from jasp_bigintiger)
-#     -> jasp_arithmetic/__init__ -> jasp_mod_adder/multiplyers/montgomery
+#   gidney_adder -> BigInteger (from jasp_biginteger)
+#     -> jasp_arithmetic/__init__ -> jasp_mod_adder/multipliers/montgomery
 #     -> gidney_adder  (circular!)
 #
 # The TYPE_CHECKING guard keeps the runtime import-free while satisfying
 # static type checkers.
 if TYPE_CHECKING:  # noqa
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
         BigInteger,
     )  # noqa
 
@@ -428,7 +428,7 @@ def carry_venting_adder(
             cx(current_carry, target[last_i])
 
         # Fused carry-xor: write the last carry into the next unwritten slot.
-        # Guared by counter vs. dirty count so it naturally skips when all
+        # Guarded by counter vs. dirty count so it naturally skips when all
         # slots are already filled (e.g. n=3 where the first block already
         # wrote the only slot).  No need for a num_qubits > 3 guard.
         if carry_xor_target is not None:

@@ -19,7 +19,7 @@ Let's start with a simple example of using Shor's algorithm to factor a number. 
 
 Try running the code on the website yourself and feel free to try the algorithm out factorizing different numbers! The result we obtain is 5, which *checks notes* is indeed one of the factors! 
 
-As we will see in the next example, number 65 is easy to crack in terms of the private and public key pairings, which is used for encryption. However, the bacis principles of encryption remain the same even with using much greater numbers.
+As we will see in the next example, number 65 is easy to crack in terms of the private and public key pairings, which is used for encryption. However, the basic principles of encryption remain the same even with using much greater numbers.
 
 A tale of encryption and decryption
 -----------------------------------
@@ -65,7 +65,7 @@ As of right now, the following list of adders have been pre-implemented:
 
 * The :meth:`qcla <qrisp.qcla>` (`paper <https://arxiv.org/abs/2304.02921>`__) requires quite a lot of ancillae but has only logarithmic scaling when it comes to T-depth. It is faster than the Gidney adder for any input size larger than 7.
 
-Using a diffent adder is as easy as adding an ``inpl_adder`` keyword to the :ref:`QuantumModulus <QuantumModulus>` variable. Literally!
+Using a different adder is as easy as adding an ``inpl_adder`` keyword to the :ref:`QuantumModulus <QuantumModulus>` variable. Literally!
 
 Let's provide an example of benchmarking the :meth:`gidney_adder <qrisp.gidney_adder>` and compare it to the :meth:`qcla <qrisp.qcla>` on the operation most relevant for Shor's algorithm: Controlled modular in-place multiplication.
 

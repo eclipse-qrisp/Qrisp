@@ -20,7 +20,7 @@ from qrisp.alg_primitives.arithmetic import QuantumFloat, q_divmod
 from qrisp.misc import multi_measurement
 
 
-def test_quantum_divison():
+def test_quantum_division():
     numerator = QuantumFloat(4, -2, signed=True)
     divisor = QuantumFloat(4, -2, signed=True)
 

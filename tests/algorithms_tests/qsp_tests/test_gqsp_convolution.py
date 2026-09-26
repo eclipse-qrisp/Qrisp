@@ -55,7 +55,7 @@ def test_gqsp_convolution():
         psi_conv = conv_psi_prep()
         return psi_conv
 
-    # Convert the resulting measurement probabilities to amplitudes by appling the square root.
+    # Convert the resulting measurement probabilities to amplitudes by applying the square root.
     res_dict = main()
     max_ = max(res_dict.values())
     for k, v in res_dict.items():

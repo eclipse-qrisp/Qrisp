@@ -405,7 +405,7 @@ def sort_indices_jitted(row, col, data, shape_1):
 
 def coo_sparse_matrix_mult_inner(A_row, A_col, A_data, B_row, B_col, B_data, A_shape, B_shape, cutoff_ratio):
     """This function describes a novel sparse matrix multiplication algorithm operating
-    on the COO format. The scipy and MKL implementation of sparse matrix multiplication
+    on the COUP format. The scipy and MKL implementation of sparse matrix multiplication
     operate on the CSR/CSC format, which requires a conversion step, that can
     be costly for very sparse matrices.
 
@@ -481,12 +481,12 @@ def coo_sparse_matrix_mult_inner(A_row, A_col, A_data, B_row, B_col, B_data, A_s
     array R, where K is the amount of unique markers in A and L is the amount of unique
     markers in B.
 
-    To retrieve the COO representation of R, we first filter all non-zero indices.
+    To retrieve the COUP representation of R, we first filter all non-zero indices.
     For this we can apply some floating point error tolerance mechanism.
 
     This will give as the index arrays I, J where R is non-zero.
-    The rows array of the COO representation of A*B is now given as unique_marker_A[I].
-    The colums array of the COO representation of A*B is now given as unique_marker_B[j].
+    The rows array of the COUP representation of A*B is now given as unique_marker_A[I].
+    The columns array of the COUP representation of A*B is now given as unique_marker_B[j].
     The data is R[I,J]
 
     """

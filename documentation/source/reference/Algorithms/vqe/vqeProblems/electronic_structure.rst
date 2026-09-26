@@ -33,7 +33,7 @@ The Hamiltonian describing the motion of $N$ electrons in the field of $M$ fixed
 
     H_{\text{el}} = -\sum_{i=1}^N\frac12\nabla_i^2-\sum_{i=1}^N\sum_{A=1}^M\frac{Z_A}{r_{iA}}+\sum_{i=1}^N\sum_{j>i}^N\frac{1}{r_{ij}}
 
-The **electronic stucture problem** consists of finding solutions to the Schrödinger equation for the electronic Hamiltonian
+The **electronic structure problem** consists of finding solutions to the Schrödinger equation for the electronic Hamiltonian
 
 .. math::
 
@@ -49,7 +49,7 @@ In the following, we focus on finding the ground state energy
 
 where $\ket{\Psi_0}$ is a ground state wave function of the system.
 
-A starting point for solving this problem is the (restricted) **Hartree-Fock** method which produces a set $\{\psi_i\}$ of $K$ spacial orbitals
+A starting point for solving this problem is the (restricted) **Hartree-Fock** method which produces a set $\{\psi_i\}$ of $K$ spatial orbitals
 that correspond to $M=2K$ spin orbitals $\chi_{2i}=\psi_{i}\alpha$ and $\chi_{2i+1}=\psi_{i}\beta$, for $i=0,\dotsc,K-1$, for the $N$ electrons 
 of the molecule.
 
@@ -106,7 +106,7 @@ All feasible $N$-electron states are expressed as a superposition of the Hartree
 
     Two electrons are moved from the occupied orbitals $\chi_i, \chi_j$ to the unoccupied (virtual) orbitals $\chi_r, \chi_s$.
 
-- higher order (triple, quadruple, ect.) excitation states.
+- higher order (triple, quadruple, etc.) excitation states.
 
 That is, a ground state can be expressed as
 

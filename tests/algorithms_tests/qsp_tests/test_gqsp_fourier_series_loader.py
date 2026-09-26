@@ -65,7 +65,7 @@ def test_gqsp_gaussian(n, alpha):
     # Run the simulation for n-qubit state
     res_dict = main(n, alpha)
 
-    # Convert the resulting measurement probabilities to amplitudes by appling the square root.
+    # Convert the resulting measurement probabilities to amplitudes by applying the square root.
     for k, v in res_dict.items():
         res_dict[k] = v**0.5
     y_val_sim = np.array([res_dict.get(key, 0) for key in range(2**n)])

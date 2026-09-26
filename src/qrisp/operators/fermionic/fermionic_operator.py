@@ -338,7 +338,7 @@ class FermionicOperator(Hamiltonian):
         Parameters
         ----------
         other : int, float, complex or FermionicOperator
-            A scalar or a FermionicOperator to substract from the operator self.
+            A scalar or a FermionicOperator to subtract from the operator self.
 
         Returns
         -------
@@ -349,7 +349,7 @@ class FermionicOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = FermionicOperator({FermionicTerm(): other})
         if not isinstance(other, FermionicOperator):
-            raise TypeError("Cannot substract FermionicOperator and " + str(type(other)))
+            raise TypeError("Cannot subtract FermionicOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
@@ -372,7 +372,7 @@ class FermionicOperator(Hamiltonian):
         Parameters
         ----------
         other : int, float, complex or FermionicOperator
-            A scalar or a FermionicOperator to substract from the operator self from.
+            A scalar or a FermionicOperator to subtract from the operator self from.
 
         Returns
         -------
@@ -383,7 +383,7 @@ class FermionicOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = FermionicOperator({FermionicTerm(): other})
         if not isinstance(other, FermionicOperator):
-            raise TypeError("Cannot substract FermionicOperator and " + str(type(other)))
+            raise TypeError("Cannot subtract FermionicOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
@@ -459,12 +459,12 @@ class FermionicOperator(Hamiltonian):
         return self
 
     def __isub__(self, other):
-        """Substracts other from the operator self.
+        """Subtracts other from the operator self.
 
         Parameters
         ----------
         other : int, float, complex or FermionicOperator
-            A scalar or a FermionicOperator to substract from the operator self.
+            A scalar or a FermionicOperator to subtract from the operator self.
 
         """
         if isinstance(other, (int, float, complex)):
@@ -666,7 +666,7 @@ class FermionicOperator(Hamiltonian):
         Returns
         -------
         callable
-            A function returning an array containing the expectaion value.
+            A function returning an array containing the expectation value.
 
         Examples
         --------
@@ -702,7 +702,7 @@ class FermionicOperator(Hamiltonian):
             print(ev_function(np.pi/2))
             # Yields: 0.5027499999999724
 
-        Similiarly, expectation values can be calculated with Jasp
+        Similarly, expectation values can be calculated with Jasp
 
         ::
 
@@ -737,7 +737,8 @@ class FermionicOperator(Hamiltonian):
         Parameters
         ----------
         forward_evolution, bool, optional
-            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.
+                If set to False $U(t)^\dagger = e^{itH}$ will be executed (useful for
+                quantum phase estimation). The default is True.
 
         Returns
         -------
@@ -750,7 +751,7 @@ class FermionicOperator(Hamiltonian):
 
                 e^{-itH}\approx U(t,N)=\left(e^{-iH_1t/N}\dotsb e^{-iH_mt/N}\right)^N
 
-            This function recieves the following arguments:
+            This function receives the following arguments:
 
             * qarg : QuantumVariable or QuantumArray
                 The quantum argument.

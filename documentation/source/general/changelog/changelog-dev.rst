@@ -368,6 +368,10 @@ Development
   after a module docstring)
   (`PR #811 <https://github.com/eclipse-qrisp/Qrisp/pull/811>`_).
 
+* Added ``codespell`` to the code style CI checks, enabling automated typo
+  checks, and to the ``dev-code-style`` optional dependency group.
+  (`PR #789 <https://github.com/eclipse-qrisp/Qrisp/pull/789>`_).
+
 * Added type hints across ``BlockEncoding`` and the ``QubitOperator``/
   ``Hamiltonian`` operator algebra. This exposed two latent bugs:
   ``BlockEncoding``'s constructor methods (``from_lcu``, ``from_operator``,

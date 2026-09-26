@@ -163,7 +163,7 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
             )
 
         # Idea: Use demux function to move operand and enabling bool into QuantumArray
-        # to execute indexs in parallel.
+        # to execute indices in parallel.
 
         # This QuantumArray acts as an addressable QRAM via the demux function
 
@@ -443,7 +443,7 @@ def _q_switch_q(index, branches, *operands, branch_amount=None, method="auto", i
 
         _, _, _ = x_fori_loop(0, -(-branch_amount // 2) - 1, body_fun, (anc, index, operands))
 
-        # Perfrom last leaf
+        # Perform last leaf
         x_cond(
             branch_amount % 2 == 0,
             lambda: leaf(n - 1, anc, index, branch_amount - 2, operands),

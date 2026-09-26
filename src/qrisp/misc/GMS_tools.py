@@ -260,7 +260,7 @@ def GXX_converter(qs):
         if ins.op.name in ["id", "qb_alloc", "qb_dealloc"]:
             continue
 
-        # If sinlge qubit gate => Collect phase
+        # If single qubit gate => Collect phase
         if len(ins.qubits) == 1:
             index = qubit_index_dic[ins.qubits[0]]
 
@@ -271,7 +271,7 @@ def GXX_converter(qs):
         index_0 = qubit_index_dic[ins.qubits[0]]
         index_1 = qubit_index_dic[ins.qubits[1]]
 
-        # Swap indices if neccessary such that the phase matrix is an upper triangle
+        # Swap indices if necessary such that the phase matrix is an upper triangle
         # matrix
         if index_0 >= index_1:
             temp = int(index_0)
@@ -435,7 +435,7 @@ def GZZ_converter(qs):
         if ins.op.name in ["id", "qb_alloc", "qb_dealloc"]:
             continue
 
-        # If sinlge qubit gate => Collect phase
+        # If single qubit gate => Collect phase
         if len(ins.qubits) == 1:
             index = qubit_index_dic[ins.qubits[0]]
 
@@ -446,7 +446,7 @@ def GZZ_converter(qs):
         index_0 = qubit_index_dic[ins.qubits[0]]
         index_1 = qubit_index_dic[ins.qubits[1]]
 
-        # Swap indices if neccessary such that the phase matrix is an upper triangle
+        # Swap indices if necessary such that the phase matrix is an upper triangle
         # matrix
         if index_0 >= index_1:
             temp = int(index_0)

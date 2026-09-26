@@ -86,7 +86,7 @@ def q_matmul(q_array_0, q_array_1, output_array=None, res_bit_shape="eq", phase_
         If set to True, the required gate count is reduced but each constellation of
         computational basis states of the inputs will introduce a different phase.
         This is helpful when it's clear that this function will be at some point
-        uncomputed, resulting in the cancelation of these phases. The default is False.
+        uncomputed, resulting in the cancellation of these phases. The default is False.
 
     Raises
     ------
@@ -471,7 +471,7 @@ def inplace_matrix_app(vector, matrix):
         # Save evaluation
         eval_eq.append(target_values[i])
 
-        # Find a column with invertible coeffiecient
+        # Find a column with invertible coefficient
         j = 0
         while True:
             # Determine that coefficient(can be done by differentiating the evaluating
@@ -496,7 +496,7 @@ def inplace_matrix_app(vector, matrix):
         subs_dic = {x[j]: eval_inverse}
 
         for k in range(i + 1, n):
-            # Substitue in the following equations
+            # Substitute in the following equations
             target_values[k] = target_values[k].subs(subs_dic).subs({ancilla_symbol: x[j]})
 
             # Truncate coefficients
@@ -560,7 +560,7 @@ def auto_matmul_wrapper(a, b, out=None):
         return semi_classic_matmul(b.transpose(), a.transpose(), out).transpose()
 
     else:
-        raise Exception("Could not proccess input constellation " + str(type(a)) + " and " + str(type(b)))
+        raise Exception("Could not process input constellation " + str(type(a)) + " and " + str(type(b)))
 
 
 def dot(a, b, out=None):
@@ -689,7 +689,7 @@ def tensordot(a, b, axes):
     >>> import numpy as np
     >>> from qrisp import QuantumFloat, QuantumArray, tensordot
 
-    Initiate the QuantumArray holding the statevector. We initate the state of uniform
+    Initiate the QuantumArray holding the statevector. We initiate the state of uniform
     superposition
 
     .. math::
@@ -781,21 +781,21 @@ def tensordot(a, b, axes):
 
     # Move the axes to sum over to the end of "a"
     # and to the front of "b"
-    notin = [k for k in range(nda) if k not in axes_a]
-    newaxes_a = notin + axes_a
+    not_in = [k for k in range(nda) if k not in axes_a]
+    newaxes_a = not_in + axes_a
     N2 = 1
     for axis in axes_a:
         N2 *= as_[axis]
-    newshape_a = (int(np.multiply.reduce([as_[ax] for ax in notin])), N2)
-    olda = [as_[axis] for axis in notin]
+    newshape_a = (int(np.multiply.reduce([as_[ax] for ax in not_in])), N2)
+    olda = [as_[axis] for axis in not_in]
 
-    notin = [k for k in range(ndb) if k not in axes_b]
-    newaxes_b = axes_b + notin
+    not_in = [k for k in range(ndb) if k not in axes_b]
+    newaxes_b = axes_b + not_in
     N2 = 1
     for axis in axes_b:
         N2 *= bs[axis]
-    newshape_b = (N2, int(np.multiply.reduce([bs[ax] for ax in notin])))
-    oldb = [bs[axis] for axis in notin]
+    newshape_b = (N2, int(np.multiply.reduce([bs[ax] for ax in not_in])))
+    oldb = [bs[axis] for axis in not_in]
 
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)

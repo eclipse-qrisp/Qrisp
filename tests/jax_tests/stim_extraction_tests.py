@@ -2097,7 +2097,7 @@ def test_detector_order_repetition_code():
     code_size = 4
     rounds = 3
 
-    def syndrom_round(data, ancilla):
+    def syndrome_round(data, ancilla):
         reset(ancilla)
         for i in range(ancilla.size):
             cx(data[i], ancilla[i])
@@ -2106,10 +2106,10 @@ def test_detector_order_repetition_code():
 
     def multi_round(data, ancilla, amount):
         parity_outcome_list = []
-        previous_meas_res = syndrom_round(data, ancilla)
+        previous_meas_res = syndrome_round(data, ancilla)
 
         for i in range(1, amount):
-            new_meas_res = syndrom_round(data, ancilla)
+            new_meas_res = syndrome_round(data, ancilla)
             detector_value = parity(new_meas_res, previous_meas_res, expectation=0)
             parity_outcome_list.append(detector_value)
             previous_meas_res = new_meas_res

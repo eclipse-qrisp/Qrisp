@@ -16,15 +16,15 @@ In practice, the exact eigenstate $\lambda_j$ is unknown, and one uses an approx
 
 $$\\ket{\\psi_0}=\\sum_j a_j\\ket{\\lambda_j}$$
 
-If the approximation $\ket{\psi_0}$ is sufficently close to the eigenstate $\ket{\lambda_j}$, the correct phase, and hence the eigenvalue $E_j$, is obtained with high probability.
+If the approximation $\ket{\psi_0}$ is sufficiently close to the eigenstate $\ket{\lambda_j}$, the correct phase, and hence the eigenvalue $E_j$, is obtained with high probability.
 
 
 Example Hydrogen
 ================
 
-We caluclate the ground state energy of the electronic Hamiltonian for the Hydrogen molecule with :ref:`Quantum Phase Estimation <QPE>`. 
+We calculate the ground state energy of the electronic Hamiltonian for the Hydrogen molecule with :ref:`Quantum Phase Estimation <QPE>`. 
 
-Utilizing symmetries, one can find a reduced two qubit Hamiltonian for the Hydrogen molecule. Frist, we define the Hamiltonian, and compute the 
+Utilizing symmetries, one can find a reduced two qubit Hamiltonian for the Hydrogen molecule. First, we define the Hamiltonian, and compute the 
 ground state energy classically.
 
 ::

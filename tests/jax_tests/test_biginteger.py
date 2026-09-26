@@ -29,7 +29,7 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic import (
     bi_montgomery_decode,
     bi_montgomery_encode,
 )
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
     BASE,
     bi_contfrac_best_approx,
     bi_contfrac_convergents,

@@ -181,7 +181,7 @@ def toposort_helper_dense(indptr, indices, node_amount, delay_nodes, prefered_no
     m = delay_nodes.size
 
     # This array will contain the ancestor relations between the
-    # prefered/delay nodes
+    # preferred/delay nodes
     dependency_matrix = np.zeros((n, m), dtype=np.int8)
 
     # Fill with information from ancestor_graph
@@ -225,12 +225,12 @@ def toposort_helper_dense(indptr, indices, node_amount, delay_nodes, prefered_no
             # Mark the nodes as processed
             remaining_nodes[ancestor_indices] = 0
 
-            # Update the depedency matrix: All delay nodes that have been processed
+            # Update the dependency matrix: All delay nodes that have been processed
             # don't need to be considered again for all following iterations,
             # we therefore remove them from the other columns
             dependency_matrix = np.clip(dependency_matrix - dependency_matrix[min_node_index, :], 0, 1)
 
-            # Finaly we set all nodes in the processed column to 1 so this column
+            # Finally we set all nodes in the processed column to 1 so this column
             # is not processed again.
             dependency_matrix[min_node_index, :] = 1
 
@@ -330,7 +330,7 @@ def toposort_helper_sparse(indptr, indices, node_amount, delay_nodes, prefered_n
     m = delay_nodes.size
 
     # This array will contain the ancestor relations between the
-    # prefered/delay nodes
+    # preferred/delay nodes
     dependency_matrix = np.zeros((n, m), dtype=np.int8)
 
     # Fill with information from ancestor_graph
@@ -374,12 +374,12 @@ def toposort_helper_sparse(indptr, indices, node_amount, delay_nodes, prefered_n
             # Mark the nodes as processed
             remaining_nodes[ancestor_indices] = 0
 
-            # Update the depedency matrix: All delay nodes that have been processed
+            # Update the dependency matrix: All delay nodes that have been processed
             # don't need to be considered again for all following iterations,
             # we therefore remove them from the other columns
             dependency_matrix = np.clip(dependency_matrix - dependency_matrix[min_node_index, :], 0, 1)
 
-            # Finaly we set all nodes in the processed column to 1 so this column
+            # Finally we set all nodes in the processed column to 1 so this column
             # is not processed again.
             dependency_matrix[min_node_index, :] = 1
 

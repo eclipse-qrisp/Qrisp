@@ -327,7 +327,7 @@ class QubitOperator(Hamiltonian):
         Parameters
         ----------
         other : int, float, complex or QubitOperator
-            A scalar or a QubitOperator to substract from the operator self.
+            A scalar or a QubitOperator to subtract from the operator self.
 
         Returns
         -------
@@ -338,7 +338,7 @@ class QubitOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = QubitOperator({QubitTerm(): other})
         if not isinstance(other, QubitOperator):
-            raise TypeError("Cannot substract QubitOperator and " + str(type(other)))
+            raise TypeError("Cannot subtract QubitOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
@@ -361,7 +361,7 @@ class QubitOperator(Hamiltonian):
         Parameters
         ----------
         other : int, float, complex or QubitOperator
-            A scalar or a QubitOperator to substract the operator self from.
+            A scalar or a QubitOperator to subtract the operator self from.
 
         Returns
         -------
@@ -372,7 +372,7 @@ class QubitOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = QubitOperator({QubitTerm(): other})
         if not isinstance(other, QubitOperator):
-            raise TypeError("Cannot substract QubitOperator and " + str(type(other)))
+            raise TypeError("Cannot subtract QubitOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
@@ -448,12 +448,12 @@ class QubitOperator(Hamiltonian):
         return self
 
     def __isub__(self, other):
-        """Substracts other from the operator self.
+        """Subtracts other from the operator self.
 
         Parameters
         ----------
         other : int, float, complex or QubitOperator
-            A scalar or a QubitOperator to substract from the operator self.
+            A scalar or a QubitOperator to subtract from the operator self.
 
         """
         if isinstance(other, (int, float, complex)):
@@ -1163,7 +1163,7 @@ class QubitOperator(Hamiltonian):
         if not check_for_tracing_mode() and len(qarg) < n:
             raise Exception("Tried to change the basis of an Operator on a quantum argument with insufficient qubits.")
 
-        # This dictionary will contain the new terms/coefficient comination for the
+        # This dictionary will contain the new terms/coefficient combination for the
         # diagonal operator
         new_terms_dict = {}
 
@@ -1221,7 +1221,7 @@ class QubitOperator(Hamiltonian):
                     new_factor_dict[j] = "Z"
 
         if method == "commuting":
-            # Calculate S: Matrix where the colums correspond to the binary representation (Z/X) of the Pauli terms
+            # Calculate S: Matrix where the columns correspond to the binary representation (Z/X) of the Pauli terms
             x_vectors = []
             z_vectors = []
             for term, coeff in self.terms_dict.items():
@@ -1231,7 +1231,7 @@ class QubitOperator(Hamiltonian):
             x_matrix = np.stack(x_vectors, axis=1)
             z_matrix = np.stack(z_vectors, axis=1)
 
-            # Find qubits (rows) on which Pauli X,Y,Z operatos act
+            # Find qubits (rows) on which Pauli X,Y,Z operators act
             qb_indices = []
             for k in range(n):
                 if not (np.all(x_matrix[k] == 0) and np.all(z_matrix[k] == 0)):
@@ -1292,7 +1292,9 @@ class QubitOperator(Hamiltonian):
                     #
                     # Consider product of stabilizers S_{i_1}*S_{i_2}*...*S_{i_m} with (w.l.o.g.) i_1<i_2<...<i_m
                     # For each i: Swap X_i with all Z_i's from stabilizers if index > i such that all Z_i's are on the left of X_i
-                    # Calculate the paritiy n1 of the sum of the numbers of 1's with position j>i for each row of the square submatrix A defined by z_vector
+                    # Calculate the parity n1 of the sum of the numbers of 1's with
+                    # position j>i for each row of the square submatrix A defined by
+                    # z_vector
                     # Yields a factor (-1)^n1
 
                     n1 = sum((z_vector @ A_low) * z_vector) % 2
@@ -1372,7 +1374,7 @@ class QubitOperator(Hamiltonian):
 
     def get_conjugation_circuit(self):
         # This method returns a QuantumCircuit that should be applied
-        # before a measurement of self is peformed.
+        # before a measurement of self is performed.
         # The method assumes that all terms within this Operator commute qubit-
         # wise. For instance, if an X operator is supposed to be measured,
         # the conjugation circuit will contain an H gate at that point,
@@ -1610,7 +1612,7 @@ class QubitOperator(Hamiltonian):
         Returns
         -------
         callable
-            A function returning an array containing the expectaion value.
+            A function returning an array containing the expectation value.
 
         Examples
         --------
@@ -1646,7 +1648,7 @@ class QubitOperator(Hamiltonian):
             print(ev_function(np.pi/2))
             # Yields: 0.010126265783222899
 
-        Similiarly, expectation values can be calculated with Jasp
+        Similarly, expectation values can be calculated with Jasp
 
         ::
 
@@ -1779,7 +1781,8 @@ class QubitOperator(Hamiltonian):
             Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
             The default is ``commuting_qw``.
         forward_evolution : bool, optional
-            If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is ``True``.
+                If set to False $U(t)^\dagger = e^{itH}$ will be executed (useful for
+                quantum phase estimation). The default is ``True``.
 
         Returns
         -------
@@ -1961,7 +1964,8 @@ class QubitOperator(Hamiltonian):
         Parameters
         ----------
         forward_evolution : bool, optional
-            If set to False, $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is True.
+                If set to False, $U(t)^\dagger = e^{itH}$ will be executed (useful for
+                quantum phase estimation). The default is True.
 
         Returns
         -------
@@ -2071,7 +2075,6 @@ class QubitOperator(Hamiltonian):
         making it a powerful tool for large-scale quantum simulations with bounded resources.
 
         """
-
         # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
         # We create a list of term.simulate functions for all terms in the operator
         # and use the q_switch with classical index to apply the j-th function
@@ -2120,14 +2123,16 @@ class QubitOperator(Hamiltonian):
 
             H = \sum_{i=0}^{M-1}\alpha_iP_i
 
-        where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corressponding to a phase shift).
+            where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are
+            Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries
+            a $\pm1$ sign (corresponding to a phase shift).
 
         Returns
         -------
         list[callable]
             A list of functions performing the Pauli unitaries on a :ref:`QuantumVariable` for the terms in the Pauli Hamiltonian.
         numpy.ndarray
-            An array of nonnegative coefficents for the terms in the Pauli Hamiltonian.
+            An array of nonnegative coefficients for the terms in the Pauli Hamiltonian.
 
         Examples
         --------
