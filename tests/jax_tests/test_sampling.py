@@ -309,8 +309,7 @@ def _pp_sum(x, y):
 
 
 class TestClassicalAndMixedReturns:
-    """Tests for sample() and expectation_value() with classical and mixed
-    (quantum + classical) returns, and terminal-sampling rejection."""
+    """Tests for sample() and expectation_value() with classical/mixed returns and terminal-sampling rejection."""
 
     import jax.numpy as jnp
     import pytest

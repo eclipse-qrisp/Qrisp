@@ -1,22 +1,22 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines ConjugationEnvironment and ConjugatedOperation for performing efficient conjugated operations."""
 
 import jax
-from jax.extend.core import JaxprEqn
 
 from qrisp.circuit import Operation
 from qrisp.core.session_merging_tools import merge, recursive_qs_search
@@ -236,7 +236,7 @@ class ConjugationEnvironment(QuantumEnvironment):
         # to properly set the ctrl_jaspr attribute to reflect the
         # controlled version: U^\dagger cV U
 
-        from qrisp.jasp import extract_invalues, insert_outvalues
+        from qrisp.jasp import copy_jaxpr_eqn, extract_invalues, insert_outvalues
 
         args = extract_invalues(eqn, context_dic)
         body_jaspr = eqn.params["jaspr"]
@@ -431,15 +431,3 @@ class PJITEnvironment(QuantumEnvironment):
             res = (res,)
 
         insert_outvalues(eqn, context_dic, res)
-
-
-def copy_jaxpr_eqn(jaxpr_eqn):
-    return JaxprEqn(
-        invars=list(jaxpr_eqn.invars),
-        outvars=list(jaxpr_eqn.outvars),
-        params=dict(jaxpr_eqn.params),
-        primitive=jaxpr_eqn.primitive,
-        effects=jaxpr_eqn.effects,
-        source_info=jaxpr_eqn.source_info,
-        ctx=jaxpr_eqn.ctx,
-    )

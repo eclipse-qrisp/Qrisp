@@ -31,7 +31,11 @@ from qrisp.jasp import terminal_sampling
 ##################### Dicke state tests #####################
 #############################################################
 
+# Every Dicke state test is run with both preparation methods.
+DICKE_METHODS = ["deterministic", "divide-and-conquer"]
 
+
+@pytest.mark.parametrize("method", DICKE_METHODS)
 @pytest.mark.parametrize(
     "n, k",
     [
@@ -40,13 +44,13 @@ from qrisp.jasp import terminal_sampling
         (1, 1),
     ],
 )
-def test_dicke_state_balanced(n, k):
+def test_dicke_state_balanced(n, k, method):
     # n - Number of qubits
     # k - Excitations
     # Prepare balanced Dicke state
     qv = QuantumVariable(n)
     x(qv[n - 1])
-    dicke_state(qv, k)
+    dicke_state(qv, k, method=method)
     prepared_sv = qv.qs.compile().statevector_array()
 
     # Manual expected state:
@@ -59,7 +63,28 @@ def test_dicke_state_balanced(n, k):
     assert np.allclose(prepared_sv, expected_sv, atol=1e-6)
 
 
-def test_dicke_state_balanced_jasp():
+@pytest.mark.parametrize("method", DICKE_METHODS)
+@pytest.mark.parametrize("n, k", [(4, 2), (3, 2), (5, 3)])
+def test_dicke_state_statevector(n, k, method):
+    # Same as above for k > 1, where the amplitudes (and not just the
+    # probabilities) of the individual branches have to line up.
+    qv = QuantumVariable(n)
+    for i in range(n - k, n):
+        x(qv[i])
+    dicke_state(qv, k, method=method)
+
+    sv = qv.qs.statevector("function")
+    expected_amplitude = 1 / np.sqrt(math.comb(n, k))
+
+    # Go over all bitstrings and check the amplitude for each of them.
+    for i in range(2**n):
+        actual_amplitude = sv({qv: qv.decoder(i)})
+        # The amplitude should be equal to `expected_amplitude` if the bitstring has Hamming weight `k` and 0 otherwise.
+        assert np.isclose(actual_amplitude, expected_amplitude * (bin(i).count("1") == k), atol=1e-6)
+
+
+@pytest.mark.parametrize("method", DICKE_METHODS)
+def test_dicke_state_balanced_jasp(method):
     n = 3  # Number of qubits
     k = 1  # Excitations
 
@@ -68,7 +93,7 @@ def test_dicke_state_balanced_jasp():
     def main():
         qv = QuantumVariable(n)
         x(qv[n - 1])
-        dicke_state(qv, k)
+        dicke_state(qv, k, method=method)
         return qv
 
     result = main()
@@ -86,7 +111,8 @@ def test_dicke_state_balanced_jasp():
     assert np.allclose(res_arr, expected_arr, atol=1e-6)
 
 
-def test_dicke_state_balanced_jasp_inverse():
+@pytest.mark.parametrize("method", DICKE_METHODS)
+def test_dicke_state_balanced_jasp_inverse(method):
     n = 3  # Number of qubits
     k = 1  # Excitations
 
@@ -95,10 +121,10 @@ def test_dicke_state_balanced_jasp_inverse():
     def main():
         qv = QuantumVariable(n)
         x(qv[n - 1])
-        dicke_state(qv, k)
+        dicke_state(qv, k, method=method)
         with invert():
             x(qv[n - 1])
-            dicke_state(qv, k)
+            dicke_state(qv, k, method=method)
         return qv
 
     result = main()
@@ -114,14 +140,74 @@ def test_dicke_state_balanced_jasp_inverse():
     assert np.allclose(res_arr, expected_arr, atol=1e-6)
 
 
-@pytest.mark.parametrize("n, k", [(4, 2), (5, 3), (6, 5), (3, 3), (1, 1)])
-def test_dicke_state_k(n, k):
+def test_dicke_state_jasp_large_k_divide_and_conquer():
+    n = 4  # Number of qubits
+    k = 3  # Excitations
+
+    # For k > n/2 the state is prepared as D(n, n-k) and then inverted. Under
+    # Jasp that reduction is traced, so it needs its own test.
+    @terminal_sampling
+    def main():
+        qv = QuantumVariable(n)
+        for i in range(n - k, n):
+            x(qv[i])
+        dicke_state(qv, k, method="divide-and-conquer")
+        return qv
+
+    result = main()
+
+    res_arr = np.zeros(2**n)
+    for key in result:
+        res_arr[int(key)] = result[key]
+
+    # Manual expected measurement:
+    expected_arr = np.zeros(2**n)
+    for i in range(2**n):
+        if bin(i).count("1") == k:
+            expected_arr[i] = 1 / math.comb(n, k)
+
+    assert np.allclose(res_arr, expected_arr, atol=1e-6)
+
+
+@pytest.mark.parametrize("n, k", [(4, 2), (5, 3)])
+def test_dicke_state_methods_agree(n, k):
+    # Preparing with one method and uncomputing with the other has to return
+    # the variable to its initial state. Unlike a comparison of measurement
+    # probabilities, this also detects a phase mismatch between the two.
+    @terminal_sampling
+    def main():
+        qv = QuantumVariable(n)
+        for i in range(n - k, n):
+            x(qv[i])
+        dicke_state(qv, k, method="deterministic")
+        with invert():
+            for i in range(n - k, n):
+                x(qv[i])
+            dicke_state(qv, k, method="divide-and-conquer")
+        return qv
+
+    result = main()
+
+    res_arr = np.zeros(2**n)
+    for key in result:
+        res_arr[int(key)] = result[key]
+
+    # Manual expected measurement:
+    expected_arr = np.zeros(2**n)
+    expected_arr[0] = 1
+
+    assert np.allclose(res_arr, expected_arr, atol=1e-6)
+
+
+@pytest.mark.parametrize("method", DICKE_METHODS)
+@pytest.mark.parametrize("n, k", [(4, 2), (5, 3), (6, 5), (3, 3), (1, 1), (5, 0)])
+def test_dicke_state_k(n, k, method):
     qv = QuantumVariable(n)
 
     for i in range(n - k, n):
         x(qv[i])
 
-    dicke_state(qv, k)
+    dicke_state(qv, k, method=method)
 
     res = qv.get_measurement()
 
@@ -139,6 +225,127 @@ def test_dicke_state_k(n, k):
 
         assert bitstring.count("1") == k
         assert np.isclose(prob, expected_prob, atol=1e-6)
+
+
+@pytest.mark.parametrize(
+    "n, k, l",
+    [
+        (2, 2, 1),
+        (3, 3, 0),
+        (3, 3, 1),
+        (3, 3, 2),
+        (4, 3, 1),
+        (4, 3, 2),
+        (5, 3, 2),
+        (5, 4, 2),
+        (6, 4, 2),
+        (6, 5, 3),
+    ],
+)
+def test_dicke_state_deterministic_lower_hamming_weight(n, k, l):
+    # The deterministic method applies the Dicke state unitary U_{n,k}, which
+    # is defined by U_{n,k} |0...01...1> = |D^n_l> for *every* l <= k and not
+    # just for l == k (arXiv:2112.12435, Eq. 2). Divide-and-conquer is a state
+    # preparation circuit rather than a Dicke state unitary and assumes a
+    # Hamming weight of exactly k, hence deterministic only.
+    qv = QuantumVariable(n)
+    for i in range(n - l, n):
+        x(qv[i])
+
+    dicke_state(qv, k, method="deterministic")
+
+    prepared_sv = qv.qs.compile().statevector_array()
+    populated = np.flatnonzero(~np.isclose(prepared_sv, 0, atol=1e-6))
+
+    # Manual expected state:
+    # |D^n_l> = equal superposition of all basis states of Hamming weight l.
+    assert len(populated) == math.comb(n, l)
+    assert all(bin(i).count("1") == l for i in populated)
+    assert np.allclose(prepared_sv[populated], 1 / np.sqrt(math.comb(n, l)), atol=1e-6)
+
+
+@pytest.mark.parametrize("n, k, l", [(4, 3, 1), (5, 4, 2), (6, 5, 3)])
+def test_dicke_state_deterministic_lower_hamming_weight_jasp(n, k, l):
+    # Same property under Jasp. k > n/2 combined with l < k is the case that a
+    # k -> n-k reduction inside dicke_state would silently break.
+    @terminal_sampling
+    def main():
+        qv = QuantumVariable(n)
+        for i in range(n - l, n):
+            x(qv[i])
+        dicke_state(qv, k, method="deterministic")
+        return qv
+
+    result = main()
+
+    res_arr = np.zeros(2**n)
+    for key in result:
+        res_arr[int(key)] = result[key]
+
+    # Manual expected measurement:
+    expected_arr = np.zeros(2**n)
+    for i in range(2**n):
+        if bin(i).count("1") == l:
+            expected_arr[i] = 1 / math.comb(n, l)
+
+    assert np.allclose(res_arr, expected_arr, atol=1e-6)
+
+
+@pytest.mark.parametrize("n, k, l", [(4, 2, 1), (5, 3, 2), (6, 4, 3)])
+def test_dicke_state_deterministic_superposition(n, k, l):
+    # U_{n,k} is a unitary, so the property above has to survive on
+    # superpositions: (|0...01^l> + |0...01^(l+1)>) / sqrt(2) has to come out
+    # as (|D^n_l> + |D^n_(l+1)>) / sqrt(2), relative phase included. This is
+    # what a caller assembling symmetric states actually relies on.
+    qv = QuantumVariable(n)
+    for i in range(n - l, n):
+        x(qv[i])
+    h(qv[n - l - 1])
+
+    dicke_state(qv, k, method="deterministic")
+
+    prepared_sv = qv.qs.compile().statevector_array()
+    populated = np.flatnonzero(~np.isclose(prepared_sv, 0, atol=1e-6))
+
+    # Manual expected state:
+    # every basis state of Hamming weight l or l+1, carrying a real, positive
+    # amplitude of 1 / sqrt(2 binom(n, weight)).
+    assert len(populated) == math.comb(n, l) + math.comb(n, l + 1)
+
+    for i in populated:
+        weight = bin(i).count("1")
+        assert weight in (l, l + 1)
+        assert np.isclose(prepared_sv[i], 1 / np.sqrt(2 * math.comb(n, weight)), atol=1e-6)
+
+
+def test_dicke_state_fail_unknown_method():
+    n = 3  # Number of qubits
+    k = 1  # Excitations
+
+    qv = QuantumVariable(n)
+    x(qv[n - 1])
+
+    with pytest.raises(ValueError) as exc_info:
+        dicke_state(qv, k, method="divide_and_conquer")
+
+    assert "Unknown `method`" in str(exc_info.value)
+
+
+@pytest.mark.parametrize("n, k", [(8, 2), (12, 3)])
+def test_dicke_state_divide_and_conquer_depth(n, k):
+    # The divide-and-conquer method prepares the two halves of the variable on
+    # disjoint qubits, so they are applied in parallel and the circuit depth is
+    # roughly halved compared to the deterministic method.
+    depths = {}
+
+    for method in DICKE_METHODS:
+        qv = QuantumVariable(n)
+        for i in range(n - k, n):
+            x(qv[i])
+        dicke_state(qv, k, method=method)
+        depths[method] = qv.qs.compile().depth()
+
+    assert depths["divide-and-conquer"] < 0.8 * depths["deterministic"]  # 0.8 is a conservative upper bound.
 
 
 ##############################################################

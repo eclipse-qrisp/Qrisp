@@ -257,6 +257,86 @@ def test_parity_catalyst_with_scan():
     assert jnp.array_equal(result, expected), f"Expected {expected}, got {result}"
 
 
+def test_scan_catalyst_num_carry_one():
+    """Test that a jax.lax.scan with a single (non-tuple) carry compiles under qjit.
+
+    Regression test for two bugs found and fixed in evaluate_scan_under_trace
+    (control_flow_interpretation.py), both specific to num_carry == 1 (a bare,
+    non-tuple carry): an unguarded list(carry) call that crashed with
+    "TypeError: iteration over a 0-d array", and a carry/pytree structure
+    mismatch between scan's input and output that crashed with a jax.lax.scan
+    structure-mismatch error.
+    """
+    try:
+        import catalyst
+    except ModuleNotFoundError:
+        return
+
+    import jax
+    import jax.numpy as jnp
+
+    @qjit
+    def test_scan_under_qjit():
+        qv = QuantumVariable(3)
+        x(qv[0])
+        x(qv[2])
+
+        m0 = measure(qv[0])
+        m1 = measure(qv[1])
+        m2 = measure(qv[2])
+
+        init_carry = jnp.int64(m0) + jnp.int64(m1) + jnp.int64(m2)
+        xs = jnp.array([1, 2, 3], dtype=jnp.int64)
+
+        def body(carry, xi):
+            return carry + xi, carry
+
+        # init_carry is a bare scalar, not a tuple -> num_carry == 1
+        final_carry, _ = jax.lax.scan(body, init_carry, xs)
+        return final_carry
+
+    result = test_scan_under_qjit()
+    assert result == 8, f"Expected 8, got {result}"
+
+
+def test_nested_jit_with_closure_in_qjit():
+    """Regression test for nested jitted (jit) equations whose jaxpr carries
+    non-empty consts (closed-over array values). Previously,
+    ``get_traced_fun`` in ``catalyst_interpreter.py`` called
+    ``eval_jaxpr(catalyst_jaxpr.jaxpr, [], *args)``, always passing an empty
+    consts list. This raises
+    ``ValueError: foreach() argument 2 is shorter than argument 1`` whenever
+    the converted sub-jaxpr actually has constvars.
+
+    A plain ``jax.jit`` closing over a Python int/scalar does not reproduce
+    this, because such values get embedded as jaxpr literals rather than
+    consts. Closing over a >1-element array and indexing into it (as happens
+    e.g. inside ``qache``-d functions that reference module-level coefficient
+    arrays) reliably produces a sub-jaxpr with non-empty constvars/consts.
+    """
+    try:
+        import catalyst
+    except ModuleNotFoundError:
+        return
+
+    import jax.numpy as jnp
+
+    angles = jnp.array([0.1, 0.2, 0.3])
+
+    @qache
+    def apply_rotation(qf):
+        ry(angles[0], qf[0])
+        return measure(qf[0])
+
+    @qjit
+    def main():
+        qf = QuantumFloat(2)
+        return apply_rotation(qf)
+
+    # Must not raise ValueError: foreach() argument 2 is shorter than argument 1
+    main()
+
+
 def test_qjit_pytree():
     """Test that qjit preserves PyTree structure in return values."""
     try:
