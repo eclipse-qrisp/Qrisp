@@ -367,9 +367,10 @@ def cuccaro_adder(
 
     # convert the classical input to a quantum input
     if not _is_quantum_register(a):
-        # truncate the classical value modulo 2**len(b) so that values larger than the
-        # target register are handled via modulo addition (as documented above)
-        a = a % (1 << jlen(b))
+        # int_encoder reads only the target's bits while tracing. In static mode,
+        # truncate here because int_encoder rejects values wider than the register.
+        if not check_for_tracing_mode():
+            a = a % (1 << jlen(b))
 
         # create a quantum variable of the same size as the other quantum input
         q_a = QuantumVariable(jlen(b))
