@@ -16,21 +16,10 @@
 
 """Implements the Cuccaro ripple-carry in-place adder for quantum and classical-quantum addition."""
 
-from __future__ import annotations
-
 import functools
 from numbers import Integral
-from typing import TYPE_CHECKING
 
 import jax.numpy as jnp
-
-# BigInteger is only used in type hints (lazy-evaluated thanks to
-# ``from __future__ import annotations``) and never at runtime. Importing it at
-# module level can trigger a circular import.
-if TYPE_CHECKING:  # noqa
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-        BigInteger,
-    )  # noqa
 
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import _is_quantum_register
 from qrisp.circuit import Qubit
@@ -191,7 +180,7 @@ def _uncompute_c_in(c_in, ancilla):
 
 @custom_control
 def cuccaro_adder(
-    a: int | str | BigInteger | QuantumVariable | DynamicQubitArray | list,
+    a: int | str | QuantumVariable | DynamicQubitArray | list,
     b: QuantumVariable | DynamicQubitArray | list,
     c_in: QuantumBool | Qubit | None = None,
     c_out: QuantumBool | Qubit | None = None,
@@ -215,10 +204,10 @@ def cuccaro_adder(
 
     Parameters
     ----------
-    a : int, str, BigInteger, QuantumVariable, list[Qubit] or DynamicQubitArray
+    a : int, str, QuantumVariable, list[Qubit] or DynamicQubitArray
         The value that should be added. A ``str`` is interpreted as a
         little-endian binary string (``"10"`` means bit 0 is 1, i.e. the value
-        1). A ``BigInteger`` is only supported in dynamic (tracing) mode.
+        1).
     b : QuantumVariable or list[Qubit] or DynamicQubitArray
         The value that should be modified in the in-place addition.
     c_in : QuantumBool or Qubit, optional
@@ -235,8 +224,8 @@ def cuccaro_adder(
         If carry in, carry out or control is not of type QuantumBool or Qubit in
         static mode.
     TypeError
-        If the first argument is classical but not an integer, binary string or
-        BigInteger in static mode.
+        If the first argument is classical but not an integer or binary string
+        in static mode.
     ValueError
         If the first argument is a ``str`` that is not a valid binary string.
     ValueError
@@ -498,18 +487,6 @@ def cuccaro_adder(
     >>> main()
     Array(9., dtype=float64)
 
-    A classical ``BigInteger`` addend is supported in dynamic mode too:
-
-    >>> from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-    >>> @jaspify
-    ... def main():
-    ...     b = QuantumFloat(4)
-    ...     b[:] = 3
-    ...     cuccaro_adder(BigInteger.create(5, 1), b)
-    ...     return measure(b)
-    >>> main()
-    Array(8., dtype=float64)
-
     """
     # The second argument is required to be a (non-empty) quantum register
     if not _is_quantum_register(b) or (isinstance(b, list) and len(b) == 0):
@@ -534,8 +511,7 @@ def cuccaro_adder(
         if not check_for_tracing_mode():
             if not isinstance(a, Integral):
                 raise TypeError(
-                    "a must be of type int, str, BigInteger, QuantumVariable, "
-                    f"DynamicQubitArray or list[Qubit], not {type(a)}"
+                    f"a must be of type int, str, QuantumVariable, DynamicQubitArray or list[Qubit], not {type(a)}"
                 )
             a = a % (1 << jlen(b))
 

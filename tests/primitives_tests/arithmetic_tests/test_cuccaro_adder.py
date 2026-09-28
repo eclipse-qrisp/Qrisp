@@ -32,7 +32,6 @@ from qrisp import (
     measure,
     x,
 )
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.circuit import Qubit
 from qrisp.misc import int_encoder
 
@@ -111,7 +110,7 @@ def test_cuccaro_adder_static_ctrl_qubit():
 
 
 def test_cuccaro_adder_static_classical_a_type_error():
-    """TypeError when the classical addend is not an int, str or BigInteger."""
+    """TypeError when the classical addend is not an int or str."""
     b = QuantumFloat(4)
     b[:] = 3
     for bad_a in (1.5, 2j, None):
@@ -280,7 +279,7 @@ def test_cuccaro_adder_static_classical_a_larger_than_b(b_is_list):
     assert b.get_measurement() == {7: 1.0}  # (5 + 10) % 8
 
 
-# -- binary string / BigInteger classical addends -----------------------------
+# -- binary string classical addends ------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -330,19 +329,6 @@ def test_cuccaro_adder_dynamic_binary_string():
         return measure(b)
 
     assert add(4, 3) == 5 + 3
-
-
-def test_cuccaro_adder_dynamic_biginteger():
-    """BigInteger addend in dynamic mode."""
-
-    @boolean_simulation
-    def add(bits, a_num, b_val):
-        b = QuantumFloat(bits)
-        b[:] = b_val
-        cuccaro_adder(BigInteger.create(a_num, 1), b)
-        return measure(b)
-
-    assert add(4, 5, 3) == 5 + 3
 
 
 # -- other quantum types ------------------------------------------------------
