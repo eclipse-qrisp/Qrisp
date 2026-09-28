@@ -205,7 +205,140 @@ def _q_switch_parallel(  # noqa: PLR0913, PLR0917
     enable.delete()
 
 
-def _q_switch_tree(  # noqa: PLR0913, PLR0915, PLR0917
+def _x_cond(pred, true_fun, false_fun, *args):
+    """Branch on ``pred``, tracing through q_cond only when it is a traced value.
+
+    In Jasp mode many predicates of the tree walk are nonetheless plain Python
+    values: the depth guards in the statically unrolled parts of the walk, the leaf
+    selection when the index is known, and ``branch_amount`` whenever the caller
+    passed an int. For those, q_cond would trace both arms and discard one, so the
+    arm is picked directly instead. A traced ``branch_amount`` still goes through
+    q_cond.
+    """
+    if isinstance(pred, jax.core.Tracer):
+        return q_cond(pred, true_fun, false_fun, *args)
+    return true_fun(*args) if pred else false_fun(*args)
+
+
+def _python_fori_loop(lower, upper, body_fun, init_val):
+    """Non-traced counterpart of q_fori_loop."""
+    val = init_val
+    for i in range(lower, upper):
+        val = body_fun(i, val)
+    return val
+
+
+def _bitwise_count_diff(a, b):
+    """Count the bits in which ``a`` and ``b`` differ."""
+    xp = jnp if check_for_tracing_mode() else np
+    return xp.int32(xp.bitwise_count(xp.bitwise_xor(a, b)))
+
+
+def _padding_branch(*args):
+    """No-op branch that pads an odd branch list to the even length the tree walk needs.
+
+    It takes ``*args`` because branches are invoked with every operand.
+    """
+
+
+def _call_list_branches(i, branches, stride, apply):
+    """Call ``apply(branches[i], ..., branches[i + stride - 1])`` for a possibly traced ``i``.
+
+    A concrete ``i`` indexes the list directly. A traced one cannot, so every
+    candidate position ``j`` is emitted under a q_cond on ``j == i``.
+    """
+    if not isinstance(i, jax.core.Tracer):
+        apply(*(branches[i + k] for k in range(stride)))
+        return
+    for j in range(0, len(branches), stride):
+        q_cond(j == i, apply, lambda *_: None, *branches[j : j + stride])
+
+
+# The arms handed to q_cond below are full functions rather than lambdas: q_cond
+# requires both arms to return the same pytree, and a lambda would return the
+# gate's own return value while the other arm returns None.
+def _toggle_from_parent(anc, target, parent, ctrl):
+    """Flip ``anc[target]`` conditioned on its parent node ``anc[parent]``.
+
+    ``parent == -1`` means ``target`` is the root of the tree and has no parent, so
+    the flip is unconditional -- or conditioned on ``ctrl`` alone when the whole
+    switch is controlled.
+    """
+
+    def at_root():
+        if ctrl is None:
+            x(anc[target])
+        else:
+            cx(ctrl, anc[target])
+
+    def below_parent():
+        cx(anc[parent], anc[target])
+
+    _x_cond(parent == -1, at_root, below_parent)
+
+
+def _toggle_from_parent_and_index(anc, index_qubit, target, parent, ctrl):
+    """Flip ``anc[target]`` conditioned on ``anc[parent]`` and ``index_qubit``.
+
+    As above, ``parent == -1`` means there is no parent node to condition on.
+    """
+
+    def at_root():
+        if ctrl is None:
+            cx(index_qubit, anc[target])
+        else:
+            mcx([index_qubit, ctrl], anc[target])
+
+    def below_parent():
+        mcx([index_qubit, anc[parent]], anc[target])
+
+    _x_cond(parent == -1, at_root, below_parent)
+
+
+def _bounce(anc, index, n, d, ctrl):
+    """Cross to the sibling subtree at depth ``d`` of a tree over ``n`` index qubits.
+
+    Retargets the node one level up, then descends again on the index qubit for
+    this depth.
+    """
+    _toggle_from_parent(anc, d - 1, d - 2, ctrl)
+    with control(anc[d - 1]):
+        x(anc[d])
+    _toggle_from_parent_and_index(anc, index[n - 1 - d], d, d - 2, ctrl)
+
+
+def _down(anc, index, n, d, ctrl):
+    """Descend into the zero child at depth ``d``.
+
+    The surrounding x gates flip the index qubit so that the toggle triggers on it
+    being 0 rather than 1.
+    """
+    x(index[n - 1 - d])
+    _toggle_from_parent_and_index(anc, index[n - 1 - d], d, d - 1, ctrl)
+    x(index[n - 1 - d])
+
+
+def _up(anc, index, n, d, ctrl):
+    """Ascend out of the one child at depth ``d``; the inverse of the toggle in _down."""
+    _toggle_from_parent_and_index(anc, index[n - 1 - d], d, d - 1, ctrl)
+
+
+def _apply_leaf_pair(anc, d, first, second, operands, ctrl):  # noqa: PLR0913, PLR0917
+    """Apply ``first`` at the even leaf below ``anc[d]``, move to its odd sibling and apply ``second``."""
+    with control(anc[d]):
+        first(*operands)
+    _toggle_from_parent(anc, d, d - 1, ctrl)
+    with control(anc[d]):
+        second(*operands)
+
+
+def _apply_last_leaf(anc, d, branch, operands):
+    """Apply ``branch`` at the leaf below ``anc[d]`` without moving on to a sibling."""
+    with control(anc[d]):
+        branch(*operands)
+
+
+def _q_switch_tree(  # noqa: PLR0913, PLR0917
     index: _Index,
     branches: _Branches,
     operands: tuple[QuantumVariable, ...],
@@ -220,244 +353,94 @@ def _q_switch_tree(  # noqa: PLR0913, PLR0915, PLR0917
     adjacent leaves rather than re-deriving each path from scratch, which keeps the
     gate count far below the linear scan of the sequential method.
     """
-    # Jasp mode
-    #
     # The tree walk is driven by the index width n = index.size, and in Jasp a
     # QuantumVariable's size is always a tracer -- even for a literally sized
     # QuantumFloat(3). The loops over n therefore have to be jrange, and the
     # depths they derive are traced values. Replacing them with a plain range
     # raises TracerIntegerConversionError.
-    #
-    # Many predicates are nonetheless plain Python values: the depth guards in
-    # the statically unrolled parts of the walk, the leaf selection when the
-    # index is known, and branch_amount whenever the caller passed an int. For
-    # those, q_cond would trace both arms and discard one. x_cond below picks
-    # the arm directly instead, which is what the non-traced definition further
-    # down already does, and falls back to q_cond for genuinely traced
-    # predicates -- including a traced branch_amount.
     if check_for_tracing_mode():
-        xrange = jrange
-        x_fori_loop = q_fori_loop
-
-        def x_cond(pred, true_fun, false_fun, *operands):
-            if isinstance(pred, jax.core.Tracer):
-                return q_cond(pred, true_fun, false_fun, *operands)
-            return true_fun(*operands) if pred else false_fun(*operands)
-
-        def bitwise_count_diff(a, b):
-            return jnp.int32(jnp.bitwise_count(jnp.bitwise_xor(a, b)))
-
-    # Normal mode
+        xrange, x_fori_loop = jrange, q_fori_loop
     else:
-        xrange = range
-
-        def x_fori_loop(lower, upper, body_fun, init_val):
-            val = init_val
-            for i in range(lower, upper):
-                val = body_fun(i, val)
-            return val
-
-        def x_cond(pred, true_fun, false_fun, *operands):
-            if pred:
-                return true_fun(*operands)
-            return false_fun(*operands)
-
-        def bitwise_count_diff(a, b):
-            return np.int32(np.bitwise_count(np.bitwise_xor(a, b)))
+        xrange, x_fori_loop = range, _python_fori_loop
 
     n = len(index) if isinstance(index, list) else index.size
 
-    # The gate calls below are wrapped so that the lambdas handed to x_cond
-    # never close over a name that a surrounding scope rebinds.
-    def nor_x(t):
-        x(t)
-
-    def nor_cx(c, t):
-        cx(c, t)
-
-    def nor_mcx(c, t):
-        mcx(c, t)
-
-    def toggle_from_parent(anc, target, parent):
-        """Flip ``anc[target]`` conditioned on its parent node ``anc[parent]``.
-
-        ``parent == -1`` means ``target`` is the root of the tree and has no
-        parent, so the flip is unconditional -- or conditioned on ``ctrl``
-        alone when the whole switch is controlled.
-        """
-        if ctrl is None:
-
-            def at_root():
-                nor_x(anc[target])
-
-        else:
-
-            def at_root():
-                nor_cx(ctrl, anc[target])
-
-        x_cond(parent == -1, at_root, lambda: nor_cx(anc[parent], anc[target]))
-
-    def toggle_from_parent_and_index(anc, index_qubit, target, parent):
-        """Flip ``anc[target]`` conditioned on ``anc[parent]`` and ``index_qubit``.
-
-        As above, ``parent == -1`` means there is no parent node to condition on.
-        """
-        if ctrl is None:
-
-            def at_root():
-                nor_cx(index_qubit, anc[target])
-
-        else:
-
-            def at_root():
-                nor_mcx([index_qubit, ctrl], anc[target])
-
-        x_cond(
-            parent == -1,
-            at_root,
-            lambda: nor_mcx([index_qubit, anc[parent]], anc[target]),
-        )
-
-    def bounce(d: int, anc, ca, oper):
-        # Cross to the sibling subtree: retarget the node one level up, then
-        # descend again on the index qubit for this depth.
-        toggle_from_parent(anc, d - 1, d - 2)
-
-        with control(anc[d - 1]):
-            x(anc[d])
-
-        toggle_from_parent_and_index(anc, ca[n - 1 - d], d, d - 2)
-
-    def down(d: int, anc, ca, oper):
-        # Descend into the zero child: the surrounding x gates flip the index
-        # qubit so that the toggle triggers on it being 0 rather than 1.
-        x(ca[n - 1 - d])
-        toggle_from_parent_and_index(anc, ca[n - 1 - d], d, d - 1)
-        x(ca[n - 1 - d])
-
-    def up(d: int, anc, ca, oper):
-        # Ascend out of the one child; the inverse of the toggle in down,
-        # without the surrounding index flips.
-        toggle_from_parent_and_index(anc, ca[n - 1 - d], d, d - 1)
-
-    # Function mode
     if is_function_mode:
 
-        def leaf(d: int, anc, ca, i, oper):
-            with control(anc[d]):
-                branches(i, *oper)
+        def leaf(anc, i, operands):
+            _apply_leaf_pair(
+                anc,
+                n - 1,
+                lambda *ops: branches(i, *ops),
+                lambda *ops: branches(i + 1, *ops),
+                operands,
+                ctrl,
+            )
 
-            # Move from the even leaf to its odd sibling.
-            toggle_from_parent(anc, d, d - 1)
-
-            with control(anc[d]):
-                branches(i + 1, *oper)
-
-        def last_leaf(d: int, anc, ca, i, oper):
-            with control(anc[d]):
-                branches(i, *oper)
-
-    # List mode
-    elif isinstance(branches, list):
-        if len(branches) % 2 != 0:
-            # The tree walks leaves in pairs, so an odd list gets one padding
-            # branch. It takes *args because branches are invoked with every
-            # operand, and it is appended to a copy because `branches` belongs
-            # to the caller.
-            def identity(*args):
-                pass
-
-            branches = [*branches, identity]
-
-        if check_for_tracing_mode():
-
-            def leaf(d: int, anc, ca, i, oper):
-                def apply_leaf(A, B):
-                    with control(anc[d]):
-                        A(*oper)
-
-                    # Move from the even leaf to its odd sibling.
-                    toggle_from_parent(anc, d, d - 1)
-
-                    with control(anc[d]):
-                        B(*oper)
-
-                for j in range(0, len(branches), 2):
-                    x_cond(
-                        j == i,
-                        apply_leaf,
-                        lambda a, b: None,
-                        branches[j],
-                        branches[j + 1],
-                    )
-
-        else:
-
-            def leaf(d: int, anc, ca, i, oper):
-                with control(anc[d]):
-                    branches[i](*oper)
-
-                # Move from the even leaf to its odd sibling.
-                toggle_from_parent(anc, d, d - 1)
-
-                with control(anc[d]):
-                    branches[i + 1](*oper)
-
-        def last_leaf(d: int, anc, ca, i, oper):
-            def apply(f):
-                with control(anc[d]):
-                    f(*oper)
-
-            for j in range(0, len(branches)):
-                x_cond(j == i, apply, lambda x: None, branches[j])
+        def last_leaf(anc, i, operands):
+            _apply_last_leaf(anc, n - 1, lambda *ops: branches(i, *ops), operands)
 
     else:
-        raise TypeError("Argument 'branches' must be a list or a callable(i, *operands)")
+        # The tree walks leaves in pairs, so an odd list gets one padding branch,
+        # appended to a copy because ``branches`` belongs to the caller.
+        if len(branches) % 2 != 0:
+            branches = [*branches, _padding_branch]
+
+        # The leaf depth is computed before the candidate q_conds rather than inside
+        # each of their arms.
+        def leaf(anc, i, operands):
+            d = n - 1
+            _call_list_branches(
+                i,
+                branches,
+                2,
+                lambda first, second: _apply_leaf_pair(anc, d, first, second, operands, ctrl),
+            )
+
+        def last_leaf(anc, i, operands):
+            d = n - 1
+            _call_list_branches(i, branches, 1, lambda branch: _apply_last_leaf(anc, d, branch, operands))
 
     def body_fun(pos, val):
-        anc, ca, oper = val
+        anc, index, operands = val
 
-        # Apply leaf
-        leaf(n - 1, anc, ca, 2 * pos, oper)
+        leaf(anc, 2 * pos, operands)
 
-        # Jump to next leaf
-        q = bitwise_count_diff(pos, pos + 1)
+        # Jump to the next leaf pair: climb to the lowest common ancestor, cross
+        # over, and descend again.
+        q = _bitwise_count_diff(pos, pos + 1)
         for j in xrange(0, q - 1):
-            up(n - j - 1, anc, ca, oper)
-        bounce(n - q, anc, ca, oper)
+            _up(anc, index, n, n - j - 1, ctrl)
+        _bounce(anc, index, n, n - q, ctrl)
         for j in xrange(0, q - 1):
-            down(n - (q - 1) + j, anc, ca, oper)
+            _down(anc, index, n, n - (q - 1) + j, ctrl)
 
-        return anc, ca, oper
+        return anc, index, operands
 
     # One ancilla per index qubit, tracking the path to the current leaf.
     anc = QuantumVariable(n)
 
     # Descend to the first leaf
     for j in xrange(0, n):
-        down(j, anc, index, operands)
+        _down(anc, index, n, j, ctrl)
 
-    # Walk the leaves, jumping from each to the next
-    _, _, _ = x_fori_loop(0, -(-branch_amount // 2) - 1, body_fun, (anc, index, operands))
+    # Walk the leaves, jumping from each pair to the next
+    x_fori_loop(0, -(-branch_amount // 2) - 1, body_fun, (anc, index, operands))
 
     # Perform the last leaf
-    x_cond(
+    _x_cond(
         branch_amount % 2 == 0,
-        lambda: leaf(n - 1, anc, index, branch_amount - 2, operands),
-        lambda: last_leaf(n - 1, anc, index, branch_amount - 1, operands),
+        lambda: leaf(anc, branch_amount - 2, operands),
+        lambda: last_leaf(anc, branch_amount - 1, operands),
     )
 
-    # Go back from last node
+    # Go back from the last leaf. The walk stopped short of the full 2**n leaves,
+    # so the levels where that shortfall has a set bit need one extra retarget on
+    # the way out.
     diff = 2**n - branch_amount
     for j in xrange(0, n):
-        up(n - j - 1, anc, index, operands)
-
-        def bf():
-            toggle_from_parent(anc, n - j - 1, n - j - 2)
-
-        # The walk stopped short of the full 2**n leaves, so the levels where
-        # that shortfall has a set bit need one extra retarget on the way out.
-        x_cond((diff >> j) & 1, bf, lambda: None)
+        _up(anc, index, n, n - j - 1, ctrl)
+        _x_cond((diff >> j) & 1, lambda: _toggle_from_parent(anc, n - j - 1, n - j - 2, ctrl), lambda: None)
 
     anc.delete()
 
