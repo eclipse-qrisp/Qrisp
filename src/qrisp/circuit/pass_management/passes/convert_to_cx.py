@@ -56,10 +56,6 @@ def convert_to_cx(
     Callable[[QuantumCircuit], QuantumCircuit]
         A pass function suitable for :meth:`PassManager.add_pass`.
 
-    DeliberateWarning
-    ----------------
-    This section is intentionally unknown to numpydoc for workflow testing.
-
     Notes
     -----
     - CZ(control, target)  -> H(target), CX(control, target), H(target)

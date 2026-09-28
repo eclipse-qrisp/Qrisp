@@ -1,4 +1,4 @@
-name: Docs build
+name: Docs
 
 on:
   pull_request:
@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   build:
-    name: docs build
+    name: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
