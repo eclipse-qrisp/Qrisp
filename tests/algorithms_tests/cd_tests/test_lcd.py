@@ -15,6 +15,8 @@
 # ********************************************************************************
 
 import numpy as np
+import pytest
+from qubo_problems import Q_coupled, field_blind_coupled, solution_coupled
 
 from qrisp.algorithms.cold import solve_QUBO
 
@@ -77,3 +79,24 @@ def test_lcd_nc_nonuniform():
     res = solve_QUBO(Q, problem_args=problem_args, run_args=run_args)
 
     assert solution in list(res.keys())[0:5]
+
+
+@pytest.mark.parametrize("uniform", [True, False])
+def test_lcd_solves_a_coupling_dominated_qubo(uniform):
+    """LCD must beat the answer that reads the local fields and ignores the couplings.
+
+    The other instances in this suite are field-dominated, so a run can land on their optimum
+    without the ZZ terms contributing anything. Here "00110" is what the local fields alone say
+    and "10110" is the actual optimum, so an encoding or a drive that does not carry the couplings
+    through correctly ends up on the wrong state instead of merely on a less peaked distribution.
+    """
+    (solution,) = solution_coupled
+
+    res = solve_QUBO(
+        Q_coupled,
+        problem_args={"method": "LCD", "agp_type": "nc", "uniform": uniform},
+        run_args={"N_steps": 20, "T": 2},
+    )
+
+    assert list(res.keys())[0] == solution
+    assert res[solution][0] > res[field_blind_coupled][0]
