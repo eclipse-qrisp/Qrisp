@@ -32,6 +32,7 @@ from qrisp import (
     measure,
     x,
 )
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.circuit import Qubit
 from qrisp.misc import int_encoder
 
@@ -110,10 +111,10 @@ def test_cuccaro_adder_static_ctrl_qubit():
 
 
 def test_cuccaro_adder_static_classical_a_type_error():
-    """TypeError when the classical addend is not an integer."""
+    """TypeError when the classical addend is not an int, str or BigInteger."""
     b = QuantumFloat(4)
     b[:] = 3
-    for bad_a in (1.5, "3", 2j):
+    for bad_a in (1.5, 2j, None):
         with pytest.raises(TypeError, match="a must be of type int"):
             cuccaro_adder(bad_a, b)
 
@@ -277,6 +278,71 @@ def test_cuccaro_adder_static_classical_a_larger_than_b(b_is_list):
     b[:] = 5
     cuccaro_adder(10, b[:] if b_is_list else b)
     assert b.get_measurement() == {7: 1.0}  # (5 + 10) % 8
+
+
+# -- binary string / BigInteger classical addends -----------------------------
+
+
+@pytest.mark.parametrize(
+    "a_str, b_bits, b_val, expected",
+    [
+        ("1010", 4, 3, 8),  # "1010" is little-endian, i.e. the value 5
+        ("", 4, 3, 3),  # empty string is treated as zero
+        ("110", 3, 6, 1),  # 3 + 6 = 9 wraps to 1 on a 3-qubit register
+    ],
+)
+def test_cuccaro_adder_static_binary_string(a_str, b_bits, b_val, expected):
+    """Classical a may be a little-endian binary string."""
+    b = QuantumFloat(b_bits)
+    b[:] = b_val
+    cuccaro_adder(a_str, b)
+    assert b.get_measurement() == {expected: 1.0}
+
+
+def test_cuccaro_adder_static_binary_string_cout():
+    """Binary-string addend with overflow captured by c_out."""
+    b = QuantumFloat(3)
+    b[:] = 6
+    c_out = QuantumBool()
+    cuccaro_adder("110", b, c_out=c_out)  # 6 + 3 = 9
+    assert b.get_measurement() == {1: 1.0}
+    assert c_out.get_measurement() == {True: 1.0}
+
+
+@pytest.mark.parametrize("bad_a", ["10201", "abc"])
+def test_cuccaro_adder_static_invalid_binary_string(bad_a):
+    """A non-binary string raises ValueError in the string-to-int conversion."""
+    b = QuantumFloat(4)
+    b[:] = 0
+    with pytest.raises(ValueError, match="base 2"):
+        cuccaro_adder(bad_a, b)
+
+
+def test_cuccaro_adder_dynamic_binary_string():
+    """Binary-string addend in dynamic mode (string captured as a closure)."""
+    a_str = "1010"  # little-endian -> 5
+
+    @boolean_simulation
+    def add(bits, b_val):
+        b = QuantumFloat(bits)
+        b[:] = b_val
+        cuccaro_adder(a_str, b)
+        return measure(b)
+
+    assert add(4, 3) == 5 + 3
+
+
+def test_cuccaro_adder_dynamic_biginteger():
+    """BigInteger addend in dynamic mode."""
+
+    @boolean_simulation
+    def add(bits, a_num, b_val):
+        b = QuantumFloat(bits)
+        b[:] = b_val
+        cuccaro_adder(BigInteger.create(a_num, 1), b)
+        return measure(b)
+
+    assert add(4, 5, 3) == 5 + 3
 
 
 # -- other quantum types ------------------------------------------------------
