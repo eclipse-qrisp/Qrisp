@@ -285,7 +285,7 @@ New Tutorials/ Updated Documentation
 
 - Added a tutorial section on quantum machine learning with Qrisp, 
   including quantum reservoirs for time series prediction and quantum neural networks for classification.
-  (`PR `).
+  (`PR #914 <https://github.com/eclipse-qrisp/Qrisp/pull/914>`).
 
 .. Add new tutorials above this line
 
