@@ -140,7 +140,7 @@ def _rlf_coloring(num_vertices: int, adjacency_matrix: npt.NDArray[np.int8]) -> 
 
 
 @nb.njit(cache=True)
-def _dsatur_coloring(num_vertices: int, adjacency_matrix: npt.NDArray[np.int8]) -> npt.NDArray[np.int64]:
+def _dsatur_coloring(num_vertices: int, adjacency_matrix: npt.NDArray[np.int8]) -> npt.NDArray[np.int64]:  # noqa: PLR0912
     """Color a graph with the DSATUR heuristic.
 
     Parameters
