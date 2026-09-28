@@ -200,6 +200,11 @@ autodoc_default_options = {
 autosummary_generate = True
 numpydoc_show_class_members = False
 
+# Optional runtime dependencies that are documented but not part of the
+# ``docs`` extra. Mock them so autodoc can import the wrapped modules without
+# the real package installed (and without emitting import warnings).
+autodoc_mock_imports = ["stim"]
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
