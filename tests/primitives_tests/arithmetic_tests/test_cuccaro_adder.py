@@ -85,6 +85,39 @@ def test_cuccaro_adder_static_c_in_type_error():
             cuccaro_adder(1, b, c_in=bad_c_in)
 
 
+def test_cuccaro_adder_static_ctrl_type_error():
+    """TypeError when ctrl is neither QuantumBool nor Qubit."""
+    a = QuantumFloat(3)
+    a[:] = 1
+    b = QuantumFloat(3)
+    b[:] = 1
+    for bad_ctrl in (QuantumFloat(2), "invalid", 42):
+        with pytest.raises(TypeError, match="ctrl must be of type QuantumBool or Qubit"):
+            cuccaro_adder(a, b, ctrl=bad_ctrl)
+
+
+def test_cuccaro_adder_static_ctrl_qubit():
+    """A bare Qubit is accepted as ctrl."""
+    a = QuantumFloat(3)
+    a[:] = 2
+    b = QuantumFloat(3)
+    b[:] = 3
+    ctrl = QuantumVariable(1)[0]
+    assert isinstance(ctrl, Qubit)
+    x(ctrl)
+    cuccaro_adder(a, b, ctrl=ctrl)
+    assert b.get_measurement() == {5: 1.0}
+
+
+def test_cuccaro_adder_static_classical_a_type_error():
+    """TypeError when the classical addend is not an integer."""
+    b = QuantumFloat(4)
+    b[:] = 3
+    for bad_a in (1.5, "3", 2j):
+        with pytest.raises(TypeError, match="a must be of type int"):
+            cuccaro_adder(bad_a, b)
+
+
 def test_cuccaro_adder_static_cout_overflow():
     """c_out captures overflow."""
     b = QuantumFloat(3)
