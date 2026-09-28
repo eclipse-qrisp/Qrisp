@@ -91,8 +91,8 @@ def convert_to_prx(qc: QuantumCircuit) -> QuantumCircuit:
         A new circuit with single-qubit gates decomposed into PRX gates
         and an optional trailing global-phase gate.
 
-    Example
-    -------
+    Examples
+    --------
     >>> from qrisp import PassManager, convert_to_prx
     >>> pm = PassManager()
     >>> pm.add_pass(convert_to_prx)

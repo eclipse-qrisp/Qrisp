@@ -29,9 +29,26 @@
 #
 import os
 import sys
+import warnings
 
 sys.path.insert(0, os.path.abspath("../../src/qrisp"))
 sys.path.insert(0, os.path.abspath("_ext"))
+
+# Treat Python warnings raised while building the docs as errors so that
+# documentation regressions fail CI (Sphinx's ``-W`` only covers its own
+# logger, not ``warnings.warn`` calls made by extensions such as numpydoc).
+warnings.filterwarnings("error", message=r".*", category=UserWarning)
+# numpydoc parses the raw docstring text and mistakes the dashed underline in
+# printed circuit output (e.g. a "QuantumCircuit:" line inside a code block)
+# for a section header, emitting a spurious "wrong underline length" warning.
+# This is a false positive, so ignore it specifically.
+warnings.filterwarnings(
+    "ignore",
+    message=r"potentially wrong underline length.*",
+    category=UserWarning,
+)
+# os.fork() is flagged because JAX runs multiple threads; harmless here.
+warnings.filterwarnings("ignore", message=r".*os\.fork.*", category=RuntimeWarning)
 
 # -- Project information -----------------------------------------------------
 

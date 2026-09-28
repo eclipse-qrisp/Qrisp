@@ -126,7 +126,7 @@ class ParityHandle:
         The :class:`~qrisp.Instruction` object containing the ``ParityOperation`` that
         sits in the circuit's data list (``qc.data``).
 
-    Properties
+    Attributes
     ----------
     clbits : list[Clbit]
         The list of :class:`~qrisp.Clbit` objects involved in this parity computation.
