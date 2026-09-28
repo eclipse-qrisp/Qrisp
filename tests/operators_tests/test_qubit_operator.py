@@ -110,8 +110,8 @@ def test_sum_classmethod(operators):
 @pytest.mark.parametrize(
     "operators, expected",
     [
-        ([X(0), -1 * X(0), Z(1)], Z(1)),
-        ([X(0), Z(0), -1 * X(0), -1 * Z(0)], QubitOperator()),
+        ([X(0), -X(0), Z(1)], Z(1)),
+        ([X(0), Z(0), -X(0), -Z(0)], QubitOperator()),
         ([], QubitOperator()),
     ],
 )
@@ -139,6 +139,17 @@ def test_pow(operator, exponent, expected):
         assert np.allclose(result.to_array(1), expected.to_array(1))
 
 
+@pytest.mark.parametrize(
+    "operator",
+    [X(0), X(0) * Z(1) + Y(0), 2 * X(0) - 3 * Z(1), QubitOperator() + 5],
+)
+def test_neg(operator):
+    """Tests unary negation."""
+    negated = -operator
+    assert np.allclose(negated.to_array() + operator.to_array(), 0)
+    assert (-negated).terms_dict == operator.terms_dict
+
+
 @pytest.mark.parametrize("scalar", [1, 2.5, 1j, -3])
 def test_add_and_radd(scalar):
     """Tests ``__add__``/``__radd__`` with a scalar."""
@@ -151,7 +162,7 @@ def test_add_and_radd_operators():
     """Tests ``__add__``/``__radd__`` with operators and invalid operands."""
     assert (X(0) + Z(0)).len() == 2
     assert (X(0) - X(0)).len() == 0
-    assert (X(0) + (-1) * X(0)).len() == 0
+    assert (X(0) + (-X(0))).len() == 0
 
     with pytest.raises(TypeError):
         X(0) + "not an operator"
