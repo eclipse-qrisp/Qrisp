@@ -16,7 +16,7 @@
 
 """Implements the threshold matrix pseudoinverse transformation via QSVT."""
 
-from qrisp.block_encodings.block_encoding import BlockEncoding
+from qrisp.block_encodings.block_encoding_base import BlockEncoding
 
 
 def apply_pseudo_inv(
