@@ -34,7 +34,6 @@ def _is_quantum_register(obj):
         return True
     if isinstance(obj, list):
         return all(
-            isinstance(qb, Qubit) or (isinstance(qb, Tracer) and isinstance(qb.aval, AbstractQubit))
-            for qb in obj
+            isinstance(qb, Qubit) or (isinstance(qb, Tracer) and isinstance(qb.aval, AbstractQubit)) for qb in obj
         )
     return False
