@@ -125,11 +125,6 @@ Algorithms & Applications
    * - :func:`~qrisp.block_encodings.BlockEncoding.svt`
      - Returns a BlockEncoding representing a singular value transformation of the operator.
 
-.. toctree::
-   :hidden:
-
-   methods/inv
-   methods/poly
-   methods/pseudo_inv
-   methods/sim
-   methods/svt
+.. The method pages (methods/inv, poly, pseudo_inv, sim, svt) are owned by the
+   ``applications`` toctree. Listing them in a second hidden toctree here made
+   Sphinx log a "referenced in multiple toctrees" message.

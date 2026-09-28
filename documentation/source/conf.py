@@ -155,7 +155,7 @@ html_theme_options = {
     "enable_search_shortcuts": True,
     "search_bar_text": "Search the docs... ",
     # "navbar_align": "content",
-    "pygment_light_style": "lovelace",
+    "pygments_light_style": "lovelace",
     "secondary_sidebar_items": [
         "page-toc.html",
         "discord_link.html",
