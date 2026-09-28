@@ -41,6 +41,11 @@ class DCQOProblem:
     ----------
     Q : np.array
         The QUBO matrix.
+        Must be symmetric: the cost is read as $y = x^T Q x$ with off-diagonal entries
+        counted twice, and the Ising coefficients $J_{ij} = \frac{1}{2} Q_{ij}$,
+        $h_i = -\frac{1}{2} \sum_j Q_{ij}$ derived from it are only valid for
+        symmetric $Q$. Symmetrize an upper-triangular matrix with
+        ``Q = 0.5 * (Q + Q.T)`` before passing it in.
     H_init : :ref:`QubitOperator`
         Hamiltonian, the system is at the time t=0.
     H_prob : :ref:`QubitOperator`
@@ -82,7 +87,7 @@ class DCQOProblem:
         N = Q.shape[0]
 
         # Define QUBO problem hamiltonian
-        h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+        h = -0.5 * np.sum(Q, axis=1)
         J = 0.5 * Q
 
         H_init = 1 * sum([X(i) for i in range(N)])
@@ -123,26 +128,26 @@ class DCQOProblem:
     ::
 
         {
-            '1011': [0.4618, np.float64(-2.5)],
-            '0111': [0.1724, np.float64(-0.6000000000000001)],
-            '0011': [0.131, np.float64(-1.3)],
-            '1001': [0.0588, np.float64(-2.0)],
-            '1111': [0.0514, np.float64(-1.0)],
-            '0101': [0.0304, np.float64(-0.5)],
-            '1101': [0.028, np.float64(-0.9)],
-            '0001': [0.023, np.float64(-0.8)],
-            '1000': [0.0192, np.float64(-1.2)],
-            '0100': [0.006, np.float64(0.3)],
-            '1010': [0.006, np.float64(-2.3)],
-            '0000': [0.0032, np.float64(0.0)],
-            '0010': [0.0032, np.float64(-1.1)],
-            '1100': [0.0026, np.float64(-0.09999999999999998)],
-            '1110': [0.0022, np.float64(-0.8000000000000003)],
-            '0110': [0.0008, np.float64(-0.40000000000000013)]
+            '1011': [0.5666, np.float64(-2.5)],
+            '1111': [0.0986, np.float64(-1.0)],
+            '1001': [0.087, np.float64(-2.0)],
+            '1010': [0.0846, np.float64(-2.3)],
+            '0111': [0.0586, np.float64(-0.6000000000000001)],
+            '1000': [0.031, np.float64(-1.2)],
+            '1110': [0.0218, np.float64(-0.8000000000000003)],
+            '0011': [0.0216, np.float64(-1.3)],
+            '0110': [0.0074, np.float64(-0.40000000000000013)],
+            '0001': [0.0056, np.float64(-0.8)],
+            '1101': [0.0052, np.float64(-0.9)],
+            '0101': [0.005, np.float64(-0.5)],
+            '0100': [0.0026, np.float64(0.3)],
+            '0000': [0.0022, np.float64(0.0)],
+            '0010': [0.0018, np.float64(-1.1)],
+            '1100': [0.0004, np.float64(-0.09999999999999998)]
         }
 
     We get a dictionary where the key is the quantum state and the values are lists of [probability, cost].
-    So our most likely result is '1011' with probability around 0.4 and the QUBO cost $x^T Q x = -2.5$.
+    So our most likely result is '1011' with probability around 0.57 and the QUBO cost $x^T Q x = -2.5$.
 
     .. |dcqo_link| raw:: html
 
@@ -176,7 +181,7 @@ class DCQOProblem:
         # Qubo characteristics
         self.Q = Q
         self.J = 0.5 * Q
-        self.h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+        self.h = -0.5 * np.sum(Q, axis=1)
 
         # Placeholder for the _precompute_timegrid function
         self.lam = None

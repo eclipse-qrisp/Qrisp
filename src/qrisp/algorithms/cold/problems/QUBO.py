@@ -180,12 +180,17 @@ def _nested_commutator_operators(h, J):
 
 
 def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
-    """Create the necessary parameters and operators to initialize a DCQO problem instance for COLD.
+    r"""Create the necessary parameters and operators to initialize a DCQO problem instance for COLD.
 
     Parameters
     ----------
     Q : np.array
         The QUBO Matrix to be encoded in the Hamiltonian.
+        Must be symmetric: the cost is read as $y = x^T Q x$ with off-diagonal entries
+        counted twice, and the Ising coefficients $J_{ij} = \frac{1}{2} Q_{ij}$,
+        $h_i = -\frac{1}{2} \sum_j Q_{ij}$ derived from it are only valid for
+        symmetric $Q$. Symmetrize an upper-triangular matrix with
+        ``Q = 0.5 * (Q + Q.T)`` before passing it in.
     uniform_AGP_coeffs : bool
         Whether to approximate the AGP with uniform or non-uniform coefficients.
     agp_type : str, optional
@@ -206,7 +211,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
 
     """
     N = len(Q[0])
-    h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+    h = -0.5 * np.sum(Q, axis=1)
     J = 0.5 * Q
 
     def lam():
@@ -265,12 +270,17 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
 
 
 def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
-    """Create the necessary parameters and operators to initialize a DCQO problem instance for LCD.
+    r"""Create the necessary parameters and operators to initialize a DCQO problem instance for LCD.
 
     Parameters
     ----------
     Q : np.array
         The QUBO Matrix to be encoded in the Hamiltonian.
+        Must be symmetric: the cost is read as $y = x^T Q x$ with off-diagonal entries
+        counted twice, and the Ising coefficients $J_{ij} = \frac{1}{2} Q_{ij}$,
+        $h_i = -\frac{1}{2} \sum_j Q_{ij}$ derived from it are only valid for
+        symmetric $Q$. Symmetrize an upper-triangular matrix with
+        ``Q = 0.5 * (Q + Q.T)`` before passing it in.
     agp_type : str
         Which approximation of the AGP to use. Can choose between ``order1``,
         ``order2``, ``nc`` (nested commutators up to first order).
@@ -336,7 +346,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
         return builders[(agp_type, uniform_AGP_coeffs)]
 
     N = len(Q[0])
-    h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+    h = -0.5 * np.sum(Q, axis=1)
     J = 0.5 * Q
 
     def lam():
@@ -369,7 +379,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
 
 
 def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
-    """Solves a QUBO Matrix using counterdiabatic driving.
+    r"""Solves a QUBO Matrix using counterdiabatic driving.
 
     This method uses the pre-defined COLD/LCD operators
     (hamiltonian, scheduling function, AGP parameters) as described in the tutorial.
@@ -379,6 +389,11 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     ----------
     Q : np.array
         QUBO Matrix to solve.
+        Must be symmetric: the cost is read as $y = x^T Q x$ with off-diagonal entries
+        counted twice, and the Ising coefficients $J_{ij} = \frac{1}{2} Q_{ij}$,
+        $h_i = -\frac{1}{2} \sum_j Q_{ij}$ derived from it are only valid for
+        symmetric $Q$. Symmetrize an upper-triangular matrix with
+        ``Q = 0.5 * (Q + Q.T)`` before passing it in.
     problem_args : dict
         Holds arguments for DCQO problem creation:
 

@@ -263,6 +263,18 @@ Bug Fixes
   ``{objective}`` from a missing f-string prefix.
   (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
+* Corrected the local fields of the QUBO-to-Ising conversion used by COLD and LCD.
+  :math:`h_i` was computed as
+  :math:`-\frac{1}{2} Q_{ii} - \frac{1}{2} \sum_j Q_{ij}`, but the row sum already
+  contains :math:`Q_{ii}`, so the diagonal was counted twice and the problem
+  Hamiltonian encoded :math:`x^T Q x + \mathrm{diag}(Q) \cdot x`. Its ground state
+  was not the QUBO optimum for roughly a third of random instances. ``h`` is now
+  :math:`-\frac{1}{2} \sum_j Q_{ij}` and the full spectrum of ``H_prob`` reproduces
+  :math:`x^T Q x` up to a constant. The docstrings of
+  :class:`~qrisp.cold.DCQOProblem`, :func:`~qrisp.cold.create_COLD_instance`,
+  :func:`~qrisp.cold.create_LCD_instance` and :func:`~qrisp.cold.solve_QUBO` now state
+  that ``Q`` must be symmetric, which both identities require.
+
 Compatibility
 -------------
 
