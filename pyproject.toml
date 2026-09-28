@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=61", # first version that reads [project] and [tool.setuptools] from pyproject.toml
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
