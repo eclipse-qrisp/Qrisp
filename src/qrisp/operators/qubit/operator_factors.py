@@ -77,6 +77,38 @@ def Z(arg: int) -> QubitOperator:
     raise TypeError("Cannot initialize operator from type " + str(type(arg)))
 
 
+def I(arg: int) -> QubitOperator:  # noqa: E743 -- public API name matching the identity operator
+    r"""Returns a QubitOperator representing the identity operator acting on qubit ``arg``.
+
+    Identity factors are not stored explicitly in a :class:`QubitTerm`, so the
+    returned operator is the global identity (the scalar :math:`1`). The index does
+    not affect the result and is accepted for API consistency with the other
+    operator factories.
+
+    Parameters
+    ----------
+    arg : int
+        The index of the qubit the identity operator acts on.
+
+    Returns
+    -------
+    QubitOperator
+        The identity operator.
+
+    Examples
+    --------
+    >>> from qrisp.operators import I, X
+    >>> print(I(0))
+    1
+    >>> print(I(0) * X(3))
+    X(3)
+
+    """
+    if isinstance(arg, int):
+        return QubitOperator({QubitTerm(): 1})
+    raise TypeError("Cannot initialize operator from type " + str(type(arg)))
+
+
 def A(arg: int) -> QubitOperator:
     r"""Returns a QubitOperator representing the lowering (ladder) operator acting on qubit ``arg``.
 
