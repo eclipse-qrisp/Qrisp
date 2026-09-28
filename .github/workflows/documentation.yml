@@ -1,0 +1,46 @@
+name: Docs build
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: docs build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[docs]"
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+
+      - name: Build documentation
+        working-directory: documentation
+        # -W turns Sphinx warnings into errors so the job fails on any warning;
+        # --keep-going reports every warning before failing.
+        run: sphinx-build -b html -W --keep-going source build/html
