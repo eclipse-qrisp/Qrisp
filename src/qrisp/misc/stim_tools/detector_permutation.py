@@ -1,3 +1,5 @@
+"""Permutes and reorders detectors in a Stim circuit while preserving their semantics."""
+
 import numpy as np
 import stim
 

@@ -1,24 +1,25 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Benchmarks and cross-validates Qrisp's unitary calculation against Qiskit's Aer simulator."""
 
 import time
 
 from numpy.linalg import norm
-from qiskit import Aer, execute
+from qiskit_aer import AerSimulator
 
 from qrisp import QuantumFloat, transpile
 from qrisp.interface import convert_to_qiskit
@@ -44,10 +45,11 @@ qc.qubits = qc.qubits[::-1]
 qiskit_qc = convert_to_qiskit(qc)
 
 
-backend = Aer.get_backend("unitary_simulator")
+backend = AerSimulator(method="unitary")
 
 start = time.time()
-job = execute(qiskit_qc, backend)
+qiskit_qc.save_unitary()
+job = backend.run(qiskit_qc)
 result = job.result()
 test_unitary_2 = result.get_unitary(qiskit_qc).data
 end = time.time()

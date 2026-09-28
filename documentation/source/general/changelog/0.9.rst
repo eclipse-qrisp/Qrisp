@@ -158,7 +158,7 @@ element-wise logical operations (``and``, ``or``, ``xor``), and reductions via
 New :func:`gidney_cq_venting_adder <qrisp.gidney_cq_venting_adder>` implements
 the classical-quantum in-place adder from `arXiv:2507.23079 <https://arxiv.org/abs/2507.23079>`_.
 Instead of propagating carries through the full register, each carry is measured in the
-X-basis ("vented") as soon as it is no longer needed, reducing Toffoli depth from
+X-basis ("vented") as soon as it is no longer needed, reducing space-overhead from
 :math:`\mathcal{O}(n)` to :math:`\mathcal{O}(1)`. A split-half design uses the
 target register itself as dirty workspace, keeping the total qubit overhead to
 just 3 clean ancillae. The adder requires dynamic (JASP) mode and supports

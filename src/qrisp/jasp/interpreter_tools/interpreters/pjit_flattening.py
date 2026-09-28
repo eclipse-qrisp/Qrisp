@@ -1,26 +1,27 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Flattens (inlines) pjit call equations in a jaxpr by evaluating their sub-jaxpr inline."""
 
 from jax import jit
 
 from qrisp.jasp.interpreter_tools import (
     eval_jaxpr,
     extract_invalues,
-    insert_outvalues,
+    insert_call_outvalues,
     reinterpret,
 )
 
@@ -34,11 +35,8 @@ def evaluate_pjit_eqn(pjit_eqn, context_dic):
 
     res = jit(eval_jaxpr(definition_jaxpr), inline=True)(*invalues)
 
-    if len(definition_jaxpr.outvars) == 1:
-        res = [res]
-
     # Insert the values into the context_dic
-    insert_outvalues(pjit_eqn, context_dic, res)
+    insert_call_outvalues(pjit_eqn, context_dic, res, len(definition_jaxpr.outvars))
 
 
 # Flattens/Inlines a pjit calls in a jaxpr

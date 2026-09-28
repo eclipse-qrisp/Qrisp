@@ -3,6 +3,13 @@ Development Guide
 
 Welcome, and thank you for your interest in contributing to Qrisp!
 
+.. image:: /_static/qrisp_development.png
+    :align: center
+    :alt: Qrisp Development Guide
+    :width: 600
+
+|
+
 This guide collects the engineering standards and conventions that help keep
 the codebase maintainable and welcoming to new contributors. It is intended
 to complement (not replace) the existing project documentation and GitHub

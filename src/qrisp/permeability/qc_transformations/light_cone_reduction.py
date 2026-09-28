@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Reorders and prunes a circuit's instructions to keep only those in the light cone of given measurements."""
 
 import networkx as nx
 
@@ -25,7 +26,7 @@ from qrisp.permeability.qc_transformations.memory_management import topological_
 
 # Intended measurements has to be a list of qubits
 
-# The strategy is similar to the one presented in reorder_circuit:
+# The strategy is similar to the one presented in _reorder_circuit:
 # We bring the circuit in the dag representation and perform a topological sort with
 # the intended measurement as prefered instructions
 

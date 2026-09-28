@@ -1,0 +1,24 @@
+version: 2
+updates:
+
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependabot-dependency-upgrade"
+    allow:
+      - dependency-type: "all"
+
+  # Maintain dependencies for pip
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependabot-dependency-upgrade"
+    allow:
+      - dependency-type: "all"

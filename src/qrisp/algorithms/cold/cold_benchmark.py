@@ -1,3 +1,6 @@
+"""Benchmark metrics (average QUBO cost, success probability) for COLD/LCD solver results."""
+
+
 def avg_qubo_cost(res):
     """Returns the average QUBO cost of the measurement."""
     expected_cost = 0.0

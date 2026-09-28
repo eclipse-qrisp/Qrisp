@@ -1,4 +1,3 @@
-# """
 # ********************************************************************************
 # * Copyright (c) 2026 the Qrisp authors
 # *
@@ -14,7 +13,6 @@
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
-# """
 
 """Tests for the Job-related classes defined in qrisp.interface.job"""
 
@@ -475,7 +473,7 @@ class TestJobStatusCaching:
         assert job.last_known_status == JobStatus.QUEUED
 
     def test_refresh_returns_current_status(self, backend):
-        """refresh() returns the freshly fetched status."""
+        """refresh() returns the current status."""
         job = MinimalJob(backend=backend)
         job._set_status(JobStatus.RUNNING)
         returned = job.refresh()

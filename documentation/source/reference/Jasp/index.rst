@@ -64,10 +64,10 @@ This gives the output
 .. code-block::
 
     { lambda ; a:f32[3]. let
-    b:f32[3] = add a 2.0
-    c:f32[3] = sin b
-    d:f32[3] = mul b c
-    in (d,) }
+        b:f32[3] = add a 2.0:f32[]
+        c:f32[3] = sin b
+        d:f32[3] = mul b c
+      in (d,) }
 
 Jax not only allows us to represent (classical) computations in a more simplified and easier-to-process form but also provides a `matured ecosystem <https://www.educative.io/courses/intro-jax-deep-learning/awesome-jax-libraries>`_ of libraries. On top of that, Jax exposes the means to `create new primitives <https://docs.jax.dev/en/latest/jax-primitives.html>`_, which allows quantum developers to use the Jax infrastructure for their purposes.
 
@@ -124,7 +124,7 @@ jasprs can be simulated using the built-in real-time simulator. You achieve this
 How is this different from the regular Qrisp features? The essential point is that because jaspr objects are embedded into the Jaxpr IR, they allow more advanced compilation tools to process the algorithm. In our case it is possible to convert jaspr objects to the `Catalyst <https://docs.pennylane.ai/projects/catalyst/en/stable/index.html>`__ representation, which targets `established classical compilation infrastructure <https://mlir.llvm.org/>`_ to lower the (hybrid) algorithm into `QIR <https://www.qir-alliance.org/>`_.
 If you are interested in how the QIR representation looks like, try calling
 
->>> jaspr.to_qir(8)
+>>> jaspr.to_qir()
 
 .. toctree::
    :maxdepth: 2
@@ -136,6 +136,7 @@ If you are interested in how the QIR representation looks like, try calling
    Control Flow/index
    Sampling
    Expectation Value
+   BackendSampling
    Resource Estimation
    Simulation Tools/index
    MLIR Interface

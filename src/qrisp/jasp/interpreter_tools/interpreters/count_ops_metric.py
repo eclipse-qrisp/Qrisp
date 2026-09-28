@@ -1,35 +1,35 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-import types
-from typing import Callable, Dict, List, Tuple
+"""Defines CountOpsMetric, a profiling metric that counts quantum gate operations in a Jaspr."""
+
+from collections.abc import Callable
+from typing import Dict, List, Tuple
 
 import jax
 import jax.numpy as jnp
 from jax.random import key
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
-from qrisp.jasp.interpreter_tools import (
-    BaseMetric,
-    eval_jaxpr,
-    make_profiling_eqn_evaluator,
+from qrisp.jasp.interpreter_tools import BaseMetric
+from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
+    build_metric_profiler,
 )
-from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
+    get_op_counts,
     get_quantum_operations,
 )
 from qrisp.jasp.jasp_expression import Jaspr
@@ -157,12 +157,7 @@ class CountOpsMetric(BaseMetric):
         counting_array = list(invalues[-1][0])
         incrementation_constants = invalues[-1][1]
 
-        op = eqn.params["gate"]
-
-        if op.definition:
-            op_counts = op.definition.transpile().count_ops()
-        else:
-            op_counts = {op.name: 1}
+        op_counts = get_op_counts(eqn.params["gate"])
 
         for op_name, count in op_counts.items():
             counting_index = self.profiling_dic[op_name]
@@ -255,26 +250,4 @@ def get_count_ops_profiler(jaspr: Jaspr, meas_behavior: Callable, callback_thres
 
     count_ops_metric = CountOpsMetric(meas_behavior, profiling_dic)
 
-    # Analyze the call graph to identify reused sub-jaxprs.  The resulting
-    # stats are threaded into the profiling evaluator so that frequently
-    # called, large sub-jaxprs can be wrapped in ``jax.pure_callback``
-    # to avoid XLA compilation blowup (see profiling_interpreter.py).
-    _, call_graph_stats = analyze_call_graph(jaspr)
-    profiling_eqn_evaluator = make_profiling_eqn_evaluator(count_ops_metric, call_graph_stats, callback_threshold)
-    jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
-
-    def count_ops_profiler(*args):
-
-        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
-        # Import here to avoid circular import issues
-        from qrisp.operators import FermionicOperator, QubitOperator
-
-        STATIC_TYPES = (str, QubitOperator, FermionicOperator, types.FunctionType)
-
-        initial_metric = count_ops_metric.initial_metric()
-
-        filtered_args = [x for x in args + (initial_metric,) if type(x) not in STATIC_TYPES]
-
-        return jitted_evaluator(*filtered_args)
-
-    return count_ops_profiler, profiling_dic
+    return build_metric_profiler(jaspr, count_ops_metric, callback_threshold), profiling_dic

@@ -516,7 +516,7 @@ def _build_controlled_no_gate_circ():
     """Cirq ControlledOperation wrapping a CircuitOperation (no .gate attribute on sub_op)."""
     q0, q1 = cirq.LineQubit.range(2)
     inner = cirq.FrozenCircuit([cirq.X(q0)])
-    co = cirq.CircuitOperation(inner)
+    co = cirq.CircuitOperation(inner, use_repetition_ids=True)
     return cirq.Circuit([cirq.ControlledOperation([q1], co)])
 
 
@@ -524,7 +524,7 @@ def _build_circuit_op_circ():
     """Cirq circuit with a bare CircuitOperation (no .gate attribute)."""
     q0 = cirq.LineQubit(0)
     inner = cirq.FrozenCircuit([cirq.X(q0)])
-    return cirq.Circuit([cirq.CircuitOperation(inner)])
+    return cirq.Circuit([cirq.CircuitOperation(inner, use_repetition_ids=True)])
 
 
 def _build_iswap_circ():

@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Provides the Grover diffuser, state-tagging oracle helper, and Grover's search algorithm."""
 
 from collections.abc import Callable, Sequence
 from typing import Any
@@ -45,7 +46,7 @@ from qrisp.typing import FloatLike
 
 # Applies the grover diffuser onto the (sequence of) quantum variable input_object
 def diffuser(
-    input_object: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
+    input_object: (QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray]),
     phase: FloatLike = np.pi,
     state_function: Callable | None = None,
     reflection_indices: list[int] | None = None,
