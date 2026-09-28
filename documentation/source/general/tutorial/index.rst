@@ -5,7 +5,7 @@ Tutorials
  
 Welcome to the Qrisp tutorials! This gallery is designed to take you from a curious beginner to a proficient developer of utility-scale quantum algorithms. By shifting the focus from low-level gate gymnastics to high-level programming with :ref:`QuantumVariables <QuantumVariable>`, Qrisp allows you to express complex logic with ease.
 
-The tutorials are organized into four topics, each containing multiple hands-on examples that build on each other:
+The tutorials are organized into five topics, each containing multiple hands-on examples that build on each other:
 
 - **Foundations and first Steps**: Start here to master the core syntax of Qrisp, where you will learn to replace manual circuit building with high-level variables and implement textbook algorithms like Shor's and Grover's.
 
@@ -14,6 +14,8 @@ The tutorials are organized into four topics, each containing multiple hands-on 
 - **High-Performance Compilation and Execution with Jasp**: Leverage the JAX-based Jasp pipeline to enable hybrid real-time control flow, while scaling your code and estimating quantum resources for real-world-sized applications.
 
 - **Scientific Computing and Quantum Numerical Linear Algebra**: Dive into high-level abstractions for quantum chemistry, physics and linear systems using our new :ref:`BlockEncoding` class.
+
+- **Quantum Machine Learning**: Explore how to leverage Qrisp for quantum machine learning applications, including quantum reservoirs for time series prediction and other machine learning tasks.
 
 If you’re the type who learns best by breaking things (and then fixing them), you can download any of these tutorials as a Jupyter notebook. Just look for the download box on the right side of the page within each specific tutorial to grab the code and run it in your own local environment.
 
@@ -352,6 +354,49 @@ This track demonstrates how to bridge the gap between complex scientific theory 
         +++
         **Solving systems of linear equations via HHL**
 
+Quantum Machine Learning
+----------------------------------------------------
+Discover how to leverage Qrisp for quantum machine learning applications, including quantum reservoirs for time series prediction and other machine learning tasks.
+Learn how to implement quantum neural networks and explore the potential of quantum computing in the field of artificial intelligence.
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: sm
+        :text-align: center
+
+        .. raw:: html
+
+            <a href="./QRCtutorial.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text"></p>
+            </div>
+            </a>
+
+        .. image:: ../../_static/qrc_thumbnail.png
+            :alt: QRC Tutorial
+
+        +++
+        **Quantum Reservoir Computing**
+
+    .. grid-item-card::
+        :shadow: sm
+        :text-align: center
+
+        .. raw:: html
+
+            <a href="./QNNtutorial.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text"></p>
+            </div>
+            </a>
+
+        .. image:: ../../_static/qnn_thumbnail.png
+            :alt: QNN Tutorial
+
+        +++
+        **Quantum Neural Networks**
+
 
 You’ve now explored the breadth of what’s possible when you trade gate-level surgery for high-level logic.
 From your first QuantumVariable to fault-tolerant resource estimation, you have the roadmap to develop utility-scale applications that once seemed out of reach.
@@ -379,3 +424,5 @@ So, take these concepts, experiment, and start building the future of quantum co
    BE_tutorial/index
    GQSP_filtering.ipynb
    HHL.ipynb
+   QRCtutorial.ipynb
+   QNNtutorial.ipynb

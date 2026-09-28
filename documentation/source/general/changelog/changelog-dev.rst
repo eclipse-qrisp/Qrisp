@@ -283,6 +283,10 @@ New Tutorials/ Updated Documentation
   Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
   link and agenda.
 
+- Added a tutorial section on quantum machine learning with Qrisp, 
+  including quantum reservoirs for time series prediction and quantum neural networks for classification.
+  (`PR `).
+
 .. Add new tutorials above this line
 
 API Changes

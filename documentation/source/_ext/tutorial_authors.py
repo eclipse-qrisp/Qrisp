@@ -209,6 +209,22 @@ tutorial_authors = {
             "linkedin": None,
         },
     ],
+    "general/tutorial/QNNtutorial": [
+            {
+                "name": "Johannes Wittmann",
+                "affiliation": "Eclipse Qrisp Contributor",
+                "role": "Eclipse Qrisp Contributor",
+                "linkedin": None,
+            },
+    ],
+    "general/tutorial/QRCtutorial": [
+            {
+                "name": "Johannes Wittmann",
+                "affiliation": "Eclipse Qrisp Contributor",
+                "role": "Eclipse Qrisp Contributor",
+                "linkedin": None,
+            },
+    ],
     "general/tutorial/Shor": [
         {
             "name": "Raphael Seidel",
