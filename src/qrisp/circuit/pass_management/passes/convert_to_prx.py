@@ -44,10 +44,10 @@ class PRXGate(U3Gate):
         super().__init__(alpha, beta - np.pi / 2, np.pi / 2 - beta, name="prx")
 
     def inverse(self):
-        """Returns the inverse of the PRX gate.
+        r"""Returns the inverse of the PRX gate.
 
-        The inverse of :math:`R_Z(\\beta) R_X(\\alpha) R_Z(-\\beta)` is
-        :math:`R_Z(\\beta) R_X(-\\alpha) R_Z(-\\beta)`.
+        The inverse of :math:`R_Z(\beta) R_X(\alpha) R_Z(-\beta)` is
+        :math:`R_Z(\beta) R_X(-\alpha) R_Z(-\beta)`.
 
         Returns
         -------
@@ -59,20 +59,19 @@ class PRXGate(U3Gate):
 
 
 def _get_phase_diff(U_a: np.ndarray, U_b: np.ndarray) -> float:
-    """Return the global phase :math:`\\gamma` such that
-    :math:`U_a = e^{i\\gamma} \\, U_b`.
+    r"""Return the global phase :math:`\gamma` such that :math:`U_a = e^{i\gamma} \, U_b`.
 
-    Computed as :math:`\\gamma = \\arg(\\operatorname{tr}(U_a U_b^\\dagger) / 2)`.
+    Computed as :math:`\gamma = \arg(\operatorname{tr}(U_a U_b^\dagger) / 2)`.
     """
     return float(np.angle(np.trace(U_a @ U_b.conj().T) / 2))
 
 
 @CircuitPass
 def convert_to_prx(qc: QuantumCircuit) -> QuantumCircuit:
-    """Convert single-qubit gates to PRX (Phased-RX) gate decomposition.
+    r"""Convert single-qubit gates to PRX (Phased-RX) gate decomposition.
 
     This pass converts arbitrary single-qubit gates to PRX gates.
-    When a U3 gate is already in PRX form (:math:`\\lambda \\approx -\\phi`),
+    When a U3 gate is already in PRX form (:math:`\lambda \approx -\phi`),
     it is replaced by a single :class:`PRXGate`. Otherwise it is decomposed
     into a sequence of two :class:`PRXGate` operations.
 
