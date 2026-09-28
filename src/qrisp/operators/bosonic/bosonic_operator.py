@@ -28,10 +28,6 @@ from qrisp.operators.qubit import QubitOperator
 
 threshold = 1e-9
 
-#
-# BosonicOperator
-#
-
 
 class BosonicOperator(Hamiltonian):
     r"""An efficient implementation of bosonic ladder term operators.
@@ -243,7 +239,23 @@ class BosonicOperator(Hamiltonian):
     #
 
     def _repr_latex_(self):
-        # Convert the sympy expression to LaTeX and return it
+        """Return a Latex expression representing the operator.
+
+        Returns
+        -------
+        expr : str
+            A Latex expression representing the operator.
+
+        Examples
+        --------
+        ::
+
+            from qrisp.operators import *
+
+            (c_b(0)*a_b(0))._repr_latex_()
+            # yields $c_{0} a_{0}$
+
+        """
         expr = self.to_expr()
         return f"${sp.latex(expr)}$"
 
@@ -259,6 +271,15 @@ class BosonicOperator(Hamiltonian):
         -------
         expr : sympy.expr
             A SymPy expression representing the operator.
+
+        Examples
+        --------
+        ::
+
+            from qrisp.operators import *
+
+            (c_b(0)*a_b(0)).to_expr()
+            # yields c0*a0
 
         """
         expr = 0
@@ -590,6 +611,19 @@ class BosonicOperator(Hamiltonian):
         threshold : float
             The threshold for the coefficients of the ladder_term terms.
 
+        Examples
+        --------
+        Remove operators below the threshold:
+
+        ::
+
+            from qrisp.operators.bosonic import *
+
+            O = a_b(0) + 1e-5 * a_b(1)
+            O.apply_threshold(1e-3)
+            print(O)
+            # Yields: a0
+
         """
         delete_list = []
         for ladder_term, coeff in self.terms_dict.items():
@@ -610,6 +644,17 @@ class BosonicOperator(Hamiltonian):
             How to embed the bosonic terms into a QubitOperator.
             Possible values are "gray_code", "standard_binary" and "one_hot".
 
+        Examples
+        --------
+        Convert to sparse matrix:
+
+        ::
+
+            from qrisp.operators.bosonic import *
+
+            O = c_b(0)*a_b(0)
+            print(O.to_sparse_matrix())
+
         """
         return self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding).to_sparse_matrix()
 
@@ -620,6 +665,15 @@ class BosonicOperator(Hamiltonian):
         -------
         float
             The ground state energy.
+
+        Calculate the ground state energy of an operator:
+
+        ::
+
+            from qrisp.operators.bosonic import *
+
+            O = c_b(0)*a_b(0)
+            print(O.ground_state_energy())
 
         """
         return self.to_qubit_operator(truncation=truncation).ground_state_energy()
@@ -799,6 +853,21 @@ def get_bosonic_encoding_qubit_number(truncation, binary_encoding):
     int
         The number of qubits.
 
+    Examples
+    --------
+    Obtain the number of qubits needed for a truncation of 12 in different encodings:
+
+    ::
+
+        from qrisp.operators.bosonic import get_bosonic_encoding_qubit_number
+
+        print(get_bosonic_encoding_qubit_number(12, "standard_binary"))
+        # yields 4
+        print(get_bosonic_encoding_qubit_number(12, "gray_code"))
+        # yields 4
+        print(get_bosonic_encoding_qubit_number(12, "one_hot"))
+        # yields 12
+
     """
     if binary_encoding != "one_hot":
         return int(np.ceil(np.log2(truncation)))
@@ -823,6 +892,25 @@ def prepare_bosonic_fock_state(n: int, truncation: int = 8, binary_encoding: str
     -------
     QuantumVariable
         A QuantumVariable with the Fock state prepared on it.
+
+    Examples
+    --------
+    Create a bosonic Fock state $|3\rangle$ and compute the expectation value of the number operator for that state
+    (it is important that the encoding and truncation are chosen the same
+    for both the state preparation function and the expectation value method!):
+
+    ::
+
+        from qrisp.operators.bosonic import a_b, c_b, prepare_bosonic_fock_state
+
+        O = c_b(0)*a_b(0)
+
+        O.expectation_value(
+                prepare_bosonic_fock_state,
+                truncation=8,
+                binary_encoding="gray_code"
+            )(3, 8, "gray_code")
+        # yields 2.9999999999999996
 
     """
     if not 0 <= n < truncation:

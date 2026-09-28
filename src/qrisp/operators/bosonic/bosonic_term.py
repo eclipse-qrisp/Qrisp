@@ -16,9 +16,6 @@
 
 """Provides an implementation of terms of bosonic ladder operators."""
 
-#
-# BosonicTerm
-#
 import warnings
 from itertools import product
 from typing import Self
