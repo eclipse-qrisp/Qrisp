@@ -319,6 +319,23 @@ class QubitOperator(Hamiltonian):
             res = res * self
         return res
 
+    def __neg__(self) -> "QubitOperator":
+        """Returns the operator with all coefficients negated.
+
+        Returns
+        -------
+        QubitOperator
+            The negated operator.
+
+        Examples
+        --------
+        >>> from qrisp.operators import X
+        >>> -X(0)
+        -X(0)
+
+        """
+        return -1 * self
+
     def __add__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the sum of the operator self and other.
 
