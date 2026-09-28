@@ -49,6 +49,14 @@ New Features
 Improvements
 ------------
 
+- **Cheaper tracing for** :func:`q_switch <qrisp.q_switch>`
+  The ``"tree"`` method resolves conditionals whose predicate is already known at
+  trace time instead of tracing both arms and discarding one. The emitted circuit
+  is unchanged; the traced program is roughly half the size and compiles about
+  twice as fast for larger switches (2807 to 1308 equations and 1.71 s to 0.77 s
+  for 16 branches). Predicates that genuinely depend on run-time values, such as a
+  ``branch_amount`` that is itself traced, still go through ``q_cond``.
+
 - :class:`~qrisp.interface.QiskitJob` and :class:`~qrisp.interface.AQTJob`
   now skip the live provider query and return the cached status once a job
   is done, cancelled, or errored. The :class:`~qrisp.interface.Job` base
@@ -141,6 +149,12 @@ Bug Fixes
   amplitudes are only known at run time, as produced by a
   :class:`~qrisp.block_encodings.BlockEncoding` simulation with traced
   coefficients.
+
+* Fixed two issues in :func:`q_switch <qrisp.q_switch>` affecting branch lists of
+  odd length. The padding branch the ``"tree"`` method appends now accepts every
+  operand, so an odd branch list no longer raises a ``TypeError`` in Jasp mode
+  when more than one operand is passed, and the padding is appended to a copy
+  rather than to the caller's list.
 
 * Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
   Unitary matrices are now computed in ``complex128`` precision, removing the
@@ -312,6 +326,15 @@ API Changes
   implemented is unchanged
   (`PR #814 <https://github.com/eclipse-qrisp/Qrisp/pull/814>`_).
 
+* Gate-application functions (``cx``, ``cy``, ``cz``, ``h``, ``x``, ``y``,
+  ``z``, ``mcx``, ``mcz``, ``mcp``, ``p``, ``cp``, ``rx``, ``ry``, ``rz``,
+  ``crz``, ``s``, ``t``, ``s_dg``, ``t_dg``, ``sx``, ``sx_dg``, ``gphase``,
+  ``xxyy``, ``rzz``, ``rxx``, ``ryy``, ``u3``, ``barrier``, and ``swap``) no
+  longer return the qubits/``QuantumVariable``\ s they were applied to; they
+  now consistently return ``None``, reflecting that they act by side effect.
+  Code relying on the previous return values (e.g. ``result = h(qv)``) must
+  use the original argument instead.
+
 .. Add API changes above this line
 
 Development
@@ -363,6 +386,7 @@ Development
   as documentation. Existing rich module-level documentation was preserved
   verbatim, only reformatted to satisfy ``D205``
   (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+  (`PR #866 <https://github.com/eclipse-qrisp/Qrisp/pull/866>`_).
 
 * Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
   style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
