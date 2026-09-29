@@ -617,8 +617,9 @@ class QuantumArray:
         circuit_preprocessor=None,
         precompiled_qc=None,
     ):
-        """Method for acquiring measurement results for the given array. The semantics are
-        similar to the :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>`
+        """Method for acquiring measurement results for the given array.
+
+        The semantics are similar to the :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>`
         method of QuantumVariable. The results are returned as a dictionary of another
         numpy subtype called OutcomeArray.
 
