@@ -125,6 +125,9 @@ Improvements
   no longer replayed event by event in Python. The returned dictionary is
   unchanged
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+- Refactored quantum_variable.py by adding more typing, explicit attributes and delegating name
+  generation to QuantumSession in a central place.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
 Other New Features
 ------------------
@@ -323,6 +326,13 @@ Bug Fixes
     every measurement of a loop, and could follow different branches than
     ``count_ops`` for the same program.
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+* Fixed a bug in :meth:`resolve_naming_collisions` where in the "qv_0 is newer" conditional branch,
+  `qv_1.is_fixed_name` (called user_given_name earlier) was checked when it should have been qv0's.
+  As a result, merging two sessions could rename a variable with an explicitly given (fixed) name. 
+  Now a fixed name is never renamed.
+
+*  Fixed a bug where calls of :meth:`duplicate` of the form `duplicate(name="foo*")` caused the variable being duplicated to change. 
+   `self.user_given_name` was set to `False`, instead of the duplicate's. This is fixed now.
 
 Compatibility
 -------------

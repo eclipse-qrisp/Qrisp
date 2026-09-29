@@ -703,8 +703,9 @@ def find_qs(args):
 
 # Function to measure multiple quantum variables at once to assess their entanglement
 def multi_measurement(qv_list, shots=None, backend=None):
-    """This functions facilitates the measurement of multiple QuantumVariables at the same
-    time. This can be used if the entanglement structure between several
+    """Measure multiple QuantumVariables at the same time.
+
+    This can be used if the entanglement structure between several
     QuantumVariables is of interest.
 
     Parameters

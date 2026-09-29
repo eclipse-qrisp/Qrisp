@@ -39,33 +39,6 @@ if TYPE_CHECKING:
     from qrisp.jasp import TracingQuantumSession
 
 
-def extract_quantum_session(qs: QuantumSession | None) -> QuantumSession | TracingQuantumSession:
-    """Determine the QuantumSession a new QuantumVariable should be registered in.
-
-    While tracing (e.g. within jasp), the active :class:`~qrisp.jasp.TracingQuantumSession`
-    is always used, regardless of ``qs``. Otherwise, ``qs`` is used if given, and
-    a fresh :class:`QuantumSession` is created if not.
-
-    Parameters
-    ----------
-    qs : QuantumSession, optional
-        A QuantumSession object to extract from, if provided, in non-tracing mode.
-        The default is None.
-
-    Returns
-    -------
-    QuantumSession or TracingQuantumSession
-        The QuantumSession to register the new QuantumVariable in.
-
-    """
-    from qrisp.core.quantum_session import QuantumSession
-    from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
-
-    if check_for_tracing_mode():
-        return TracingQuantumSession.get_instance()
-    return qs or QuantumSession()
-
-
 class QuantumVariable:
     """
     The quantum analogue of a regular variable in classical programming languages.
@@ -302,8 +275,11 @@ class QuantumVariable:
         # Specify the static attributes (empty for base type QuantumVariable)
         self.static_attributes = []
 
+        from qrisp.core.quantum_session import QuantumSession
+        from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
+
         # Store quantum session
-        self.qs = extract_quantum_session(qs)
+        self.qs = TracingQuantumSession.get_instance() if check_for_tracing_mode() else qs or QuantumSession()
 
         # Imported locally: qrisp.core.quantum_session imports QuantumVariable from this module.
         from qrisp.core.quantum_session import QuantumSession
@@ -505,8 +481,7 @@ class QuantumVariable:
             If merging the duplicate's quantum session with ``qs`` fails.
         TracingModeError
             If ``init`` is True while tracing, since initializing from another
-            QuantumVariable is not supported in a :class:`TracingQuantumSession
-            <qrisp.jasp.TracingQuantumSession>`.
+            QuantumVariable is not supported in a ``TracingQuantumSession`.
         Exception
             If ``init`` is True and the provided ``qubits`` are not fresh.
 
@@ -987,9 +962,8 @@ class QuantumVariable:
             If the containing QuantumSession is in a quantum environment, it is not
             possible to execute measurements.
         TracingModeError
-            If the QuantumVariable is registered in a :class:`TracingQuantumSession
-            <qrisp.jasp.TracingQuantumSession>` (i.e. while tracing), measurements
-            are not supported.
+            If the QuantumVariable is registered in a ``TracingQuantumSession`` (i.e. while tracing),
+            measurements are not supported.
 
         Returns
         -------
@@ -1347,9 +1321,8 @@ class QuantumVariable:
         Raises
         ------
         TracingModeError
-            If the QuantumVariable is registered in a :class:`TracingQuantumSession
-            <qrisp.jasp.TracingQuantumSession>` (i.e. while tracing), uncomputation
-            is not supported.
+            If the QuantumVariable is registered in a ``TracingQuantumSession`` (i.e. while tracing),
+            uncomputation is not supported.
 
         Examples
         --------
@@ -1408,9 +1381,7 @@ class QuantumVariable:
             ---------------------
             QuantumVariable a
 
-
         """
-
         # Imported locally: qrisp.jasp imports QuantumVariable from this module.
         from qrisp.jasp import TracingModeError, TracingQuantumSession
 
@@ -1442,11 +1413,11 @@ class QuantumVariable:
 
         while True:
             try:
-                naming_number = self.name_tracker[name]
-                self.name_tracker[name] += 1
+                naming_number = QuantumVariable.name_tracker[name]
+                QuantumVariable.name_tracker[name] += 1
                 name = name + "_" + str(naming_number)
             except KeyError:
-                self.name_tracker[name] = 1
+                QuantumVariable.name_tracker[name] = 1
                 name = name + "_0"
 
             i = 0
@@ -1506,9 +1477,8 @@ class QuantumVariable:
         Exception
             Tried to initialize qubits which are not fresh anymore.
         TracingModeError
-            If the QuantumVariable is registered in a :class:`TracingQuantumSession
-            <qrisp.jasp.TracingQuantumSession>` (i.e. while tracing), initializing
-            from another QuantumVariable is not supported.
+            If the QuantumVariable is registered in a ``TracingQuantumSession`` (i.e. while tracing),
+            initializing from another QuantumVariable is not supported.
 
         Examples
         --------

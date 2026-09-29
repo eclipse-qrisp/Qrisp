@@ -131,7 +131,6 @@ If you are interested in how the QIR representation looks like, try calling
    :hidden:
    
    Jaspr
-   TracingQuantumSession
    Quantum Kernel
    qache
    Control Flow/index
