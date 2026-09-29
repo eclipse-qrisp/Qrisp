@@ -210,20 +210,20 @@ tutorial_authors = {
         },
     ],
     "general/tutorial/QNNtutorial": [
-            {
-                "name": "Johannes Wittmann",
-                "affiliation": "Eclipse Qrisp Contributor",
-                "role": "Eclipse Qrisp Contributor",
-                "linkedin": None,
-            },
+        {
+            "name": "Johannes Wittmann",
+            "affiliation": "Eclipse Qrisp Contributor",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
     ],
     "general/tutorial/QRCtutorial": [
-            {
-                "name": "Johannes Wittmann",
-                "affiliation": "Eclipse Qrisp Contributor",
-                "role": "Eclipse Qrisp Contributor",
-                "linkedin": None,
-            },
+        {
+            "name": "Johannes Wittmann",
+            "affiliation": "Eclipse Qrisp Contributor",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
     ],
     "general/tutorial/Shor": [
         {
