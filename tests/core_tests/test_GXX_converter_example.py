@@ -25,6 +25,9 @@ from qrisp import QuantumVariable, cp, p
 from qrisp.misc.GMS_tools import GXX_converter
 
 
+random.seed(42)
+
+
 def test_GMS_converter_example():
     n = 8
 

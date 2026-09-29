@@ -52,6 +52,8 @@ def mkcs_obj(quantumcolor_array, G):
     return -color
 
 
+random.seed(42)
+
 def test_mkcs_G1e2c():
     ###### Trivial case with 1 edge and 2 colors,
     G1e2c = nx.Graph()

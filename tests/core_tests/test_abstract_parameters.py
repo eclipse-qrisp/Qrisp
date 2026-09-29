@@ -27,6 +27,8 @@ from qrisp.circuit import PGate
 from qrisp.core import QuantumVariable, xxyy
 
 
+random.seed(42)
+
 def test_abstract_parameters():
     n = 3
     ctrl_qv = QuantumVariable(n)
