@@ -109,9 +109,10 @@ def test_multi_return_cat_state():
         return sample(kernel, shots=300)(k)
 
     res = main(3)
-    assert res.shape == (300, 2)
-    pairs = {(float(r[0]), float(r[1])) for r in res}
-    assert pairs == {(0.0, 0.0), (3.0, 3.0)}
+    assert isinstance(res, tuple) and len(res) == 2
+    assert all(r.shape == (300,) for r in res)
+    pairs = {(float(a), float(b)) for a, b in zip(res[0][:200], res[1][:200])}
+    assert pairs == {(0.0, 0.0), (3.0, 3.0)}, f"got {pairs}"
 
 
 def test_single_return_boolean():
@@ -149,10 +150,11 @@ def test_triple_return():
         return sample(kernel, shots=300)()
 
     res = main()
-    assert res.shape == (300, 3)
-    assert {float(r[0]) for r in res} == {0.0, 1.0}
-    assert {float(r[1]) for r in res} == {1.0}
-    assert len({float(r[2]) for r in res}) >= 3
+    assert isinstance(res, tuple) and len(res) == 3
+    assert all(r.shape == (300,) for r in res)
+    assert {float(a) for a in res[0][:100]} == {0.0, 1.0}
+    assert {float(b) for b in res[1][:100]} == {1.0}
+    assert len({float(c) for c in res[2][:100]}) >= 3
 
 
 # ===========================================================================
@@ -244,7 +246,8 @@ def test_postproc_tuple_return():
         return sample(kernel, shots=200, post_processor=post_processor)()
 
     res = main()
-    assert res.shape == (200, 2)
+    assert isinstance(res, tuple) and len(res) == 2
+    assert all(r.shape == (200,) for r in res)
 
 
 # ===========================================================================
@@ -266,9 +269,10 @@ def test_bell_state():
         return sample(kernel, shots=300)()
 
     res = main()
-    assert res.shape == (300, 2)
-    pairs = {(bool(r[0]), bool(r[1])) for r in res}
-    assert pairs == {(False, False), (True, True)}
+    assert isinstance(res, tuple) and len(res) == 2
+    assert all(r.shape == (300,) for r in res)
+    pairs = {(bool(a), bool(b)) for a, b in zip(res[0][:200], res[1][:200])}
+    assert pairs == {(False, False), (True, True)}, f"got {pairs}"
 
 
 def test_ghz_state():
@@ -307,9 +311,10 @@ def test_controlled_operation():
         return sample(kernel, shots=300)()
 
     res = main()
-    assert res.shape == (300, 2)
-    pairs = {(bool(r[0]), float(r[1])) for r in res}
-    assert pairs == {(False, 0.0), (True, 5.0)}
+    assert isinstance(res, tuple) and len(res) == 2
+    assert all(r.shape == (300,) for r in res)
+    pairs = {(bool(a), float(b)) for a, b in zip(res[0][:200], res[1][:200])}
+    assert pairs == {(False, 0.0), (True, 5.0)}, f"got {pairs}"
 
 
 def test_multi_controlled_x():
@@ -387,7 +392,8 @@ def test_large_qubit_count():
         return sample(kernel, shots=100)()
 
     res = main()
-    assert res.shape == (100, 2)
+    assert isinstance(res, tuple) and len(res) == 2
+    assert all(r.shape == (100,) for r in res)
 
 
 def test_multiple_sample_calls():
@@ -567,9 +573,10 @@ def test_measure_all_qubits():
         return sample(kernel, shots=200)()
 
     res = main()
-    assert res.shape == (200, 4)
-    assert {bool(r[1]) for r in res} == {False}
-    assert {bool(r[3]) for r in res} == {False}
+    assert isinstance(res, tuple) and len(res) == 4
+    assert all(r.shape == (200,) for r in res)
+    assert {bool(b) for b in res[1][:100]} == {False}
+    assert {bool(b) for b in res[3][:100]} == {False}
 
 
 def test_parameterized_gates():
@@ -964,3 +971,128 @@ def test_captured_int_scalar_does_not_shadow_loop_index():
     # A uniform superposition over 3 qubits: collapsing to a single repeated
     # shot is the failure mode this guards against.
     assert len(set(float(value) for value in result)) > 1
+
+
+# ===========================================================================
+# Pytree returns
+# ===========================================================================
+#
+# Two separate restorations are exercised here.  A kernel returning a
+# container is rebuilt inside ``sample()`` and has to survive being
+# flattened across the io_callback boundary.  A decorated function
+# returning a container is rebuilt from the traced output tree in
+# ``_make_backend_sampler_wrapper``.
+# ===========================================================================
+
+
+def test_kernel_returns_dict():
+    """A dict-returning kernel keeps its keys and per-leaf dtypes."""
+
+    def kernel():
+        qf = QuantumFloat(3)
+        qb = QuantumBool()
+        h(qf[0])
+        h(qb)
+        return {"f": measure(qf), "b": measure(qb)}
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return sample(kernel, shots=50)()
+
+    res = main()
+    assert isinstance(res, dict)
+    assert set(res) == {"f", "b"}
+    assert res["f"].shape == (50,)
+    assert res["b"].shape == (50,)
+    assert res["f"].dtype == jnp.float64
+    assert res["b"].dtype == bool
+
+
+def test_kernel_returns_nested_container():
+    """A kernel may nest containers; the structure round-trips."""
+
+    def kernel():
+        qf = QuantumFloat(3)
+        qb = QuantumBool()
+        h(qf[0])
+        h(qb)
+        return [(measure(qf),), {"flag": measure(qb)}]
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return sample(kernel, shots=50)()
+
+    res = main()
+    assert isinstance(res, list)
+    assert isinstance(res[0], tuple)
+    assert res[0][0].shape == (50,)
+    assert isinstance(res[1], dict)
+    assert res[1]["flag"].shape == (50,)
+    assert res[1]["flag"].dtype == bool
+
+
+def test_decorated_function_returns_dict():
+    """The decorated function's own return structure is restored."""
+
+    def kernel_a():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        return measure(qf)
+
+    def kernel_b():
+        qf = QuantumFloat(3)
+        x(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return {"a": sample(kernel_a, shots=50)(), "b": sample(kernel_b, shots=50)()}
+
+    res = main()
+    assert isinstance(res, dict)
+    assert set(res) == {"a", "b"}
+    assert res["a"].shape == (50,)
+    assert res["b"].shape == (50,)
+    # kernel_b sets the lowest bit, so every shot is odd.  Without the
+    # top-level restoration the two samples could not be told apart.
+    assert all(int(value) % 2 == 1 for value in res["b"])
+
+
+def test_decorated_function_returns_nested_list():
+    """A nested top-level return is restored, not silently flattened."""
+
+    def kernel():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        first = sample(kernel, shots=50)()
+        second = sample(kernel, shots=50)()
+        return [first, (second,)]
+
+    res = main()
+    assert isinstance(res, list)
+    assert len(res) == 2
+    assert res[0].shape == (50,)
+    assert isinstance(res[1], tuple)
+    assert res[1][0].shape == (50,)
+
+
+def test_decorated_function_returns_single_element_container():
+    """A one-element top-level container is preserved, not unwrapped."""
+
+    def kernel():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        return measure(qf)
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return {"only": sample(kernel, shots=50)()}
+
+    res = main()
+    assert isinstance(res, dict)
+    assert set(res) == {"only"}
+    assert res["only"].shape == (50,)
