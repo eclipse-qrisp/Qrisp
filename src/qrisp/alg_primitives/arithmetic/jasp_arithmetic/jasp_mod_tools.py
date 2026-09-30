@@ -454,10 +454,13 @@ def best_montgomery_shift(n: int | BigInteger | Array, N: int | BigInteger | Arr
 
     Parameters
     ----------
-    n : int or BigInteger
-        Number of partial products (e.g., bit-width of the quantum multiplicand).
-    N : int or BigInteger, optional
-        Odd modulus. If None, falls back to ceil(log2(n)).
+    n : int, BigInteger or Array
+        Number of partial products summed by the reduction. For the multiplication
+        of a quantum register by a classical factor, this is the number of qubits
+        of the register, not the value of the factor. May be a traced JAX scalar.
+    N : int, BigInteger or Array, optional
+        Odd modulus, possibly a traced JAX scalar. If None or a BigInteger,
+        falls back to ceil(log2(n)).
 
     Returns
     -------
@@ -476,16 +479,10 @@ def best_montgomery_shift(n: int | BigInteger | Array, N: int | BigInteger | Arr
     if (N is None) or isinstance(N, BigInteger):
         return smallest_power_of_two(n)
 
-    # Use integer-safe ceil-division with JAX or Python ints
+    # ceil(n·(N-1)/N) equals n - floor(n/N). Computing n·(N-1) instead would
+    # overflow int64 for traced moduli larger than about 2^63 / n.
     if check_for_tracing_mode():
         nj = jnp.asarray(n)
-        mod_jax = jnp.asarray(N)
-        num = nj * (mod_jax - 1)
-        den = mod_jax
-        # ceil(num/den) = (num + den - 1) // den
-        ceil_div = (num + den - 1) // den
-        return smallest_power_of_two(ceil_div)
+        return smallest_power_of_two(nj - nj // jnp.asarray(N))
 
-    num = n * (N - 1)
-    ceil_div = (num + N - 1) // N
-    return smallest_power_of_two(ceil_div)
+    return smallest_power_of_two(n - n // N)

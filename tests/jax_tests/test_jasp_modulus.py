@@ -713,3 +713,99 @@ def test_static_modulus_hardcoded_literal_repeated_calls():
 
     for _ in range(3):
         assert int(solve()) == 8
+
+
+# ----------------- Montgomery shift of the multiplication by a classical factor -----------------
+
+# The multiplication by a classical factor X uses a Montgomery reduction with a
+# shift m that must depend on the size n of the quantum register: the reduction
+# sums one partial product (reduced modulo N) per qubit, so m = ceil(log2(n))
+# is enough. The shift used to be computed from the value of X instead, which
+# was close to n for large factors and could overflow for 32-bit moduli.
+# The factors below cover both regimes: small (2, 3) and close to N.
+
+
+@pytest.mark.parametrize("N", [13, 17])
+def test_inplace_multiplication_by_classical_factor_all_inputs(N):
+    """``qm *= X`` computes X * y mod N for every input y, with and without a control qubit."""
+    from qrisp import QuantumBool, QuantumModulus, boolean_simulation, control, measure
+
+    @boolean_simulation
+    def multiply(x, y, c):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        ctrl = QuantumBool()
+        ctrl[:] = c
+        with control(ctrl[0]):
+            qm *= x
+        return measure(qm)
+
+    for x in (2, 3, N - 2, N - 1):
+        for y in range(N):
+            for c in (0, 1):
+                assert int(multiply(x, y, c)) == x**c * y % N, (x, y, c)
+
+
+@pytest.mark.parametrize("N", [13, 17])
+def test_multiplication_by_classical_factor_all_inputs(N):
+    """``qm * X`` computes X * y mod N for every input y and leaves ``qm`` unchanged."""
+    from qrisp import QuantumModulus, boolean_simulation, measure
+
+    @boolean_simulation
+    def multiply(x, y):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        res = qm * x
+        return measure(qm), measure(res)
+
+    for x in (2, 3, N - 2, N - 1):
+        for y in range(N):
+            assert tuple(int(v) for v in multiply(x, y)) == (y, x * y % N), (x, y)
+
+
+def test_inplace_multiplication_with_32_bit_modulus():
+    """``qm *= X`` computes X * y mod N for a 32-bit integer modulus.
+
+    Regression test: the shift was computed from X * (N - 1), which overflowed
+    int64 for a 32-bit factor and modulus. The shift became 0 and the result was wrong.
+    """
+    from qrisp import QuantumModulus, boolean_simulation, measure
+
+    N = 3221225473
+
+    @boolean_simulation
+    def multiply(x, y):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        qm *= x
+        return measure(qm)
+
+    for x, y in [(N - 2, 12345), (N - 2, N - 1), (3, 2**31 + 5), (123456789, 987654321)]:
+        assert int(multiply(x, y)) == x * y % N, (x, y)
+
+
+@pytest.mark.parametrize(
+    "N, factor, peak",
+    [(40961, 3, 58), (40961, 40959, 58), (3221225473, 3, 108), (3221225473, 3221225471, 108)],
+    ids=["16-bit N, factor 3", "16-bit N, factor N - 2", "32-bit N, factor 3", "32-bit N, factor N - 2"],
+)
+def test_multiplication_shift_depends_on_register_size(N, factor, peak):
+    """A controlled ``qm *= X`` needs the same number of qubits for every factor X.
+
+    It allocates the control qubit, the n-qubit register, a temporary copy of it,
+    m + 1 auxiliary qubits and the n + m ancillas of the widest Gidney adder:
+    3n + 2m + 2 qubits with m = ceil(log2(n)), that is 58 for n = 16 and 108 for n = 32.
+
+    Regression test: with the shift computed from the value of the factor, the
+    qubit count changed with the factor (54 and 82 for n = 16).
+    """
+    from qrisp import QuantumBool, QuantumModulus, control, h, num_qubits
+
+    def main():
+        qm = QuantumModulus(N)
+        ctrl = QuantumBool()
+        h(ctrl)
+        with control(ctrl):
+            qm *= factor
+
+    assert num_qubits(meas_behavior="1")(main)()["peak_allocations"] == peak

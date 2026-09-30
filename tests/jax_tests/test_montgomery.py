@@ -16,8 +16,25 @@
 
 """Tests for Jasp Montgomery modular multiplication and order-finding via QPE."""
 
-from qrisp import BigInteger
+import pytest
+
+from qrisp import BigInteger, best_montgomery_shift, boolean_simulation
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
+
+
+@pytest.mark.parametrize(
+    "n, N, shift",
+    [(10, 97, 4), (5, 3, 2), (32, 3221225473, 5), (62, 2**62 - 57, 6)],
+    ids=["n=10, N=97", "n=5, N=3", "32-bit N", "62-bit N"],
+)
+def test_best_montgomery_shift(n, N, shift):
+    """The shift is ceil(log2(ceil(n (N - 1) / N))) in Python and under tracing, also for moduli close to 2**63.
+
+    Regression test: under tracing, n * (N - 1) was computed in int64 and
+    overflowed for large moduli, which gave a wrong shift.
+    """
+    assert best_montgomery_shift(n, N) == shift
+    assert int(boolean_simulation(best_montgomery_shift)(n, N)) == shift
 
 
 def test_montgomery_jasp_qq():
@@ -81,7 +98,7 @@ def test_montgomery_jasp_cq():
     def cq(a, b, n, N):
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a)
+        shift = best_montgomery_shift(n, N)  # one partial product per qubit of qb
         res = cq_montgomery_multiply(a, qb, N, shift, gidney_adder)
         return measure(qb), measure(res)
 
@@ -106,7 +123,7 @@ def test_montgomery_jasp_cq_inplace():
     def icq(a, b, n, N):
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a)
+        shift = best_montgomery_shift(n, N)  # one partial product per qubit of qb
         cq_montgomery_multiply_inplace(a, qb, N, shift, gidney_adder)
         return measure(qb)
 
@@ -139,7 +156,7 @@ def test_montgomery_jasp_cq_inplace_controlled():
     def cicq(a, b, n, N, c):
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a)
+        shift = best_montgomery_shift(n, N)  # one partial product per qubit of qb
         qc = QuantumBool()
         qc[:] = c
         with control(qc[0]):
@@ -178,7 +195,7 @@ def test_montgomery_jasp_cq_inplace_bi():
         N = BigInteger.create(N, 3)
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a)
+        shift = best_montgomery_shift(n, N)  # one partial product per qubit of qb
         qc = QuantumBool()
         qc[:] = c
         with control(qc[0]):

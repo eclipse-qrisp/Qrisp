@@ -412,7 +412,10 @@ class QuantumModulus(QuantumFloat):
                 cq_montgomery_multiply,
             )
 
-            shift = best_montgomery_shift(other, self.modulus)
+            # The Montgomery reduction sums one partial product (reduced modulo N)
+            # per qubit of self, so the shift depends on the size of self, not on
+            # the value of the classical factor.
+            shift = best_montgomery_shift(self.size, self.modulus)
             if isinstance(self.modulus, BigInteger):
                 if not isinstance(other, BigInteger):
                     other = _coerce_bigint_operand(other, self.modulus)
@@ -437,11 +440,14 @@ class QuantumModulus(QuantumFloat):
                 cq_montgomery_multiply_inplace,
             )
 
-            # If other is a np.integer, convert to Python int for compatibility with best_montgomery_shift
+            # If other is a np.integer, convert it to a Python int for the Montgomery helpers
             if isinstance(other, np.integer):
                 other = int(other)
 
-            shift = best_montgomery_shift(other, self.modulus)
+            # The Montgomery reduction sums one partial product (reduced modulo N)
+            # per qubit of self, so the shift depends on the size of self, not on
+            # the value of the classical factor.
+            shift = best_montgomery_shift(self.size, self.modulus)
             if isinstance(self.modulus, BigInteger):
                 if not isinstance(other, BigInteger):
                     other = _coerce_bigint_operand(other, self.modulus)
