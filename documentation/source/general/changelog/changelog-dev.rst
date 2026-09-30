@@ -189,6 +189,7 @@ Bug Fixes
   the same declarative assembly format as the remaining operations, which also
   removes the stray whitespace around ``(`` and ``,`` those printers emitted
   and stops attributes from being dropped.
+
 * Removed reduant imports in the top-level ``qrisp`` package.
   (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
 

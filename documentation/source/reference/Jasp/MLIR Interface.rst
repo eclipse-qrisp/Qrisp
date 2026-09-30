@@ -269,7 +269,9 @@ Textual Formats and Interoperability
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``str(mlir_module)`` prints the Jasp operations in their **custom assembly
-format**, for instance::
+format**, for instance
+
+.. code-block:: none
 
     %0, %1 = jasp.create_qubits %arg0, %arg1 : tensor<i64>, !jasp.QuantumState -> !jasp.QubitArray, !jasp.QuantumState
 
@@ -288,7 +290,9 @@ knowledge of the dialect's custom syntax at all::
 
     Printer(print_generic_format=True).print_op(mlir_module)
 
-which prints the same module as::
+which prints the same module as 
+
+.. code-block:: none
 
     %0, %1 = "jasp.create_qubits"(%arg0, %arg1) : (tensor<i64>, !jasp.QuantumState) -> (!jasp.QubitArray, !jasp.QuantumState)
 
