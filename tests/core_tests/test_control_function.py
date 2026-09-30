@@ -30,7 +30,7 @@ from qrisp import (
     measure,
     x,
 )
-from qrisp.jasp import boolean_simulation, jaspify, make_jaspr
+from qrisp.jasp import boolean_simulation, make_jaspr
 
 UNSUPPORTED_MESSAGE = "Don't know how to control from input type"
 
@@ -339,9 +339,7 @@ def test_jasp_classical_control(value):
 def test_jasp_classical_ctrl_state_and_invert(value):
     """A string ctrl_state is a binary number, and invert negates the condition."""
 
-    # jaspify, because boolean_simulation measures single qubits as integers, which
-    # breaks the negation that invert applies to several booleans.
-    @jaspify
+    @boolean_simulation
     def main(n):
         a = QuantumFloat(2)
         a[:] = n

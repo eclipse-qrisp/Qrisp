@@ -128,6 +128,23 @@ def test_jasp_return_types():
     }
 
 
+@pytest.mark.parametrize("value", [0, 1])
+def test_boolean_simulation_measures_a_qubit_as_a_boolean(value):
+    """Under boolean_simulation, a measured qubit is a boolean, so ~ negates it."""
+
+    @boolean_simulation
+    def main(n):
+        qf = QuantumFloat(1)
+        qf[:] = n
+        result = measure(qf[0])
+        return result, ~result
+
+    result, negated = main(value)
+    assert result.dtype == jnp.bool_
+    assert bool(result) == bool(value)
+    assert bool(negated) != bool(value)
+
+
 @pytest.mark.parametrize("value", [0, 5, 6])
 def test_jasp_measurement_values(value):
     """The traced outcomes match the encoded state."""
