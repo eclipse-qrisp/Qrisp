@@ -72,7 +72,7 @@ def _jax_mulmod(a: int | Array, b: int | Array, modulus: int | Array) -> Array:
     b = (jnp.asarray(b, dtype=jnp.int64) % modulus).astype(jnp.uint64)
     n = modulus.astype(jnp.uint64)
 
-    def body_fun(i, acc):
+    def body_fun(i: Array, acc: Array) -> Array:
         # Bits of b from the most significant one (b < modulus < 2**63 has 63 bits)
         bit = (b >> (jnp.uint64(62) - i.astype(jnp.uint64))) & jnp.uint64(1)
         acc = (acc * jnp.uint64(2)) % n
@@ -133,11 +133,11 @@ def pow2_mod_N(m: int | Array, N: int | Array) -> Array:
     # State tuple: (result, base, exponent, modulus)
     init_state = (jnp.asarray(1, dtype=N.dtype), base % N, m, N)
 
-    def cond_fun(state):
+    def cond_fun(state: tuple[Array, Array, Array, Array]) -> Array:
         _, _, exp, _ = state
         return exp > 0
 
-    def body_fun(state):
+    def body_fun(state: tuple[Array, Array, Array, Array]) -> tuple[Array, Array, Array, Array]:
         res, b, exp, mod = state
 
         # If exp is odd, update result: res = (res * b) % mod

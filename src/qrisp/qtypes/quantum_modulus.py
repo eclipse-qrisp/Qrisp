@@ -16,17 +16,34 @@
 
 """Defines QuantumModulus, a QuantumFloat subtype for modular arithmetic used in e.g. Shor's algorithm."""
 
-from functools import wraps
+from __future__ import annotations
 
-import jax
+from collections.abc import Callable
+from functools import wraps
+from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, cast
+
 import jax.numpy as jnp
 import numpy as np
+from jax import Array
 from jax.core import Tracer
 
 from qrisp import check_for_tracing_mode
 from qrisp.core import cx
 from qrisp.misc import gate_wrap
 from qrisp.qtypes.quantum_float import QuantumFloat
+
+if TYPE_CHECKING:
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    from qrisp.core import QuantumSession
+    from qrisp.qtypes.quantum_bool import QuantumBool
+
+    # QuantumModulus supports integer operands only (traced integers are jax
+    # Arrays), so its operators narrow the QuantumFloat signatures.
+    _ClassicalInteger = int | np.integer | Array | BigInteger
+    _Operand = QuantumFloat | _ClassicalInteger
+    _ComparisonOperand = QuantumFloat | int | np.integer | Array
+
+_Comparison = TypeVar("_Comparison", bound=Callable[..., "QuantumBool"])
 
 
 def _moduli_neq(a, b):
@@ -105,16 +122,16 @@ def _coerce_bigint_operand(value, modulus):
     return BigInteger.coerce(value, modulus.digits.shape[0])
 
 
-def _is_classical_factor(value):
+def _is_classical_factor(value: object) -> TypeGuard[_ClassicalInteger]:
     """Return whether ``value`` is a classical integer that a QuantumModulus can be multiplied with."""
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )
 
-    return isinstance(value, (int, np.integer, jnp.integer, jax.Array, Tracer, BigInteger))
+    return isinstance(value, (int, np.integer, jnp.integer, Array, Tracer, BigInteger))
 
 
-def _normalize_modular_arithmetic_operand(qm, other):
+def _normalize_modular_arithmetic_operand(qm: QuantumModulus, other: _Operand) -> _Operand:
     """Return a quantum operand as is, and encode a classical one in the representation of ``qm``."""
     if isinstance(other, QuantumFloat):
         return other
@@ -122,11 +139,11 @@ def _normalize_modular_arithmetic_operand(qm, other):
     return qm.encoder(other % qm.modulus)
 
 
-def comparison_wrapper(func):
+def comparison_wrapper(func: _Comparison) -> _Comparison:
     """Check that a QuantumModulus comparison compares values in the same representation, then run it."""
 
     @wraps(func)
-    def res_func(self, other):
+    def res_func(self: QuantumModulus, other: Any) -> QuantumBool:
 
         if not check_for_tracing_mode() and isinstance(other, QuantumModulus):
             # Two QuantumModuli can be compared as long as they share the
@@ -143,7 +160,7 @@ def comparison_wrapper(func):
 
         return func(self, other)
 
-    return res_func
+    return cast(_Comparison, res_func)
 
 
 class QuantumModulus(QuantumFloat):
@@ -260,7 +277,12 @@ class QuantumModulus(QuantumFloat):
 
     """
 
-    def __init__(self, modulus, inpl_adder=None, qs=None):
+    def __init__(
+        self,
+        modulus: int | BigInteger | Array,
+        inpl_adder: Callable | None = None,
+        qs: QuantumSession | None = None,
+    ) -> None:
         """Create a register holding values modulo ``modulus``, multiplied with the adder ``inpl_adder``."""
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
             smallest_power_of_two,
@@ -314,7 +336,9 @@ class QuantumModulus(QuantumFloat):
 
         return new_montgomery_decoder(i, self.m, self.modulus)
 
-    def jdecoder(self, i):
+    def jdecoder(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, i: int | BigInteger | Array
+    ) -> int | BigInteger | Array:
         """Decode a Montgomery-encoded value, also under tracing and without the range check of ``decoder``."""
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
             new_montgomery_decoder,
@@ -322,7 +346,7 @@ class QuantumModulus(QuantumFloat):
 
         return new_montgomery_decoder(i, self.m, self.modulus)
 
-    def measure(self):
+    def measure(self) -> int | BigInteger | Array:
         """Measure the register and return the decoded value, as a BigInteger for a BigInteger modulus."""
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
             BigInteger,
@@ -337,20 +361,22 @@ class QuantumModulus(QuantumFloat):
             for_loop = q_fori_loop
         else:
 
-            def for_loop(lower, upper, body_fun, init_val):
+            def for_loop(lower: int, upper: int, body_fun: Callable[[int, Array], Array], init_val: Array) -> Array:
                 val = init_val
                 for i in range(lower, upper):
                     val = body_fun(i, val)
                 return val
 
-        def body_fun(i, val):
+        def body_fun(i: int | Array, val: Array) -> Array:
             return val.at[i].set(measure(self[32 * i : 32 * (i + 1)]).astype(jnp.uint32))
 
         digits = for_loop(0, (self.size - 1) // 32, body_fun, jnp.zeros_like(self.modulus.digits))
         digits = digits.at[(self.size - 1) // 32].set(measure(self[32 * ((self.size - 1) // 32) :]).astype(jnp.uint32))
         return self.jdecoder(BigInteger(digits))
 
-    def encoder(self, i):
+    def encoder(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, i: _ClassicalInteger
+    ) -> int | BigInteger | Array:
         """Encode a value in the Montgomery representation of the register.
 
         Outside of tracing, the value must lie in ``[0, modulus)``.
@@ -384,7 +410,9 @@ class QuantumModulus(QuantumFloat):
 
         return montgomery_encoder(i_value, 2**self.m, modulus_value)
 
-    def _classical_factor_operands(self, other):
+    def _classical_factor_operands(
+        self, other: _ClassicalInteger
+    ) -> tuple[int | BigInteger | Array, int | BigInteger | Array, int | Array]:
         """Return the factor, the modulus and the Montgomery shift of the multiplication by a classical factor.
 
         For a BigInteger modulus, the factor and the modulus are returned with
@@ -413,7 +441,9 @@ class QuantumModulus(QuantumFloat):
         return other, self.modulus, shift
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __mul__(self, other):
+    def __mul__(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, other: QuantumModulus | _ClassicalInteger
+    ) -> QuantumFloat:
         """Return a new QuantumModulus holding the product with a QuantumModulus or a classical factor."""
         if isinstance(other, QuantumModulus):
             if not check_for_tracing_mode() and _moduli_neq(self.modulus, other.modulus):
@@ -444,7 +474,7 @@ class QuantumModulus(QuantumFloat):
     __rmul__ = __mul__
 
     @gate_wrap(permeability=[1], is_qfree=True)
-    def __imul__(self, other):
+    def __imul__(self, other: _ClassicalInteger) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Multiply the register in place by a classical factor."""
         if _is_classical_factor(other):
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
@@ -458,7 +488,7 @@ class QuantumModulus(QuantumFloat):
         raise TypeError(f"Quantum modular in-place multiplication with type {type(other)} not implemented")
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __add__(self, other):
+    def __add__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a new QuantumModulus holding the sum with a quantum or classical value."""
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
@@ -480,7 +510,7 @@ class QuantumModulus(QuantumFloat):
     __radd__ = __add__
 
     @gate_wrap(permeability=[1], is_qfree=True)
-    def __iadd__(self, other):
+    def __iadd__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Add a quantum or classical value to the register in place."""
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
@@ -501,7 +531,7 @@ class QuantumModulus(QuantumFloat):
         return self
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __sub__(self, other):
+    def __sub__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a new QuantumModulus holding the difference with a quantum or classical value."""
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
@@ -523,7 +553,7 @@ class QuantumModulus(QuantumFloat):
         return res
 
     @gate_wrap(permeability="args", is_qfree=True)
-    def __rsub__(self, other):
+    def __rsub__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a new QuantumModulus holding a quantum or classical value minus the register."""
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
@@ -544,7 +574,7 @@ class QuantumModulus(QuantumFloat):
         return res
 
     @gate_wrap(permeability=[1], is_qfree=True)
-    def __isub__(self, other):
+    def __isub__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Subtract a quantum or classical value from the register in place."""
         other = _normalize_modular_arithmetic_operand(self, other)
         if isinstance(other, QuantumModulus):
@@ -563,43 +593,43 @@ class QuantumModulus(QuantumFloat):
         return self
 
     @comparison_wrapper
-    def __lt__(self, other):
+    def __lt__(self, other: _ComparisonOperand) -> QuantumBool:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a QuantumBool indicating whether the register is less than ``other``."""
         from qrisp.alg_primitives import uint_lt
 
         return uint_lt(self, other, self.inpl_adder)
 
     @comparison_wrapper
-    def __gt__(self, other):
+    def __gt__(self, other: _ComparisonOperand) -> QuantumBool:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a QuantumBool indicating whether the register is greater than ``other``."""
         from qrisp.alg_primitives import uint_gt
 
         return uint_gt(self, other, self.inpl_adder)
 
     @comparison_wrapper
-    def __le__(self, other):
+    def __le__(self, other: _ComparisonOperand) -> QuantumBool:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a QuantumBool indicating whether the register is at most ``other``."""
         from qrisp.alg_primitives import uint_le
 
         return uint_le(self, other, self.inpl_adder)
 
     @comparison_wrapper
-    def __ge__(self, other):
+    def __ge__(self, other: _ComparisonOperand) -> QuantumBool:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a QuantumBool indicating whether the register is at least ``other``."""
         from qrisp.alg_primitives import uint_ge
 
         return uint_ge(self, other, self.inpl_adder)
 
     @comparison_wrapper
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> QuantumBool:
         """Return a QuantumBool indicating whether the register equals ``other``."""
         return QuantumFloat.__eq__(self, other)
 
     @comparison_wrapper
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> QuantumBool:
         """Return a QuantumBool indicating whether the register differs from ``other``."""
         return QuantumFloat.__ne__(self, other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """Hash by identity, since the equality operator returns a QuantumBool."""
         return id(self)
