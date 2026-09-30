@@ -21,72 +21,18 @@ from numbers import Integral
 
 import jax.numpy as jnp
 
-from qrisp.alg_primitives.arithmetic.adders.adder_utilities import _is_quantum_register
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    _resolve_c_in,
+    _resolve_c_out,
+    _resolve_ctrl,
+    _validate_adder_inputs,
+)
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import conjugate, custom_control
 from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.misc import int_encoder
 from qrisp.qtypes import QuantumBool
-
-
-def _resolve_c_in(c_in, ancilla):
-    """Resolve the carry-in qubit and apply the initial c_in-controlled cx.
-
-    The carry-in may be passed as a QuantumBool or a bare Qubit. This helper
-    normalizes it to a Qubit (raising a TypeError for any other type in static
-    mode) and then seeds the carry ancilla with the carry-in value via
-    CNOT gate. The resolved qubit is returned so the caller can
-    uncompute it after the addition.
-    """
-    if c_in is None:
-        return None
-
-    if isinstance(c_in, QuantumBool):
-        c_in = c_in[0]
-    elif not check_for_tracing_mode() and not isinstance(c_in, Qubit):
-        raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
-
-    cx(c_in, ancilla[0])
-    return c_in
-
-
-def _resolve_c_out(c_out):
-    """Return the carry-out qubit.
-
-    The carry-out may be passed as a QuantumBool or a bare Qubit. This helper
-    normalizes it to a Qubit and raises a TypeError for any other type in
-    static mode. It does not apply any gates itself.
-    """
-    if c_out is None:
-        return None
-
-    if isinstance(c_out, QuantumBool):
-        return c_out[0]
-
-    if not check_for_tracing_mode() and not isinstance(c_out, Qubit):
-        raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
-
-    return c_out
-
-
-def _resolve_ctrl(ctrl):
-    """Return the control qubit.
-
-    The control may be passed as a QuantumBool or a bare Qubit. This helper
-    normalizes it to a Qubit and raises a TypeError for any other type in
-    static mode. It does not apply any gates itself.
-    """
-    if ctrl is None:
-        return None
-
-    if isinstance(ctrl, QuantumBool):
-        return ctrl[0]
-
-    if not check_for_tracing_mode() and not isinstance(ctrl, Qubit):
-        raise TypeError(f"ctrl must be of type QuantumBool or Qubit, not {type(ctrl)}")
-
-    return ctrl
 
 
 def _apply_maj_gates(a, b, ancilla, dim_a):
@@ -488,19 +434,25 @@ def cuccaro_adder(
     Array(9., dtype=float64)
 
     """
-    # The second argument is required to be a (non-empty) quantum register
-    if not _is_quantum_register(b) or (isinstance(b, list) and len(b) == 0):
-        raise ValueError(
-            "The second argument must be of type QuantumVariable, DynamicQubitArray or a non-empty list[Qubit]."
+    # A classical addend must be an int, a (little-endian) binary string or a
+    # supported quantum register. Reject any other scalar type with a clear
+    # TypeError before the generic pair check below, which reports invalid input
+    # *pairs* (e.g. a non-quantum target) as ValueError.
+    if not isinstance(a, (Integral, str, list, QuantumVariable, DynamicQubitArray)) and not (
+        check_for_tracing_mode()
+        and (
+            hasattr(a, "get_bit")
+            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
         )
+    ):
+        raise TypeError(f"a must be of type int, str, QuantumVariable, DynamicQubitArray or list[Qubit], not {type(a)}")
 
-    # A list that does not contain only Qubits is neither a valid quantum register
-    # nor a valid classical input.
-    if isinstance(a, list) and not _is_quantum_register(a):
-        raise ValueError("If the first argument is a list, it must contain only Qubits.")
+    # The second argument is required to be a (non-empty) quantum register,
+    # and the first must be a quantum register or a classical value.
+    a_is_quantum, _ = _validate_adder_inputs(a, b)
 
     # convert the classical input to a quantum input
-    if not _is_quantum_register(a):
+    if not a_is_quantum:
         # Binary strings are little-endian: "10" means bit 0 is 1 (value 1).
         if isinstance(a, str):
             a = int(a[::-1], 2) if a else 0
@@ -548,9 +500,13 @@ def cuccaro_adder(
     # a single carry ancilla is sufficient for the Cuccaro adder
     ancilla = QuantumVariable(1)
 
-    c_in = _resolve_c_in(c_in, ancilla)
+    c_in = _resolve_c_in(c_in)
     c_out = _resolve_c_out(c_out)
     ctrl = _resolve_ctrl(ctrl)
+
+    # seed the carry ancilla with the carry-in value
+    if c_in is not None:
+        cx(c_in, ancilla[0])
 
     # first maj gate application + iterator maj gate application
     _apply_maj_gates(a, b, ancilla, dim_a)

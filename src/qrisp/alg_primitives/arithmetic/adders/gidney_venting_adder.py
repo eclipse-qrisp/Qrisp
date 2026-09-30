@@ -43,7 +43,7 @@ if TYPE_CHECKING:  # noqa
         BigInteger,
     )  # noqa
 
-from qrisp.alg_primitives.arithmetic.adders.gidney_adder import _extract_bit
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import _extract_bit
 
 
 def bit_inverted_mcx(
