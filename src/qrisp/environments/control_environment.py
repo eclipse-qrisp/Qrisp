@@ -497,7 +497,7 @@ def control(
     For a string, character ``i`` is the state of the ``i``-th qubit in quantum
     control, while classical control reads the string as a binary number, so its
     last character is the state of the first boolean. ``invert`` has no effect on
-    quantum control in Jasp mode and on classical control in static mode.
+    quantum control in Jasp mode.
 
     See Also
     --------

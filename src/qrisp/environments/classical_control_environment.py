@@ -171,10 +171,10 @@ class ClControlEnvironment(QuantumEnvironment):
         self.invert = invert
 
     def compile(self):
-        for i in range(len(self.ctrl_bls)):
-            if self.ctrl_bls[i] != bool((self.ctrl_state >> i) & 1):
-                break
-        else:
+        bits = [bool((self.ctrl_state >> i) & 1) for i in range(len(self.ctrl_bls))]
+        matches = not any(ctrl_bl != bit for ctrl_bl, bit in zip(self.ctrl_bls, bits))
+        # With invert, the body takes effect when the booleans do not match ctrl_state.
+        if matches != bool(self.invert):
             QuantumEnvironment.compile(self)
 
     def __exit__(self, exception_type, exception_value, traceback):
@@ -193,15 +193,16 @@ class ClControlEnvironment(QuantumEnvironment):
         static_error_appeared = False
         if not check_for_tracing_mode():
             if exception_type is not None:
-                for i in range(len(self.ctrl_bls)):
-                    ctrl_bl = self.ctrl_bls[i]
-                    if (ctrl_bl ^ (self.ctrl_state >> i)) & 1:
-                        self.env_qs.data = []
-                        static_error_appeared = True
-                        exception_type = None
-                        exception_value = None
-                        traceback = None
-                        break
+                states = [self.ctrl_state >> i for i in range(len(self.ctrl_bls))]
+                pairs = zip(self.ctrl_bls, states)
+                mismatch = any((ctrl_bl ^ state) & 1 for ctrl_bl, state in pairs)
+                # With invert, the body was not supposed to run if the booleans match.
+                if mismatch != bool(self.invert):
+                    self.env_qs.data = []
+                    static_error_appeared = True
+                    exception_type = None
+                    exception_value = None
+                    traceback = None
 
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
 

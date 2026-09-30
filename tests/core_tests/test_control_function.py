@@ -209,13 +209,29 @@ def test_static_classical_control(ctrl, ctrl_state, applies):
     assert bit(target) == applies
 
 
-@pytest.mark.xfail(strict=True, reason="ClControlEnvironment ignores invert in static mode")
-def test_static_classical_invert():
-    """invert=True should negate a classical condition in static mode."""
+@pytest.mark.parametrize("flag", [True, False])
+def test_static_classical_invert(flag):
+    """invert=True negates a classical condition."""
     target = QuantumBool()
-    with control(True, invert=True):
+    with control(flag, invert=True):
         x(target)
+    assert bit(target) == (not flag)
+
+
+@pytest.mark.parametrize("flag, invert", [(False, False), (True, True)])
+def test_static_classical_inactive_block_errors_are_discarded(flag, invert):
+    """An error raised by a block that does not take effect is discarded with the block."""
+    target = QuantumBool()
+    with control(flag, invert=invert):
+        x(target)
+        raise IndexError("raised inside an inactive block")
     assert not bit(target)
+
+
+def test_static_classical_active_block_errors_propagate():
+    """An error raised by a block that takes effect propagates."""
+    with pytest.raises(IndexError), control(False, invert=True):
+        raise IndexError("raised inside an active block")
 
 
 # Jasp mode: dispatch
