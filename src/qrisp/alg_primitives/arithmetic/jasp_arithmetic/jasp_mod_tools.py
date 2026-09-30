@@ -26,6 +26,8 @@
 # - best_montgomery_shift implements the paper's choice using N when available,
 #   and falls back to ceil(log2(n)) when N is not provided.
 
+from typing import cast
+
 import jax.numpy as jnp
 import numpy as np
 from jax import Array, jit, lax
@@ -38,6 +40,70 @@ from .jasp_bigintiger import (
     bi_montgomery_decode,
     bi_montgomery_encode,
 )
+
+
+@jit
+def _jax_mulmod(a: int | Array, b: int | Array, modulus: int | Array) -> Array:
+    """Compute ``a * b % modulus`` for JAX integers without overflow, for 0 < modulus < 2**63.
+
+    The product is built bit by bit (double and add) in unsigned 64-bit
+    arithmetic, where every intermediate value stays below 2 * modulus < 2**64.
+    Computing ``a * b`` directly would overflow int64 as soon as the modulus
+    exceeds 2**31.5.
+
+    Parameters
+    ----------
+    a : int or jnp scalar
+        First factor.
+    b : int or jnp scalar
+        Second factor.
+    modulus : int or jnp scalar
+        Modulus.
+
+    Returns
+    -------
+    jnp scalar
+        ``a * b % modulus`` with the dtype of the modulus.
+
+    """
+    dtype = jnp.asarray(modulus).dtype
+    modulus = jnp.asarray(modulus, dtype=jnp.int64)
+    a = (jnp.asarray(a, dtype=jnp.int64) % modulus).astype(jnp.uint64)
+    b = (jnp.asarray(b, dtype=jnp.int64) % modulus).astype(jnp.uint64)
+    n = modulus.astype(jnp.uint64)
+
+    def body_fun(i, acc):
+        # Bits of b from the most significant one (b < modulus < 2**63 has 63 bits)
+        bit = (b >> (jnp.uint64(62) - i.astype(jnp.uint64))) & jnp.uint64(1)
+        acc = (acc * jnp.uint64(2)) % n
+        return jnp.where(bit == jnp.uint64(1), (acc + a) % n, acc)
+
+    return lax.fori_loop(0, 63, body_fun, jnp.zeros_like(a)).astype(dtype)
+
+
+def _mulmod(a: int | Array, b: int | Array, modulus: int | Array) -> int | Array:
+    """Compute ``a * b % modulus`` exactly, also for JAX integers whose product would overflow int64.
+
+    Parameters
+    ----------
+    a : int or jnp scalar
+        First factor.
+    b : int or jnp scalar
+        Second factor.
+    modulus : int or jnp scalar
+        Modulus.
+
+    Returns
+    -------
+    int or jnp scalar
+        ``a * b % modulus``, as a JAX scalar if any input is a JAX array.
+
+    """
+    if isinstance(a, Array) or isinstance(b, Array) or isinstance(modulus, Array):
+        return _jax_mulmod(a, b, modulus)
+    if all(isinstance(v, (int, np.integer)) for v in (a, b, modulus)):
+        return (int(a) * int(b)) % int(modulus)
+    return ((a % modulus) * (b % modulus)) % modulus
 
 
 @jit
@@ -77,10 +143,10 @@ def pow2_mod_N(m: int | Array, N: int | Array) -> Array:
         # If exp is odd, update result: res = (res * b) % mod
         # jax.lax.select acts like an if-else statement without breaking traceability
         is_odd = exp % 2 == 1
-        res = lax.select(is_odd, (res * b) % mod, res)
+        res = lax.select(is_odd, _jax_mulmod(res, b, mod), res)
 
         # Square the base and halve the exponent
-        b = (b * b) % mod
+        b = _jax_mulmod(b, b, mod)
         exp = exp // 2
 
         return (res, b, exp, mod)
@@ -170,6 +236,16 @@ def pow2mod(exp: int | Array, modulus: int | BigInteger | Array) -> int | Array 
 def _bigint_width(*values: int | BigInteger | Array) -> int:
     """Return the limb width shared by every BigInteger among values.
 
+    Parameters
+    ----------
+    *values : int, BigInteger or Array
+        Operands, at least one of which is a BigInteger.
+
+    Returns
+    -------
+    int
+        The number of limbs of the BigInteger operands.
+
     Raises
     ------
     ValueError
@@ -180,6 +256,24 @@ def _bigint_width(*values: int | BigInteger | Array) -> int:
     if len(widths) > 1:
         raise ValueError(f"Mixed BigInteger limb widths are not supported: {sorted(widths)}")
     return next(iter(widths))
+
+
+def _as_common_bigints(*values: int | BigInteger | Array) -> tuple[BigInteger, ...]:
+    """Convert values to BigIntegers with the limb width of the BigInteger among them.
+
+    Parameters
+    ----------
+    *values : int, BigInteger or Array
+        Operands, at least one of which is a BigInteger.
+
+    Returns
+    -------
+    tuple[BigInteger, ...]
+        The operands as BigIntegers of the same limb width, in the same order.
+
+    """
+    width = _bigint_width(*values)
+    return tuple(BigInteger.coerce(v, width) for v in values)
 
 
 def montgomery_encoder(
@@ -199,7 +293,7 @@ def montgomery_encoder(
     Returns
     -------
     int or BigInteger
-        x in Montgomery form.
+        The value x in Montgomery form.
 
     Examples
     --------
@@ -217,12 +311,8 @@ def montgomery_encoder(
 
     """
     if isinstance(x, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
-        width = _bigint_width(x, R, N)
-        x_bi = BigInteger.coerce(x, width)
-        r_bi = BigInteger.coerce(R, width)
-        n_bi = BigInteger.coerce(N, width)
-        return bi_montgomery_encode(x_bi, r_bi, n_bi)
-    return ((x % N) * (R % N)) % N
+        return bi_montgomery_encode(*_as_common_bigints(x, R, N))
+    return _mulmod(x, R, N)
 
 
 def new_montgomery_decoder(
@@ -289,15 +379,11 @@ def montgomery_decoder(
 
     """
     if isinstance(y, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
-        width = _bigint_width(y, R, N)
-        y_bi = BigInteger.coerce(y, width)
-        r_bi = BigInteger.coerce(R, width)
-        n_bi = BigInteger.coerce(N, width)
-        return bi_montgomery_decode(y_bi, r_bi, n_bi)
+        return bi_montgomery_decode(*_as_common_bigints(y, R, N))
     # Handle fractional R (from negative Montgomery shifts)
     effective_R = modinv(int(R**-1), N) if isinstance(R, float) and 0 < R < 1 else R
-    R_inv = modinv(effective_R, N)
-    return ((y % N) * (R_inv % N)) % N
+    # Without BigInteger operands, modinv returns an integer
+    return _mulmod(y, cast("int | Array", modinv(effective_R, N)), N)
 
 
 def egcd(a: int, b: int) -> tuple[int | Array, int | Array, int | Array]:
@@ -361,10 +447,7 @@ def modinv(a: int | BigInteger | Array, m: int | BigInteger | Array) -> int | Bi
 
     """
     if isinstance(a, BigInteger) or isinstance(m, BigInteger):
-        width = _bigint_width(a, m)
-        a_bi = BigInteger.coerce(a, width)
-        m_bi = BigInteger.coerce(m, width)
-        return bi_modinv(a_bi, m_bi)
+        return bi_modinv(*_as_common_bigints(a, m))
 
     if check_for_tracing_mode():
         dtype = jnp.asarray(m).dtype
@@ -394,7 +477,7 @@ def modinv(a: int | BigInteger | Array, m: int | BigInteger | Array) -> int | Bi
 
 
 def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
-    """ceil(log2(n)) computed in a JAX-safe way.
+    """Compute ceil(log2(n)) in a JAX-safe way.
 
     Parameters
     ----------
@@ -404,7 +487,7 @@ def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
     Returns
     -------
     int or jnp.int64
-        ceil(log2(n)) with 0 for n <= 1.
+        The value ceil(log2(n)), or 0 for n <= 1.
 
     Examples
     --------
@@ -430,9 +513,12 @@ def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
         return (n - 1).bit_length() if n > 1 else 0
 
     if check_for_tracing_mode():
-        nj = jnp.asarray(n)
-        # Avoid log2(0); define result 0 for n<=1
-        return jnp.where(nj <= 1, jnp.int64(0), jnp.ceil(jnp.log2(nj)).astype(jnp.int64))
+        nj = jnp.asarray(n, dtype=jnp.int64)
+        # ceil(log2(n)) is the bit length of n - 1, counted exactly: a float log2
+        # cannot tell 2**k + 1 from 2**k for large k.
+        bit_length = jnp.sum(jnp.right_shift((nj - 1)[..., None], jnp.arange(63, dtype=jnp.int64)) > 0, axis=-1)
+        bit_length = bit_length.astype(jnp.int64)
+        return lax.select(nj <= 1, jnp.zeros_like(bit_length), bit_length)
 
     if isinstance(n, Array):
         # Concrete (non-traced) JAX scalar, e.g. from indexing a jnp.ndarray

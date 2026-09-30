@@ -809,3 +809,49 @@ def test_multiplication_shift_depends_on_register_size(N, factor, peak):
             qm *= factor
 
     assert num_qubits(meas_behavior="1")(main)()["peak_allocations"] == peak
+
+
+@pytest.mark.parametrize("factor", [3, np.int64(3), jnp.int64(3)], ids=["int", "np.int64", "jnp.int64"])
+def test_multiplication_accepts_the_same_factors_as_inplace_multiplication(factor):
+    """``qm * X`` accepts the same classical factors as ``qm *= X``, including JAX integers.
+
+    Regression test: ``qm * jnp.int64(3)`` raised a TypeError, while ``qm *= jnp.int64(3)`` worked.
+    """
+    from qrisp import QuantumModulus, jaspify, measure
+
+    @jaspify
+    def multiply():
+        qm = QuantumModulus(13)
+        qm[:] = 5
+        return measure(qm * factor)
+
+    @jaspify
+    def multiply_inplace():
+        qm = QuantumModulus(13)
+        qm[:] = 5
+        qm *= factor
+        return measure(qm)
+
+    assert int(multiply()) == 5 * 3 % 13
+    assert int(multiply_inplace()) == 5 * 3 % 13
+
+
+def test_montgomery_shift_roundtrip_with_40_bit_modulus():
+    """A QuantumModulus with a non-zero Montgomery shift measures the value it was set to, for a 40-bit modulus.
+
+    Regression test: encoding and decoding multiplied in int64, which overflowed
+    for moduli above 2**31.5.
+    """
+    from qrisp import QuantumModulus, boolean_simulation, measure
+
+    N = 1000000000039
+
+    @boolean_simulation
+    def roundtrip(value):
+        qm = QuantumModulus(N)
+        qm.m = 3
+        qm[:] = value
+        return measure(qm)
+
+    for value in (1, 12345, 987654321123, N - 1):
+        assert int(roundtrip(value)) == value, value

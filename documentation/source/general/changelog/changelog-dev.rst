@@ -306,6 +306,15 @@ Bug Fixes
   overflowed, which gave wrong results. ``best_montgomery_shift`` no longer
   overflows for traced moduli close to 2**63.
 
+* The modular arithmetic helpers behind :class:`~qrisp.QuantumModulus` are
+  exact for large integer moduli under tracing. ``pow2_mod_N``,
+  ``montgomery_encoder`` and ``montgomery_decoder`` multiplied in int64, which
+  overflowed for moduli above 2**31.5, so for example a ``QuantumModulus`` with
+  a non-zero Montgomery shift decoded wrong values. ``smallest_power_of_two``
+  used a floating-point logarithm, which gave one bit too few from 2**49 on.
+  ``qm * X`` now also accepts the same classical factors as ``qm *= X``,
+  including JAX integers.
+
 Compatibility
 -------------
 

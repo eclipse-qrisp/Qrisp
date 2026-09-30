@@ -313,6 +313,61 @@ def test_pow2_mod_n_traced_matches_python_pow():
         assert int(traced(exp, mod)) == pow(2, exp, mod)
 
 
+def test_pow2_mod_n_large_moduli():
+    """`pow2_mod_N` matches Python's pow for moduli of 33 to 63 bits.
+
+    Regression test: the products were computed in int64, which overflowed for
+    moduli above 2**31.5.
+    """
+    import random
+
+    import jax
+    import jax.numpy as jnp
+
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import pow2_mod_N
+
+    rng = random.Random(0)
+    cases = [
+        (rng.randrange(200), rng.randrange(2 ** (bits - 1) + 1, 2**bits, 2)) for bits in range(33, 64) for _ in range(8)
+    ]
+    results = jax.vmap(pow2_mod_N)(jnp.array([e for e, _ in cases]), jnp.array([n for _, n in cases]))
+    assert results.tolist() == [pow(2, e, n) for e, n in cases]
+
+
+@pytest.mark.parametrize("bits", [32, 40, 50, 62])
+def test_traced_montgomery_encoder_and_decoder_large_moduli(bits):
+    """Under tracing, `montgomery_encoder` and `montgomery_decoder` match the Python results for large moduli.
+
+    Regression test: x * R was computed in int64, which overflowed for moduli above 2**31.5.
+    """
+    import random
+
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_decoder, montgomery_encoder
+
+    rng = random.Random(bits)
+    N = rng.randrange(2 ** (bits - 1) + 1, 2**bits, 2)
+    encode = boolean_simulation(montgomery_encoder)
+    decode = boolean_simulation(montgomery_decoder)
+    for _ in range(5):
+        x, R = rng.randrange(N), rng.randrange(1, N)
+        assert int(encode(x, R, N)) == x * R % N
+        assert int(decode(x, 8, N)) == montgomery_decoder(x, 8, N)
+
+
+def test_traced_smallest_power_of_two_exact():
+    """Under tracing, `smallest_power_of_two` gives ceil(log2(n)) exactly around every power of two below 2**63.
+
+    Regression test: a float log2 gave one bit too few for n = 2**k + 1 with k >= 49.
+    """
+    traced = boolean_simulation(smallest_power_of_two)
+    for k in range(1, 63):
+        for n in (2**k - 1, 2**k, 2**k + 1):
+            if n < 2**63:
+                assert int(traced(n)) == smallest_power_of_two(n), n
+    assert int(traced(0)) == 0
+    assert int(traced(1)) == 0
+
+
 def test_smallest_power_of_two_bigint_matches_int_at_powers_of_two():
     """`smallest_power_of_two` must agree between the int and BigInteger paths, including at exact powers of two."""  # {1, 2, 4, 8, 16, 1024} in addition to non-power-of-two values and n=0.
     for n in [0, 1, 2, 3, 4, 7, 8, 15, 16, 100, 1023, 1024]:
