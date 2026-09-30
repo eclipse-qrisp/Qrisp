@@ -438,21 +438,14 @@ def cuccaro_adder(
     # supported quantum register. Reject any other scalar type with a clear
     # TypeError before the generic pair check below, which reports invalid input
     # *pairs* (e.g. a non-quantum target) as ValueError.
-    if not isinstance(
-        a, (Integral, str, list, QuantumVariable, DynamicQubitArray)
-    ) and not (
+    if not isinstance(a, (Integral, str, list, QuantumVariable, DynamicQubitArray)) and not (
         check_for_tracing_mode()
         and (
             hasattr(a, "get_bit")
-            or (
-                getattr(a, "ndim", None) == 0
-                and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer)
-            )
+            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
         )
     ):
-        raise TypeError(
-            f"a must be of type int, str, QuantumVariable, DynamicQubitArray or list[Qubit], not {type(a)}"
-        )
+        raise TypeError(f"a must be of type int, str, QuantumVariable, DynamicQubitArray or list[Qubit], not {type(a)}")
 
     # The second argument is required to be a (non-empty) quantum register,
     # and the first must be a quantum register or a classical value.
