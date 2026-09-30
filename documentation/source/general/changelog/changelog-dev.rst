@@ -276,6 +276,13 @@ Bug Fixes
   inconsistent error messages
   (`#877 <https://github.com/eclipse-qrisp/Qrisp/issues/877>`_).
 
+* :ref:`num_qubits <num_qubits>` now computes the size of a sliced qubit array
+  with Python slicing semantics. Negative bounds were taken literally, so for
+  example ``qv[:-1]`` had a negative size, and allocations sized from it (such
+  as the ancillas of the adder in the Montgomery reduction of Shor's
+  algorithm) were miscounted. Fusing a qubit array with a single qubit no
+  longer raises a ``TypeError``.
+
 Compatibility
 -------------
 

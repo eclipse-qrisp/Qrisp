@@ -30,6 +30,7 @@ from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
 )
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
+    AbstractQubit,
     AbstractQubitArray,
 )
 
@@ -143,14 +144,26 @@ class NumQubitsMetric(BaseMetric):
 
     def handle_fuse(self, invalues, eqn, context_dic):
 
+        # Each operand is either a QubitArray (represented by its size)
+        # or a single Qubit (represented by None), which contributes one qubit.
+        size_1, size_2 = (
+            1 if isinstance(invar.aval, AbstractQubit) else value for invar, value in zip(eqn.invars, invalues)
+        )
+
         # Associate the following in context_dic:
         # QubitArray -> size1 + size2
-        return invalues[0] + invalues[1]
+        return size_1 + size_2
 
     def handle_slice(self, invalues, eqn, context_dic):
 
-        start = jnp.max(jnp.array([invalues[1], 0]))
-        stop = jnp.min(jnp.array([invalues[2], invalues[0]]))
+        size, start, stop = invalues
+
+        # Follow Python slicing semantics (step 1): negative bounds count from
+        # the end, out-of-range bounds are clamped and an empty slice has size 0.
+        start = start + (start < 0) * size
+        stop = stop + (stop < 0) * size
+        start = jnp.maximum(start, 0)
+        stop = jnp.maximum(jnp.minimum(stop, size), start)
 
         # Associate the following in context_dic:
         # QubitArray -> size
