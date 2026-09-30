@@ -826,22 +826,6 @@ class TestDepthNegativeIndex:
     # The depth of two gates on the same qubit, which must run one after the other
     SEQUENTIAL_DEPTH = 2
 
-    @pytest.mark.parametrize("size", [1, 3, 5])
-    def test_last_qubit_dynamic_size(self, size):
-        """``qv[-1]`` is the last qubit of a register with a dynamic size.
-
-        Regression test: ``qv[-1]`` addressed an unallocated entry at the end of the
-        lookup table, so the two gates below looked parallel and the depth was 1.
-        """
-
-        @depth(meas_behavior="0")
-        def main(n):
-            qv = QuantumFloat(n)
-            h(qv[-1])
-            h(qv[n - 1])  # the same qubit, so the two gates are sequential
-
-        assert main(size) == self.SEQUENTIAL_DEPTH
-
     def test_last_qubit_static_size(self):
         """``qv[-1]`` is the last qubit of a register with a static size."""
 
@@ -853,17 +837,21 @@ class TestDepthNegativeIndex:
 
         assert main() == self.SEQUENTIAL_DEPTH
 
-    @pytest.mark.parametrize("index", [-1, -2, -3])
-    def test_negative_index_matches_positive_index(self, index):
-        """Each negative index addresses the same qubit as ``n + index``."""
+    @pytest.mark.parametrize("size, index", [(1, -1), (3, -1), (3, -2), (3, -3), (5, -1)])
+    def test_negative_index_matches_positive_index(self, size, index):
+        """In a register with a dynamic size, each negative index addresses the same qubit as ``n + index``.
+
+        Regression test: a negative index addressed an unallocated entry at the end
+        of the lookup table, so the two gates below looked parallel and the depth was 1.
+        """
 
         @depth(meas_behavior="0")
         def main(n):
             qv = QuantumFloat(n)
             h(qv[index])
-            h(qv[n + index])
+            h(qv[n + index])  # the same qubit, so the two gates are sequential
 
-        assert main(3) == self.SEQUENTIAL_DEPTH
+        assert main(size) == self.SEQUENTIAL_DEPTH
 
     def test_negative_index_other_qubit_is_parallel(self):
         """A gate on ``qv[-1]`` and a gate on ``qv[0]`` act on different qubits and run in parallel."""

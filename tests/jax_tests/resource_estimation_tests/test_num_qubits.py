@@ -31,7 +31,6 @@ from qrisp import (
     measure,
     num_qubits,
     parity,
-    reset,
     x,
 )
 from qrisp.jasp import expectation_value, jlen, jrange, make_jaspr, profile_jaspr, qache
@@ -186,33 +185,8 @@ class TestNumQubitsSimple:
         }
         assert main(num_qubits_input) == expected_dic
 
-    def test_num_qubits_reset_does_not_change_counts(self):
-        """Test that resetting qubits neither allocates nor deallocates them."""
-
-        @num_qubits(meas_behavior="0")
-        def main(num_qubits_input):
-            qv = QuantumFloat(num_qubits_input)
-            h(qv[0])
-            reset(qv)
-            qv.delete()
-
-        num_qubits_input = 3
-        expected_dic = {
-            "total_allocated": num_qubits_input,
-            "total_deallocated": num_qubits_input,
-            "peak_allocations": num_qubits_input,
-            "finally_allocated": 0,
-        }
-        assert main(num_qubits_input) == expected_dic
-
-    def test_num_qubits_with_return_values(self):
-        """Test that the counts are extracted correctly when the function returns values."""
-
-        @num_qubits(meas_behavior="1")
-        def return_measurement(num_qubits_input):
-            qv = QuantumFloat(num_qubits_input)
-            h(qv[0])
-            return measure(qv)
+    def test_num_qubits_with_multiple_return_values(self):
+        """Test that the counts are extracted correctly when the function returns several values."""
 
         @num_qubits(meas_behavior="1")
         def return_multiple(num_qubits_input):
@@ -223,12 +197,6 @@ class TestNumQubitsSimple:
             return measure(qv), qb
 
         num_qubits_input = 3
-        assert return_measurement(num_qubits_input) == {
-            "total_allocated": num_qubits_input,
-            "total_deallocated": 0,
-            "peak_allocations": num_qubits_input,
-            "finally_allocated": num_qubits_input,
-        }
         assert return_multiple(num_qubits_input) == {
             "total_allocated": num_qubits_input + 1,
             "total_deallocated": 0,

@@ -105,35 +105,6 @@ class TestCountOpsSingleQubit:
         assert main() == {"rx": 1, "rz": 1, "u3": 1, "measure": 3}
 
 
-class TestCountOpsMultiQubit:
-    """Test that count_ops is correctly computed for multi-qubit gates."""
-
-    def test_bell_pair(self):
-        """Test count_ops of a two-qubit Bell state preparation."""
-
-        @count_ops(meas_behavior="0")
-        def main():
-            qv = QuantumVariable(2)
-            h(qv[0])
-            cx(qv[0], qv[1])
-            return measure(qv)
-
-        assert main() == {"h": 1, "cx": 1, "measure": 2}
-
-    def test_ghz_state(self):
-        """Test count_ops of an n-qubit GHZ state preparation via a jrange loop."""
-
-        @count_ops(meas_behavior="0")
-        def main(n):
-            qv = QuantumVariable(n)
-            h(qv[0])
-            for i in jrange(1, n):
-                cx(qv[0], qv[i])
-            return measure(qv)
-
-        assert main(5) == {"h": 1, "cx": 4, "measure": 5}
-
-
 class TestCountOpsControlStructures:
     """Test that count_ops is correctly computed for control structures."""
 

@@ -14,22 +14,15 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tools to perform quantum resource estimation using the Jasp infrastructure.
+"""User-facing decorators for quantum resource estimation of Jasp functions."""
 
-This file implements the tools to perform quantum resource estimation using Jasp
-infrastructure. The idea here is to transform the quantum instructions within a
-given Jaspr into "counting instructions". That means instead of performing some
-quantum gate, we increment an index in an array, which keeps track of how many
-instructions of each type have been performed.
-
-To do this, we implement the
-
-qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter.py
-
-Which handles the transformation logic of the Jaspr.
-This file implements the interfaces to evaluating the transformed Jaspr.
-
-"""
+# Resource estimation transforms the quantum instructions of a Jaspr into
+# classical "counting instructions": instead of performing a quantum gate, a
+# metric updates classical data, for example by incrementing a gate counter.
+# The transformation itself is implemented in
+# qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter, while this
+# module implements the decorators (count_ops, depth, num_qubits) that
+# evaluate the transformed Jaspr.
 
 import warnings
 from collections.abc import Callable

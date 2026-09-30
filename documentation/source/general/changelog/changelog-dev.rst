@@ -108,9 +108,10 @@ Improvements
 - The :ref:`num_qubits <num_qubits>` resource estimator no longer limits the
   number of qubit allocations and deallocations. It now keeps four running
   counters instead of recording every event in a fixed-size buffer, so large
-  programs (such as 2048-bit Shor, with millions of ancilla allocations) no
-  longer overflow, and the result is no longer replayed event by event in
-  Python. The returned dictionary is unchanged.
+  programs with millions of allocations no longer overflow, and the result is
+  no longer replayed event by event in Python. The returned dictionary is
+  unchanged
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 Other New Features
 ------------------
@@ -281,10 +282,8 @@ Bug Fixes
 
   - ``count_ops`` and ``num_qubits`` now compute the size of a sliced qubit
     array with Python slicing semantics. Negative bounds were taken literally,
-    so for example ``x(qv[:-1])`` counted no gates. The Montgomery reduction of
-    Shor's algorithm adds into such a slice, so its gate counts were too low
-    (by 0.17% of the T gates for the 128-bit example of the ``BigInteger``
-    tutorial), and the ancillas of that adder were not counted as qubits.
+    so for example ``x(qv[:-1])`` counted no gates, and qubits allocated with
+    the size of such a slice were miscounted.
   - Fusing a qubit array with a single qubit no longer raises a ``TypeError``
     in ``count_ops`` and ``num_qubits``.
   - ``depth`` now resolves negative qubit indices such as ``qv[-1]`` correctly
@@ -294,6 +293,8 @@ Bug Fixes
     does. With a random ``meas_behavior``, they reused the same outcome for
     every measurement of a loop, and could follow different branches than
     ``count_ops`` for the same program.
+
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 Compatibility
 -------------
@@ -363,7 +364,8 @@ API Changes
   :func:`BlockEncoding.resources <qrisp.block_encodings.BlockEncoding.resources>`
   is deprecated and has no effect: passing it emits a
   ``QrispDeprecationWarning``. Programs that exceeded the old limit no longer
-  raise ``ValueError``.
+  raise ``ValueError``
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 .. Add API changes above this line
 
@@ -373,9 +375,12 @@ Development
 * Refactored the Jasp resource estimators: the slice, fuse and register
   handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and
   the parity handler now have a single implementation shared by the metrics,
-  and the metric modules are clean under ruff and pyright. Added tests on
+  and the metric modules are clean under ruff and pyright. The tests of
+  resource estimation with Jasp now live in
+  ``tests/jax_tests/resource_estimation_tests``, which includes tests on
   textbook circuits (GHZ, Grover, Toffoli, Bernstein-Vazirani, teleportation,
-  repetition code) whose resources are known in closed form.
+  repetition code) whose resources are known in closed form
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 * Added Dependabot configuration for automated dependency updates
   (grouped by type, with labels applied automatically).

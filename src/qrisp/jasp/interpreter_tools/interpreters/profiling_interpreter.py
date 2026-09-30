@@ -14,22 +14,13 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tools to perform quantum resource estimation using the Jasp infrastructure.
+"""Interpreter that turns a Jaspr into a classical computation of a resource metric."""
 
-This file implements the tools to perform quantum resource estimation using Jasp
-infrastructure. The idea here is to transform the quantum instructions within a
-given Jaspr into "counting instructions". That means instead of performing some
-quantum gate, we increment an index in an array, which keeps track of how many
-instructions of each type have been performed.
-
-To do this, we implement the
-
-qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter.py
-
-Which handles the transformation logic of the Jaspr.
-This file implements the interfaces to evaluating the transformed Jaspr.
-
-"""
+# Instead of performing quantum operations, the profiling interpreter lets a
+# metric (a subclass of BaseMetric) update classical metric data for every
+# quantum primitive, for example by incrementing a gate counter. The metrics
+# themselves live in the *_metric.py modules next to this one, and the
+# user-facing decorators in qrisp.jasp.evaluation_tools.profiler.
 
 import types
 from abc import ABC, abstractmethod
@@ -903,7 +894,7 @@ def build_metric_profiler(jaspr: "Jaspr", metric: BaseMetric, callback_threshold
         """Run the jitted evaluator on ``args`` and the initial metric data."""
         # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
         # Import here to avoid circular import issues
-        from qrisp.operators import FermionicOperator, QubitOperator  # pylint: disable=import-outside-toplevel
+        from qrisp.operators import FermionicOperator, QubitOperator
 
         static_types = (str, QubitOperator, FermionicOperator, types.FunctionType)
 
@@ -946,7 +937,7 @@ def get_cached_jaspr(function: Any, args: tuple[Any, ...], meas_behavior: Any) -
 
     """
     # Import here to avoid circular import issues
-    from qrisp.jasp import make_jaspr  # pylint: disable=import-outside-toplevel
+    from qrisp.jasp import make_jaspr
 
     if not hasattr(function, "jaspr_dict"):
         function.jaspr_dict = {}
