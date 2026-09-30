@@ -16,30 +16,183 @@
 
 """Implements the Cuccaro ripple-carry in-place adder for quantum and classical-quantum addition."""
 
+import functools
+from numbers import Integral
+
 import jax.numpy as jnp
 
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import _is_quantum_register
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import conjugate, custom_control
-from qrisp.jasp import check_for_tracing_mode, jlen, jrange
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.misc import int_encoder
-from qrisp.qtypes import QuantumBool, QuantumFloat
+from qrisp.qtypes import QuantumBool
+
+
+def _resolve_c_in(c_in, ancilla):
+    """Resolve the carry-in qubit and apply the initial c_in-controlled cx.
+
+    The carry-in may be passed as a QuantumBool or a bare Qubit. This helper
+    normalizes it to a Qubit (raising a TypeError for any other type in static
+    mode) and then seeds the carry ancilla with the carry-in value via
+    CNOT gate. The resolved qubit is returned so the caller can
+    uncompute it after the addition.
+    """
+    if c_in is None:
+        return None
+
+    if isinstance(c_in, QuantumBool):
+        c_in = c_in[0]
+    elif not check_for_tracing_mode() and not isinstance(c_in, Qubit):
+        raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
+
+    cx(c_in, ancilla[0])
+    return c_in
+
+
+def _resolve_c_out(c_out):
+    """Return the carry-out qubit.
+
+    The carry-out may be passed as a QuantumBool or a bare Qubit. This helper
+    normalizes it to a Qubit and raises a TypeError for any other type in
+    static mode. It does not apply any gates itself.
+    """
+    if c_out is None:
+        return None
+
+    if isinstance(c_out, QuantumBool):
+        return c_out[0]
+
+    if not check_for_tracing_mode() and not isinstance(c_out, Qubit):
+        raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
+
+    return c_out
+
+
+def _resolve_ctrl(ctrl):
+    """Return the control qubit.
+
+    The control may be passed as a QuantumBool or a bare Qubit. This helper
+    normalizes it to a Qubit and raises a TypeError for any other type in
+    static mode. It does not apply any gates itself.
+    """
+    if ctrl is None:
+        return None
+
+    if isinstance(ctrl, QuantumBool):
+        return ctrl[0]
+
+    if not check_for_tracing_mode() and not isinstance(ctrl, Qubit):
+        raise TypeError(f"ctrl must be of type QuantumBool or Qubit, not {type(ctrl)}")
+
+    return ctrl
+
+
+def _apply_maj_gates(a, b, ancilla, dim_a):
+    """Apply the majority (maj) gate chain of the Cuccaro adder.
+
+    The maj gates compute the carry bits into the ``ancilla`` (reusing the
+    ``a`` qubits as scratch space) while leaving the sum bits of ``b``
+    untouched. The first few gates set up the carry at the least significant
+    bit, and the loop then propagates it upward across the remaining ``dim_a``
+    bits.
+    """
+    cx(a[0], b[0])
+    cx(a[0], ancilla[0])
+    mcx([ancilla[0], b[0]], a[0])
+
+    for i in jrange(1, dim_a):
+        cx(a[i], b[i])
+        cx(a[i], a[i - 1])
+        mcx([a[i - 1], b[i]], a[i])
+
+
+def _apply_uma_gates(a, b, ancilla, ctrl, dim_a):
+    """Apply the unmajority (uma) gate chain of the Cuccaro adder.
+
+    The uma gates run in reverse over the qubits and use the carries stored in
+    the previous phase to write the result of the addition back into ``b``.
+    There are two variants: the uncontrolled version toggles qubits with ``x``
+    to save an ancilla, while the controlled version (``ctrl`` given) replaces
+    those X gates with Toffolis controlled on ``ctrl`` so the addition only
+    happens when the control is |1>.
+    """
+    if ctrl is None:
+        for j in jrange(dim_a - 1):
+            i = dim_a - j - 1
+
+            x(b[i])
+            cx(a[i - 1], b[i])
+            mcx([a[i - 1], b[i]], a[i])
+            x(b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+
+        x(b[0])
+        cx(ancilla[0], b[0])
+        mcx([ancilla[0], b[0]], a[0])
+        x(b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+
+    else:
+        for j in jrange(dim_a - 1):
+            i = dim_a - j - 1
+
+            mcx([a[i - 1], b[i]], a[i])
+            mcx([ctrl, a[i - 1]], b[i])
+            cx(a[i], a[i - 1])
+            cx(a[i], b[i])
+
+        mcx([ancilla[0], b[0]], a[0])
+        mcx([ctrl, ancilla[0]], b[0])
+        cx(a[0], ancilla[0])
+        cx(a[0], b[0])
+
+
+def _apply_c_out(c_out, a, ctrl):
+    """Copy the final carry into the carry-out qubit.
+
+    After the maj phase the most significant carry still sits in the top ``a``
+    qubit. If a carry-out qubit was requested, this helper copies it over
+    before the uma phase uncomputes the carries. For a controlled addition,
+    the copy is also controlled so the carry-out remains unchanged when the
+    control is disabled.
+    """
+    if c_out is not None:
+        if ctrl is None:
+            cx(a[-1], c_out)
+        else:
+            mcx([ctrl, a[-1]], c_out)
+
+
+def _uncompute_c_in(c_in, ancilla):
+    """Uncompute the carry-in seeding from the carry ancilla.
+
+    ``_resolve_c_in`` seeded the ancilla with the carry-in value at the start
+    of the addition. After the full adder has run, the same cnot is applied
+    again to clear the ancilla so it can be safely deleted.
+    """
+    if c_in is not None:
+        cx(c_in, ancilla[0])
 
 
 @custom_control
 def cuccaro_adder(
-    a: int | QuantumVariable,
-    b: QuantumVariable,
+    a: int | str | QuantumVariable | DynamicQubitArray | list,
+    b: QuantumVariable | DynamicQubitArray | list,
     c_in: QuantumBool | Qubit | None = None,
     c_out: QuantumBool | Qubit | None = None,
-    ctrl: QuantumBool | None = None,
+    ctrl: QuantumBool | Qubit | None = None,
 ) -> None:
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
     This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
-    type and one quantum type. Note that when the first input is larger than the second input, the function will perform
-    modulo addition (relative to the size of the second input) after the first input is truncated to be the same size as
-    the second input.
+    type and one quantum type. All :ref:`QuantumTypes <QuantumTypes>` (e.g. QuantumFloat, QuantumBool, QuantumModulus,
+    ...), as well as lists of Qubits and DynamicQubitArrays, are supported as quantum inputs. Note that when the first
+    input is larger than the second input, the function will perform modulo addition (relative to the size of the second
+    input) after the first input is truncated to be the same size as the second input.
 
     The custom control implementation is based on Theorem 2.12 of https://arxiv.org/abs/2407.20167
 
@@ -51,21 +204,35 @@ def cuccaro_adder(
 
     Parameters
     ----------
-    a : int or QuantumVariable
-        The value that should be added.
-    b : QuantumVariable or list[Qubit]
+    a : int, str, QuantumVariable, list[Qubit] or DynamicQubitArray
+        The value that should be added. A ``str`` is interpreted as a
+        little-endian binary string (``"10"`` means bit 0 is 1, i.e. the value
+        1).
+    b : QuantumVariable or list[Qubit] or DynamicQubitArray
         The value that should be modified in the in-place addition.
     c_in : QuantumBool or Qubit, optional
         An optional carry in value. The default is None.
     c_out : QuantumBool or Qubit, optional
         An optional carry out value. The default is None.
+    ctrl : QuantumBool or Qubit, optional
+        An optional control qubit. If provided, the addition is only applied
+        when the control qubit is in the ``|1>`` state. The default is None.
 
     Raises
     ------
     TypeError
-        If carry in or carry out is not of type QuantumBool or Qubit in static mode.
+        If carry in, carry out or control is not of type QuantumBool or Qubit in
+        static mode.
+    TypeError
+        If the first argument is classical but not an integer or binary string
+        in static mode.
     ValueError
-        If the inputs are not valid quantum or classical types.
+        If the first argument is a ``str`` that is not a valid binary string.
+    ValueError
+        If the second argument is not a quantum register, i.e. if ``b`` is not a
+        QuantumVariable, DynamicQubitArray or a non-empty ``list[Qubit]``.
+    ValueError
+        If the first argument is a ``list`` that does not contain only Qubits.
 
     Returns
     -------
@@ -74,7 +241,13 @@ def cuccaro_adder(
 
     Examples
     --------
-    Static mode with both quantum inputs:
+    The examples below show how to use
+    :func:`~qrisp.alg_primitives.arithmetic.adders.cuccaro_adder`. Because ``a``
+    and ``b`` are generic quantum variables, the adder works with any quantum
+    type that can store a value, e.g. ``QuantumFloat``, ``QuantumVariable`` or
+    ``QuantumModulus``.
+
+    Static mode with both quantum inputs of equal size:
 
     >>> from qrisp import QuantumFloat, cuccaro_adder
     >>> a = QuantumFloat(4)
@@ -85,11 +258,265 @@ def cuccaro_adder(
     >>> print(b)
     {9: 1.0}
 
+    Static mode with a classical first input:
+
+    >>> from qrisp import QuantumFloat, cuccaro_adder
+    >>> b = QuantumFloat(4)
+    >>> b[:] = 3
+    >>> cuccaro_adder(5, b)
+    >>> print(b)
+    {8: 1.0}
+
+    A ``str`` is interpreted as a little-endian binary string (``"10"`` means
+    bit 0 is 1, i.e. the value 1). Here ``"1010"`` is the value 5:
+
+    >>> b = QuantumFloat(4)
+    >>> b[:] = 3
+    >>> cuccaro_adder("1010", b)
+    >>> print(b)
+    {8: 1.0}
+
+    If the classical input is larger than the second input, it is truncated
+    modulo ``2**len(b)``. Here, the 4-qubit `QuantumFloat` ``b`` can only hold
+    values from 0 to 15, so the sum value 16 cannot be represented. Since 16
+    wraps around to 0 in this `QuantumFloat`, adding 16 is equivalent to adding
+    0:
+
+    >>> b = QuantumFloat(4)
+    >>> b[:] = 5
+    >>> cuccaro_adder(16, b)
+    >>> print(b)
+    {5: 1.0}
+
+    Static mode with a quantum first input larger than the second input. The
+    first input is truncated to the size of the second input (i.e. addition is
+    performed modulo ``2**len(b)``) by slicing off its high-order qubits. No
+    qubits are added or removed, so ``a`` keeps its value and size:
+
+    >>> a = QuantumFloat(4)
+    >>> b = QuantumFloat(2)
+    >>> a[:] = 9
+    >>> b[:] = 2
+    >>> cuccaro_adder(a, b)
+    >>> print(a)
+    {9: 1.0}
+    >>> print(a.size)
+    4
+    >>> print(b)
+    {3: 1.0}
+
+    Static mode with a quantum first input smaller than the second input. The
+    first input is temporarily padded with additional (ancilla) qubits. The
+    helper ancillas are created in the ``|0>`` state and appended to ``a`` so
+    that the adder can process a register as large as ``b``. They are deleted
+    once the addition is done, so no extra qubits are left over. ``a`` itself is
+    not modified:
+
+    >>> a = QuantumFloat(2)
+    >>> b = QuantumFloat(4)
+    >>> a[:] = 3
+    >>> b[:] = 2
+    >>> cuccaro_adder(a, b)
+    >>> print(a.size)
+    2
+    >>> print(b)
+    {5: 1.0}
+
+    Lists of :class:`~qrisp.circuit.Qubit` objects are supported as well. The
+    slices ``a[:]`` and ``b[:]`` return the qubit registers of ``a`` and ``b``
+    as plain lists of Qubits, which are passed to the adder instead of the
+    QuantumFloat objects:
+
+    >>> a = QuantumFloat(5)
+    >>> b = QuantumFloat(4)
+    >>> a[:] = 10
+    >>> b[:] = 5
+    >>> cuccaro_adder(a[:], b[:])
+    >>> print(b)
+    {15: 1.0}
+
+    All :ref:`QuantumTypes <QuantumTypes>` are supported. A base
+    ``QuantumVariable`` (encoded with :func:`~qrisp.misc.int_encoder`), for
+    example, reports its measurement as a little-endian bit string, so the sum
+    8 is shown as ``"0001"``:
+
+    >>> from qrisp import QuantumVariable
+    >>> from qrisp.misc import int_encoder
+    >>> a = QuantumVariable(4)
+    >>> b = QuantumVariable(4)
+    >>> int_encoder(a, 5)
+    >>> int_encoder(b, 3)
+    >>> cuccaro_adder(a, b)
+    >>> print(b)
+    {'0001': 1.0}
+
+    A ``QuantumBool`` is a single-qubit register, so ``1 + 1`` wraps around
+    modulo 2 to ``False``:
+
+    >>> from qrisp import QuantumBool
+    >>> a = QuantumBool()
+    >>> b = QuantumBool()
+    >>> a.flip()
+    >>> b.flip()
+    >>> cuccaro_adder(a, b)
+    >>> print(b)
+    {False: 1.0}
+
+    A ``QuantumModulus`` works as long as the sum stays below the modulus:
+
+    >>> from qrisp import QuantumModulus
+    >>> a = QuantumModulus(13)
+    >>> b = QuantumModulus(13)
+    >>> a[:] = 5
+    >>> b[:] = 3
+    >>> cuccaro_adder(a, b)
+    >>> print(b)
+    {8: 1.0}
+
+    Addition with a carry-in and a carry-out qubit. ``c_in`` is an optional
+    carry-in bit, flipped to ``|1>`` here with ``x``, so it adds an extra 1 to
+    the sum. ``c_out`` records the overflow: it is set to ``True`` whenever the sum
+    does not fit in ``b``. The total sum is 6 + 3 + 1 = 10, which wraps around
+    in the 3-qubit ``b``, so ``b`` ends up with 10 mod 8 = 2 and ``c_out``
+    holds the overflow:
+
+    >>> from qrisp import QuantumBool, x
+    >>> b = QuantumFloat(3)
+    >>> b[:] = 6
+    >>> c_in = QuantumBool()
+    >>> x(c_in[0])
+    >>> c_out = QuantumBool()
+    >>> cuccaro_adder(3, b, c_in=c_in, c_out=c_out)
+    >>> print(b)
+    {2: 1.0}
+    >>> print(c_out)
+    {True: 1.0}
+
+    ``c_in`` and ``c_out`` also accept a bare :class:`~qrisp.circuit.Qubit`
+    (here the single qubit of a ``QuantumVariable``):
+
+    >>> from qrisp import QuantumVariable
+    >>> b = QuantumFloat(3)
+    >>> b[:] = 6
+    >>> c_in_var = QuantumVariable(1)
+    >>> x(c_in_var[0])
+    >>> c_out_var = QuantumVariable(1)
+    >>> cuccaro_adder(3, b, c_in=c_in_var[0], c_out=c_out_var[0])
+    >>> print(b)
+    {2: 1.0}
+    >>> print(c_out_var)
+    {'1': 1.0}
+
+    Controlled addition. ``ctrl`` is an optional control qubit, flipped to ``|1>``
+    here with ``x``. When ``ctrl`` is in the ``|1>`` state the addition is
+    applied; otherwise ``b`` stays unchanged. Here the sum 5 + 3 = 8 fits into
+    the 5-qubit ``b`` without wrap-around, so ``b`` ends up holding the sum 8:
+
+    >>> a = QuantumFloat(5)
+    >>> b = QuantumFloat(5)
+    >>> a[:] = 3
+    >>> b[:] = 5
+    >>> ctrl = QuantumBool()
+    >>> x(ctrl[0])
+    >>> cuccaro_adder(a, b, ctrl=ctrl)
+    >>> print(b)
+    {8: 1.0}
+
+    ``ctrl`` may also be a bare :class:`~qrisp.circuit.Qubit`:
+
+    >>> a = QuantumFloat(5)
+    >>> b = QuantumFloat(5)
+    >>> a[:] = 3
+    >>> b[:] = 5
+    >>> ctrl_var = QuantumVariable(1)
+    >>> x(ctrl_var[0])
+    >>> cuccaro_adder(a, b, ctrl=ctrl_var[0])
+    >>> print(b)
+    {8: 1.0}
+
+    Equivalently, the addition can be wrapped in a :func:`~qrisp.control`
+    environment (the ``custom_control`` mechanism):
+
+    >>> from qrisp import control
+    >>> a = QuantumFloat(5)
+    >>> b = QuantumFloat(5)
+    >>> a[:] = 3
+    >>> b[:] = 5
+    >>> ctrl = QuantumBool()
+    >>> x(ctrl[0])
+    >>> with control(ctrl):
+    ...     cuccaro_adder(a, b)
+    >>> print(b)
+    {8: 1.0}
+
+    Dynamic mode (inside a :func:`~qrisp.jasp.jaspify` decorated function):
+
+    The examples above can also be run inside a :func:`~qrisp.jasp.jaspify`
+    function. As ``b`` holds the result, ``measure`` is used to read it out. In
+    static mode ``print(b)`` already simulates and shows the outcome, so no
+    explicit measurement is needed. Inside a jaspified function, however, the
+    result is a quantum state that has to be collapsed with ``measure`` before
+    it can be returned as a classical value:
+
+    >>> from qrisp import QuantumFloat, cuccaro_adder, measure
+    >>> from qrisp.jasp import jaspify
+    >>> @jaspify
+    ... def main():
+    ...     a = QuantumFloat(4)
+    ...     b = QuantumFloat(4)
+    ...     a[:] = 4
+    ...     b[:] = 5
+    ...     cuccaro_adder(a, b)
+    ...     return measure(b)
+    >>> result = main()
+    >>> result  # result is 9 (4 + 5 = 9)
+    Array(9., dtype=float64)
+
+    In dynamic mode the quantum inputs may be
+    :class:`~qrisp.jasp.DynamicQubitArray` objects, such as those returned by
+    ``a.reg`` or by a full slice ``a[:]`` while tracing:
+
+    >>> @jaspify
+    ... def main():
+    ...     a = QuantumFloat(4)
+    ...     b = QuantumFloat(4)
+    ...     a[:] = 4
+    ...     b[:] = 5
+    ...     cuccaro_adder(a.reg, b.reg)
+    ...     return measure(b)
+    >>> main()
+    Array(9., dtype=float64)
+
     """
+    # The second argument is required to be a (non-empty) quantum register
+    if not _is_quantum_register(b) or (isinstance(b, list) and len(b) == 0):
+        raise ValueError(
+            "The second argument must be of type QuantumVariable, DynamicQubitArray or a non-empty list[Qubit]."
+        )
+
+    # A list that does not contain only Qubits is neither a valid quantum register
+    # nor a valid classical input.
+    if isinstance(a, list) and not _is_quantum_register(a):
+        raise ValueError("If the first argument is a list, it must contain only Qubits.")
+
     # convert the classical input to a quantum input
-    if not isinstance(a, QuantumVariable):
-        # create a QuantumFloat of the same size as the other quantum input
-        q_a = b.duplicate()
+    if not _is_quantum_register(a):
+        # Binary strings are little-endian: "10" means bit 0 is 1 (value 1).
+        if isinstance(a, str):
+            a = int(a[::-1], 2) if a else 0
+
+        # int_encoder reads only the target's bits while tracing. In static mode,
+        # validate the integer and truncate here because int_encoder rejects
+        # values wider than the register.
+        if not check_for_tracing_mode():
+            if not isinstance(a, Integral):
+                raise TypeError(
+                    f"a must be of type int, str, QuantumVariable, DynamicQubitArray or list[Qubit], not {type(a)}"
+                )
+            a = a % (1 << jlen(b))
+
+        # create a quantum variable of the same size as the other quantum input
+        q_a = QuantumVariable(jlen(b))
 
         with conjugate(int_encoder)(q_a, a):
             cuccaro_adder(q_a, b, c_in=c_in, c_out=c_out, ctrl=ctrl)
@@ -99,15 +526,10 @@ def cuccaro_adder(
         q_a.delete()
         return
 
-    if not isinstance(b, QuantumVariable):
-        raise ValueError("The second argument must be of type QuantumVariable.")
-
-    # when the inputs are of unequal length
+    # when the quantum inputs are of unequal length
     # pad the size of the input with the smaller size
-    dim_a = a.size
-    dim_b = b.size
-
-    max_size = jnp.maximum(dim_a, dim_b)
+    dim_a = jlen(a)
+    dim_b = jlen(b)
 
     # reduce the size of a to the size of b if a is larger than b
     effective_size_a = jnp.minimum(dim_a, dim_b)
@@ -119,85 +541,42 @@ def cuccaro_adder(
     extended_a = a[:] + extension_anc_a[:]
     a = extended_a
 
+    # redefine the dimensions of a and b after the size adjustments
     dim_a = jlen(a)
     dim_b = jlen(b)
 
-    ancilla = QuantumFloat(max_size)
+    # a single carry ancilla is sufficient for the Cuccaro adder
+    ancilla = QuantumVariable(1)
 
-    if c_in is not None:
-        if isinstance(c_in, QuantumBool):
-            c_in = c_in[0]
-        elif not check_for_tracing_mode() and not isinstance(c_in, Qubit):
-            raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
-        cx(c_in, ancilla[0])
+    c_in = _resolve_c_in(c_in, ancilla)
+    c_out = _resolve_c_out(c_out)
+    ctrl = _resolve_ctrl(ctrl)
 
-    if c_out is not None:
-        if isinstance(c_out, QuantumBool):
-            ancilla2 = c_out[0]
-        elif not check_for_tracing_mode() and not isinstance(c_out, Qubit):
-            raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
-        else:
-            ancilla2 = c_out
+    # first maj gate application + iterator maj gate application
+    _apply_maj_gates(a, b, ancilla, dim_a)
 
-    # first maj gate application
-    cx(a[0], b[0])
-    cx(a[0], ancilla[0])
-    mcx([ancilla[0], b[0]], a[0])
+    # copy carry-out
+    _apply_c_out(c_out, a, ctrl)
 
-    # iterator maj gate application
+    # iterator + last uma gate application
+    _apply_uma_gates(a, b, ancilla, ctrl, dim_a)
 
-    for i in jrange(1, dim_a):
-        cx(a[i], b[i])
-        cx(a[i], a[i - 1])
-        mcx([a[i - 1], b[i]], a[i])
-
-    # cnot
-    if c_out is not None:
-        cx(a[-1], ancilla2)
-
-    if ctrl is None:
-        # iterator uma gate application
-        for j in jrange(dim_a - 1):
-            # reverse the iteration
-            i = dim_a - j - 1
-
-            x(b[i])
-            cx(a[i - 1], b[i])
-            mcx([a[i - 1], b[i]], a[i])
-            x(b[i])
-            cx(a[i], a[i - 1])
-            cx(a[i], b[i])
-
-        # last uma gate application
-        x(b[0])
-        cx(ancilla[0], b[0])
-        mcx([ancilla[0], b[0]], a[0])
-        x(b[0])
-        cx(a[0], ancilla[0])
-        cx(a[0], b[0])
-
-    else:
-        # iterator uma gate application
-        for j in jrange(dim_a - 1):
-            # reverse the iteration
-            i = dim_a - j - 1
-
-            mcx([a[i - 1], b[i]], a[i])
-            mcx([ctrl, a[i - 1]], b[i])
-            cx(a[i], a[i - 1])
-            cx(a[i], b[i])
-
-        # last uma gate application
-        mcx([ancilla[0], b[0]], a[0])
-        mcx([ctrl, ancilla[0]], b[0])
-        cx(a[0], ancilla[0])
-        cx(a[0], b[0])
-
-    if c_in is not None:
-        cx(c_in, ancilla[0])
+    _uncompute_c_in(c_in, ancilla)
 
     # delete the ancilla used for carry bits
     ancilla.delete()
 
     # delete the extension ancillas when the inputs are of unequal length
     extension_anc_a.delete()
+
+
+# ``custom_control`` itself inspects the ``ctrl`` argument (it calls ``ctrl.qs()``)
+# before the function body runs, so an invalid control type would otherwise fail
+# deep inside the decorator. Validate/normalize it first with a thin public wrapper.
+_cuccaro_adder_core = cuccaro_adder
+
+
+@functools.wraps(_cuccaro_adder_core)
+def cuccaro_adder(a, b, c_in=None, c_out=None, ctrl=None):
+    """Validate the optional control argument and delegate to the controlled core."""
+    return _cuccaro_adder_core(a, b, c_in=c_in, c_out=c_out, ctrl=_resolve_ctrl(ctrl))
