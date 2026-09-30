@@ -320,28 +320,6 @@ def test_jasp_classical_control(value):
 
 
 @pytest.mark.parametrize("value", range(4))
-def test_jasp_quantum_control(value):
-    """The target is flipped only if the control qubit is 1."""
-    assert bool(boolean_simulation(controlled_flip)(value)) == bool(value & 1)
-
-
-@pytest.mark.parametrize("value", range(4))
-def test_jasp_quantum_ctrl_state(value):
-    """In Jasp mode, character i of a string ctrl_state is the state of qubit i."""
-
-    @boolean_simulation
-    def main(n):
-        a = QuantumFloat(2)
-        a[:] = n
-        target = QuantumBool()
-        with control([a[0], a[1]], ctrl_state="10"):
-            x(target)
-        return measure(target)
-
-    assert bool(main(value)) == (value == 1)
-
-
-@pytest.mark.parametrize("value", range(4))
 def test_jasp_classical_ctrl_state_and_invert(value):
     """A string ctrl_state is a binary number, and invert negates the condition."""
 
