@@ -26,7 +26,7 @@ from qrisp.misc.GMS_tools import (
     gms_multi_cx_fan_in,
 )
 
-random.seed(42)
+rng = random.Random(42)
 
 
 def test_GZZ_gates_example():
@@ -44,7 +44,7 @@ def test_GZZ_gates_example():
             matrix = np.zeros((n, n))
             for i in range(n):
                 for j in range(n):
-                    matrix[i, j] = random.randint(0, 2**bit - 1)
+                    matrix[i, j] = rng.randint(0, 2**bit - 1)
 
             det = np.round(np.linalg.det(matrix) % 2**bit)
 

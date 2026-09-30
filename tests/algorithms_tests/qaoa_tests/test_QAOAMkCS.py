@@ -52,7 +52,7 @@ def mkcs_obj(quantumcolor_array, G):
     return -color
 
 
-random.seed(42)
+rng = random.Random(42)
 
 def test_mkcs_G1e2c():
     ###### Trivial case with 1 edge and 2 colors,
@@ -69,7 +69,7 @@ def test_mkcs_G1e2c():
         mkcs_1e2c = QAOAProblem(
             create_coloring_operator(G1e2c), apply_XY_mixer, create_coloring_cl_cost_function(G1e2c)
         )
-        init_state = [random.choice(color_list) for _ in range(len(G1e2c))]
+        init_state = [rng.choice(color_list) for _ in range(len(G1e2c))]
 
         mkcs_1e2c.set_init_function(lambda x: x.encode(init_state))
         res1e2c = mkcs_1e2c.run(qarg, depth, mes_kwargs={"backend": qaoa_backend, "shots": 100000}, max_iter=25)
@@ -105,7 +105,7 @@ def test_mkcs_G1e2c():
         qarg = QuantumArray(qtype=QuantumColor(color_list, one_hot_enc=False), shape=num_nodes)
 
         mkcs_1e2c = QAOAProblem(create_coloring_operator(G1e2c), RX_mixer, create_coloring_cl_cost_function(G1e2c))
-        init_state = [random.choice(color_list) for _ in range(len(G1e2c))]
+        init_state = [rng.choice(color_list) for _ in range(len(G1e2c))]
 
         mkcs_1e2c.set_init_function(lambda x: x.encode(init_state))
         res1e2c = mkcs_1e2c.run(qarg, depth, mes_kwargs={"backend": qaoa_backend, "shots": 100000}, max_iter=25)
@@ -148,7 +148,7 @@ def test_mkcs_5nodes():
         qarg = QuantumArray(qtype=QuantumColor(color_list, one_hot_enc=True), shape=num_nodes)
 
         mkcs_onehot = QAOAProblem(create_coloring_operator(G), apply_XY_mixer, create_coloring_cl_cost_function(G))
-        init_state = [random.choice(color_list) for _ in range(len(G))]
+        init_state = [rng.choice(color_list) for _ in range(len(G))]
 
         mkcs_onehot.set_init_function(lambda x: x.encode(init_state))
 
@@ -182,7 +182,7 @@ def test_mkcs_5nodes():
         qarg = QuantumArray(qtype=QuantumColor(color_list, one_hot_enc=False), shape=num_nodes)
 
         mkcs_bin = QAOAProblem(create_coloring_operator(G), RX_mixer, create_coloring_cl_cost_function(G))
-        init_state = [random.choice(color_list) for _ in range(len(G))]
+        init_state = [rng.choice(color_list) for _ in range(len(G))]
 
         mkcs_bin.set_init_function(lambda x: x.encode(init_state))
 
