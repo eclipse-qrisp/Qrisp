@@ -74,7 +74,7 @@ class ControlEnvironment(QuantumEnvironment):
 
     """
 
-    def __init__(self, ctrl_qubits, ctrl_state=-1, ctrl_method=None, invert=False):
+    def __init__(self, ctrl_qubits, ctrl_state: int | str = -1, ctrl_method=None, invert=False):
 
         if isinstance(ctrl_state, int):
             if ctrl_state < 0:
@@ -88,6 +88,18 @@ class ControlEnvironment(QuantumEnvironment):
             QuantumEnvironment.__init__(self, list(ctrl_qubits))
             if not isinstance(ctrl_qubits, list):
                 ctrl_qubits = [ctrl_qubits]
+
+            self.invert = invert
+            # Controls and state of an inverted environment with several controls,
+            # whose condition is computed into the helper QuantumBool _condition.
+            self._negated_ctrl_qubits = None
+            self._negated_ctrl_state = self.ctrl_state
+            self._condition = None
+            if invert and len(self.env_args) == 1:
+                # Inverting a single control means controlling on its other state.
+                self.ctrl_state = "0" if self.ctrl_state == "1" else "1"
+            elif invert:
+                self._negated_ctrl_qubits = list(self.env_args)
 
         else:
             if isinstance(ctrl_qubits, list):
@@ -115,6 +127,18 @@ class ControlEnvironment(QuantumEnvironment):
     def __enter__(self):
 
         if check_for_tracing_mode():
+            negated_ctrl_qubits = getattr(self, "_negated_ctrl_qubits", None)
+            if negated_ctrl_qubits is not None:
+                # Negating the condition of several controls is not the same as
+                # negating each control: compute the condition into a helper qubit
+                # and control the body on it being 0.
+                from qrisp.qtypes.quantum_bool import QuantumBool
+
+                condition = QuantumBool()
+                self._flip_if_matching(negated_ctrl_qubits, self._negated_ctrl_state, condition)
+                self._condition = condition
+                self.env_args = [condition[0]]
+                self.ctrl_state = "0"
             QuantumEnvironment.__enter__(self)
             return
 
@@ -141,6 +165,12 @@ class ControlEnvironment(QuantumEnvironment):
 
         if check_for_tracing_mode():
             QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
+            negated_ctrl_qubits = getattr(self, "_negated_ctrl_qubits", None)
+            condition = getattr(self, "_condition", None)
+            if negated_ctrl_qubits is not None and condition is not None:
+                # Uncompute and release the helper qubit.
+                self._flip_if_matching(negated_ctrl_qubits, self._negated_ctrl_state, condition)
+                condition.delete()
             return
         self.parent_cond_env = None
 
@@ -367,6 +397,12 @@ class ControlEnvironment(QuantumEnvironment):
         if self.parent_cond_env is not None:
             self.parent_cond_env.sub_condition_envs.extend(self.sub_condition_envs + [self])
 
+    @staticmethod
+    def _flip_if_matching(ctrl_qubits, ctrl_state, target):
+        """Flip ``target`` if ``ctrl_qubits`` are in ``ctrl_state``, in Jasp mode."""
+        with ControlEnvironment(ctrl_qubits, ctrl_state=ctrl_state):
+            x(target)
+
     def jcompile(self, eqn, context_dic):
 
         from qrisp.jasp import extract_invalues, insert_outvalues
@@ -496,8 +532,7 @@ def control(
     For an integer ``ctrl_state``, bit ``i`` is the state of the ``i``-th control.
     For a string, character ``i`` is the state of the ``i``-th qubit in quantum
     control, while classical control reads the string as a binary number, so its
-    last character is the state of the first boolean. ``invert`` has no effect on
-    quantum control in Jasp mode.
+    last character is the state of the first boolean.
 
     See Also
     --------

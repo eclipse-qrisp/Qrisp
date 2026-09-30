@@ -374,17 +374,39 @@ def test_jasp_python_bool_control():
     assert bool(main())
 
 
-@pytest.mark.xfail(strict=True, reason="ControlEnvironment ignores invert in Jasp mode")
-def test_jasp_quantum_invert():
-    """invert=True should negate a quantum condition in Jasp mode."""
+@pytest.mark.parametrize("ctrl_state", [1, 0])
+@pytest.mark.parametrize("value", range(4))
+def test_jasp_quantum_invert_single_control(value, ctrl_state):
+    """invert=True with a single control qubit activates the block for its other state."""
 
     @boolean_simulation
-    def main():
-        a = QuantumFloat(1)
-        a[:] = 1
+    def main(n):
+        a = QuantumFloat(2)
+        a[:] = n
         target = QuantumBool()
-        with control(a[0], invert=True):
+        with control(a[0], ctrl_state=ctrl_state, invert=True):
             x(target)
         return measure(target)
 
-    assert not bool(main())
+    assert bool(main(value)) == ((value & 1) != ctrl_state)
+
+
+@pytest.mark.parametrize("ctrl_state", ["10", 3])
+@pytest.mark.parametrize("value", range(4))
+def test_jasp_quantum_invert_several_controls(value, ctrl_state):
+    """invert=True with several controls negates the whole condition and restores the controls."""
+
+    @boolean_simulation
+    def main(n):
+        a = QuantumFloat(2)
+        a[:] = n
+        target = QuantumBool()
+        with control([a[0], a[1]], ctrl_state=ctrl_state, invert=True):
+            x(target)
+        return measure(target), measure(a)
+
+    fired, controls = main(value)
+    # "10" means qubit 0 in 1 and qubit 1 in 0 (a == 1), the integer 3 means a == 3.
+    activating_value = 1 if ctrl_state == "10" else ctrl_state
+    assert bool(fired) == (value != activating_value)
+    assert int(controls) == value
