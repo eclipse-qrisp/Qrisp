@@ -817,11 +817,10 @@ class QuantumSession(QuantumCircuit):
 
         **Workspace**
 
-        We calculate a product of 2 :ref:`QuantumFloats <QuantumFloat>` using the
-        :meth:`sbp_mult <qrisp.sbp_mult>` function which heavily profits from more
-        workspace.
+        We calculate a product of 2 :ref:`QuantumFloats <QuantumFloat>` which heavily
+        profits from more workspace.
 
-        >>> from qrisp import QuantumFloat, sbp_mult
+        >>> from qrisp import QuantumFloat
         >>> qf_0 = QuantumFloat(5)
         >>> qf_0[:] = 3
         >>> qf_1 = QuantumFloat(5)
@@ -829,9 +828,9 @@ class QuantumSession(QuantumCircuit):
 
         Calculate product:
 
-        >>> qf_res = sbp_mult(qf_0, qf_1)
+        >>> qf_res = qf_0 * qf_1
         >>> qf_res.qs.num_qubits()
-        45
+        21
 
         Compile circuit with no workspace
 
@@ -839,7 +838,7 @@ class QuantumSession(QuantumCircuit):
         >>> qc_0.num_qubits()
         21
         >>> qc_0.depth()
-        497
+        205
 
         Compile circuit with 4 workspace qubits
 
@@ -847,7 +846,7 @@ class QuantumSession(QuantumCircuit):
         >>> qc_1.num_qubits()
         25
         >>> qc_1.depth()
-        258
+        205
 
         **mcx recompilation**
 
