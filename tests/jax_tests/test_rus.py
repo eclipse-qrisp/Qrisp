@@ -191,7 +191,7 @@ def test_rus_keyword_arguments():
     static_argnums_rus = RUS(static_argnums=0)(trial_function)
     static_argnames_rus = RUS(static_argnames=["size"])(trial_function)
 
-    def main(rus_function):
+    def main():
         # The value is only known at runtime
         value_qf = QuantumFloat(3)
         value_qf[:] = 3
@@ -202,4 +202,4 @@ def test_rus_keyword_arguments():
         return measure(a), measure(b), measure(c)
 
     for rus_function in [static_argnums_rus, static_argnames_rus]:
-        assert make_jaspr(main)(rus_function)(rus_function) == (3, 5, 4)
+        assert make_jaspr(main)()() == (3, 5, 4)
