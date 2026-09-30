@@ -267,7 +267,6 @@ Explore the Jasp pipeline to build highly performant algorithms, and ensure your
         +++
         **Using BigInteger to compile Shor's at 2048 bit**
 
-
 Scientific Computing and Quantum Numerical Linear Algebra
 ---------------------------------------------------------
 Unlock the potential of quantum computers for scientific discovery and advanced mathematics.

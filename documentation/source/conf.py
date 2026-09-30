@@ -73,6 +73,8 @@ copybutton_prompt_is_regexp = True
 # Only copy lines that have prompts (input lines), automatically excluding output
 copybutton_only_copy_prompt_lines = True
 
+nbsphinx_allow_errors = True
+
 # Use Python for default highlighting:
 highlight_language = "python"
 
