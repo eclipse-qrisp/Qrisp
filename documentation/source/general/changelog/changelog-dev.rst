@@ -276,12 +276,24 @@ Bug Fixes
   inconsistent error messages
   (`#877 <https://github.com/eclipse-qrisp/Qrisp/issues/877>`_).
 
-* :ref:`num_qubits <num_qubits>` now computes the size of a sliced qubit array
-  with Python slicing semantics. Negative bounds were taken literally, so for
-  example ``qv[:-1]`` had a negative size, and allocations sized from it (such
-  as the ancillas of the adder in the Montgomery reduction of Shor's
-  algorithm) were miscounted. Fusing a qubit array with a single qubit no
-  longer raises a ``TypeError``.
+* Fixed several bugs in the Jasp resource estimators
+  :ref:`count_ops <count_ops>`, :ref:`depth <depth>` and :ref:`num_qubits <num_qubits>`:
+
+  - ``count_ops`` and ``num_qubits`` now compute the size of a sliced qubit
+    array with Python slicing semantics. Negative bounds were taken literally,
+    so for example ``x(qv[:-1])`` counted no gates. The Montgomery reduction of
+    Shor's algorithm adds into such a slice, so its gate counts were too low
+    (by 0.17% of the T gates for the 128-bit example of the ``BigInteger``
+    tutorial), and the ancillas of that adder were not counted as qubits.
+  - Fusing a qubit array with a single qubit no longer raises a ``TypeError``
+    in ``count_ops`` and ``num_qubits``.
+  - ``depth`` now resolves negative qubit indices such as ``qv[-1]`` correctly
+    for registers whose size is only known at run time.
+  - ``depth`` and ``num_qubits`` now number the measurements consistently
+    across loop iterations, branches and subroutine calls, as ``count_ops``
+    does. With a random ``meas_behavior``, they reused the same outcome for
+    every measurement of a loop, and could follow different branches than
+    ``count_ops`` for the same program.
 
 Compatibility
 -------------
@@ -357,6 +369,13 @@ API Changes
 
 Development
 -----------
+
+* Refactored the Jasp resource estimators: the slice, fuse and register
+  handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and
+  the parity handler now have a single implementation shared by the metrics,
+  and the metric modules are clean under ruff and pyright. Added tests on
+  textbook circuits (GHZ, Grover, Toffoli, Bernstein-Vazirani, teleportation,
+  repetition code) whose resources are known in closed form.
 
 * Added Dependabot configuration for automated dependency updates
   (grouped by type, with labels applied automatically).

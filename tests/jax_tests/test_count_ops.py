@@ -32,6 +32,7 @@ from qrisp import (
     QuantumVariable,
     control,
     cx,
+    gidney_adder,
     h,
     invert,
     measure,
@@ -42,7 +43,7 @@ from qrisp import (
     x,
     y,
 )
-from qrisp.jasp import count_ops, expectation_value, jrange, q_cond, qache
+from qrisp.jasp import count_ops, expectation_value, jrange, make_jaspr, q_cond, qache
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
@@ -464,6 +465,97 @@ class TestCountOpsArguments:
             trotter_step(qv, 1)
 
         assert main(X(0) * Z(1)) == {"cx": 2, "rz": 1, "h": 2}
+
+
+class TestCountOpsRegisterOperations:
+    """Regression tests for gates applied to sliced and fused qubit arrays.
+
+    count_ops represents a qubit array by its size, so the size it computes for a
+    slice or a fused array decides how many gates are counted. The expected counts
+    are also checked against the circuit that Jasp actually produces.
+    """
+
+    @staticmethod
+    def _extracted_circuit_counts(main):
+        """Return the gate counts of the circuit that Jasp extracts from ``main``."""
+        return make_jaspr(main)().to_qc().count_ops()
+
+    @pytest.mark.parametrize(
+        "slicer,expected_size",
+        [
+            (lambda qa: qa[1:3], 2),
+            (lambda qa: qa[:-1], 3),
+            (lambda qa: qa[1:-1], 2),
+            (lambda qa: qa[-2:], 2),
+            (lambda qa: qa[-10:], 4),
+            (lambda qa: qa[:-10], 0),
+            (lambda qa: qa[:9], 4),
+            (lambda qa: qa[6:], 0),
+            (lambda qa: qa[3:1], 0),
+        ],
+        ids=["[1:3]", "[:-1]", "[1:-1]", "[-2:]", "[-10:]", "[:-10]", "[:9]", "[6:]", "[3:1]"],
+    )
+    def test_gates_on_slice(self, slicer, expected_size):
+        """Gates on a slice are counted once per qubit, following Python slicing semantics.
+
+        Regression test: negative bounds were taken literally, so ``x(qv[:-1])``
+        counted no gates at all, and empty slices had a negative size.
+        """
+
+        def main():
+            qv = QuantumVariable(4)
+            h(qv[0])
+            x(slicer(qv[:]))
+
+        expected = {"h": 1, "x": expected_size} if expected_size else {"h": 1}
+        assert count_ops(meas_behavior="0")(main)() == expected
+        assert self._extracted_circuit_counts(main) == expected
+
+    @pytest.mark.parametrize(
+        "fuser,expected_size",
+        [
+            (lambda qa, qb: qa[:] + [qb[0]], 4),
+            (lambda qa, qb: [qb[0]] + qa[:], 4),
+            (lambda qa, qb: qa[:] + qb[:], 5),
+        ],
+        ids=["array + qubit", "qubit + array", "array + array"],
+    )
+    def test_gates_on_fused_array(self, fuser, expected_size):
+        """Gates on a fused array are counted once per qubit, a single qubit counting as one.
+
+        Regression test: fusing a qubit array with a single qubit raised a TypeError.
+        """
+
+        def main():
+            qa = QuantumVariable(3)
+            qb = QuantumVariable(2)
+            x(fuser(qa, qb))
+
+        assert count_ops(meas_behavior="0")(main)() == {"x": expected_size}
+        assert self._extracted_circuit_counts(main) == {"x": expected_size}
+
+    def test_adder_on_negative_slice(self):
+        """An adder on ``qf[:-1]`` is counted exactly like the same adder on ``qf[:3]``.
+
+        Regression test: the Montgomery reduction used in Shor's algorithm adds into
+        ``qf[m:-1]``. With the negative stop taken literally the slice was empty, so
+        the gates of that adder were missing from the Shor gate counts.
+        """
+
+        def negative_stop():
+            qf = QuantumFloat(4)
+            h(qf)
+            gidney_adder(3, qf[:-1])
+
+        def positive_stop():
+            qf = QuantumFloat(4)
+            h(qf)
+            gidney_adder(3, qf[:3])
+
+        counts = count_ops(meas_behavior="0")(negative_stop)()
+        assert counts == count_ops(meas_behavior="0")(positive_stop)()
+        # The adder itself is counted, not only the four Hadamard gates
+        assert counts["cx"] > 0  # type: ignore[index]
 
 
 class TestCountOpsParity:

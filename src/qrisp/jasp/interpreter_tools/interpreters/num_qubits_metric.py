@@ -17,25 +17,21 @@
 """Defines NumQubitsMetric, a profiling metric that tracks qubit allocations and deallocations in a Jaspr."""
 
 from collections.abc import Callable
-from typing import Tuple
 
-import jax
 import jax.numpy as jnp
-from jax.random import key
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
-    BaseMetric,
+    SizeBasedMetric,
     build_metric_profiler,
 )
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.jasp.primitives import (
-    AbstractQubit,
     AbstractQubitArray,
 )
 
 
-class NumQubitsMetric(BaseMetric):
+class NumQubitsMetric(SizeBasedMetric):
     """A metric implementation that tracks the qubit allocations in a Jaspr.
 
     The metric only keeps running counters, so its cost does not depend on how
@@ -52,16 +48,18 @@ class NumQubitsMetric(BaseMetric):
         """Initialize the NumQubitsMetric."""
         super().__init__(meas_behavior=meas_behavior)
 
-    def cache_key(self) -> Tuple[Callable]:
+    def cache_key(self) -> tuple[Callable]:
+        """Return the measurement behavior as a hashable key."""
         return (self.meas_behavior,)
 
     @classmethod
     def from_cache_key(cls, cache_key) -> "NumQubitsMetric":
+        """Rebuild the metric from its measurement behavior."""
         (meas_behavior,) = cache_key
         return cls(meas_behavior)
 
-    def initial_metric(self) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-
+    def initial_metric(self) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+        """Return all counters set to zero."""
         # Here is the explanation of the metric data structure:
 
         # - currently_allocated: the number of qubits allocated at this point of the computation.
@@ -71,140 +69,101 @@ class NumQubitsMetric(BaseMetric):
         # - total_allocated: the summed size of all allocations performed so far.
         #
         # - total_deallocated: the summed size of all deallocations performed so far.
+        #
+        # - meas_count: the number of qubits measured so far, used to number the
+        #   measurements (see BaseMetric._sample_measurement).
         currently_allocated = jnp.int64(0)
         peak_allocations = jnp.int64(0)
         total_allocated = jnp.int64(0)
         total_deallocated = jnp.int64(0)
+        meas_count = jnp.int64(0)
 
-        return currently_allocated, peak_allocations, total_allocated, total_deallocated
+        return currently_allocated, peak_allocations, total_allocated, total_deallocated, meas_count
 
     ##############################################################
     ### Quantum primitive handlers
     ##############################################################
 
     def handle_create_qubits(self, invalues, eqn, context_dic):
-
+        """Record the allocation of a QubitArray and update the peak."""
         size, metric_data = invalues
 
-        currently_allocated, peak_allocations, total_allocated, total_deallocated = metric_data
+        currently_allocated, peak_allocations, total_allocated, total_deallocated, meas_count = metric_data
 
         currently_allocated = currently_allocated + size
         peak_allocations = jnp.maximum(peak_allocations, currently_allocated)
         total_allocated = total_allocated + size
 
-        metric_data = (currently_allocated, peak_allocations, total_allocated, total_deallocated)
+        metric_data = (currently_allocated, peak_allocations, total_allocated, total_deallocated, meas_count)
 
         # Associate the following in context_dic:
         # QubitArray -> size
         # QuantumState -> metric_data
         return (size, metric_data)
 
-    def handle_get_qubit(self, invalues, eqn, context_dic):
-
-        # Associate the following in context_dic:
-        # Qubit -> None (we don't need to track individual qubits for this metric)
-        return None
-
-    def handle_get_size(self, invalues, eqn, context_dic):
-
-        # Associate the following in context_dic:
-        # size -> size
-        return invalues[0]
-
     def handle_quantum_gate(self, invalues, eqn, context_dic):
-
+        """Leave the counters unchanged: gates do not allocate qubits."""
         # Associate the following in context_dic:
         # QuantumState -> metric_data
         return invalues[-1]
 
     def handle_measure(self, invalues, eqn, context_dic):
+        """Sample the measurement outcome and count the measured qubits."""
+        target, metric_data = invalues
+        *counters, meas_count = metric_data
 
-        _, metric_data = invalues
-
-        # We keep a measurement counter only to generate unique keys.
-        meas_number = context_dic.get("_meas_number", jnp.int32(0))
-
-        if isinstance(eqn.invars[0].aval, AbstractQubitArray):
-
-            def body_fun(i, acc):
-                return self._measurement_body_fun(meas_number, i, acc)
-
-            meas_res = jax.lax.fori_loop(0, invalues[0], body_fun, jnp.int64(0))
-            context_dic["_meas_number"] = meas_number + invalues[0]
-
-        else:  # measuring a single qubit
-            meas_res = self.meas_behavior(key(meas_number))
-            self._validate_measurement_result(meas_res)
-            context_dic["_meas_number"] = meas_number + jnp.int32(1)
+        num_measured = target if isinstance(eqn.invars[0].aval, AbstractQubitArray) else 1
+        meas_res = self._sample_measurement(eqn, num_measured, meas_count)
 
         # Associate the following in context_dic:
-        # meas_result -> meas_res (int64 scalar)
+        # meas_result -> meas_res
         # QuantumState -> metric_data
-        return (meas_res, metric_data)
-
-    def handle_fuse(self, invalues, eqn, context_dic):
-
-        # Each operand is either a QubitArray (represented by its size)
-        # or a single Qubit (represented by None), which contributes one qubit.
-        size_1, size_2 = (
-            1 if isinstance(invar.aval, AbstractQubit) else value for invar, value in zip(eqn.invars, invalues)
-        )
-
-        # Associate the following in context_dic:
-        # QubitArray -> size1 + size2
-        return size_1 + size_2
-
-    def handle_slice(self, invalues, eqn, context_dic):
-
-        size, start, stop = invalues
-
-        # Follow Python slicing semantics (step 1): negative bounds count from
-        # the end, out-of-range bounds are clamped and an empty slice has size 0.
-        start = start + (start < 0) * size
-        stop = stop + (stop < 0) * size
-        start = jnp.maximum(start, 0)
-        stop = jnp.maximum(jnp.minimum(stop, size), start)
-
-        # Associate the following in context_dic:
-        # QubitArray -> size
-        return stop - start
+        return (meas_res, (*counters, meas_count + num_measured))
 
     def handle_reset(self, invalues, eqn, context_dic):
-
+        """Leave the counters unchanged: a reset neither allocates nor deallocates qubits."""
         # Associate the following in context_dic:
         # QuantumState -> metric_data
         return invalues[-1]
 
     def handle_delete_qubits(self, invalues, eqn, context_dic):
-
+        """Record the deallocation of a QubitArray."""
         size, metric_data = invalues
 
-        currently_allocated, peak_allocations, total_allocated, total_deallocated = metric_data
+        currently_allocated, peak_allocations, total_allocated, total_deallocated, meas_count = metric_data
 
         currently_allocated = currently_allocated - size
         total_deallocated = total_deallocated + size
 
-        metric_data = (currently_allocated, peak_allocations, total_allocated, total_deallocated)
+        metric_data = (currently_allocated, peak_allocations, total_allocated, total_deallocated, meas_count)
 
         # Associate the following in context_dic:
         # QuantumState -> metric_data
         return metric_data
 
-    def handle_parity(self, invalues, eqn, context_dic):
 
-        # Parity is a classical operation on measurement results
-        # Compute XOR and handle expectation
-        expectation = eqn.params.get("expectation", 0)
-        result = jnp.bitwise_xor(sum(invalues) % 2, expectation)
+def extract_num_qubits(res: tuple, jaspr: Jaspr, _) -> dict:
+    """Extract the number of allocated and deallocated qubits from the metric result.
 
-        return jnp.array(result, dtype=bool)
+    Parameters
+    ----------
+    res : tuple
+        The output of the profiler: the Jaspr's return values followed by the metric data.
+    jaspr : Jaspr
+        The profiled Jaspr.
+    _ : None
+        The auxiliary data of the profiler, unused by this metric.
 
+    Returns
+    -------
+    dict
+        The keys ``total_allocated``, ``total_deallocated``, ``peak_allocations``
+        and ``finally_allocated``, as documented in :func:`~qrisp.jasp.num_qubits`.
 
-def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
-    """Extract the number of allocated and deallocated qubits from the metric result."""
+    """
     metric = res[-1] if len(jaspr.outvars) > 1 else res
 
-    currently_allocated, peak_allocations, total_allocated, total_deallocated = metric
+    currently_allocated, peak_allocations, total_allocated, total_deallocated, _ = metric
 
     return {
         "total_allocated": int(total_allocated),
@@ -244,15 +203,32 @@ def get_num_qubits_profiler(
 
     Returns
     -------
-    Tuple[Callable, None]
+    tuple[Callable, None]
         A num qubits profiler function and None as auxiliary data.
 
     """
+    del max_allocations  # deprecated and ignored
     num_qubits_metric = NumQubitsMetric(meas_behavior)
 
     return build_metric_profiler(jaspr, num_qubits_metric, callback_threshold), None
 
 
 def simulate_num_qubits(jaspr: Jaspr, *_, **__) -> dict:
-    """Simulate num_qubits metric via actual simulation."""
+    """Simulate num_qubits metric via actual simulation.
+
+    Parameters
+    ----------
+    jaspr : Jaspr
+        The Jaspr to simulate.
+    *_ : Any
+        The arguments of the Jaspr (unused).
+    **__ : Any
+        Keyword arguments of the simulation (unused).
+
+    Raises
+    ------
+    NotImplementedError
+        Always, since simulation-based qubit counting is not implemented yet.
+
+    """
     raise NotImplementedError("Num qubits metric via simulation is not implemented yet.")
