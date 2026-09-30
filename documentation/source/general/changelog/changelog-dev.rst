@@ -105,6 +105,13 @@ Improvements
   ``encode(..., rounding=True)`` (now O(1))
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+- The :ref:`num_qubits <num_qubits>` resource estimator no longer limits the
+  number of qubit allocations and deallocations. It now keeps four running
+  counters instead of recording every event in a fixed-size buffer, so large
+  programs (such as 2048-bit Shor, with millions of ancilla allocations) no
+  longer overflow, and the result is no longer replayed event by event in
+  Python. The returned dictionary is unchanged.
+
 Other New Features
 ------------------
 
@@ -331,6 +338,13 @@ API Changes
   now consistently return ``None``, reflecting that they act by side effect.
   Code relying on the previous return values (e.g. ``result = h(qv)``) must
   use the original argument instead.
+
+* The ``max_allocations`` argument of :ref:`num_qubits <num_qubits>`,
+  ``Jaspr.num_qubits`` and
+  :func:`BlockEncoding.resources <qrisp.block_encodings.BlockEncoding.resources>`
+  is deprecated and has no effect: passing it emits a
+  ``QrispDeprecationWarning``. Programs that exceeded the old limit no longer
+  raise ``ValueError``.
 
 .. Add API changes above this line
 

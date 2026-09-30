@@ -32,6 +32,7 @@ from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
 )
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class TestNumQubitsSimple:
@@ -393,34 +394,47 @@ class TestNumQubitsExceptions:
         with pytest.raises(ValueError, match="Measurement behavior must return a boolean, got 42"):
             main()
 
-    def test_num_qubits_overflow1(self):
-        """Test that exceeding the maximum number of allocations raises an error."""
+    def test_num_qubits_many_allocations(self):
+        """Test that the number of allocation/deallocation events is not bounded."""
 
-        @num_qubits(meas_behavior="0", max_allocations=2)
+        @num_qubits(meas_behavior="0")
+        def main(num_iterations):
+            for _ in jrange(num_iterations):
+                qv = QuantumFloat(2)
+                h(qv[0])
+                qv.delete()
+
+        num_iterations = 5000
+        expected_dic = {
+            "total_allocated": 2 * num_iterations,
+            "total_deallocated": 2 * num_iterations,
+            "peak_allocations": 2,
+            "finally_allocated": 0,
+        }
+        assert main(num_iterations) == expected_dic
+
+    def test_num_qubits_max_allocations_deprecated(self):
+        """Test that passing ``max_allocations`` warns and does not limit the computation."""
+
+        with pytest.warns(QrispDeprecationWarning, match="max_allocations"):
+            decorator = num_qubits(meas_behavior="0", max_allocations=2)
+
+        @decorator
         def main():
             qv1 = QuantumFloat(1)
             h(qv1[0])
             qv2 = QuantumFloat(1)
             h(qv2[0])
-            qv3 = QuantumFloat(1)  # This allocation should trigger the overflow
+            qv3 = QuantumFloat(1)
             h(qv3[0])
 
-        with pytest.raises(ValueError, match="The ``num_qubits`` metric computation overflowed"):
-            main()
-
-    def test_num_qubits_overflow2(self):
-        """Test that exceeding the maximum number of allocations raises an error."""
-
-        @num_qubits(meas_behavior="0", max_allocations=2)
-        def main():
-            qv1 = QuantumFloat(1)
-            h(qv1[0])
-            qv2 = QuantumFloat(1)
-            h(qv2[0])
-            qv2.delete()  # This should prevent the overflow since it frees up one allocation
-
-        with pytest.raises(ValueError, match="The ``num_qubits`` metric computation overflowed"):
-            main()
+        expected_dic = {
+            "total_allocated": 3,
+            "total_deallocated": 0,
+            "peak_allocations": 3,
+            "finally_allocated": 3,
+        }
+        assert main() == expected_dic
 
 
 def test_callback_threshold_num_qubits():

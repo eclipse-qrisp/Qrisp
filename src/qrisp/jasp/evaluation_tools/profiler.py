@@ -31,6 +31,7 @@ This file implements the interfaces to evaluating the transformed Jaspr.
 
 """
 
+import warnings
 from functools import wraps
 from typing import Any, Callable, NamedTuple, Tuple
 
@@ -60,6 +61,7 @@ from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     simulation,
 )
 from qrisp.jasp.jasp_expression import Jaspr
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class MetricSpec(NamedTuple):
@@ -414,9 +416,19 @@ def depth(
     return depth_decorator
 
 
+def _warn_max_allocations_deprecated() -> None:
+    """Warn that the ``max_allocations`` argument of ``num_qubits`` has no effect anymore."""
+    warnings.warn(
+        "The ``max_allocations`` argument of ``num_qubits`` is deprecated and has no effect: "
+        "the number of allocations is no longer bounded. It will be removed in a future release.",
+        QrispDeprecationWarning,
+        stacklevel=3,
+    )
+
+
 def num_qubits(
     meas_behavior: str | Callable,
-    max_allocations: int = 1000,
+    max_allocations: int | None = None,
     callback_threshold: int | None = None,
 ) -> Callable:
     """Decorator to track qubit allocation and deallocation events during a quantum computation.
@@ -428,6 +440,9 @@ def num_qubits(
 
     - increased whenever qubits are allocated (e.g., via ``QuantumVariable`` creation),
     - decreased whenever qubits are explicitly deleted (e.g., via ``qv.delete()``),
+
+    Only a fixed number of running counters is tracked, so there is no limit on the
+    number of allocation and deallocation events.
 
     The decorated function returns a dictionary containing information about
     all allocation and deallocation events.
@@ -449,8 +464,8 @@ def num_qubits(
         A callable must take a JAX PRNG key as input and return a boolean.
 
     max_allocations : int, optional
-        The maximum number of allocation/deallocation events supported for tracking.
-        Default is 1000. This is necessary as JAX requires static shapes for JIT compilation.
+        Deprecated and ignored. The number of allocation/deallocation events is no longer
+        bounded. Passing a value emits a ``QrispDeprecationWarning``.
 
     callback_threshold : int or None, optional
         For very large algorithms, compile time can blow up due to aggressively
@@ -565,6 +580,9 @@ def num_qubits(
 
     """
 
+    if max_allocations is not None:
+        _warn_max_allocations_deprecated()
+
     def num_qubits_decorator(function):
 
         def qubits_counter(*args):
@@ -572,7 +590,6 @@ def num_qubits(
             return jaspr.num_qubits(
                 *args,
                 meas_behavior=meas_behavior,
-                max_allocations=max_allocations,
                 callback_threshold=callback_threshold,
             )
 
@@ -598,8 +615,7 @@ def profile_jaspr(jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", 
 
     **kwargs : Any
         Additional keyword arguments to be passed to the profiler builder.
-        For example, `max_qubits` for depth profiling,
-        or `max_allocations` for num_qubits profiling.
+        For example, `max_qubits` for depth profiling.
 
     Returns
     -------

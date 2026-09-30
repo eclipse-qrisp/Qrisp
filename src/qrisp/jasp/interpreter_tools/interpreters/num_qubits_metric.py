@@ -34,73 +34,48 @@ from qrisp.jasp.primitives import (
 )
 
 
-# The computation will fail anyway if this is triggered,
-# but this way we can print an informative message before the failure happens.
-def _warn(n_allocations, max_allocations):
-    """Helper function to print a warning when the number of qubits exceeds the maximum supported."""
-    jax.debug.print(
-        (
-            "ERROR: `num_qubits` computation overflowed: tried to (de)allocate qubits "
-            "{n_allocations} times, but the maximum supported is {max_allocations}. "
-            "Consider increasing the `max_allocations` parameter for `num_qubits`."
-        ),
-        n_allocations=n_allocations,
-        max_allocations=max_allocations,
-    )
-
-
 class NumQubitsMetric(BaseMetric):
-    """A metric implementation that computes the number of qubits in a Jaspr.
+    """A metric implementation that tracks the qubit allocations in a Jaspr.
+
+    The metric only keeps running counters, so its cost does not depend on how
+    many allocations and deallocations the program performs.
 
     Parameters
     ----------
     meas_behavior : Callable
         The measurement behavior function.
 
-    max_allocations : int
-        The maximum number of qubit allocations/deallocations supported by the profiler.
-
     """
 
-    def __init__(self, meas_behavior: Callable, max_allocations: int = 1000):
+    def __init__(self, meas_behavior: Callable):
         """Initialize the NumQubitsMetric."""
         super().__init__(meas_behavior=meas_behavior)
 
-        self._max_allocations: int = max_allocations
-
-    @property
-    def max_allocations(self) -> int:
-        """Return the maximum number of qubit allocations/deallocations supported by the profiler."""
-        return self._max_allocations
-
-    def cache_key(self) -> Tuple[Callable, int]:
-        return (self.meas_behavior, self._max_allocations)
+    def cache_key(self) -> Tuple[Callable]:
+        return (self.meas_behavior,)
 
     @classmethod
     def from_cache_key(cls, cache_key) -> "NumQubitsMetric":
-        meas_behavior, max_allocations = cache_key
-        return cls(meas_behavior, max_allocations)
+        (meas_behavior,) = cache_key
+        return cls(meas_behavior)
 
-    def initial_metric(self) -> Tuple[jnp.ndarray, int, bool]:
+    def initial_metric(self) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
 
         # Here is the explanation of the metric data structure:
 
-        # - allocations_array: a JAX array of integers, where each entry represents the
-        #   size of a qubit allocation (positive) or deallocation (negative).
-        #   The length of this array is equal to `max_allocations`,
-        #   which is the maximum number of allocations/deallocations we want to track.
+        # - currently_allocated: the number of qubits allocated at this point of the computation.
         #
-        # - allocations_counter_index: a JAX integer scalar that keeps track of how many
-        #   allocations/deallocations have been performed so far. It indicates the next
-        #   index in the `allocations_array` where the next allocation/deallocation size should be recorded.
+        # - peak_allocations: the largest value `currently_allocated` has reached so far.
         #
-        # - invalid: a JAX boolean scalar that indicates whether the number of
-        #   allocations/deallocations has exceeded the maximum supported.
-        allocations_array = jnp.zeros(self.max_allocations, dtype=jnp.int64)
-        allocations_counter_index = jnp.int64(0)
-        invalid = jnp.bool_(False)
+        # - total_allocated: the summed size of all allocations performed so far.
+        #
+        # - total_deallocated: the summed size of all deallocations performed so far.
+        currently_allocated = jnp.int64(0)
+        peak_allocations = jnp.int64(0)
+        total_allocated = jnp.int64(0)
+        total_deallocated = jnp.int64(0)
 
-        return allocations_array, allocations_counter_index, invalid
+        return currently_allocated, peak_allocations, total_allocated, total_deallocated
 
     ##############################################################
     ### Quantum primitive handlers
@@ -110,25 +85,18 @@ class NumQubitsMetric(BaseMetric):
 
         size, metric_data = invalues
 
-        allocations_array, allocations_counter_index, invalid = metric_data
+        currently_allocated, peak_allocations, total_allocated, total_deallocated = metric_data
 
-        allocations_array = allocations_array.at[allocations_counter_index].set(size)
-        allocations_counter_index += 1
+        currently_allocated = currently_allocated + size
+        peak_allocations = jnp.maximum(peak_allocations, currently_allocated)
+        total_allocated = total_allocated + size
 
-        overflow = allocations_counter_index > jnp.int64(self._max_allocations)
-        invalid = jnp.logical_or(invalid, overflow)
-        jax.lax.cond(
-            invalid,
-            _warn,
-            lambda *_: None,
-            allocations_counter_index,
-            self._max_allocations,
-        )
+        metric_data = (currently_allocated, peak_allocations, total_allocated, total_deallocated)
 
         # Associate the following in context_dic:
         # QubitArray -> size
         # QuantumState -> metric_data
-        return (size, (allocations_array, allocations_counter_index, invalid))
+        return (size, metric_data)
 
     def handle_get_qubit(self, invalues, eqn, context_dic):
 
@@ -198,24 +166,14 @@ class NumQubitsMetric(BaseMetric):
 
         size, metric_data = invalues
 
-        allocations_array, allocations_counter_index, invalid = metric_data
-        allocations_array = allocations_array.at[allocations_counter_index].set(-size)
-        allocations_counter_index += 1
+        currently_allocated, peak_allocations, total_allocated, total_deallocated = metric_data
 
-        overflow = allocations_counter_index > jnp.int64(self._max_allocations)
-        invalid = jnp.logical_or(invalid, overflow)
-        jax.lax.cond(
-            invalid,
-            _warn,
-            lambda *_: None,
-            allocations_counter_index,
-            self._max_allocations,
-        )
+        currently_allocated = currently_allocated - size
+        total_deallocated = total_deallocated + size
 
-        metric_data = (allocations_array, allocations_counter_index, invalid)
+        metric_data = (currently_allocated, peak_allocations, total_allocated, total_deallocated)
 
         # Associate the following in context_dic:
-        # QubitArray -> size
         # QuantumState -> metric_data
         return metric_data
 
@@ -229,39 +187,17 @@ class NumQubitsMetric(BaseMetric):
         return jnp.array(result, dtype=bool)
 
 
-def _peak_allocated_qubits(dict_values) -> int:
-    """Helper function to compute the peak number of allocated qubits from the allocation dictionary."""
-    current, peak = 0, 0
-    for delta in dict_values:
-        current += delta
-        peak = max(peak, current)
-    return peak
-
-
 def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
     """Extract the number of allocated and deallocated qubits from the metric result."""
     metric = res[-1] if len(jaspr.outvars) > 1 else res
 
-    allocations_array, allocations_counter_index, overflowed = metric
-
-    if overflowed:
-        raise ValueError(
-            "The ``num_qubits`` metric computation overflowed the maximum number of allocations supported. "
-        )
-
-    alloc_dict = {f"alloc{i + 1}": int(allocations_array[i]) for i in range(int(allocations_counter_index))}
-    dict_values = alloc_dict.values()
-
-    total_allocated = sum(v for v in dict_values if v > 0)
-    total_deallocated = -sum(v for v in dict_values if v < 0)
-    peak_allocations = _peak_allocated_qubits(dict_values)
-    finally_allocated = sum(dict_values)
+    currently_allocated, peak_allocations, total_allocated, total_deallocated = metric
 
     return {
-        "total_allocated": total_allocated,
-        "total_deallocated": total_deallocated,
-        "peak_allocations": peak_allocations,
-        "finally_allocated": finally_allocated,
+        "total_allocated": int(total_allocated),
+        "total_deallocated": int(total_deallocated),
+        "peak_allocations": int(peak_allocations),
+        "finally_allocated": int(currently_allocated),
     }
 
 
@@ -270,7 +206,7 @@ def extract_num_qubits(res: Tuple, jaspr: Jaspr, _) -> dict:
 def get_num_qubits_profiler(
     jaspr: Jaspr,
     meas_behavior: Callable,
-    max_allocations: int = 1000,
+    max_allocations: int | None = None,
     callback_threshold: int | None = None,
 ) -> tuple[Callable, None]:
     """Build a num qubits profiling computer for a given Jaspr.
@@ -283,9 +219,9 @@ def get_num_qubits_profiler(
     meas_behavior : Callable
         The measurement behavior function.
 
-    max_allocations : int
-        The maximum number of qubit allocations/deallocations supported by the profiler.
-        Default is 1000.
+    max_allocations : int | None, optional
+        Deprecated and ignored. Kept in this position so that existing positional
+        and keyword calls keep their meaning. The public entry points warn about it.
 
     callback_threshold : int | None, optional
         Minimum value of ``call_count * inlined_eqn_count`` required to
@@ -299,7 +235,7 @@ def get_num_qubits_profiler(
         A num qubits profiler function and None as auxiliary data.
 
     """
-    num_qubits_metric = NumQubitsMetric(meas_behavior, max_allocations)
+    num_qubits_metric = NumQubitsMetric(meas_behavior)
 
     return build_metric_profiler(jaspr, num_qubits_metric, callback_threshold), None
 
