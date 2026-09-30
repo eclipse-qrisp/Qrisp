@@ -75,6 +75,7 @@ dev-testing = [
     "qiskit-aer",
     "pyscf",
     "cirq",
+    "pyzx",
     "tqecd",
     "iqm-client[qrisp]",
 ]
