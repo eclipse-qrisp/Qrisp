@@ -14,20 +14,13 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Provide xDSL dialects for CUDA-Q Quake and classical-control IR."""
 
-from qrisp.jasp.evaluation_tools.boolean_simulation import *
-from qrisp.jasp.evaluation_tools.terminal_sampling import *
-from qrisp.jasp.evaluation_tools.jaspification import *
-from qrisp.jasp.evaluation_tools.catalyst_qjit import *
-from qrisp.jasp.evaluation_tools.profiler import *
-from qrisp.jasp.evaluation_tools.stim_extraction import *
-from qrisp.jasp.evaluation_tools.backend_sampling import *
-
-# Optional CUDA-Q backend — only exposed when cudaq is installed.
-try:
-    from qrisp.jasp.cudaq_interface import (
-        FixedShapeNDArray,
-        cudaq_kernel,
-    )
-except ImportError:
-    pass
+# xDSL dialect definitions for the CUDA-Q Quake and CC dialects.
+# =================================================================
+#
+# quake_dialect
+#     Quake dialect: qubit references, quantum gates, measurements.
+# cc_dialect
+#     CC (classical control) dialect: structured control flow, std::vector-like
+#     arrays, and scalar/loop constructs used by the lowered CUDA-Q kernels.

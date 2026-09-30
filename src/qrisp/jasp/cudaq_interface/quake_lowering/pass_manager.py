@@ -14,20 +14,23 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Provide utilities for running the Quake lowering stages."""
 
-from qrisp.jasp.evaluation_tools.boolean_simulation import *
-from qrisp.jasp.evaluation_tools.terminal_sampling import *
-from qrisp.jasp.evaluation_tools.jaspification import *
-from qrisp.jasp.evaluation_tools.catalyst_qjit import *
-from qrisp.jasp.evaluation_tools.profiler import *
-from qrisp.jasp.evaluation_tools.stim_extraction import *
-from qrisp.jasp.evaluation_tools.backend_sampling import *
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 
-# Optional CUDA-Q backend — only exposed when cudaq is installed.
-try:
-    from qrisp.jasp.cudaq_interface import (
-        FixedShapeNDArray,
-        cudaq_kernel,
-    )
-except ImportError:
-    pass
+from xdsl.dialects.builtin import ModuleOp
+
+
+@dataclass(frozen=True)
+class _LoweringPass:
+    """A named transformation that mutates an xDSL module in place."""
+
+    name: str
+    run: Callable[[ModuleOp], None]
+
+
+def _run_pass_pipeline(module: ModuleOp, passes: Iterable[_LoweringPass]) -> None:
+    """Run each named lowering pass against *module* in sequence."""
+    for lowering_pass in passes:
+        lowering_pass.run(module)

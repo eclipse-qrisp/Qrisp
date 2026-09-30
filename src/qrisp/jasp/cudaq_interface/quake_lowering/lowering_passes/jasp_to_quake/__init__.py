@@ -14,20 +14,19 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Provide Jasp-to-Quake operation and state lowering passes."""
 
-from qrisp.jasp.evaluation_tools.boolean_simulation import *
-from qrisp.jasp.evaluation_tools.terminal_sampling import *
-from qrisp.jasp.evaluation_tools.jaspification import *
-from qrisp.jasp.evaluation_tools.catalyst_qjit import *
-from qrisp.jasp.evaluation_tools.profiler import *
-from qrisp.jasp.evaluation_tools.stim_extraction import *
-from qrisp.jasp.evaluation_tools.backend_sampling import *
-
-# Optional CUDA-Q backend — only exposed when cudaq is installed.
-try:
-    from qrisp.jasp.cudaq_interface import (
-        FixedShapeNDArray,
-        cudaq_kernel,
-    )
-except ImportError:
-    pass
+# Jasp → Quake lowering (QuantumState elimination + op rewriting).
+# ====================================================================
+#
+# jasp_to_quake
+#     Orchestrator, running 1a then 1b.
+# lower_jasp_to_quake
+#     Rewrites Jasp quantum ops into their Quake dialect equivalents.
+# strip_qst
+#     Eliminates the QuantumState-threading value, replacing it with direct
+#     Quake qubit-reference semantics.
+# gate_mapping
+#     Mapping from Jasp gate names to Quake gate descriptors.
+# helper_functions
+#     Shared xDSL-construction helpers used by 1a/1b.

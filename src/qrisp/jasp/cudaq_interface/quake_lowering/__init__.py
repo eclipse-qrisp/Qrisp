@@ -14,20 +14,28 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Provide lowering passes from Jasp IR to CUDA-Q Quake IR."""
 
-from qrisp.jasp.evaluation_tools.boolean_simulation import *
-from qrisp.jasp.evaluation_tools.terminal_sampling import *
-from qrisp.jasp.evaluation_tools.jaspification import *
-from qrisp.jasp.evaluation_tools.catalyst_qjit import *
-from qrisp.jasp.evaluation_tools.profiler import *
-from qrisp.jasp.evaluation_tools.stim_extraction import *
-from qrisp.jasp.evaluation_tools.backend_sampling import *
+from qrisp.jasp.cudaq_interface.quake_lowering.jaspr_to_quake import _jaspr_to_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering.validation_tools import _validate_quake_mlir
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.quake_dialect import (
+    QuakeDialect,
+    QuakeMeasureType,
+    QuakeRefType,
+    QuakeVeqType,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.dialects.cc_dialect import (
+    CcDialect,
+    CcMeasureHandleType,
+    CcSequenceType,
+)
 
-# Optional CUDA-Q backend — only exposed when cudaq is installed.
-try:
-    from qrisp.jasp.cudaq_interface import (
-        FixedShapeNDArray,
-        cudaq_kernel,
-    )
-except ImportError:
-    pass
+__all__ = [
+    "QuakeDialect",
+    "QuakeRefType",
+    "QuakeVeqType",
+    "QuakeMeasureType",
+    "CcDialect",
+    "CcMeasureHandleType",
+    "CcSequenceType",
+]

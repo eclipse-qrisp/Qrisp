@@ -14,20 +14,19 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Provide the CUDA-Q backend interface for Qrisp Jasp programs."""
 
-from qrisp.jasp.evaluation_tools.boolean_simulation import *
-from qrisp.jasp.evaluation_tools.terminal_sampling import *
-from qrisp.jasp.evaluation_tools.jaspification import *
-from qrisp.jasp.evaluation_tools.catalyst_qjit import *
-from qrisp.jasp.evaluation_tools.profiler import *
-from qrisp.jasp.evaluation_tools.stim_extraction import *
-from qrisp.jasp.evaluation_tools.backend_sampling import *
+# qrisp.jasp.cudaq_interface — CUDA-Q backend for Qrisp/Jasp.
+# =============================================================
+#
+# Provides the CUDA-Q execution tools for Qrisp functions compiled via
+# Jasp/Quake MLIR. cudaq is an optional dependency; importing this
+# package when cudaq is not installed raises an ImportError.
 
-# Optional CUDA-Q backend — only exposed when cudaq is installed.
-try:
-    from qrisp.jasp.cudaq_interface import (
-        FixedShapeNDArray,
-        cudaq_kernel,
-    )
-except ImportError:
-    pass
+from qrisp.jasp.cudaq_interface.annotations import FixedShapeNDArray
+from qrisp.jasp.cudaq_interface.cudaq_kernel import cudaq_kernel
+
+__all__ = [
+    "cudaq_kernel",
+    "FixedShapeNDArray",
+]

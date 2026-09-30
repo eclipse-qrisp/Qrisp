@@ -14,20 +14,15 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Run the complete Jasp-to-Quake lowering pipeline."""
 
-from qrisp.jasp.evaluation_tools.boolean_simulation import *
-from qrisp.jasp.evaluation_tools.terminal_sampling import *
-from qrisp.jasp.evaluation_tools.jaspification import *
-from qrisp.jasp.evaluation_tools.catalyst_qjit import *
-from qrisp.jasp.evaluation_tools.profiler import *
-from qrisp.jasp.evaluation_tools.stim_extraction import *
-from qrisp.jasp.evaluation_tools.backend_sampling import *
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.lower_jasp_to_quake import (
+    _lower_jasp_to_quake,
+)
+from qrisp.jasp.cudaq_interface.quake_lowering.lowering_passes.jasp_to_quake.strip_qst import _strip_qst
 
-# Optional CUDA-Q backend — only exposed when cudaq is installed.
-try:
-    from qrisp.jasp.cudaq_interface import (
-        FixedShapeNDArray,
-        cudaq_kernel,
-    )
-except ImportError:
-    pass
+
+def _jasp_to_quake(module, execution_mode="run"):
+    """Full Jasp→Quake lowering pipeline."""
+    _lower_jasp_to_quake(module, execution_mode)  # Lower operations
+    _strip_qst(module, execution_mode)  # Remove QuantumState structure
