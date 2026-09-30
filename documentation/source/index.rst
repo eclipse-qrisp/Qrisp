@@ -16,10 +16,10 @@
         <canvas id="hero-graph-canvas"></canvas>
         <div class="hero-orb-secondary"></div>
         <div id="hero-left">
-            <img alt="./_static/eclipse_font.png" class="align-bottom-left scaled-image" src="./_static/eclipse_font.png" width="126">
-            <img alt="./_static/logo_white.png" src="./_static/logo_white.png" width="260" style="margin: 0.4rem 0; display: block;">
-            <h3 style="font-weight: 600; margin-top: 0;">The next generation of quantum <br> algorithm development</h3>
-            <p style="margin-right: 30pt">Qrisp is a high-level language for building and compiling quantum algorithms. Its structured programming model supports scalable, maintainable development. With seamless JAX integration, Qrisp enables hybrid real-time algorithm design and analysis.</p>
+            <img alt="./_static/eclipse_font.png" class="align-bottom-left scaled-image dark-light" src="./_static/eclipse_font.png" width="126">
+            <img alt="./_static/qrisp_logo_white.png" class="dark-light" src="./_static/qrisp_logo_white.png" width="260" style="margin: 0.4rem 0; display: block;">
+            <h3 style="font-weight: 600; margin-top: 0; color: #ffffff;">The next generation of quantum <br> algorithm development</h3>
+            <p style="margin-right: 30pt; color: #ffffff;">Qrisp is a high-level language for building and compiling quantum algorithms. Its structured programming model supports scalable, maintainable development. With seamless JAX integration, Qrisp enables hybrid real-time algorithm design and analysis.</p>
 
             <div class="homepage-button-container">
                 <div class="homepage-button-container-row">
@@ -302,14 +302,16 @@ Qrisp enables developers to express quantum algorithms in substantially fewer li
    :widths: 25 25
    :header-rows: 1
 
-   * - .. image:: ./qiskit_logo.png
+   * - .. image:: ../../logo/qiskit_logo.png
          :width: 100
          :alt: Qrisp Logo
          :align: center
-     - .. image:: ./qrisp_logo.png
+         :class: dark-light
+     - .. image:: ../../logo/qrisp_logo_with_contour.png
          :width: 100
          :alt: Qiskit Logo
          :align: center
+         :class: dark-light
    * - ::
          
 		from qiskit import (QuantumCircuit, QuantumRegister,
@@ -472,20 +474,20 @@ Qrisp is an open-source project developed across organizations. We are open to a
     
     <div class="logo-slider">
         <div class="logo-track">
-        <div class="slide"><img src="./_static/FMF_UL_logo.svg" alt="Faculty of Mathematics and Physics, University of Ljubljana logo"></div>
-        <div class="slide"><img src="./_static/FRI_UL_logo.png" alt="Faculty of Computer and Information Science, University of Ljubljana logo"></div>
+        <div class="slide"><img class="only-light" src="./_static/FMF_UL_logo.svg" alt="Faculty of Mathematics and Physics, University of Ljubljana logo"><img class="only-dark" src="./_static/FMF_UL_logo_dark.png" alt="Faculty of Mathematics and Physics, University of Ljubljana logo"></div>
+        <div class="slide"><img class="only-light" src="./_static/FRI_UL_logo.png" alt="Faculty of Computer and Information Science, University of Ljubljana logo"><img class="only-dark" src="./_static/FRI_UL_logo_dark.png" alt="Faculty of Computer and Information Science, University of Ljubljana logo"></div>
         <div class="slide"><img src="./_static/ORNL_logo.png" alt="Oak Ridge National Laboratory logo"></div>
         
-        <div class="slide"><img src="./_static/FMF_UL_logo.svg" alt=""></div>
-        <div class="slide"><img src="./_static/FRI_UL_logo.png" alt=""></div>
+        <div class="slide"><img class="only-light" src="./_static/FMF_UL_logo.svg" alt=""><img class="only-dark" src="./_static/FMF_UL_logo_dark.png" alt=""></div>
+        <div class="slide"><img class="only-light" src="./_static/FRI_UL_logo.png" alt=""><img class="only-dark" src="./_static/FRI_UL_logo_dark.png" alt=""></div>
         <div class="slide"><img src="./_static/ORNL_logo.png" alt=""></div>
 
-        <div class="slide"><img src="./_static/FMF_UL_logo.svg" alt=""></div>
-        <div class="slide"><img src="./_static/FRI_UL_logo.png" alt=""></div>
+        <div class="slide"><img class="only-light" src="./_static/FMF_UL_logo.svg" alt=""><img class="only-dark" src="./_static/FMF_UL_logo_dark.png" alt=""></div>
+        <div class="slide"><img class="only-light" src="./_static/FRI_UL_logo.png" alt=""><img class="only-dark" src="./_static/FRI_UL_logo_dark.png" alt=""></div>
         <div class="slide"><img src="./_static/ORNL_logo.png" alt=""></div>
 
-        <div class="slide"><img src="./_static/FMF_UL_logo.svg" alt=""></div>
-        <div class="slide"><img src="./_static/FRI_UL_logo.png" alt=""></div>
+        <div class="slide"><img class="only-light" src="./_static/FMF_UL_logo.svg" alt=""><img class="only-dark" src="./_static/FMF_UL_logo_dark.png" alt=""></div>
+        <div class="slide"><img class="only-light" src="./_static/FRI_UL_logo.png" alt=""><img class="only-dark" src="./_static/FRI_UL_logo_dark.png" alt=""></div>
         <div class="slide"><img src="./_static/ORNL_logo.png" alt=""></div>
         </div>
     </div>
