@@ -535,6 +535,4 @@ def _q_switch_q(  # noqa: PLR0913
         assert_never(resolved_method)
 
 
-temp = _q_switch_q.__doc__
 _q_switch_q = custom_control(custom_inversion(_q_switch_q))
-_q_switch_q.__doc__ = temp
