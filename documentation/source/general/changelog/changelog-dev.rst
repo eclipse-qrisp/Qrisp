@@ -80,6 +80,13 @@ Improvements
   ``jaspification`` module (``jaspify``, ``simulate_jaspr``, ``stimulate``)
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
+- Decorators ``qache``, ``custom_inversion``, ``custom_control``,
+  ``RUS``, ``auto_uncompute`` now propagate the wrapped function's
+  docstring, name, and signature via ``functools.wraps``, removing the need
+  for manual docstring-copy workarounds at call sites. Functions decorated
+  with ``RUS`` can now also be called with keyword arguments.
+  (`PR #803 <https://github.com/eclipse-qrisp/Qrisp/pull/803>`_).
+
 - **Faster COLD/LCD circuit compilation and Hamiltonian construction**
   :meth:`compile_U_cold <qrisp.cold.DCQOProblem.compile_U_cold>` and
   :meth:`~qrisp.cold.DCQOProblem.run` no longer recompute Trotter term
@@ -206,6 +213,22 @@ Bug Fixes
   raised a ``ValueError`` when used inside an :func:`invert <qrisp.invert>` or
   :func:`control <qrisp.control>` environment in Jasp mode
   (`PR #769 <https://github.com/eclipse-qrisp/Qrisp/pull/769>`_).
+
+* Fixed the custom assembly format of ``jasp.create_qubits`` in the TableGen
+  definition of the Jasp dialect, which still listed the operand types in the
+  order ``!jasp.QuantumState, tensor<i64>`` while Qrisp prints them in operand
+  order, ``tensor<i64>, !jasp.QuantumState``.  MLIR-based consumers that build
+  a parser from ``dialect_definition/JaspOps.td`` could not parse the MLIR
+  emitted by :meth:`to_mlir <qrisp.jasp.Jaspr.to_mlir>`
+  (`Issue #783 <https://github.com/eclipse-qrisp/Qrisp/issues/783>`_).
+
+* Fixed ``jasp.quantum_gate`` and ``jasp.parity`` being printed in a syntax
+  that could not be parsed back: both had a hand-written printer and no
+  matching parser, so re-reading a printed module failed with
+  ``Operation jasp.quantum_gate does not have a custom format``.  Both now use
+  the same declarative assembly format as the remaining operations, which also
+  removes the stray whitespace around ``(`` and ``,`` those printers emitted
+  and stops attributes from being dropped.
 
 * Removed reduant imports in the top-level ``qrisp`` package.
   (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
