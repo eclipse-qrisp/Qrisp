@@ -17,6 +17,7 @@
 """Implements the Cuccaro ripple-carry in-place adder for quantum and classical-quantum addition."""
 
 import functools
+from numbers import Integral
 
 import jax.numpy as jnp
 
@@ -29,7 +30,7 @@ from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import conjugate, custom_control
-from qrisp.jasp import DynamicQubitArray, jlen, jrange
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.misc import int_encoder
 from qrisp.qtypes import QuantumBool
 
@@ -433,15 +434,45 @@ def cuccaro_adder(
     Array(9., dtype=float64)
 
     """
+    # A classical addend must be an int, a (little-endian) binary string or a
+    # supported quantum register. Reject any other scalar type with a clear
+    # TypeError before the generic pair check below, which reports invalid input
+    # *pairs* (e.g. a non-quantum target) as ValueError.
+    if not isinstance(
+        a, (Integral, str, list, QuantumVariable, DynamicQubitArray)
+    ) and not (
+        check_for_tracing_mode()
+        and (
+            hasattr(a, "get_bit")
+            or (
+                getattr(a, "ndim", None) == 0
+                and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer)
+            )
+        )
+    ):
+        raise TypeError(
+            f"a must be of type int, str, QuantumVariable, DynamicQubitArray or list[Qubit], not {type(a)}"
+        )
+
     # The second argument is required to be a (non-empty) quantum register,
     # and the first must be a quantum register or a classical value.
     a_is_quantum, _ = _validate_adder_inputs(a, b)
 
     # convert the classical input to a quantum input
     if not a_is_quantum:
-        # truncate the classical value modulo 2**len(b) so that values larger than the
-        # target register are handled via modulo addition (as documented above)
-        a = a % (1 << jlen(b))
+        # Binary strings are little-endian: "10" means bit 0 is 1 (value 1).
+        if isinstance(a, str):
+            a = int(a[::-1], 2) if a else 0
+
+        # int_encoder reads only the target's bits while tracing. In static mode,
+        # validate the integer and truncate here because int_encoder rejects
+        # values wider than the register.
+        if not check_for_tracing_mode():
+            if not isinstance(a, Integral):
+                raise TypeError(
+                    f"a must be of type int, str, QuantumVariable, DynamicQubitArray or list[Qubit], not {type(a)}"
+                )
+            a = a % (1 << jlen(b))
 
         # create a quantum variable of the same size as the other quantum input
         q_a = QuantumVariable(jlen(b))
