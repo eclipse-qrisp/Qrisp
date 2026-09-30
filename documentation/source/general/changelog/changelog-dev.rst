@@ -112,6 +112,12 @@ Improvements
   ``encode(..., rounding=True)`` (now O(1))
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+- Qrisp now ships a ``py.typed`` marker
+  (`PEP 561 <https://peps.python.org/pep-0561/>`_), so type checkers such as
+  mypy and pyright use Qrisp's inline type annotations when checking code
+  that imports Qrisp, instead of treating the package as untyped
+  (`PR #656 <https://github.com/eclipse-qrisp/Qrisp/pull/656>`_).
+
 Other New Features
 ------------------
 
