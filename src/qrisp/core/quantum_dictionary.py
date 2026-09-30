@@ -20,13 +20,12 @@ import itertools
 
 import numpy as np
 
-from qrisp.core import QuantumVariable, recursive_qv_search
-from qrisp.misc import bin_rep, custom_qv, int_as_array
+from qrisp.core import QuantumVariable, custom_qv, recursive_qv_search
+from qrisp.misc import bin_rep, int_as_array
 
 
 class QuantumDictionary(dict):
-    r"""This class can be used for loading data relations into the quantum computer which
-    are not based on a quantum algorithm.
+    r"""This class can be used for loading non-algorithmic data relations into the quantum computer.
 
     As an inheritor of the Python dictionary it has all the functionality we are used to
 
@@ -93,7 +92,7 @@ class QuantumDictionary(dict):
     CustomQuantumVariable:
 
     >>> print(type(value_qv))
-    <class 'qrisp.misc.misc_functions.custom_qv.<locals>.CustomQuantumVariable'>
+    <class 'qrisp.core.quantum_variable.custom_qv.<locals>.CustomQuantumVariable'>
 
     If we want to apply further processing this might not be helpfull since custom
     QuantumVariables lack many methods that are available in more specific quantum

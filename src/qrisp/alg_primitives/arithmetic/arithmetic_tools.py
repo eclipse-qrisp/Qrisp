@@ -25,6 +25,15 @@ from qrisp.jasp import jnp, jrange
 from qrisp.qtypes import QuantumBool, QuantumFloat
 
 
+def is_inv(value: int, _bit: int) -> bool:
+    """Check whether ``value`` is invertible modulo ``2**_bit``.
+
+    The only divisors of ``2**_bit`` are powers of 2, so ``value`` is invertible
+    modulo ``2**_bit`` exactly when it is odd.
+    """
+    return bool(int(value) % 2)
+
+
 def q_max(a: QuantumFloat, b: QuantumFloat) -> QuantumFloat:
     """Computes the maximum of two QuantumFloats ``a`` and ``b``.
 

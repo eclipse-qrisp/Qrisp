@@ -21,6 +21,7 @@ from qrisp.interface.measurement_result import (
     MeasurementResult,
     DecodedMeasurementResult,
     MultiMeasurementResult,
+    get_measurement_from_qc,
 )
 from qrisp.interface.converter import *
 from qrisp.interface.backend import *
