@@ -65,3 +65,11 @@ Qrisp. These can be imported directly from the top-level package:
    Covers all types accepted as gate parameters throughout Qrisp: Python
    numeric scalars, NumPy numeric scalars, symbolic expressions,
    concrete JAX arrays, and JAX tracers.
+
+.. py:data:: ControlLike
+   :type: TypeAlias
+   :value: C | Sequence[C], where C = Qubit | QuantumVariable | bool | np.bool_ | jax.Array | jax.core.Tracer
+
+   Accepted by :func:`control`. Qubits select quantum control. Booleans,
+   including JAX arrays and traced measurement results, select classical
+   control.

@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence, TypeAlias
+from typing import TYPE_CHECKING, Any, Sequence, TypeAlias
 
 import jax
 import jax.core
@@ -28,6 +28,9 @@ from sympy import Expr
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
 
+if TYPE_CHECKING:
+    from qrisp.core.quantum_variable import QuantumVariable
+
 __all__ = [
     "QubitLike",
     "ClbitLike",
@@ -35,6 +38,7 @@ __all__ = [
     "NDArrayLike",
     "ArrayLike",
     "FloatLike",
+    "ControlLike",
 ]
 
 QubitLike: TypeAlias = Qubit | int | Sequence[Qubit | int]
@@ -121,3 +125,57 @@ True
 >>> isinstance(sympy.Symbol("phi"), FloatLike)
 True
 """
+
+if TYPE_CHECKING:
+    _Control: TypeAlias = Qubit | QuantumVariable | bool | np.bool_ | jax.Array | jax.core.Tracer
+
+    ControlLike: TypeAlias = _Control | Sequence[_Control]
+    """Accepted by :func:`qrisp.control`.
+
+    Qubits select quantum control. Booleans, including JAX arrays and traced
+    measurement results, select classical control.
+
+    Examples
+    --------
+
+    >>> from qrisp import QuantumBool
+    >>> from qrisp.typing import ControlLike
+    >>> isinstance(QuantumBool(), ControlLike)
+    True
+    >>> isinstance(True, ControlLike)
+    True
+    """
+
+
+def __getattr__(name: str) -> Any:
+    """Build the aliases that need ``qrisp.core`` on first access (:pep:`562`).
+
+    ``qrisp.jasp`` imports this module while ``qrisp.core`` is being initialized, so
+    ``QuantumVariable`` can only be imported here. The unions match the
+    ``TYPE_CHECKING`` definitions above.
+
+    Parameters
+    ----------
+    name : str
+        The requested attribute.
+
+    Returns
+    -------
+    Any
+        The alias, which is then cached in the module namespace.
+
+    Raises
+    ------
+    AttributeError
+        If ``name`` is not such an alias.
+
+    """
+    if name != "ControlLike":
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    from qrisp.core.quantum_variable import QuantumVariable
+
+    control_operand = Qubit | QuantumVariable | bool | np.bool_ | jax.Array | jax.core.Tracer
+    control_like = control_operand | Sequence[control_operand]
+    globals()[name] = control_like
+    return control_like
