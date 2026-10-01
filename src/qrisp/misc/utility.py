@@ -703,8 +703,9 @@ def find_qs(args):
 
 # Function to measure multiple quantum variables at once to assess their entanglement
 def multi_measurement(qv_list, shots=None, backend=None):
-    """This functions facilitates the measurement of multiple QuantumVariables at the same
-    time. This can be used if the entanglement structure between several
+    """Measure multiple QuantumVariables at the same time.
+
+    This can be used if the entanglement structure between several
     QuantumVariables is of interest.
 
     Parameters
@@ -721,6 +722,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
     ------
     Exception
         Tried to perform measurement with open environments.
+    TracingModeError
+        Tried to perform measurement in tracing mode.
 
     Returns
     -------
@@ -745,10 +748,10 @@ def multi_measurement(qv_list, shots=None, backend=None):
 
     """
     from qrisp.interface.measurement_result import MultiMeasurementResult
-    from qrisp.jasp import check_for_tracing_mode
+    from qrisp.jasp import TracingModeError, check_for_tracing_mode
 
     if check_for_tracing_mode():
-        raise Exception("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
+        raise TracingModeError("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
 
     if backend is None:
         if qv_list[0].qs.backend is None:
