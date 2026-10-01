@@ -190,9 +190,26 @@ class QubitOperator(Hamiltonian):
     """
 
     def __init__(self, terms_dict={}):
+        """Builds an operator from a dictionary of terms and coefficients.
+
+        Parameters
+        ----------
+        terms_dict : dict, optional
+            A dictionary mapping each term to its coefficient. The default is
+            an empty dictionary, which gives the zero operator.
+
+        """
         self.terms_dict = dict(terms_dict)
 
     def len(self):
+        """Returns the number of terms in the operator.
+
+        Returns
+        -------
+        int
+            The number of terms.
+
+        """
         return len(self.terms_dict)
 
     def coeffs(self):
@@ -223,11 +240,13 @@ class QubitOperator(Hamiltonian):
         return f"${sp.latex(expr)}$"
 
     def __str__(self):
+        """Returns the operator as a readable string."""
         # Convert the sympy expression to a string and return it
         expr = self.to_expr()
         return str(expr)
 
     def __repr__(self):
+        """Returns the operator as a readable string."""
         # Convert the sympy expression to a string and return it
         return str(self)
 
@@ -282,10 +301,40 @@ class QubitOperator(Hamiltonian):
         return cls(res_terms_dict)
 
     def __pow__(self, e):
+        """Raises the operator to the power ``e``.
+
+        Parameters
+        ----------
+        e : int
+            The exponent.
+
+        Returns
+        -------
+        QubitOperator
+            The operator multiplied by itself ``e`` times.
+
+        """
         res = 1
         for i in range(e):
             res = res * self
         return res
+
+    def __neg__(self) -> "QubitOperator":
+        """Returns the operator with all coefficients negated.
+
+        Returns
+        -------
+        QubitOperator
+            The negated operator.
+
+        Examples
+        --------
+        >>> from qrisp.operators import X
+        >>> -X(0)
+        -X(0)
+
+        """
+        return -1 * self
 
     def __add__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the sum of the operator self and other.
@@ -529,6 +578,14 @@ class QubitOperator(Hamiltonian):
     #
 
     def find_minimal_qubit_amount(self):
+        """Returns the smallest number of qubits the operator fits on.
+
+        Returns
+        -------
+        int
+            The number of qubits needed for the terms of this operator.
+
+        """
         indices = sum([list(term.factor_dict.keys()) for term in self.terms_dict.keys()], [])
         if len(indices) == 0:
             return 0
@@ -596,7 +653,23 @@ class QubitOperator(Hamiltonian):
 
     @classmethod
     def from_numpy_array(cls, numpy_array, threshold=np.inf):
+        """Builds an operator from a matrix given as a NumPy array.
 
+        Parameters
+        ----------
+        numpy_array : numpy.ndarray
+            The matrix to represent as an operator. Its size must be a power
+            of two.
+        threshold : float, optional
+            Currently unused, kept for compatibility. The default is
+            ``numpy.inf``.
+
+        Returns
+        -------
+        QubitOperator
+            The operator represented by the matrix.
+
+        """
         from qrisp.operators import X, Y, Z
 
         n = int(np.log2(numpy_array.shape[0]))
@@ -717,6 +790,16 @@ class QubitOperator(Hamiltonian):
         -------
         scipy.sparse.csr_matrix
             The sparse matrix representing the operator.
+
+        Examples
+        --------
+        We convert a simple operator into its sparse matrix representation.
+
+        >>> from qrisp.operators import Z
+        >>> H = Z(0)
+        >>> H.to_sparse_matrix().toarray()
+        array([[ 1.+0.j,  0.+0.j],
+               [ 0.+0.j, -1.+0.j]])
 
         """
         operator_matrices = {
@@ -923,10 +1006,30 @@ class QubitOperator(Hamiltonian):
         QubitOperator
             The hermitian part.
 
+        Examples
+        --------
+        We calculate the hermitian part of a non-hermitian operator.
+
+        >>> from qrisp.operators import A, C
+        >>> H = A(0)*C(1)
+        >>> H.hermitize()
+        0.5*A(0)*C(1) + 0.5*C(0)*A(1)
+
         """
         return 0.5 * (self + self.adjoint())
 
     def eliminate_ladder_conjugates(self):
+        """Combines terms that are adjoints of each other.
+
+        This reduces the number of terms for operators that are built from
+        raising and lowering operators.
+
+        Returns
+        -------
+        QubitOperator
+            The operator with adjoint term pairs combined.
+
+        """
         new_terms_dict = {}
         for term, coeff in self.terms_dict.items():
             for factor in term.factor_dict.values():
@@ -951,8 +1054,16 @@ class QubitOperator(Hamiltonian):
         float
             The ground state energy.
 
-        """
+        Examples
+        --------
+        We calculate the ground state energy of $H = Z_0Z_1 + X_0$.
 
+        >>> from qrisp.operators import X, Z
+        >>> H = Z(0)*Z(1) + X(0)
+        >>> H.ground_state_energy()
+        -1.4142135623730951
+
+        """
         hamiltonian = self.hermitize()
         hamiltonian = hamiltonian.eliminate_ladder_conjugates()
         hamiltonian = hamiltonian.apply_threshold(0)
@@ -1388,6 +1499,19 @@ class QubitOperator(Hamiltonian):
         return QubitOperator(new_terms_dict)
 
     def get_conjugation_circuit(self):
+        """Returns the circuit that changes to the basis in which the terms are diagonal.
+
+        The circuit is meant to be applied before measuring operators whose
+        terms commute on each qubit.
+
+        Returns
+        -------
+        QuantumCircuit
+            The basis-change circuit.
+        QubitOperator
+            The operator written in the new basis.
+
+        """
         # This method returns a QuantumCircuit that should be applied
         # before a measurement of self is peformed.
         # The method assumes that all terms within this Operator commute qubit-
@@ -2125,6 +2249,7 @@ class QubitOperator(Hamiltonian):
 
     def unitaries(self):
         r"""Returns unitiaries and coefficients for the Pauli representation of the operator.
+
         Note that this method will always consider the **hermitized** operator, i.e.
 
         .. math::
@@ -2149,27 +2274,20 @@ class QubitOperator(Hamiltonian):
         Examples
         --------
         Applying a Hamiltonian operator via Linear Combination of Unitaries.
+        Note that all coefficients are nonnegative. The unitaries are $P_0=XX$ and
+        $P_1=-ZZ$, where the minus sign is accounted for by a phase shift. They can
+        be applied to a :ref:`QuantumVariable`:
 
-        ::
-
-            from qrisp import QuantumVariable, barrier
-            from qrisp.operators import X,Y,Z
-
-            H = 2*X(0)*X(1)-Z(0)*Z(1)
-
-            unitaries, coeffs = H.unitaries()
-            print(coeffs)
-            # [2. 1.]
-
-        Note that all coefficients are nonnegative. The unitaries are $P_0=XX$, and $P_1=-ZZ$ where the minus sign is accounted for by a phase shift:
-
-        ::
-
-            qv = QuantumVariable(2)
-            unitaries[0](qv)
-            barrier(qv)
-            unitaries[1](qv)
-
+        >>> from qrisp import QuantumVariable, barrier
+        >>> from qrisp.operators import X, Y, Z
+        >>> H = 2*X(0)*X(1) - Z(0)*Z(1)
+        >>> unitaries, coeffs = H.unitaries()
+        >>> print(coeffs)
+        [2. 1.]
+        >>> qv = QuantumVariable(2)
+        >>> unitaries[0](qv)
+        >>> barrier(qv)
+        >>> unitaries[1](qv)
         >>> print(qv.qs)
         QuantumCircuit:
         ---------------

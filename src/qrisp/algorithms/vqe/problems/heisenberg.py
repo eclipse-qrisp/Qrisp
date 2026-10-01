@@ -96,6 +96,19 @@ def create_heisenberg_hamiltonian(G, J, B):
     H : :ref:`QubitOperator`
         The quantum Hamiltonian.
 
+    Examples
+    --------
+    We create the Hamiltonian for a two-site Heisenberg model with coupling
+    $J=1$ and no magnetic field.
+
+    >>> import networkx as nx
+    >>> from qrisp.vqe.problems.heisenberg import create_heisenberg_hamiltonian
+    >>> G = nx.Graph()
+    >>> G.add_edge(0, 1)
+    >>> H = create_heisenberg_hamiltonian(G, J=1, B=0)
+    >>> print(H)
+    X(0)*X(1) + Y(0)*Y(1) + Z(0)*Z(1)
+
     """
     H = sum(J * (X(i) * X(j) + Y(i) * Y(j) + Z(i) * Z(j)) for (i, j) in G.edges()) + sum(B * Z(i) for i in G.nodes)
     return H
@@ -124,6 +137,38 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
     -------
     ansatz : function
         A function that can be applied to a :ref:`QuantumVariable` and a list of parameters.
+
+    Examples
+    --------
+    We create one layer of the ansatz for a two-site Heisenberg model and
+    apply it to a :ref:`QuantumVariable`.
+
+    >>> import networkx as nx
+    >>> from qrisp import QuantumVariable
+    >>> from qrisp.vqe.problems.heisenberg import create_heisenberg_ansatz, greedy_edge_coloring
+    >>> G = nx.Graph()
+    >>> G.add_edge(0, 1)
+    >>> M = nx.maximal_matching(G)
+    >>> C = greedy_edge_coloring(G, M)
+    >>> ansatz = create_heisenberg_ansatz(G, J=1, B=0, M=M, C=C)
+    >>> qv = QuantumVariable(2, name="qv")
+    >>> ansatz(qv, [0.5, 0.5])
+    >>> print(qv.qs)
+    QuantumCircuit:
+    ---------------
+          ┌───────┐     ┌───┐         ┌────────┐┌───┐          ┌───┐         »
+    qv.0: ┤ Rz(0) ├──■──┤ H ├─■───────┤ gphase ├┤ H ├──■────■──┤ H ├─■───────»
+          ├───────┤┌─┴─┐└───┘ │P(0.5) └────────┘└───┘┌─┴─┐┌─┴─┐└───┘ │P(0.5) »
+    qv.1: ┤ Rz(0) ├┤ X ├──────■──────────────────────┤ X ├┤ X ├──────■───────»
+          └───────┘└───┘                             └───┘└───┘              »
+    «      ┌────────┐┌───┐
+    «qv.0: ┤ gphase ├┤ H ├──■──
+    «      └────────┘└───┘┌─┴─┐
+    «qv.1: ───────────────┤ X ├
+    «                     └───┘
+    Live QuantumVariables:
+    ----------------------
+    QuantumVariable qv
 
     """
 
@@ -178,7 +223,10 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
 
 
 def create_heisenberg_init_function(M):
-    """Creates the function that, when applied to a :ref:`QuantumVariable`, initializes a tensor product of singlet sates corresponding to a given matching.
+    """Creates the initialization function for a given matching.
+
+    When applied to a :ref:`QuantumVariable`, the function initializes a tensor
+    product of singlet states corresponding to the matching ``M``.
 
     Parameters
     ----------
@@ -189,6 +237,32 @@ def create_heisenberg_init_function(M):
     -------
     init_function : function
         A function that can be applied to a :ref:`QuantumVariable`.
+
+    Examples
+    --------
+    We create the initialization function for a maximal matching of a
+    two-site lattice and apply it to a :ref:`QuantumVariable`.
+
+    >>> import networkx as nx
+    >>> from qrisp import QuantumVariable
+    >>> from qrisp.vqe.problems.heisenberg import create_heisenberg_init_function
+    >>> G = nx.Graph()
+    >>> G.add_edge(0, 1)
+    >>> M = nx.maximal_matching(G)
+    >>> init_function = create_heisenberg_init_function(M)
+    >>> qv = QuantumVariable(2, name="qv")
+    >>> init_function(qv)
+    >>> print(qv.qs)
+    QuantumCircuit:
+    ---------------
+          ┌───┐┌───┐
+    qv.0: ┤ X ├┤ H ├──■──
+          ├───┤└───┘┌─┴─┐
+    qv.1: ┤ X ├─────┤ X ├
+          └───┘     └───┘
+    Live QuantumVariables:
+    ----------------------
+    QuantumVariable qv
 
     """
 

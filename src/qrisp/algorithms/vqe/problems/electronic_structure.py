@@ -135,9 +135,10 @@ def spacial_to_spin(one_int, two_int):
 
 
 def electronic_data(mol):
-    """A function that utilizes `restricted Hartree-Fock (RHF) <https://pyscf.org/user/scf.html>`_
-    calculation in the `PySCF <https://pyscf.org>`_ quantum chemistry package to obtain the electronic data for
-    defining an electronic structure problem.
+    """Gets the electronic data needed to define an electronic structure problem.
+
+    The data is obtained from a `restricted Hartree-Fock (RHF) <https://pyscf.org/user/scf.html>`_
+    calculation with the `PySCF <https://pyscf.org>`_ package.
 
     Parameters
     ----------
@@ -161,6 +162,20 @@ def electronic_data(mol):
             The nuclear repulsion energy.
         * ``energy_hf``
             The Hartree-Fock ground state energy.
+
+    Examples
+    --------
+    We obtain the electronic data for the Hydrogen molecule using a restricted
+    Hartree-Fock calculation.
+
+    >>> from pyscf import gto
+    >>> from qrisp.vqe.problems.electronic_structure import electronic_data
+    >>> mol = gto.M(atom="H 0 0 0; H 0 0 0.74", basis="sto-3g")
+    >>> data = electronic_data(mol)
+    >>> print(data["num_orb"], data["num_elec"])
+    4 2
+    >>> print(data["energy_hf"])
+    -1.1167593073964255
 
     """
     from pyscf import ao2mo, scf
@@ -389,7 +404,20 @@ def create_QCCSD_ansatz(M, N):
         A function that can be applied to a :ref:`QuantumVariable` and a list of parameters.
     num_params : int
         The number of parameters.
-    
+
+    Examples
+    --------
+    We create one layer of the QCCSD ansatz for two electrons in four spin
+    orbitals and apply it to a :ref:`QuantumVariable`.
+
+    >>> from qrisp import QuantumVariable
+    >>> from qrisp.vqe.problems.electronic_structure import create_QCCSD_ansatz
+    >>> ansatz, num_params = create_QCCSD_ansatz(M=4, N=2)
+    >>> num_params
+    3
+    >>> qv = QuantumVariable(4)
+    >>> ansatz(qv, [0.5, 0.5, 0.5])
+
     """
     spin_down_occupied = [i for i in range(N) if i % 2 == 0]
     spin_down_virtual = [i for i in range(N, M) if i % 2 == 0]
@@ -442,8 +470,10 @@ def create_QCCSD_ansatz(M, N):
 
 
 def create_hartree_fock_init_function(M, N):
-    r"""Creates the function that, when applied to a :ref:`QuantumVariable`, initializes the Hartee-Fock state:
-    Consistent with the Jordan-Wigner mapping, the first ``N`` qubits are initialized in the $\ket{1}$ state.
+    r"""Creates the Hartree-Fock initialization function.
+
+    Consistent with the Jordan-Wigner mapping, the first ``N`` qubits are
+    initialized in the $\ket{1}$ state when applied to a :ref:`QuantumVariable`.
 
     Parameters
     ----------
@@ -456,6 +486,30 @@ def create_hartree_fock_init_function(M, N):
     -------
     init_function : function
         A function that can be applied to a :ref:`QuantumVariable`.
+
+    Examples
+    --------
+    We create the Hartree-Fock initialization function for two electrons in
+    four spin orbitals and apply it to a :ref:`QuantumVariable`.
+
+    >>> from qrisp import QuantumVariable
+    >>> from qrisp.vqe.problems.electronic_structure import create_hartree_fock_init_function
+    >>> init_function = create_hartree_fock_init_function(M=4, N=2)
+    >>> qv = QuantumVariable(4, name="qv")
+    >>> init_function(qv)
+    >>> print(qv.qs)
+    QuantumCircuit:
+    ---------------
+          ┌───┐
+    qv.0: ┤ X ├
+          ├───┤
+    qv.1: ┤ X ├
+          └───┘
+    qv.2: ─────
+    qv.3: ─────
+    Live QuantumVariables:
+    ----------------------
+    QuantumVariable qv
 
     """
 
