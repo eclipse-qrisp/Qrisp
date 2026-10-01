@@ -4,10 +4,9 @@
 <div align="center">
 
 [![License](https://img.shields.io/badge/License-EPL_2.0-brightgreen.svg)](https://opensource.org/licenses/EPL-2.0)
-![PyPI - Version](https://img.shields.io/pypi/v/qrisp?color=brightgreen)
+[![PyPI - Version](https://img.shields.io/pypi/v/qrisp?color=brightgreen)](https://pypi.org/project/qrisp/)
 [![Discord](https://img.shields.io/discord/1471858163908214870?style=plastic&logo=Discord&label=discord)](https://discord.gg/v5np7DeBaq)
 [![Pytest](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml)
-[![Downloads](https://img.shields.io/pypi/dm/qrisp.svg)](https://pypi.org/project/qrisp/)
 
 [![Paper](https://img.shields.io/badge/DOI-10.1038%2Fs41586--020--2649--2-brightgreen)](https://doi.org/10.48550/arXiv.2406.14792)
 [![Forks](https://img.shields.io/github/forks/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/network/members)
