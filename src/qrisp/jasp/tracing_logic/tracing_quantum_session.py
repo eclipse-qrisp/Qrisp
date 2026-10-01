@@ -54,7 +54,7 @@ class TracingModeError(RuntimeError):
     """Raised when an operation is not supported while tracing a Jasp program.
 
     The call itself is valid, but cannot be carried out because the involved
-    QuantumVariables are registered in a :class:`TracingQuantumSession` rather
+    QuantumVariables are registered in a ``TracingQuantumSession`` rather
     than a :class:`~qrisp.QuantumSession`.
     """
 
@@ -323,7 +323,7 @@ class TracingQuantumSession:
 
     @classmethod
     def get_instance(cls) -> "TracingQuantumSession":
-        """Return the module-level singleton :class:`TracingQuantumSession`.
+        """Return the module-level singleton ``TracingQuantumSession``.
 
         The instance is created at import time and is always available.
         """
