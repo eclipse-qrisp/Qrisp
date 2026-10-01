@@ -1120,18 +1120,21 @@ class QubitOperator(Hamiltonian):
         return groups
 
     def group_up(self, group_denominator):
-        """Splits the operator into groups of terms that belong together.
+        """Partitions the QubitOperator into QubitOperators whose terms pairwise satisfy a predicate.
 
         Parameters
         ----------
         group_denominator : callable
-            A function that takes two terms and returns ``True`` if they should
-            be placed in the same group.
+            A function ``(QubitTerm, QubitTerm) -> bool`` returning ``True`` if two terms may be
+            placed in the same group. The predicate must be symmetric, i.e.
+            ``group_denominator(a, b) == group_denominator(b, a)``. This is not checked: the
+            predicate is only evaluated for one ordering of each pair of terms, so an asymmetric
+            predicate can yield groups containing pairs that violate it.
 
         Returns
         -------
-        list[QubitOperator]
-            The groups, each returned as its own operator.
+        groups : list[QubitOperator]
+            The partition of the QubitOperator.
 
         """
         term_groups = group_up_iterable(list(self.terms_dict.keys()), group_denominator)
