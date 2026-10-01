@@ -209,6 +209,26 @@ tutorial_authors = {
             "linkedin": None,
         },
     ],
+    "general/tutorial/RLWE": [
+        {
+            "name": "René Zander",
+            "affiliation": "Fraunhofer FOKUS",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
+        {
+            "name": "Eric Kühnke",
+            "affiliation": "Fraunhofer FOKUS",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
+        {
+            "name": "Tobias Köppl",
+            "affiliation": "Fraunhofer FOKUS",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
+    ],
     "general/tutorial/Shor": [
         {
             "name": "Raphael Seidel",
