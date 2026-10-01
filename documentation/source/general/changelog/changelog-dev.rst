@@ -433,6 +433,10 @@ Development
   already covered by other tooling
   (`PR #920 <https://github.com/eclipse-qrisp/Qrisp/pull/920>`_).
 
+* Removed the duplicate PyPI badge from the README, keeping a single
+  version badge linked to the PyPI project page
+  (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
+
 Dependency Upgrades
 -------------------
 
