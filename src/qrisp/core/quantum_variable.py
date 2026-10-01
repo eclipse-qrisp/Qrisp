@@ -481,7 +481,7 @@ class QuantumVariable:
             If merging the duplicate's quantum session with ``qs`` fails.
         TracingModeError
             If ``init`` is True while tracing, since initializing from another
-            QuantumVariable is not supported in a ``TracingQuantumSession`.
+            QuantumVariable is not supported in a ``TracingQuantumSession``.
         Exception
             If ``init`` is True and the provided ``qubits`` are not fresh.
 
