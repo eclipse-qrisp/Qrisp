@@ -459,3 +459,112 @@ def test_cold_rejects_invalid_n_opt(n_opt):
 
     with pytest.raises(ValueError, match="N_opt must be a positive integer"):
         solve_QUBO(Q, problem_args, run_args)
+
+
+def _small_crab_problem(N=3):
+    """Smallest COLD instance that still runs the full ``run`` pipeline (AGP coefficients are irrelevant here)."""
+    Q = np.eye(N)
+    h = -0.5 * np.sum(Q, axis=1)
+    H_init = sum([X(i) for i in range(N)])
+    H_prob = sum([h[i] * Z(i) for i in range(N)])
+    A_lam = sum([Y(i) for i in range(N)])
+    H_control = sum([Z(i) for i in range(N)])
+
+    def alpha(lam, f, f_deriv):
+        return [0.0] * N
+
+    def lam():
+        t, T = sp.symbols("t T", real=True)
+        return t / T
+
+    return N, DCQOProblem(Q, H_init, H_prob, A_lam, alpha, lam, H_control=H_control)
+
+
+def _record_opt_pulses(monkeypatch):
+    """Wrap ``_precompute_opt_pulses`` so a test can see every pulse basis the COLD pipeline actually used."""
+    calls = []
+    original = DCQOProblem._precompute_opt_pulses
+
+    def recording(self, N_steps, T, t_list, N_opt, CRAB=False):
+        sin_matrix, cos_matrix = original(self, N_steps, T, t_list, N_opt, CRAB=CRAB)
+        calls.append((CRAB, sin_matrix.copy(), cos_matrix.copy()))
+        return sin_matrix, cos_matrix
+
+    monkeypatch.setattr(DCQOProblem, "_precompute_opt_pulses", recording)
+    return calls
+
+
+@pytest.mark.parametrize("objective", ["exp_value", "agp_coeff_magnitude"])
+def test_cold_crab_final_circuit_uses_the_optimized_basis(monkeypatch, objective):
+    """The parameters are optimized for one random CRAB basis, so the final circuit must apply that same basis.
+
+    A past regression redrew the random frequencies on every call and built the final circuit without
+    them (CRAB=False), so the optimized parameters were applied to a different pulse than the one
+    they were optimized for.
+    """
+    calls = _record_opt_pulses(monkeypatch)
+    np.random.seed(42)  # Deterministic for reproducible test results
+    N, problem = _small_crab_problem()
+
+    problem.run(
+        QuantumVariable(N),
+        N_steps=4,
+        T=2,
+        method="COLD",
+        N_opt=2,
+        CRAB=True,
+        objective=objective,
+        bounds=(-2, 2),
+        options={"maxiter": 2},
+        mes_kwargs={"shots": 100},
+    )
+
+    assert len(calls) >= 2, "expected the optimization and the final circuit to both build pulses"
+    assert all(crab for crab, _, _ in calls), "every pulse build in a CRAB run must use the CRAB basis"
+    _, sin_ref, cos_ref = calls[0]
+    for _, sin_matrix, cos_matrix in calls[1:]:
+        np.testing.assert_allclose(sin_matrix, sin_ref)
+        np.testing.assert_allclose(cos_matrix, cos_ref)
+
+
+def test_cold_crab_draws_a_new_basis_for_each_run(monkeypatch):
+    """Reusing one instance for two CRAB runs must explore two different random bases, not repeat the first."""
+    calls = _record_opt_pulses(monkeypatch)
+    N, problem = _small_crab_problem()
+
+    first_pulse_of_run = []
+    for seed in (1, 2):
+        calls.clear()
+        np.random.seed(seed)  # Deterministic for reproducible test results
+        problem.run(
+            QuantumVariable(N),
+            N_steps=4,
+            T=2,
+            method="COLD",
+            N_opt=2,
+            CRAB=True,
+            objective="agp_coeff_magnitude",
+            bounds=(-2, 2),
+            options={"maxiter": 2},
+            mes_kwargs={"shots": 100},
+        )
+        first_pulse_of_run.append(calls[0][1])
+
+    assert not np.allclose(first_pulse_of_run[0], first_pulse_of_run[1])
+
+
+def test_cold_without_crab_is_deterministic_basis():
+    """Without CRAB the basis is the plain 2*pi*k sine basis and never touches the random number generator."""
+    N, problem = _small_crab_problem()
+    N_steps, T = 8, 2.0
+    problem._precompute_timegrid(N_steps, T, "COLD")
+    t_list = (np.arange(N_steps) + 0.5) * (T / N_steps)
+
+    sin_matrix, cos_matrix = problem._precompute_opt_pulses(N_steps, T, t_list, 2, CRAB=False)
+
+    for k in (1, 2):
+        np.testing.assert_allclose(sin_matrix[:, k - 1], np.sin(2 * np.pi * k * t_list / T))
+        # d/dlam sin(2*pi*k*g(lam)) = 2*pi*k*cos(2*pi*k*g(lam)) * g'(lam), with g = t/T
+        np.testing.assert_allclose(
+            cos_matrix[:, k - 1], 2 * np.pi * k * np.cos(2 * np.pi * k * t_list / T) * problem.g_deriv
+        )

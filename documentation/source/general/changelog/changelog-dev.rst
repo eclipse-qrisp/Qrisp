@@ -249,6 +249,17 @@ Bug Fixes
   at any other ``T`` the AGP drive alternated sign between timesteps.
   (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
+* The COLD control pulses now use the basis:math:`\sin(2\pi k\, g(\lambda))`,
+  instead of :math:`\sin(\pi k\, g(\lambda))`, and COLD-CRAB randomizes the 
+  frequencies as :math:`k \to k(1 + r_k)` instead of :math:`k \to k + r_k`.
+  Optimized parameters from earlier versions do not carry over.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
+
+* Fixed COLD-CRAB (``CRAB=True``) in :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>`.
+  The random frequencies :math:`r_k` were redrawn on every call, and the final circuit
+  was built without them.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
+
 * Fixed the ``agp_coeff_magnitude`` objective, which summed the AGP coefficients
   without weighting by ``lamdot``. Since the coefficients diverge as
   ``1/lamdot`` through the control-pulse derivative while the circuit applies

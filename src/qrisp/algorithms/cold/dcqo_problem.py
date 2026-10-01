@@ -187,6 +187,9 @@ class DCQOProblem:
         self.lam = None
         self.lamdot = None
 
+        # Random CRAB frequency offsets r_k of the current run, drawn on first use by _precompute_opt_pulses
+        self._crab_r = None
+
     def _precompute_timegrid(self, N_steps, T, method):
         """Compute lambda(t, T) and the time-derivative lambdadot(t, T) for each timestep.
 
@@ -275,17 +278,21 @@ class DCQOProblem:
         cos_matrix = np.zeros((N_steps, N_opt))
 
         if CRAB:
-            # Random CRAB parameters
-            r_params = np.random.uniform(-0.5, 0.5, N_opt)
+            # Random CRAB parameters. The optimized beta only fit the basis they were optimized for, so
+            # every later call (objective evaluations, final circuit) must see the same r_k.
+            if self._crab_r is None or len(self._crab_r) != N_opt:
+                self._crab_r = np.random.uniform(-0.5, 0.5, N_opt)
+            r_params = self._crab_r
         else:
             # Otherwise add nothing
             r_params = np.zeros(N_opt)
 
+        # Pulse basis f_k = sin(omega_k * g(lam)) with principal frequencies omega_k = 2*pi*k and
+        # CRAB randomization k -> k*(1 + r_k), see Eq. (28) of https://doi.org/10.1103/PRXQuantum.4.010312.
         for k in range(N_opt):
-            sin_matrix[:, k] = np.sin(np.pi * (k + 1 + r_params[k]) * t_list / T)
-            cos_matrix[:, k] = (
-                (np.pi * (k + 1 + r_params[k])) * np.cos(np.pi * (k + 1 + r_params[k]) * self.g) * self.g_deriv
-            )
+            omega = 2 * np.pi * (k + 1) * (1 + r_params[k])
+            sin_matrix[:, k] = np.sin(omega * t_list / T)
+            cos_matrix[:, k] = omega * np.cos(omega * self.g) * self.g_deriv
 
         return sin_matrix, cos_matrix
 
@@ -711,6 +718,9 @@ class DCQOProblem:
 
             qarg1, qarg2 = qarg.duplicate(), qarg.duplicate()
 
+            # Every run optimizes over a fresh random CRAB basis
+            self._crab_r = None
+
             # If we optimize the Hamiltonian expectation value,
             # compile COLD routine into a circuit for the optimization
             if objective == "exp_value":
@@ -742,7 +752,7 @@ class DCQOProblem:
                     cost = cost_temp
 
             # Apply hamiltonian with optimal parameters
-            self.apply_cold_hamiltonian(qarg, N_steps, T, opt_params, CRAB=False)
+            self.apply_cold_hamiltonian(qarg, N_steps, T, opt_params, CRAB=CRAB)
 
         # Run LCD routine
         elif method == "LCD":

@@ -408,7 +408,7 @@ def test_solve_qubo_routes_agp_type_to_both_methods(agp_type):
         # h_i = -0.5 sum_j Q_ij are all below 0.5 in magnitude. A control pulse free to reach
         # +-3 simply overwhelms the problem Hamiltonian and drives every spin to one polarity,
         # so the bound has to sit at the scale of h.
-        run_args={"N_steps": 20, "T": 1, "N_opt": 1, "CRAB": False, "bounds": (-0.5, 0.5)},
+        run_args={"N_steps": 20, "T": 2, "N_opt": 1, "CRAB": False, "bounds": (-0.5, 0.5)},
     )
     assert solution in list(res.keys())[0:3]
 
