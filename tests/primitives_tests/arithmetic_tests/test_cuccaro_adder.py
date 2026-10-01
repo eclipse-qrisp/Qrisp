@@ -32,6 +32,7 @@ from qrisp import (
     measure,
     x,
 )
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.circuit import Qubit
 from qrisp.misc import int_encoder
 
@@ -329,6 +330,49 @@ def test_cuccaro_adder_dynamic_binary_string():
         return measure(b)
 
     assert add(4, 3) == 5 + 3
+
+
+# -- BigInteger classical addends ---------------------------------------------
+
+
+def test_cuccaro_adder_dynamic_biginteger():
+    """BigInteger addend in dynamic mode."""
+
+    @boolean_simulation
+    def add(bits, a_num, b_val):
+        b = QuantumFloat(bits)
+        b[:] = b_val
+        cuccaro_adder(BigInteger.create(a_num, 1), b)
+        return measure(b)
+
+    assert add(4, 5, 3) == 5 + 3
+
+
+@pytest.mark.xfail(
+    reason=(
+        "int_encoder calls get_bit(32) on a one-limb BigInteger; the "
+        "out-of-range limb index is clamped to limb 0, so a 33-qubit target "
+        "encodes 2**32 + 1 instead of 1."
+    ),
+    strict=True,
+)
+def test_cuccaro_adder_dynamic_biginteger_33_qubit_target():
+    """Regression: a one-limb BigInteger addend must zero-extend to 33 qubits.
+
+    ``BigInteger.create(1, 1)`` only holds limb 0, while the 33-qubit target
+    makes ``int_encoder`` read bit 32 (limb 1). Until ``BigInteger.get_bit``
+    returns zero for out-of-range indices (or the addend is zero-padded to the
+    target width), the encoder adds a spurious ``2**32``.
+    """
+
+    @boolean_simulation
+    def add(bits, a_num, b_val):
+        b = QuantumFloat(bits)
+        b[:] = b_val
+        cuccaro_adder(BigInteger.create(a_num, 1), b)
+        return measure(b)
+
+    assert add(33, 1, 0) == 1
 
 
 # -- other quantum types ------------------------------------------------------
