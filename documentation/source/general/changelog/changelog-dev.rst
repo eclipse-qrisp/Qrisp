@@ -230,13 +230,12 @@ Bug Fixes
   (`#877 <https://github.com/eclipse-qrisp/Qrisp/issues/877>`_).
 
 * Corrected the adiabatic gauge potential (AGP) coefficients used by COLD and
-  LCD. Every closed form deviated from the minimal-action solution
-  :math:`S = \mathrm{Tr}[G_\lambda^2]`,
-  :math:`G_\lambda = \partial_\lambda H + i[A_\lambda, H]`, that they are meant
-  to solve, through a mix of wrong exponents, sums used where sums of squares
-  belong, a dropped sign, and a sign convention mismatch between
-  ``AGP_params`` and the evolving circuit. All forms now reproduce an exact
-  minimal-action calculation to machine precision for ``N = 3`` through ``N = 10``.
+  LCD. Every closed-form expression deviated from the exact minimizer of the
+  action :math:`S = \mathrm{Tr}[G_\lambda^2]`, with
+  :math:`G_\lambda = \partial_\lambda H + i[A_\lambda, H]` and the AGP
+  :math:`A_\lambda`, through a mix of wrong exponents, sums used where sums of
+  squares belong, a dropped sign, and a sign convention mismatch between
+  ``AGP_params`` and the evolving circuit.
   (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
 * Fixed the inverse scheduling function ``g(lam)`` in
