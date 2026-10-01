@@ -428,6 +428,11 @@ Development
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
+* Removed the CodeFactor status badge from the README. It was frequently
+  broken due to upstream rate limiting and its AI-review functionality is
+  already covered by other tooling
+  (`PR #920 <https://github.com/eclipse-qrisp/Qrisp/pull/920>`_).
+
 Dependency Upgrades
 -------------------
 
