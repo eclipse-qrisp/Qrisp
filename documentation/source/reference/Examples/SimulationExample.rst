@@ -10,7 +10,7 @@ We use the :meth:`tensordot` function to contract quantum tensors (ie. a :ref:`Q
 >>> import numpy as np
 >>> from qrisp import QuantumFloat, QuantumArray, tensordot
 
-Initiate the :ref:`QuantumArray` holding the statevector. We initate the state of uniform
+Initiate the :ref:`QuantumArray` holding the statevector. We initiate the state of uniform
 superposition
 
 .. math::

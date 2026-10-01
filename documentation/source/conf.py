@@ -82,7 +82,7 @@ pygments_style = "sphinx"
 # Recognize code cells as Python 3 for highlighting:
 nbsphinx_codecell_lexer = "ipython3"
 
-imgmath_latex_preamble = r"\usepackage{braket}\n\usepackage{xcolor}"
+imgmath_latex_preamble = r"\usepackage{braket}\n\usepackage{xcolor}"  # codespell:ignore
 
 thebe_config = {
     "repository_url": "https://github.com/fraunhoferfokus/Qrisp",

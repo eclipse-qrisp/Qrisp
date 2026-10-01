@@ -50,7 +50,7 @@ def _moduli_neq(a, b):
         the same modulus.
 
     """
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
         BigInteger,
     )
 
@@ -96,7 +96,7 @@ def _coerce_bigint_operand(value, modulus):
         Value with exactly ``modulus.digits.shape[0]`` limbs.
 
     """
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
         BigInteger,
     )
 
@@ -288,7 +288,7 @@ class QuantumModulus(QuantumFloat):
         Decoding recovers k = (k_hat * 2^m) mod N = montgomery_decoder(k_hat, R, N)
         where R = 2^m is the Montgomery radix.
         """
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
             BigInteger,
         )
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
@@ -314,7 +314,7 @@ class QuantumModulus(QuantumFloat):
         return new_montgomery_decoder(i, self.m, self.modulus)
 
     def measure(self):
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
             BigInteger,
         )
 
@@ -344,7 +344,7 @@ class QuantumModulus(QuantumFloat):
 
     def encoder(self, i):
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
                 BigInteger,
             )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
@@ -357,7 +357,7 @@ class QuantumModulus(QuantumFloat):
                 return montgomery_encoder(i, 1 << self.m, self.modulus)
 
         else:
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
                 BigInteger,
             )
             from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
@@ -384,7 +384,7 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(self, other):
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
             BigInteger,
         )
 
@@ -425,7 +425,7 @@ class QuantumModulus(QuantumFloat):
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __imul__(self, other):
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
             BigInteger,
         )
 

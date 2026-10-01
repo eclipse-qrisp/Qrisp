@@ -1,0 +1,16 @@
+# Temporary configuration: CodeRabbit has a file-count limit on reviews, so the
+# codespell changes in this PR are reviewed in two batches.
+#
+# Batch 1 (active): documentation + tooling.
+# Batch 2 (later): comment out the Batch 1 entries and uncomment the Batch 2
+# entries below, then re-request a review from CodeRabbit.
+reviews:
+  path_filters:
+    # --- Batch 1: documentation + tooling ---
+    # - "documentation/**"
+    # - "pyproject.toml"
+    # - ".github/**"
+    # - "logo/**"
+    # --- Batch 2: source + tests ---
+    - "src/**"
+    # - "tests/**"

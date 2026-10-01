@@ -27,14 +27,14 @@ import numpy as np
 # from __future__ import annotations) and never at runtime.
 # Importing it at module level triggers a circular import:
 #
-#   gidney_adder -> BigInteger (from jasp_bigintiger)
-#     -> jasp_arithmetic/__init__ -> jasp_mod_adder/multiplyers/montgomery
+#   gidney_adder -> BigInteger (from jasp_biginteger)
+#     -> jasp_arithmetic/__init__ -> jasp_mod_adder/multipliers/montgomery
 #     -> gidney_adder  (circular!)
 #
 # The TYPE_CHECKING guard keeps the runtime import-free while satisfying
 # static type checkers.
 if TYPE_CHECKING:  # noqa
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import (
         BigInteger,
     )  # noqa
 from qrisp.circuit import Qubit
@@ -427,7 +427,7 @@ def gidney_adder(
             # original a bits move up one slot.  This mutated a is used
             # downstream (final XOR loop) — the shift is effectively undone
             # by the adjusted start offset.
-            # BigInteger supports both << and + (see jasp_bigintiger.py).
+            # BigInteger supports both << and + (see jasp_biginteger.py).
             a = (a << 1) + 1
         if c_out_qb is not None:
             b_qbs = b_qbs + [c_out_qb]

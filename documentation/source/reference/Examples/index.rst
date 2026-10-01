@@ -30,7 +30,7 @@ In this section, we provide a glimpse into the diverse range of applications tha
    * - :ref:`EfficientTSP`
      - A more efficient version of the solution of the traveling salesman problem, that was presented in the :ref:`Tutorial`
    * - :ref:`ShorExample` 
-     - Showcases the cryptographic implications of implementating Shor's algorithm and provides insight in how to easily use a custom adder.
+     - Showcases the cryptographic implications of implementing Shor's algorithm and provides insight in how to easily use a custom adder.
    * - :ref:`MolecularPotentialEnergyCurve` 
      - Calculating molecular potential energy curves with :ref:`VQE`.
    * - :ref:`GroundStateEnergyQPE` 

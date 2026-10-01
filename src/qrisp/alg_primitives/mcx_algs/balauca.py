@@ -455,7 +455,7 @@ def vchain_2_dirty(control, target, dirty_ancillae=None):
 
 @jit
 def extract_boolean_digit(integer, digit):
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import BigInteger
 
     if isinstance(integer, BigInteger):
         return jnp.bool(integer.get_bit(digit))
@@ -482,7 +482,7 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
     N = jlen(ctrls)
 
     from qrisp import mcx  # Double import
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import BigInteger
 
     if not isinstance(ctrl_state, BigInteger):
         ctrl_state = jnp.int64(ctrl_state)

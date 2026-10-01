@@ -29,7 +29,7 @@ def spsa(fun, x0, args, maxiter=50, a=2.0, c=0.1, alpha=0.702, gamma=0.201, seed
 
     See :func:`~qrisp.jasp.minimize` for a description of ``fun``, ``x0``, and ``args``.
 
-    This algorithm aims at finding the optimal control $x^*$ minimizing a given loss fuction $f$:
+    This algorithm aims at finding the optimal control $x^*$ minimizing a given loss function $f$:
 
     .. math::
 

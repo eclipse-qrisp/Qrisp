@@ -19,7 +19,7 @@
 import jax
 import numpy as np
 
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import BigInteger
 from qrisp.core import cp, h, p, swap
 from qrisp.environments import conjugate, control
 from qrisp.jasp import DynamicQubitArray, jrange, qache

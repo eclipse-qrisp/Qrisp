@@ -88,7 +88,7 @@ def controlled_unitary(controlled_gate):
     return res
 
 
-# Calculates the unitary of a gate embeddded into a circuit of n qubits
+# Calculates the unitary of a gate embedded into a circuit of n qubits
 # For instance consider this circuit
 # Here we have gate = CXGate(), n = 4, destination_qubits = [2,3]
 # q80_0: ─────
@@ -111,7 +111,7 @@ def calc_embedded_unitary(gate, n, destination_qubits):
     # In principle, we could use the numpy function np.kron
     # tensor_array = np.kron(np.eye(2**(n-m)), gate.get_unitary())
 
-    # However, this performs alot of unnecessary multiplications since the structure of
+    # However, this performs a lot of unnecessary multiplications since the structure of
     # this matrix is simply the unitary of the gate on the diagonal 2**n/2**dim(gate)
     # times repeated
     if isinstance(gate, ControlledOperation):
@@ -215,7 +215,7 @@ def swap_tensor_factors(tensor, i, j):
 # tensor_array = np.kron(np.eye(2**(n-m)), gate.get_unitary())
 
 
-# However this performs alot of unnecessary multiplications
+# However this performs a lot of unnecessary multiplications
 # since the structure of this matrix is simply the unitary
 # of the gate on the diagonal 2**n/2**dim(gate) times repeated
 def generate_id_kron(input_tensor, n):
@@ -279,7 +279,7 @@ def generate_id_kron_jitted(input_tensor, n):
 # and then embedd this unitary into the 2**4 = 16d basis
 
 
-# In order to harness the effciency gain we use a divide and conquer strategy:
+# In order to harness the efficiency gain we use a divide and conquer strategy:
 # We merge the instruction of the circuit into pairs of elementary gates, calculate
 # this unitary and the again merge this unitary with the neighbouring pair of elementary
 # gate. Applying this recursively requires only a single 2**n d matrix multiplication.
@@ -292,7 +292,7 @@ def __calc_circuit_unitary(qc):
     if len(qc.data) == 0:
         return np.eye(2**n, dtype=np_dtype)
 
-    # If the circuit contains only a single insturction,
+    # If the circuit contains only a single instruction,
     # calculate this instructions unitary and embedd it
     if len(qc.data) == 1:
         instr_0 = qc.data[0]

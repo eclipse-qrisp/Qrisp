@@ -66,7 +66,7 @@ class QuantumVariable:
     >>> example_qv_2.name
     'alice'
 
-    If not explicitely specified during construction, a name is determined
+    If not explicitly specified during construction, a name is determined
     automatically. Qrisp will try to infer the name of the Python variable and if that
     fails, a generic name is given.
 
@@ -413,10 +413,10 @@ class QuantumVariable:
         Note that this method has a different function than the destructor. Calling this
         method will tell the QuantumSession to mark the used qubits as free and apply a
         reset gate.
-        If set to True, the keyword verify will cause a simulation to check, wether the
-        deleted qubits are in the $\ket{0}$ state prior to resetting. This is helpfull
-        during debugging, as it indicates wether the uncomputation of this
-        QuantumVariable was successfull.
+        If set to True, the keyword verify will cause a simulation to check, whether the
+        deleted qubits are in the $\ket{0}$ state prior to resetting. This is helpful
+        during debugging, as it indicates whether the uncomputation of this
+        QuantumVariable was successful.
 
         After deletion, the QuantumVariable object is basically unchanged but an error
         will be raised if further operations on the deleted qubits are attempted.
@@ -583,7 +583,7 @@ class QuantumVariable:
 
     def decoder(self, i):
         """The decoder method specifies how a QuantumVariable turns the outcomes of
-        measurements into human-readable values. It recieves an integer ``i`` and
+        measurements into human-readable values. It receives an integer ``i`` and
         returns a human-readable value.
 
         This method is supposed to be overloaded when defining new
@@ -674,7 +674,7 @@ class QuantumVariable:
         value :
             A value supported by the encoder.
         permit_dirtyness : bool, optional
-            Surpresses the error message when calling encode on dirty qubits.
+            Suppresses the error message when calling encode on dirty qubits.
 
         Returns
         -------
@@ -849,7 +849,7 @@ class QuantumVariable:
         Raises
         ------
         Exception
-            Missmatch between proposed qubits and amount integer.
+            Mismatch between proposed qubits and amount integer.
 
         Returns
         -------
@@ -899,7 +899,7 @@ class QuantumVariable:
             The qubits to remove from the QuantumVariable.
 
         verify : bool
-            Boolean value which indicates wether Qrisp should verify that the reduced
+            Boolean value which indicates whether Qrisp should verify that the reduced
             qubits are in the $\ket{0}$ state.
 
         Raises
@@ -962,7 +962,7 @@ class QuantumVariable:
         Parameters
         ----------
         plot : Bool, optional
-            Plots the measurement results as a historgram. The default is False.
+            Plots the measurement results as a histogram. The default is False.
         backend : BackendLike, optional
             The backend on which to evaluate the quantum circuit.
             The default can be specified in the file default_backend.py.
@@ -980,7 +980,7 @@ class QuantumVariable:
             of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
             The default is {}.
         circuit_preprocessor : Python function, optional
-            A function which recieves a QuantumCircuit and returns one, which is applied
+            A function which receives a QuantumCircuit and returns one, which is applied
             after compilation and parameter substitution. The default is None.
         filename : string, optional
             The location of where to save a generated plot. The default is None.

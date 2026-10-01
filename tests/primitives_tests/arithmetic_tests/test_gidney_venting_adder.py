@@ -39,7 +39,7 @@ from qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder import (
     zz_mcx,
     zz_zz_mcx,
 )
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_biginteger import BigInteger
 from qrisp.jasp import count_ops, jaspify, jrange, terminal_sampling
 
 ZZ_PARITY_CASES = [

@@ -23,7 +23,7 @@ Based on the **maximum absolute entry** of the correlation matrix M and its sign
 
 * If :math:`\text{M}_{ij} > 0, (i, j) ∈ E` was selected, we remove both vertices from the graph with the argument, that, since both of them would be in the same state in the final solution, including both as part of the solution would violate the constraint, as they share an edge. In turn, they can be removed from the graph. 
 
-* If :math:`\text{M}_{ij} < 0, (i, j) ∈ E` was selected, we remove all vertices that share an edge with both vertices :math:`i` and :math:`j`. Since one of the vertices :math:`i` and :math:`j` will be part of the final solution (but not both), any vertex that is connected to both :math:`i` and :math:`j` is guaranteed to violate the problem constraints, and can be removed from the graph. In this case, it may be possible that no vertex is found to be a canditate for being removed. We will then simply choose the second biggest absolute value of **M** for the replacement routine.
+* If :math:`\text{M}_{ij} < 0, (i, j) ∈ E` was selected, we remove all vertices that share an edge with both vertices :math:`i` and :math:`j`. Since one of the vertices :math:`i` and :math:`j` will be part of the final solution (but not both), any vertex that is connected to both :math:`i` and :math:`j` is guaranteed to violate the problem constraints, and can be removed from the graph. In this case, it may be possible that no vertex is found to be a candidate for being removed. We will then simply choose the second biggest absolute value of **M** for the replacement routine.
 
 
 .. autofunction:: create_max_indep_replacement_routine

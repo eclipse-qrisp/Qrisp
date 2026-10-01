@@ -79,7 +79,7 @@ _GROUPING_RECURSION_PARAMETERS = ((16, 2), (20, 3), (24, 4), (28, 6), (32, 7), (
 
 # This class is supposed to describe a group of instructions
 # The idea behind the grouping is that grouping instructions together allows
-# to precalculate their unitary. This saves alot of time because applying
+# to precalculate their unitary. This saves a lot of time because applying
 # a medium size unitary on a large statevector is more efficient than applying
 # many small unitaries. This estimation is elaborated in the calc_gain method.
 class _GroupedInstruction:

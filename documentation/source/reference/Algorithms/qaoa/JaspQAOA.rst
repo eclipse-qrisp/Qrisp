@@ -4,7 +4,7 @@ How to use QAOA in Jasp
 =======================
 
 In the `How to think in Jasp <https://www.qrisp.eu/general/tutorial/Jasp.html>`_ we learned how Jasp allows to future-proof Qrisp code for practically relevant problems.
-For variational quantum algorithms like QAOA and VQE, hybrid quantum-classical workflows can be seamlessly compliled, optimized and executed.
+For variational quantum algorithms like QAOA and VQE, hybrid quantum-classical workflows can be seamlessly compiled, optimized and executed.
 
 We demonstrate how to use QAOA in Jasp for MaxCut problem:
 
@@ -12,7 +12,7 @@ For a graph $G$ with $n$ nodes, a bipartition $S$, $V\setminus S$ of the set of 
 we measure the $i$-th qubit in 0 if the node $i$ is in the set $S$, and 1 if the node $i$ is in the set $V\setminus S$.
 The cut value is the number of edges $e=(i,j)$ in $G$ such that $i\in S$ and $j\in V\setminus S$.
 
-In Jasp, varibales are decoded to integers (i.e. jax.numpy.int) and not to binrary strings. In this case, the binary representation of an integer encodes a bipartition of the graph $G$.
+In Jasp, variables are decoded to integers (i.e. jax.numpy.int) and not to binary strings. In this case, the binary representation of an integer encodes a bipartition of the graph $G$.
 Therefore, repeated sampling from a QuantumVariable in a superposition state will result in an array of integers representing bipartitions of the graph $G$. 
 Within QAOA, we require a post processing function to compute the average cut value for an array of samples. 
 More details on how to build an efficient post processing function are provided in the `tutorial about how to implement QAOA with Jasp <https://www.qrisp.eu/general/tutorial/JaspQAOAtutorial.html>`_. 

@@ -25,7 +25,7 @@ class IterationEnvironment(QuantumEnvironment):
     algorithms. For this problem the ``IterationEnvironment`` exposes the ``precompile``
     keyword. Setting this keyword to ``True`` will perform the Qubit allocation algorithm
     on the QuantumEnvironments content and then (if necessary) allocate another
-    :ref:`QuantumVariable` to accomodate the workspace qubits of the compilation
+    :ref:`QuantumVariable` to accommodate the workspace qubits of the compilation
     result. This way there is only a single (de)allocation per
     ``IterationEnvironment``.
 

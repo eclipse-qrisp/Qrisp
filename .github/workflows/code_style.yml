@@ -82,3 +82,25 @@ jobs:
 
       - name: Ruff format check
         run: ruff format --check
+
+  spellcheck:
+    name: codespell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install codespell
+        run: |
+          CODESPELL_VERSION=$(sed -n 's/^.*"codespell==\([^"]*\)".*$/\1/p' pyproject.toml)
+          pip install "codespell==${CODESPELL_VERSION}"
+
+      - name: Run codespell
+        run: |
+          codespell || {
+            echo "::warning title=Codespell::The Qrisp project uses American English. Found spelling issues (see above).%0ARun 'codespell' locally to see the full list, or 'codespell -w' to auto-fix.%0ATo suppress: add '# codespell:ignore' to the line, or add the keyword to 'ignore-words-list' in pyproject.toml."
+            exit 1
+          }

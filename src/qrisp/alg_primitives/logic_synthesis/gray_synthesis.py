@@ -33,7 +33,7 @@ try:
     from ffht import fht as fwht
 
     fwht(np.array([0, 1, 0, 1]))
-    # print("FALCONN fwht import successfull")
+    # print("FALCONN fwht import successful")
 except:
     # print("FALCONN fwht import failed")
 
@@ -75,7 +75,7 @@ def hamming_tsp(location_list, bit_amount):
     # Copy list in order not to change the input
     location_list = list(location_list)
 
-    # Create log-lists for the salesman pathes
+    # Create log-lists for the salesman paths
     salesman_1 = [min(location_list)]
     location_list.pop(np.argmin(location_list))
 
@@ -171,17 +171,17 @@ def hamming_movement(init, target, bit_amount):
 def gray_code(n):
     # The key observation is that we can solve the problem for the n-D cube, if we solve
     # it for the (n-1)-D cube such that the path starts at bin(0) and ends in
-    # bin(2**(n-2)). We then concantenate this solution in the "lower half" of the n-D
+    # bin(2**(n-2)). We then concatenate this solution in the "lower half" of the n-D
     # cube with the reversed solution in the upper half applied
 
-    # This concantenation will again give a solution which starts at 0 and ends in
+    # This concatenation will again give a solution which starts at 0 and ends in
     # bin(2**((n+1)-2)). We thus have a recursion
 
     # Example for the 3D cube:
     # A possible solution for the 2D cube is [0,1,3,2]
 
     # The reversal is [2,3,1,0] which is [6,7,5,4] on the upper half
-    # Concantenating gives [0,1,3,2,6,7,5,4] ie. a solution which starts in 0
+    # Concatenating gives [0,1,3,2,6,7,5,4] ie. a solution which starts in 0
     # and ends in 2**(3-1) = 4
 
     if n < 1:
@@ -200,9 +200,9 @@ def gray_code(n):
 
 
 # This function calculates the phases to put after each parity operator.
-# A given state will recieve then recieve the phase phi_i if it is true under the parity
+# A given state will receive then receive the phase phi_i if it is true under the parity
 # operator i. As each state is true on a unique combination of parity operators each
-# state will recieve a unique phase. The total phase of any state is the sum of all the
+# state will receive a unique phase. The total phase of any state is the sum of all the
 # parity operators it is True on. If we now want to get a certain constellation of total
 # phases. This gives us a system of linear equations, where the matrix is given by the
 # parity matrix
@@ -266,7 +266,7 @@ def single_qb_traversal(locations, bit_amount):
 # Returns a list of tuples indicating the applied CNOT gates
 # and a list of integers indicating the sequence of traversed parity operators
 def multi_qb_traversal(locations, bit_amount):
-    # Copy locations list (in oder to prevent modification)
+    # Copy locations list (in order to prevent modification)
 
     locations = list(locations)
 
@@ -490,7 +490,7 @@ def gray_phase_synth_qb_list(qc, qb_list, target_phases, phase_tolerant=False):
 # |1> if we synthesized the |-> state and |0> if we synthesized the |+> state.
 # We choose the phases for the states which have a 0 in the output variable to be 0
 # and the phases for the states which have a 1 in the output variable according to
-# wether the truth table to be synthesized requires a 1 or a 0.
+# whether the truth table to be synthesized requires a 1 or a 0.
 
 # An additional perk of this function is, that it support phase tolerant synthesis
 # This means that we are tolerant regarding the phase the out will have, i.e. if the
