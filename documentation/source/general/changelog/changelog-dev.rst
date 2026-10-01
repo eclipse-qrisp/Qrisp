@@ -49,6 +49,14 @@ New Features
 Improvements
 ------------
 
+- **Cheaper tracing for** :func:`q_switch <qrisp.q_switch>`
+  The ``"tree"`` method resolves conditionals whose predicate is already known at
+  trace time instead of tracing both arms and discarding one. The emitted circuit
+  is unchanged; the traced program is roughly half the size and compiles about
+  twice as fast for larger switches (2807 to 1308 equations and 1.71 s to 0.77 s
+  for 16 branches). Predicates that genuinely depend on run-time values, such as a
+  ``branch_amount`` that is itself traced, still go through ``q_cond``.
+
 - :class:`~qrisp.interface.QiskitJob` and :class:`~qrisp.interface.AQTJob`
   now skip the live provider query and return the cached status once a job
   is done, cancelled, or errored. The :class:`~qrisp.interface.Job` base
@@ -71,6 +79,13 @@ Improvements
   small, exact-value edge-case tests, and improved the docstrings of the
   ``jaspification`` module (``jaspify``, ``simulate_jaspr``, ``stimulate``)
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
+
+- Decorators ``qache``, ``custom_inversion``, ``custom_control``,
+  ``RUS``, ``auto_uncompute`` now propagate the wrapped function's
+  docstring, name, and signature via ``functools.wraps``, removing the need
+  for manual docstring-copy workarounds at call sites. Functions decorated
+  with ``RUS`` can now also be called with keyword arguments.
+  (`PR #803 <https://github.com/eclipse-qrisp/Qrisp/pull/803>`_).
 
 - **Faster COLD/LCD circuit compilation and Hamiltonian construction**
   :meth:`compile_U_cold <qrisp.cold.DCQOProblem.compile_U_cold>` and
@@ -142,6 +157,12 @@ Bug Fixes
   :class:`~qrisp.block_encodings.BlockEncoding` simulation with traced
   coefficients.
 
+* Fixed two issues in :func:`q_switch <qrisp.q_switch>` affecting branch lists of
+  odd length. The padding branch the ``"tree"`` method appends now accepts every
+  operand, so an odd branch list no longer raises a ``TypeError`` in Jasp mode
+  when more than one operand is passed, and the padding is appended to a copy
+  rather than to the caller's list.
+
 * Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
   Unitary matrices are now computed in ``complex128`` precision, removing the
   spurious ~1e-7 off-diagonal entries that previously appeared where a
@@ -184,6 +205,22 @@ Bug Fixes
   raised a ``ValueError`` when used inside an :func:`invert <qrisp.invert>` or
   :func:`control <qrisp.control>` environment in Jasp mode
   (`PR #769 <https://github.com/eclipse-qrisp/Qrisp/pull/769>`_).
+
+* Fixed the custom assembly format of ``jasp.create_qubits`` in the TableGen
+  definition of the Jasp dialect, which still listed the operand types in the
+  order ``!jasp.QuantumState, tensor<i64>`` while Qrisp prints them in operand
+  order, ``tensor<i64>, !jasp.QuantumState``.  MLIR-based consumers that build
+  a parser from ``dialect_definition/JaspOps.td`` could not parse the MLIR
+  emitted by :meth:`to_mlir <qrisp.jasp.Jaspr.to_mlir>`
+  (`Issue #783 <https://github.com/eclipse-qrisp/Qrisp/issues/783>`_).
+
+* Fixed ``jasp.quantum_gate`` and ``jasp.parity`` being printed in a syntax
+  that could not be parsed back: both had a hand-written printer and no
+  matching parser, so re-reading a printed module failed with
+  ``Operation jasp.quantum_gate does not have a custom format``.  Both now use
+  the same declarative assembly format as the remaining operations, which also
+  removes the stray whitespace around ``(`` and ``,`` those printers emitted
+  and stops attributes from being dropped.
 
 * Removed reduant imports in the top-level ``qrisp`` package.
   (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
@@ -309,6 +346,15 @@ API Changes
   implemented is unchanged
   (`PR #814 <https://github.com/eclipse-qrisp/Qrisp/pull/814>`_).
 
+* Gate-application functions (``cx``, ``cy``, ``cz``, ``h``, ``x``, ``y``,
+  ``z``, ``mcx``, ``mcz``, ``mcp``, ``p``, ``cp``, ``rx``, ``ry``, ``rz``,
+  ``crz``, ``s``, ``t``, ``s_dg``, ``t_dg``, ``sx``, ``sx_dg``, ``gphase``,
+  ``xxyy``, ``rzz``, ``rxx``, ``ryy``, ``u3``, ``barrier``, and ``swap``) no
+  longer return the qubits/``QuantumVariable``\ s they were applied to; they
+  now consistently return ``None``, reflecting that they act by side effect.
+  Code relying on the previous return values (e.g. ``result = h(qv)``) must
+  use the original argument instead.
+
 .. Add API changes above this line
 
 Development
@@ -360,6 +406,7 @@ Development
   as documentation. Existing rich module-level documentation was preserved
   verbatim, only reformatted to satisfy ``D205``
   (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+  (`PR #866 <https://github.com/eclipse-qrisp/Qrisp/pull/866>`_).
 
 * Extended the ``ruff`` ignore list in ``pyproject.toml`` with the docstring
   style rules ``D209``, ``D212``, ``D401``, ``D402``, ``D404``, and ``D416``
@@ -384,6 +431,15 @@ Development
   workflows into a single ``code_style.yml``, with the ``ruff format --check``
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
+
+* Removed the CodeFactor status badge from the README. It was frequently
+  broken due to upstream rate limiting and its AI-review functionality is
+  already covered by other tooling
+  (`PR #920 <https://github.com/eclipse-qrisp/Qrisp/pull/920>`_).
+
+* Removed the duplicate PyPI badge from the README, keeping a single
+  version badge linked to the PyPI project page
+  (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
 
 Dependency Upgrades
 -------------------

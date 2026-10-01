@@ -209,7 +209,4 @@ def inpl_add(
         ancilla_var_2.delete()
 
 
-# Workaround for protecting the docstring from the decorator
-temp = inpl_add.__doc__
 inpl_add = gate_wrap(inpl_add)
-inpl_add.__doc__ = temp
