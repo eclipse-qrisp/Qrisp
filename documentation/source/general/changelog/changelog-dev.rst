@@ -253,7 +253,7 @@ Bug Fixes
   at any other ``T`` the AGP drive alternated sign between timesteps.
   (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
-* The COLD control pulses now use the basis:math:`\sin(2\pi k\, g(\lambda))`,
+* The COLD control pulses now use the basis :math:`\sin(2\pi k\, g(\lambda))`,
   instead of :math:`\sin(\pi k\, g(\lambda))`, and COLD-CRAB randomizes the 
   frequencies as :math:`k \to k(1 + r_k)` instead of :math:`k \to k + r_k`.
   Optimized parameters from earlier versions do not carry over.
