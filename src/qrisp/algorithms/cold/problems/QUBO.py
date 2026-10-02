@@ -332,9 +332,9 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
             """Nested-commutator AGP ansatz operators."""
             return _nested_commutator_operators(h, J)
 
-        builders = {"local": local(), "nc": nested_commutators(J, h)}
+        builders = {"local": local, "nc": lambda: nested_commutators(J, h)}
 
-        return builders[agp_type]
+        return builders[agp_type]()
 
     def build_coeffs(agp_type, uniform_AGP_coeffs, J, h):
         """Return the AGP coefficient function for the given ``agp_type`` and uniformity."""
@@ -374,13 +374,13 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
             return alpha
 
         builders = {
-            ("local", True): local_uniform(J, h),
-            ("local", False): local_nonuniform(J, h),
-            ("nc", True): nc_uniform(J, h),
-            ("nc", False): nc_nonuniform(J, h),
+            ("local", True): local_uniform,
+            ("local", False): local_nonuniform,
+            ("nc", True): nc_uniform,
+            ("nc", False): nc_nonuniform,
         }
 
-        return builders[(agp_type, uniform_AGP_coeffs)]
+        return builders[(agp_type, uniform_AGP_coeffs)](J, h)
 
     N = len(Q[0])
     h = -0.5 * np.sum(Q, axis=1)
