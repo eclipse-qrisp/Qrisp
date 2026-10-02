@@ -46,6 +46,8 @@ Since Jasp is a fundamentally different compilation architecture, not all Qrisp 
      -    ✅ 
    * - :ref:`Automatic Uncomputation <uncomputation>`
      -   	❌ 
+   * - :ref:`Uncomputation of temporaries via jasp_uncompute <jasp_uncomputation>`
+     -    ✅
    * - :ref:`QuantumArrays <QuantumArray>`
      -   	✅ 
    * - :ref:`QAOA <QAOA>`

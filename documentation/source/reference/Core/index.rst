@@ -54,6 +54,7 @@ This page elaborates on the ways automatic uncomputation can be achieved in Qris
 
 #. The :meth:`uncompute <qrisp.QuantumVariable.uncompute>` method, which uncomputes the QuantumVariable (if possible) and calls :meth:`delete <qrisp.QuantumVariable.delete>` afterwards.
 #. The ``auto_uncompute`` decorator, which uncomputes any local QuantumVariable of Python function.
+#. The ``jasp_uncompute`` decorator, which uncomputes the temporary QuantumVariables of a function in :ref:`Jasp <jasp>`.
 
 
 :ref:`Session Merging <SessionMerging>`

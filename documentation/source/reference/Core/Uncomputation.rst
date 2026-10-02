@@ -527,3 +527,41 @@ We see that the uncomputation of ``u`` is no longer delayed but performed instan
 6
 
 We can see how ``u`` is calculated into ``workspace_0`` and then uncomputed. Subsequently, ``result`` is computed into the recycled qubit and uncomputed afterwards. Finally ``u`` is recomputed, used to uncompute ``v`` and finally uncomputed for good. Performing the recomputation therefore gave us a circuit with one less qubit at the cost of two additional Margolus gates. This example is of course trivial but depending on the amount of qubits occupied by ``u`` and the amount of extra gates to perform a recomputation, this can be really beneficial (especially when working with a simulator, where qubits are a more costly resource than gates).
+
+.. _jasp_uncomputation:
+
+Uncomputation in Jasp
+---------------------
+
+The Unqomp algorithm works on quantum circuits and is therefore not available
+for :ref:`Jasp <jasp>` programs, which are represented as :ref:`Jaspr` objects.
+For the most common use case, Jasp provides the :func:`jasp_uncompute
+<qrisp.jasp_uncompute>` decorator instead. It uncomputes the *temporaries* of a
+function, i.e. the QuantumVariables that the function creates and neither
+returns nor deletes.
+
+``jasp_uncompute`` applies to functions that first compute all temporaries and
+then only use them, such as Grover oracles. It splits the function at the
+last operation that modifies a temporary into a computation :math:`C` and a use
+:math:`U` and executes :math:`C^\dagger U C`. In contrast to Unqomp, it doesn't
+analyze each temporary individually, so the conditions below must hold for the
+function as a whole.
+
+You can use ``jasp_uncompute`` if
+
+* every temporary is computed before any temporary is used,
+* the computation consists of operations like Qrisp's comparisons, logical
+  operations and arithmetic, which map computational basis states to
+  computational basis states and clean up their own ancillas,
+* the use acts on the temporaries and on the qubits they were computed from only
+  through phases or as controls,
+* no temporary is measured and the computation contains no measurement, and
+* the temporaries are not created inside classical control flow such as
+  :func:`jrange <qrisp.jasp.jrange>` loops.
+
+All of these conditions except the second are checked, and a violation raises an
+error describing the offending operation. Decorated functions can be controlled,
+inverted and nested. If a decorated function is controlled, only the use is
+controlled. Outside of Jasp, ``jasp_uncompute`` behaves like ``auto_uncompute``.
+
+.. autofunction:: qrisp.jasp_uncompute

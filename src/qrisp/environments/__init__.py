@@ -27,3 +27,4 @@ from qrisp.environments.iteration_environment import *
 from qrisp.environments.custom_control_environment import *
 from qrisp.environments.custom_inversion_environment import *
 from qrisp.environments.jiteration_environment import *
+from qrisp.environments.jasp_uncomputation_environment import *

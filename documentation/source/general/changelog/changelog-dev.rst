@@ -46,6 +46,18 @@ New Features
   * Raises ``ValueError`` for a non-positive shot count — including a
     dynamic one, which only becomes concrete once the backend runs.
 
+- **Uncomputation of temporaries in Jasp via** ``@jasp_uncompute``
+  The new :func:`~qrisp.jasp_uncompute` decorator uncomputes the temporary
+  QuantumVariables of a function in Jasp, such as the :class:`~qrisp.QuantumBool`
+  results of comparisons in a Grover oracle. It applies to functions that first
+  compute all temporaries and then only use them, for instance through phases or
+  as controls, and executes them as :math:`C^\dagger U C`. Decorated functions can
+  be controlled (only the use :math:`U` is controlled), inverted and nested.
+  Violations of the conditions, such as a temporary used before all temporaries
+  are computed or a use that modifies the inputs, raise an error describing the
+  offending operation. Outside of Jasp, the decorator behaves like
+  ``auto_uncompute``. See :ref:`Uncomputation in Jasp <jasp_uncomputation>`.
+
 Improvements
 ------------
 
