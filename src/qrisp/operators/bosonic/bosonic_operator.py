@@ -212,7 +212,7 @@ class BosonicOperator(Hamiltonian):
 
         return BosonicOperator(new_terms_dict)
 
-    def len(self):
+    def __len__(self):
         """Return the number of terms."""
         return len(self.terms_dict)
 
