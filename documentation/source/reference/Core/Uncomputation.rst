@@ -550,9 +550,10 @@ function as a whole.
 You can use ``jasp_uncompute`` if
 
 * every temporary is computed before any temporary is used,
-* the computation consists of operations like Qrisp's comparisons, logical
-  operations and arithmetic, which map computational basis states to
-  computational basis states and clean up their own ancillas,
+* the computation is qfree (see above), i.e. it maps computational basis states
+  to computational basis states up to a phase, as Qrisp's comparisons, logical
+  operations and arithmetic do, and its ancillas are back in :math:`\ket{0}`
+  before it deletes them,
 * the use acts on the temporaries and on the qubits they were computed from only
   through phases or as controls,
 * no temporary is measured and the computation contains no measurement, and

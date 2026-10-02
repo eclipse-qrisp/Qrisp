@@ -73,10 +73,11 @@ def jasp_uncompute(function):
        neither use a temporary without modifying another temporary (for
        instance by applying a phase to it) nor modify a QuantumVariable that
        the function returns.
-    #. **Clean computation.** The computation maps every computational basis
-       state of the involved qubits to a computational basis state (up to a
-       phase), restores the qubits it reads and cleans up its own ancillas. This
-       holds for Qrisp's comparisons, logical operations and arithmetic.
+    #. **Clean computation.** The computation is :ref:`qfree <uncomputation>`:
+       it maps computational basis states to computational basis states (up to
+       a phase), as Qrisp's comparisons, logical operations and arithmetic do.
+       Ancillas it allocates and deletes must be back in :math:`\ket{0}` before
+       they are deleted.
     #. **Permeable use.** The use only acts diagonally (in the computational
        basis) on the temporaries and on every qubit the computation reads. It
        may for instance apply phases or controlled operations depending on the
@@ -235,19 +236,23 @@ class JaspUncomputationEnvironment(QuantumEnvironment):
     # Why this is correct
     # -------------------
     #
-    # Let D be the qubits C acts on: its inputs, its ancillas and the
-    # temporaries. Because of the clean-computation condition, C maps
-    # |x>|0> to e^{i phi(x)} |x>|t(x)>, where x are the inputs and t(x) the
-    # values of the temporaries (ancillas start and end in |0>). Because U is
-    # permeable on all of D, it is block diagonal in the computational basis of
-    # D:
+    # Let D be the qubits C acts on: its inputs and the temporaries (its
+    # ancillas start and end in |0> and can be ignored). Because C is qfree, it
+    # maps every basis state |d> of D, with the temporaries in |0>, to a single
+    # basis state up to a phase:
     #
-    #     U = sum_d |d><d| (x) W_d
+    #     C |d> = e^{i phi(d)} |pi(d)>
     #
-    # where W_d acts on the remaining qubits. Hence
+    # Here pi(d) contains the computed temporaries. C doesn't need to leave its
+    # inputs unchanged; pi may also permute them. Because U is permeable on all
+    # of D, it is block diagonal in the computational basis of D:
     #
-    #     C^dagger U C |x>|0>|psi> = C^dagger e^{i phi(x)} |x>|t(x)> W_{x,t(x)}|psi>
-    #                              = |x>|0> W_{x,t(x)}|psi>.
+    #     U = sum_e |e><e| (x) W_e
+    #
+    # where W_e acts on the remaining qubits. Hence
+    #
+    #     C^dagger U C |d>|psi> = C^dagger e^{i phi(d)} |pi(d)> W_{pi(d)}|psi>
+    #                           = |d> W_{pi(d)}|psi>.
     #
     # The temporaries are back in |0> and can be deleted, the inputs are
     # unchanged, the phase phi cancels, and the remaining qubits received
