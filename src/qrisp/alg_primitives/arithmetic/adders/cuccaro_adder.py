@@ -16,8 +16,10 @@
 
 """Implements the Cuccaro ripple-carry in-place adder for quantum and classical-quantum addition."""
 
-import functools
+from __future__ import annotations
+
 from numbers import Integral
+from typing import TYPE_CHECKING, TypeAlias
 
 import jax.numpy as jnp
 
@@ -29,67 +31,49 @@ from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.misc import int_encoder
 from qrisp.qtypes import QuantumBool
 
+# ``BigInteger`` only appears in type hints (lazy-evaluated thanks to
+# ``from __future__ import annotations``) and is never needed at runtime.
+# Importing it at module level can trigger a circular import.
+if TYPE_CHECKING:
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        BigInteger,
+    )
 
-def _resolve_c_in(c_in, ancilla):
-    """Resolve the carry-in qubit and apply the initial c_in-controlled cx.
+# An optional control/carry qubit may be passed as a QuantumBool or a bare Qubit.
+QubitLike: TypeAlias = QuantumBool | Qubit
 
-    The carry-in may be passed as a QuantumBool or a bare Qubit. This helper
-    normalizes it to a Qubit (raising a TypeError for any other type in static
-    mode) and then seeds the carry ancilla with the carry-in value via
-    CNOT gate. The resolved qubit is returned so the caller can
-    uncompute it after the addition.
+# The quantum operands are QuantumVariables (or subclasses), DynamicQubitArrays
+# or plain lists of Qubits (including traced qubits).
+QuantumRegister: TypeAlias = QuantumVariable | DynamicQubitArray | list[Qubit]
+
+
+def _normalize_optional_input_arg(value: QubitLike | None, name: str) -> Qubit | None:
+    """Normalize an optional QuantumBool or Qubit argument to a Qubit.
+
+    The ``c_in``, ``c_out`` and ``ctrl`` arguments each accept a QuantumBool, a
+    bare Qubit or None. This helper normalizes such a value to a Qubit (or None)
+    and raises a TypeError for any other type in static mode. It does not touch
+    the circuit or allocate anything, so it can run before any ancilla is
+    created.
     """
-    if c_in is None:
+    if value is None:
         return None
 
-    if isinstance(c_in, QuantumBool):
-        c_in = c_in[0]
-    elif not check_for_tracing_mode() and not isinstance(c_in, Qubit):
-        raise TypeError(f"c_in must be of type QuantumBool or Qubit, not {type(c_in)}")
+    if isinstance(value, QuantumBool):
+        return value[0]
 
-    cx(c_in, ancilla[0])
-    return c_in
+    if not check_for_tracing_mode() and not isinstance(value, Qubit):
+        raise TypeError(f"{name} must be of type QuantumBool or Qubit, not {type(value)}")
 
-
-def _resolve_c_out(c_out):
-    """Return the carry-out qubit.
-
-    The carry-out may be passed as a QuantumBool or a bare Qubit. This helper
-    normalizes it to a Qubit and raises a TypeError for any other type in
-    static mode. It does not apply any gates itself.
-    """
-    if c_out is None:
-        return None
-
-    if isinstance(c_out, QuantumBool):
-        return c_out[0]
-
-    if not check_for_tracing_mode() and not isinstance(c_out, Qubit):
-        raise TypeError(f"c_out must be of type QuantumBool or Qubit, not {type(c_out)}")
-
-    return c_out
+    return value
 
 
-def _resolve_ctrl(ctrl):
-    """Return the control qubit.
-
-    The control may be passed as a QuantumBool or a bare Qubit. This helper
-    normalizes it to a Qubit and raises a TypeError for any other type in
-    static mode. It does not apply any gates itself.
-    """
-    if ctrl is None:
-        return None
-
-    if isinstance(ctrl, QuantumBool):
-        return ctrl[0]
-
-    if not check_for_tracing_mode() and not isinstance(ctrl, Qubit):
-        raise TypeError(f"ctrl must be of type QuantumBool or Qubit, not {type(ctrl)}")
-
-    return ctrl
-
-
-def _apply_maj_gates(a, b, ancilla, dim_a):
+def _apply_maj_gates(
+    a: QuantumRegister,
+    b: QuantumRegister,
+    ancilla: QuantumVariable,
+    dim_a: int,
+) -> None:
     """Apply the majority (maj) gate chain of the Cuccaro adder.
 
     The maj gates compute the carry bits into the ``ancilla`` (reusing the
@@ -108,7 +92,13 @@ def _apply_maj_gates(a, b, ancilla, dim_a):
         mcx([a[i - 1], b[i]], a[i])
 
 
-def _apply_uma_gates(a, b, ancilla, ctrl, dim_a):
+def _apply_uma_gates(
+    a: QuantumRegister,
+    b: QuantumRegister,
+    ancilla: QuantumVariable,
+    ctrl: Qubit | None,
+    dim_a: int,
+) -> None:
     """Apply the unmajority (uma) gate chain of the Cuccaro adder.
 
     The uma gates run in reverse over the qubits and use the carries stored in
@@ -151,7 +141,7 @@ def _apply_uma_gates(a, b, ancilla, ctrl, dim_a):
         cx(a[0], b[0])
 
 
-def _apply_c_out(c_out, a, ctrl):
+def _apply_c_out(c_out: Qubit | None, a: QuantumRegister, ctrl: Qubit | None) -> None:
     """Copy the final carry into the carry-out qubit.
 
     After the maj phase the most significant carry still sits in the top ``a``
@@ -167,12 +157,13 @@ def _apply_c_out(c_out, a, ctrl):
             mcx([ctrl, a[-1]], c_out)
 
 
-def _uncompute_c_in(c_in, ancilla):
-    """Uncompute the carry-in seeding from the carry ancilla.
+def _apply_c_in_cx(c_in: Qubit | None, ancilla: QuantumVariable) -> None:
+    """Toggle the carry ancilla with the carry-in value.
 
-    ``_resolve_c_in`` seeded the ancilla with the carry-in value at the start
-    of the addition. After the full adder has run, the same cnot is applied
-    again to clear the ancilla so it can be safely deleted.
+    ``_normalize_optional_input_arg`` resolves the carry-in without touching the circuit.
+    This helper applies the CNOT that seeds the carry ancilla with the carry-in
+    value before the maj phase, and is applied a second time after the uma phase
+    to clear the ancilla again so it can be safely deleted.
     """
     if c_in is not None:
         cx(c_in, ancilla[0])
@@ -180,11 +171,11 @@ def _uncompute_c_in(c_in, ancilla):
 
 @custom_control
 def cuccaro_adder(
-    a: int | str | QuantumVariable | DynamicQubitArray | list,
-    b: QuantumVariable | DynamicQubitArray | list,
-    c_in: QuantumBool | Qubit | None = None,
-    c_out: QuantumBool | Qubit | None = None,
-    ctrl: QuantumBool | Qubit | None = None,
+    a: int | str | BigInteger | QuantumRegister,
+    b: QuantumRegister,
+    c_in: QubitLike | None = None,
+    c_out: QubitLike | None = None,
+    ctrl: QubitLike | None = None,
 ) -> None:
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
@@ -204,10 +195,10 @@ def cuccaro_adder(
 
     Parameters
     ----------
-    a : int, str, QuantumVariable, list[Qubit] or DynamicQubitArray
+    a : int, str, BigInteger, QuantumVariable, list[Qubit] or DynamicQubitArray
         The value that should be added. A ``str`` is interpreted as a
         little-endian binary string (``"10"`` means bit 0 is 1, i.e. the value
-        1).
+        1). A ``BigInteger`` is only supported in dynamic (tracing) mode.
     b : QuantumVariable or list[Qubit] or DynamicQubitArray
         The value that should be modified in the in-place addition.
     c_in : QuantumBool or Qubit, optional
@@ -220,12 +211,15 @@ def cuccaro_adder(
 
     Raises
     ------
+    AttributeError
+        If ``ctrl`` is not a QuantumBool or Qubit. The ``custom_control``
+        decorator inspects the control qubit before the function body runs.
     TypeError
-        If carry in, carry out or control is not of type QuantumBool or Qubit in
-        static mode.
+        If carry in or carry out is not of type QuantumBool or Qubit in static
+        mode.
     TypeError
-        If the first argument is classical but not an integer or binary string
-        in static mode.
+        If the first argument is classical but not an integer, binary string or
+        BigInteger in static mode.
     ValueError
         If the first argument is a ``str`` that is not a valid binary string.
     ValueError
@@ -487,6 +481,18 @@ def cuccaro_adder(
     >>> main()
     Array(9., dtype=float64)
 
+    A classical ``BigInteger`` addend is supported in dynamic mode too:
+
+    >>> from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    >>> @jaspify
+    ... def main():
+    ...     b = QuantumFloat(4)
+    ...     b[:] = 3
+    ...     cuccaro_adder(BigInteger.create(5, 1), b)
+    ...     return measure(b)
+    >>> main()
+    Array(8., dtype=float64)
+
     """
     # The second argument is required to be a (non-empty) quantum register
     if not _is_quantum_register(b) or (isinstance(b, list) and len(b) == 0):
@@ -498,6 +504,13 @@ def cuccaro_adder(
     # nor a valid classical input.
     if isinstance(a, list) and not _is_quantum_register(a):
         raise ValueError("If the first argument is a list, it must contain only Qubits.")
+
+    # Normalize and validate the optional arguments before allocating any
+    # ancillas or applying gates, so that an invalid argument raises cleanly
+    # without leaving qubits or a half-applied circuit behind.
+    c_in = _normalize_optional_input_arg(c_in, "c_in")
+    c_out = _normalize_optional_input_arg(c_out, "c_out")
+    ctrl = _normalize_optional_input_arg(ctrl, "ctrl")
 
     # convert the classical input to a quantum input
     if not _is_quantum_register(a):
@@ -511,7 +524,8 @@ def cuccaro_adder(
         if not check_for_tracing_mode():
             if not isinstance(a, Integral):
                 raise TypeError(
-                    f"a must be of type int, str, QuantumVariable, DynamicQubitArray or list[Qubit], not {type(a)}"
+                    "a must be of type int, str, BigInteger, QuantumVariable, "
+                    f"DynamicQubitArray or list[Qubit], not {type(a)}"
                 )
             a = a % (1 << jlen(b))
 
@@ -548,9 +562,8 @@ def cuccaro_adder(
     # a single carry ancilla is sufficient for the Cuccaro adder
     ancilla = QuantumVariable(1)
 
-    c_in = _resolve_c_in(c_in, ancilla)
-    c_out = _resolve_c_out(c_out)
-    ctrl = _resolve_ctrl(ctrl)
+    # seed the carry ancilla with the carry-in value
+    _apply_c_in_cx(c_in, ancilla)
 
     # first maj gate application + iterator maj gate application
     _apply_maj_gates(a, b, ancilla, dim_a)
@@ -561,22 +574,11 @@ def cuccaro_adder(
     # iterator + last uma gate application
     _apply_uma_gates(a, b, ancilla, ctrl, dim_a)
 
-    _uncompute_c_in(c_in, ancilla)
+    # clear the carry-in seeding so the ancilla can be deleted
+    _apply_c_in_cx(c_in, ancilla)
 
     # delete the ancilla used for carry bits
     ancilla.delete()
 
     # delete the extension ancillas when the inputs are of unequal length
     extension_anc_a.delete()
-
-
-# ``custom_control`` itself inspects the ``ctrl`` argument (it calls ``ctrl.qs()``)
-# before the function body runs, so an invalid control type would otherwise fail
-# deep inside the decorator. Validate/normalize it first with a thin public wrapper.
-_cuccaro_adder_core = cuccaro_adder
-
-
-@functools.wraps(_cuccaro_adder_core)
-def cuccaro_adder(a, b, c_in=None, c_out=None, ctrl=None):
-    """Validate the optional control argument and delegate to the controlled core."""
-    return _cuccaro_adder_core(a, b, c_in=c_in, c_out=c_out, ctrl=_resolve_ctrl(ctrl))
