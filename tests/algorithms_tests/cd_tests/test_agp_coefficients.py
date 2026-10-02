@@ -249,11 +249,13 @@ def test_counterdiabatic_drive_helps_at_short_evolution_time(agp_type, uniform):
     here it shows up immediately -- the nested-commutator coefficient used to land below the
     no-drive baseline.
     """
+    np.random.seed(42)
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
     solution = "1011"
     N = Q.shape[0]
 
     def probability(disable_agp):
+        """Probability of the target solution, with the AGP optionally switched off."""
         operators = list(create_LCD_instance(Q, agp_type=agp_type, uniform_AGP_coeffs=uniform))
         if disable_agp:
             operators[4] = lambda lam: [0.0] * N

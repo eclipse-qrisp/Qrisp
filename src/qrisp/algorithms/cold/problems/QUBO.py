@@ -166,6 +166,7 @@ def _nc_uniform_agp_coeffs(h, J):
     S_adj = (np.sum(R_i**2) - 2 * S_4) / 2
 
     def alpha(lam, f=0.0, f_deriv=0.0):
+        """AGP coefficient(s) at scheduling value ``lam``."""
         nom = S_h2 + 2 * S_2 + (f + (1 - lam) * f_deriv) * S_h
         denom = 4 * (
             (S_h2 + 8 * S_2) * (1 - lam) ** 2
@@ -235,6 +236,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="local"):
     J = 0.5 * Q
 
     def lam():
+        """Symbolic scheduling function lambda(t)."""
         t, T = sp.symbols("t T", real=True)
         lam_expr = sp.sin(sp.pi / 2 * sp.sin(sp.pi * t / (2 * T)) ** 2) ** 2
         return lam_expr
@@ -243,6 +245,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="local"):
     if agp_type == "local":
 
         def alpha(lam, f, f_deriv):
+            """AGP coefficient(s) at scheduling value ``lam``."""
             return _local_agp_coeffs(h, J, lam, f, f_deriv, uniform=uniform_AGP_coeffs)
 
     elif agp_type == "nc" and uniform_AGP_coeffs:
@@ -319,12 +322,15 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     agp_type = _normalize_agp_type(agp_type)
 
     def build_agp(agp_type, J, h):
+        """Return the AGP operators for the given ``agp_type``."""
 
         def local():
+            """Local AGP ansatz: one single-qubit Y operator per qubit."""
             A_lam = [Y(i) for i in range(N)]
             return A_lam
 
         def nested_commutators(J, h):
+            """Nested-commutator AGP ansatz operators."""
             return _nested_commutator_operators(h, J)
 
         builders = {"local": local(), "nc": nested_commutators(J, h)}
@@ -332,26 +338,37 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
         return builders[agp_type]
 
     def build_coeffs(agp_type, uniform_AGP_coeffs, J, h):
+        """Return the AGP coefficient function for the given ``agp_type`` and uniformity."""
 
         def local_uniform(J, h):
+            """Coefficient function for the uniform local AGP."""
+
             # LCD has no control Hamiltonian, so f = f_deriv = 0.
             def alpha(lam):
+                """AGP coefficient(s) at scheduling value ``lam``."""
                 return _local_agp_coeffs(h, J, lam, uniform=True)
 
             return alpha
 
         def local_nonuniform(J, h):
+            """Coefficient function for the per-qubit local AGP."""
+
             def alpha(lam):
+                """AGP coefficient(s) at scheduling value ``lam``."""
                 return _local_agp_coeffs(h, J, lam, uniform=False)
 
             return alpha
 
         def nc_uniform(J, h):
+            """Coefficient function for the uniform nested-commutator AGP."""
             # LCD has no control Hamiltonian, so the coefficient is evaluated at f = f_deriv = 0.
             return _nc_uniform_agp_coeffs(h, J)
 
         def nc_nonuniform(J, h):
+            """Coefficient function for the per-site nested-commutator AGP."""
+
             def alpha(lam):
+                """AGP coefficient(s) at scheduling value ``lam``."""
                 alph = _solve_alpha(h, J, lam)
                 return alph
 
@@ -371,6 +388,7 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
     J = 0.5 * Q
 
     def lam():
+        """Symbolic scheduling function lambda(t)."""
         t, T = sp.symbols("t T", real=True)
         lam_expr = sp.sin(sp.pi / 2 * sp.sin(sp.pi * t / (2 * T)) ** 2) ** 2
         return lam_expr

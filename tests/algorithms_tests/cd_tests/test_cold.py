@@ -187,7 +187,7 @@ def test_cold_full_example():
     A_lam = [Y(i) for i in range(N)]  # non-uniform
 
     def alpha(lam, f, f_deriv):
-
+        """AGP coefficient(s) at scheduling value ``lam``."""
         nom = [h[i] + f + (1 - lam) * f_deriv for i in range(N)]
 
         denom = [
@@ -200,6 +200,7 @@ def test_cold_full_example():
         return alph
 
     def lam():
+        """Symbolic scheduling function lambda(t)."""
         t, T = sp.symbols("t T", real=True)
         lam_expr = t / T
         return lam_expr
@@ -214,6 +215,7 @@ def test_cold_full_example():
 
 
 def test_cold_expvalue_fast_path_matches_hprob():
+    """The exp_value fast path derives its cost table from H_prob's diagonal terms."""
     np.random.seed(42)  # Deterministic for reproducible test results
     # The exp_value fast path's cost table must be derived from H_prob's own diagonal
     # terms, not hand-rolled from Q (a past regression did, computing a different
@@ -231,6 +233,7 @@ def test_cold_expvalue_fast_path_matches_hprob():
     A_lam = sum([Y(i) for i in range(N)])
 
     def alpha(lam, f, f_deriv):
+        """AGP coefficient(s) at scheduling value ``lam``."""
         A = lam * h + f
         B = 1 - lam
         C = h + f_deriv
@@ -239,10 +242,12 @@ def test_cold_expvalue_fast_path_matches_hprob():
         return [nom / denom] * N
 
     def lam():
+        """Symbolic scheduling function lambda(t)."""
         t, T = sp.symbols("t T", real=True)
         return t / T
 
     def qarg_prep(q):
+        """Prepare the default uniform superposition state on ``q``."""
         had_gate(q)
         z_gate(q)
         return q
@@ -276,6 +281,7 @@ def test_cold_expvalue_fast_path_matches_hprob():
 
 
 def test_cold_expvalue_fast_path_handles_projectors():
+    """The fast path accounts for Z, P0 and P1 factors individually."""
     np.random.seed(42)  # Deterministic for reproducible test results
     # The fast path's per-term eigenvalue must account for each factor's actual type
     # (Z, P0, P1), not treat every factor as Z -- a P0/P1 term evaluated as Z gives a
@@ -288,13 +294,16 @@ def test_cold_expvalue_fast_path_handles_projectors():
     H_control = sum([Z(i) for i in range(N)])
 
     def alpha(lam, f, f_deriv):
+        """AGP coefficient(s) at scheduling value ``lam``."""
         return [0.0] * N
 
     def lam():
+        """Symbolic scheduling function lambda(t)."""
         t, T = sp.symbols("t T", real=True)
         return t / T
 
     def qarg_prep(q):
+        """Prepare the default uniform superposition state on ``q``."""
         had_gate(q)
         z_gate(q)
         return q
@@ -328,6 +337,7 @@ def test_cold_expvalue_fast_path_handles_projectors():
 
 
 def test_cold_expvalue_falls_back_for_nondiagonal_hprob():
+    """A non-diagonal H_prob disables the fast path and uses the measurement fallback."""
     np.random.seed(42)  # Deterministic for reproducible test results
     # H_prob with a non-diagonal factor (X here) has no well-defined per-basis-state
     # eigenvalue, so the fast path must disable itself and fall back to
@@ -339,13 +349,16 @@ def test_cold_expvalue_falls_back_for_nondiagonal_hprob():
     H_control = sum([Z(i) for i in range(N)])
 
     def alpha(lam, f, f_deriv):
+        """AGP coefficient(s) at scheduling value ``lam``."""
         return [0.0] * N
 
     def lam():
+        """Symbolic scheduling function lambda(t)."""
         t, T = sp.symbols("t T", real=True)
         return t / T
 
     def qarg_prep(q):
+        """Prepare the default uniform superposition state on ``q``."""
         had_gate(q)
         z_gate(q)
         return q
@@ -379,6 +392,7 @@ def test_cold_expvalue_falls_back_for_nondiagonal_hprob():
 
 
 def test_cold_no_exponential_precompute_for_non_expvalue_objective():
+    """Non-exp_value objectives must not build the 2**n_qubits cost table."""
     np.random.seed(42)  # Deterministic for reproducible test results
     # A past regression built the exp_value fast path's 2**n_qubits cost table
     # unconditionally. A wall-clock ceiling at n_qubits=24 catches that regression
@@ -393,9 +407,11 @@ def test_cold_no_exponential_precompute_for_non_expvalue_objective():
     A_lam = sum([Y(i) for i in range(N)])
 
     def alpha(lam, f, f_deriv):
+        """AGP coefficient(s) at scheduling value ``lam``."""
         return [0.0] * N
 
     def lam():
+        """Symbolic scheduling function lambda(t)."""
         t, T = sp.symbols("t T", real=True)
         return t / T
 
@@ -423,10 +439,13 @@ def test_cold_no_exponential_precompute_for_non_expvalue_objective():
 
 
 def test_cold_g_deriv_stays_finite_for_smooth_schedule():
+    """g_deriv stays finite where the schedule derivative vanishes."""
+
     # This schedule's derivative vanishes at the domain endpoints; a past regression's
     # time grid sampled g_deriv = 1/lamdot exactly there, blowing up to ~1e32. 1e10
     # separates that signature from g_deriv's expected, benign N_steps**3 growth.
     def lam():
+        """Symbolic scheduling function lambda(t)."""
         t, T = sp.symbols("t T", real=True)
         return sp.sin(sp.pi / 2 * sp.sin(sp.pi * t / (2 * T)) ** 2) ** 2
 
@@ -439,6 +458,7 @@ def test_cold_g_deriv_stays_finite_for_smooth_schedule():
     H_control = sum([Z(i) for i in range(N)])
 
     def alpha(lam, f, f_deriv):
+        """AGP coefficient(s) at scheduling value ``lam``."""
         return [0.0] * N
 
     problem = DCQOProblem(Q, H_init, H_prob, A_lam, alpha, lam, H_control=H_control)
@@ -450,6 +470,7 @@ def test_cold_g_deriv_stays_finite_for_smooth_schedule():
 
 @pytest.mark.parametrize("n_opt", [None, 0, -1, 1.5, True, "1"])
 def test_cold_rejects_invalid_n_opt(n_opt):
+    """COLD rejects invalid N_opt values with a clear error."""
     # method="COLD" needs N_opt >= 1; invalid values used to fail deep in range()/scipy
     # with confusing errors instead of explaining the constraint (issue #877).
     # Non-integer numerics and bools must be rejected too, not silently misused.
@@ -471,9 +492,11 @@ def _small_crab_problem(N=3):
     H_control = sum([Z(i) for i in range(N)])
 
     def alpha(lam, f, f_deriv):
+        """AGP coefficient(s) at scheduling value ``lam``."""
         return [0.0] * N
 
     def lam():
+        """Symbolic scheduling function lambda(t)."""
         t, T = sp.symbols("t T", real=True)
         return t / T
 
@@ -486,6 +509,7 @@ def _record_opt_pulses(monkeypatch):
     original = DCQOProblem._precompute_opt_pulses
 
     def recording(self, N_steps, T, t_list, N_opt, CRAB=False):
+        """Wrap ``_precompute_opt_pulses`` and record each call's CRAB flag and pulse matrices."""
         sin_matrix, cos_matrix = original(self, N_steps, T, t_list, N_opt, CRAB=CRAB)
         calls.append((CRAB, sin_matrix.copy(), cos_matrix.copy()))
         return sin_matrix, cos_matrix

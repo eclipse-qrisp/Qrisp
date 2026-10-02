@@ -531,6 +531,7 @@ class DCQOProblem:
 
         # Expectation value of the QUBO Hamiltonian
         def objective_exp(params, CRAB):
+            """Expectation value of the problem Hamiltonian for the given optimization parameters."""
             # Dict to assign the optimization parameters
             subs_dic = {sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))}
 
@@ -566,6 +567,7 @@ class DCQOProblem:
 
         # Magnitude of the AGP coefficients (sum of absolute values over all timesteps)
         def objective_mag(params, CRAB):
+            """Weighted magnitude of the AGP coefficients for the given optimization parameters."""
             # Precompute opt pulses to be multiplied with opt params.
             # Must match the midpoint grid used in _precompute_timegrid.
             t_list = (np.arange(int(N_steps)) + 0.5) * (T / N_steps)
@@ -705,6 +707,7 @@ class DCQOProblem:
         if self.qarg_prep is None:
 
             def qarg_prep(q):
+                """Prepare the default uniform superposition state on ``q``."""
                 h(q)
                 z(q)
                 return q
