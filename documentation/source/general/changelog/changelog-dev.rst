@@ -56,7 +56,8 @@ New Features
   Violations of the conditions, such as a temporary used before all temporaries
   are computed or a use that modifies the inputs, raise an error describing the
   offending operation. Outside of Jasp, the decorator behaves like
-  ``auto_uncompute``. See :ref:`Uncomputation in Jasp <jasp_uncomputation>`.
+  ``auto_uncompute``. See :ref:`Uncomputation in Jasp <jasp_uncomputation>`
+  (`PR #928 <https://github.com/eclipse-qrisp/Qrisp/pull/928>`_).
 
 Improvements
 ------------
