@@ -87,13 +87,21 @@ def test_cuccaro_adder_static_c_in_type_error():
 
 
 def test_cuccaro_adder_static_ctrl_type_error():
-    """TypeError when ctrl is neither QuantumBool nor Qubit."""
+    """Reject a ``ctrl`` that is neither QuantumBool nor Qubit.
+
+    A ``QuantumFloat`` exposes ``.qs()``, so ``custom_control`` lets it through
+    and the body's control normalization raises ``TypeError``. Values without a
+    ``.qs()`` attribute (``str``, ``int``) fail earlier inside
+    ``custom_control`` with ``AttributeError``.
+    """
     a = QuantumFloat(3)
     a[:] = 1
     b = QuantumFloat(3)
     b[:] = 1
-    for bad_ctrl in (QuantumFloat(2), "invalid", 42):
-        with pytest.raises(TypeError, match="ctrl must be of type QuantumBool or Qubit"):
+    with pytest.raises(TypeError, match="ctrl must be of type QuantumBool or Qubit"):
+        cuccaro_adder(a, b, ctrl=QuantumFloat(2))
+    for bad_ctrl in ("invalid", 42):
+        with pytest.raises(AttributeError):
             cuccaro_adder(a, b, ctrl=bad_ctrl)
 
 
