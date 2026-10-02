@@ -341,4 +341,72 @@ def qache_helper(func, jax_kwargs):
         # Return the result.
         return res
 
+    # Marks the function as qached for gate_wrap, see jasp_gate_wrap.
+    return_function.qache_jax_kwargs = jax_kwargs
+
     return return_function
+
+
+def jasp_gate_wrap(function, args, kwargs, permeability, is_qfree, name):
+    """Jasp implementation of :func:`qrisp.gate_wrap`.
+
+    The permeability and qfree-ness specification is stored on the Jaspr of the
+    ``jit`` equation that a qached function creates. Functions that are not qached
+    are traced inline and carry no specification.
+    """
+    jax_kwargs = getattr(function, "qache_jax_kwargs", None)
+
+    res = function(*args, **kwargs)
+
+    if jax_kwargs is None:
+        return res
+
+    eqn = get_last_equation()
+    if name is not None:
+        eqn.params["name"] = name
+
+    # Static arguments are not passed to the jit, so they have no invars.
+    static_argnums = jax_kwargs.get("static_argnums", ())
+    if isinstance(static_argnums, int):
+        static_argnums = (static_argnums,)
+    static_argnums = {i % len(args) for i in static_argnums}
+    dynamic_pos = [i for i in range(len(args)) if i not in static_argnums]
+
+    _set_gate_wrap_properties(eqn.params["jaxpr"], dynamic_pos, [args[i] for i in dynamic_pos], permeability, is_qfree)
+
+    return res
+
+
+def _set_gate_wrap_properties(jaspr, dynamic_pos, dynamic_args, permeability, is_qfree):
+    """Store a :func:`qrisp.gate_wrap` permeability/qfree specification on ``jaspr``.
+
+    The specification refers to positional arguments. Each dynamic positional
+    argument occupies as many invars as its pytree has leaves; its qubit-type
+    invars receive the argument's permeability. Returned qubits are permeable
+    only for ``permeability="full"``.
+    """
+    from qrisp.jasp.primitives import AbstractQubit, AbstractQubitArray
+
+    def is_quantum(var):
+        return isinstance(getattr(var, "aval", None), (AbstractQubit, AbstractQubitArray))
+
+    jaspr.isqfree = is_qfree
+
+    if permeability is None:
+        return
+
+    if isinstance(permeability, str) and permeability not in ("args", "full"):
+        raise Exception(f"Don't know permeability option {permeability}")
+
+    invar_index = 0
+    for i, arg in zip(dynamic_pos, dynamic_args):
+        num_leaves = len(jax.tree_util.tree_leaves(arg))
+        arg_permeability = i in permeability if isinstance(permeability, list) else True
+        for var in jaspr.invars[invar_index : invar_index + num_leaves]:
+            if is_quantum(var):
+                jaspr.permeability[var] = arg_permeability
+        invar_index += num_leaves
+
+    for var in jaspr.outvars[:-1]:
+        if is_quantum(var):
+            jaspr.permeability[var] = permeability == "full"
