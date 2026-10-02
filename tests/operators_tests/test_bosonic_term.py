@@ -18,42 +18,80 @@ from qrisp.operators.bosonic import a_b as a, c_b as c
 
 import pytest
 
-def test_bosonic_term():
-    O_0 = a(0) * c(1)
-    O_1 = c(1) * a(0)
-
-    assert (O_0.hermitize() == O_1.hermitize()) == True
-
+def test_arithmetic():
     O_0 = a(0) * c(1)
     O_1 = -1 * c(1) * a(0)
 
-    assert (O_0 == O_1) == False
+    assert not O_0 == O_1
 
     O_0 = a(0) * c(1) + a(1) * c(2)
     O_1 = a(0) * c(1)
 
-    assert (O_0 == O_1) == False
+    assert not O_0 == O_1
+
+    O_0 = a(0) * c(1) - a(1) * c(2)
+    O_1 = a(0) * c(1)
+
+    assert not O_0 == O_1
 
     O_0 = a(0) * c(0) + a(1) * c(1)
     O_1 = a(2) * c(2) + a(3) * c(3)
 
-    assert (O_0 == O_1) == False
+    assert not O_0 == O_1
 
     O_0 = 1 * a(0) * a(0)
     O_1 = 2 * c(0) * c(0)
 
-    assert (O_0 == O_1) == False
+    assert not O_0 == O_1
 
     O_0 = c(0) * a(0)
     O_1 = -1 * c(0) * a(0)
 
-    assert (-O_1 == O_0) == True
+    assert -O_1 == O_0
 
     O_0 = a(0) * c(1) * a(2)
     O_1 = c(2) * a(1) * c(0)
 
-    assert (O_0 == O_1) == True
+    assert O_0 == O_1
 
+    O_0 = a(0)
+    O_1 = 1e-12 * a(1)
+
+    assert O_0 == O_0 + O_1
+    assert O_0 == O_1 + O_0
+    assert O_0 == O_0 - O_1
+    assert -O_0 == O_1 - O_0
+    assert 1. + O_0 == 1. - O_1 + O_0
+    assert 1.e-12 - O_0 == 1.e-12 - O_0
+
+    O_0 = a(0) + c(0)
+    O_1 = a(0) * a(0) + c(0) * a(0) + a(0) * c(0) + c(0) * c(0)
+
+    assert O_0**2 == O_1
+
+    O = c(0) * a(0) + 1.
+    O = c(0) * a(0) - 1.
+    O = 1. - c(0) * a(0)
+    O = 1. + c(0) * a(0)
+
+    O = c(0) * a(0)
+
+    O += c(1)
+    assert O == c(0) * a(0) + c(1)
+    O += 1.
+    assert O == c(0) * a(0) + c(1) + 1.
+    O += 1.e-12 * c(0)
+    assert O == c(0) * a(0) + c(1) + 1.
+
+    O -= 1.
+
+def test_hermitize():
+    O_0 = a(0) * c(1)
+    O_1 = c(1) * a(0)
+
+    assert O_0.hermitize() == O_1.hermitize()
+
+def test_reduce():
     O = 3 * a(0) * c(1) + c(1) * a(0)
     O = O.reduce()
 
@@ -64,14 +102,23 @@ def test_bosonic_term():
 
     assert str(O) == "0"
 
-    O = c(0) * a(0) + 1.
-    O = c(0) * a(0) - 1.
-
-    O += 1.
-    O -= 1.
-
 def test_error_combining_operator():
-    with pytest.raises(ValueError, match="cannot be decomposed either"):
+    with pytest.raises(TypeError, match="Cannot add BosonicOperator"):
+        O = c(0) + [1,2]
+    with pytest.raises(TypeError, match="Cannot subtract BosonicOperator"):
+        O = c(0) - [1,2]
+    with pytest.raises(TypeError, match="Cannot subtract BosonicOperator"):
+        O = [1,2] -  c(0)
+    with pytest.raises(TypeError, match="Cannot multipliy BosonicOperator"):
+        O = c(0) * [1,2]
+    with pytest.raises(TypeError, match="Operators can be exponentiated only with positive integers"):
+        O = c(0) ** (-1)
+    with pytest.raises(TypeError, match="Cannot add BosonicOperator"):
+        O = c(0)
+        O += [1,2]
+    with pytest.raises(TypeError, match="Cannot subtract BosonicOperator"):
+        O = c(0)
+        O -= [1,2]
 
 def test_len():
     O = c(0) * a(0) + c(1) * a(1)

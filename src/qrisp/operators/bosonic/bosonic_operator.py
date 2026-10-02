@@ -431,7 +431,7 @@ class BosonicOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = BosonicOperator({BosonicTerm(): other})
         if not isinstance(other, BosonicOperator):
-            raise TypeError("Cannot substract BosonicOperator and " + str(type(other)))
+            raise TypeError("Cannot subtract BosonicOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
@@ -465,7 +465,7 @@ class BosonicOperator(Hamiltonian):
         if isinstance(other, (int, float, complex)):
             other = BosonicOperator({BosonicTerm(): other})
         if not isinstance(other, BosonicOperator):
-            raise TypeError("Cannot substract BosonicOperator and " + str(type(other)))
+            raise TypeError("Cannot subtract BosonicOperator and " + str(type(other)))
 
         res_terms_dict = {}
 
@@ -576,7 +576,7 @@ class BosonicOperator(Hamiltonian):
             self.terms_dict[BosonicTerm()] = self.terms_dict.get(BosonicTerm(), 0) - other
             return self
         if not isinstance(other, BosonicOperator):
-            raise TypeError("Cannot add BosonicOperator and " + str(type(other)))
+            raise TypeError("Cannot subtract BosonicOperator and " + str(type(other)))
 
         for ladder_term, coeff in other.terms_dict.items():
             self.terms_dict[ladder_term] = self.terms_dict.get(ladder_term, 0) - coeff
