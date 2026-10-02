@@ -30,7 +30,7 @@ from qrisp.operators.qubit import QubitOperator, X, Y, Z
 
 
 def _normalize_agp_type(agp_type):
-    """Map the deprecated agp_type ``"order1"`` to ``"local"``, with a QrispDeprecationWarning."""
+    """Map the deprecated agp_type ``"order1"`` to ``"local"`` (with a QrispDeprecationWarning) and reject unknown values."""
     if agp_type == "order1":
         warnings.warn(
             "agp_type='order1' is deprecated and will be removed in version 0.11. Use agp_type='local' instead.",
@@ -38,6 +38,8 @@ def _normalize_agp_type(agp_type):
             stacklevel=3,
         )
         return "local"
+    if agp_type not in ("local", "nc"):
+        raise ValueError(f"{agp_type} is not a valid option as agp_type. Valid options are 'local' and 'nc'.")
     return agp_type
 
 
@@ -261,9 +263,6 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="local"):
             "uniform_AGP_coeffs=True, which has a closed-form coefficient, or run the "
             "non-uniform nested-commutator ansatz with method='LCD'."
         )
-
-    else:
-        raise ValueError(f"{agp_type} is not a valid option as agp_type. Valid options are 'local' and 'nc'.")
 
     # Initial Hamiltonian
     H_init = 1 * sum([X(i) for i in range(N)])

@@ -373,7 +373,7 @@ def test_invalid_agp_type_is_rejected_by_both_instance_builders():
     Q, _, _ = _random_qubo(4, seed=902)
     with pytest.raises(ValueError, match="bogus"):
         create_COLD_instance(Q, uniform_AGP_coeffs=True, agp_type="bogus")
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match="bogus"):
         create_LCD_instance(Q, agp_type="bogus", uniform_AGP_coeffs=True)
 
 
