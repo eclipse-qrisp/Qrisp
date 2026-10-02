@@ -428,6 +428,14 @@ Development
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
+* Added a ``docs build`` workflow that builds the Sphinx documentation on pull
+  requests and treats any warning as an error. Building it fresh surfaced and
+  fixed several issues: numpydoc-unknown docstring sections (``Properties``,
+  ``Decompositions``, ``Example``), a duplicate ``Attributes`` section, a
+  document listed in two toctrees, the ``pygment_light_style`` theme option
+  (renamed to ``pygments_light_style``), and ``stim`` being unavailable in the
+  docs environment (now mocked via ``autodoc_mock_imports``)
+  (`PR #915 <https://github.com/eclipse-qrisp/Qrisp/pull/915>`_).
 * Removed the CodeFactor status badge from the README. It was frequently
   broken due to upstream rate limiting and its AI-review functionality is
   already covered by other tooling

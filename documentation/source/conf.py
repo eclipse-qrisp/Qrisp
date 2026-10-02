@@ -29,9 +29,26 @@
 #
 import os
 import sys
+import warnings
 
 sys.path.insert(0, os.path.abspath("../../src/qrisp"))
 sys.path.insert(0, os.path.abspath("_ext"))
+
+# Treat Python warnings raised while building the docs as errors so that
+# documentation regressions fail CI (Sphinx's ``-W`` only covers its own
+# logger, not ``warnings.warn`` calls made by extensions such as numpydoc).
+warnings.filterwarnings("error", message=r".*", category=UserWarning)
+# numpydoc parses the raw docstring text and mistakes the dashed underline in
+# printed circuit output (e.g. a "QuantumCircuit:" line inside a code block)
+# for a section header, emitting a spurious "wrong underline length" warning.
+# This is a false positive, so ignore it specifically.
+warnings.filterwarnings(
+    "ignore",
+    message=r"potentially wrong underline length.*",
+    category=UserWarning,
+)
+# os.fork() is flagged because JAX runs multiple threads; harmless here.
+warnings.filterwarnings("ignore", message=r".*os\.fork.*", category=RuntimeWarning)
 
 # -- Project information -----------------------------------------------------
 
@@ -155,7 +172,7 @@ html_theme_options = {
     "enable_search_shortcuts": True,
     "search_bar_text": "Search the docs... ",
     # "navbar_align": "content",
-    "pygment_light_style": "lovelace",
+    "pygments_light_style": "lovelace",
     "secondary_sidebar_items": [
         "page-toc.html",
         "discord_link.html",
@@ -182,6 +199,11 @@ autodoc_default_options = {
 }
 autosummary_generate = True
 numpydoc_show_class_members = False
+
+# Optional runtime dependencies that are documented but not part of the
+# ``docs`` extra. Mock them so autodoc can import the wrapped modules without
+# the real package installed (and without emitting import warnings).
+autodoc_mock_imports = ["stim"]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
