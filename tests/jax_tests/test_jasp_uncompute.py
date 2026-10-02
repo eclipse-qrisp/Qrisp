@@ -28,8 +28,8 @@ from qrisp.jasp import *
 def oracle_body(qf):
     flag1 = qf < 3
     flag2 = qf == 7
-    flag_all = flag1 | flag2
-    z(flag_all)
+    flag_any = flag1 | flag2
+    z(flag_any)
 
 
 oracle = jasp_uncompute(oracle_body)
@@ -39,17 +39,17 @@ def manual_oracle(qf, phase=None):
     # Reference: the same oracle uncomputed by hand via injection and conjugation
     flag1 = QuantumBool()
     flag2 = QuantumBool()
-    flag_all = QuantumBool()
+    flag_any = QuantumBool()
     with conjugate(flag1 << (lambda qf: qf < 3))(qf):
         with conjugate(flag2 << (lambda qf: qf == 7))(qf):
-            with conjugate(flag_all << (lambda a, b: a | b))(flag1, flag2):
+            with conjugate(flag_any << (lambda a, b: a | b))(flag1, flag2):
                 if phase is None:
-                    z(flag_all)
+                    z(flag_any)
                 else:
-                    p(phase, flag_all)
+                    p(phase, flag_any)
     flag1.delete()
     flag2.delete()
-    flag_all.delete()
+    flag_any.delete()
 
 
 def phase_distribution(function, size=4):
@@ -95,8 +95,8 @@ def test_temporaries_are_clean(capsys):
     def mark(qf, target):
         flag1 = qf < 3
         flag2 = qf == 7
-        flag_all = flag1 | flag2
-        cx(flag_all, target)
+        flag_any = flag1 | flag2
+        cx(flag_any, target)
 
     @boolean_simulation
     def main(value):
@@ -161,8 +161,8 @@ def test_inversion():
     def phase_oracle(qf):
         flag1 = qf < 3
         flag2 = qf == 7
-        flag_all = flag1 | flag2
-        p(0.3, flag_all)
+        flag_any = flag1 | flag2
+        p(0.3, flag_any)
 
     def inverted(qf):
         with invert():

@@ -132,8 +132,8 @@ def jasp_uncompute(function: Callable[..., Any]) -> Callable[..., Any]:
         def oracle(qf):
             flag1 = qf < 3
             flag2 = qf == 7
-            flag_all = flag1 | flag2
-            z(flag_all)
+            flag_any = flag1 | flag2
+            z(flag_any)
 
         @terminal_sampling
         def main():
@@ -434,7 +434,88 @@ def _crossing_variables(body: Jaspr, split: int) -> tuple[list[Var], Var]:
 
 
 class _TopLevelAnalysis:
-    """Roots and effects of the top-level quantum equations of a Jaspr."""
+    """Analysis of the top-level equations of a Jaspr, on which :func:`jasp_uncompute` bases its split.
+
+    The analysis answers two questions for the body of a decorated function:
+    which qubit arrays are temporaries, and what each top-level quantum
+    equation does to them and to the other qubits. It does so in a single pass
+    over the equations.
+
+    **Roots.** Equations rarely act on the allocated qubit arrays directly, but
+    on qubits and sub-arrays derived from them via ``get_qubit``, ``slice`` or
+    ``fuse``. To relate these to each other, every qubit-type variable is
+    mapped to its *roots*: the variables it stems from. The roots of an input
+    qubit array are the array itself; the root of an allocation is the
+    allocated array. A derived variable inherits the roots of the variables it
+    is derived from (a fused array has the roots of both parts). An allocation
+    is a top-level ``create_qubits`` equation or a qubit array that a block
+    (``jit``, ``cond`` or ``while``) returns without having received it, for
+    instance the result QuantumBool of a gate-wrapped comparison. Analyses of
+    nested blocks mark such arrays with ``FRESH``, which is resolved to the
+    returned variable here. Since qubit indices may be dynamic, roots are
+    tracked per qubit array, not per qubit.
+
+    **Effects.** For every top-level equation that acts on the quantum state,
+    the analysis records its effect on each root it touches, as one of
+    ``PERMEABLE`` (commutes with Z on all qubits of the root, e.g. a control
+    or a phase), ``WRITE``, ``MEASURE``, ``DELETE`` or ``UNKNOWN`` (a gate
+    without permeability information). The effects are ordered by severity,
+    and an equation that acts on a root in several ways records the most
+    severe one. Gates use the permeability of their Operation. Blocks are
+    analyzed recursively, and the permeability that :func:`gate_wrap
+    <qrisp.gate_wrap>` stores on a block's Jaspr overrides the result of the
+    recursion. This matters for blocks like the Balauca MCX, which applies X
+    gates to its controls internally but is permeable on them as a whole.
+
+    **Temporaries.** The temporaries are the allocations that are neither
+    deleted (by a ``DELETE`` effect) nor reachable from the outvars of the
+    body, i.e. not returned and not used after the function.
+
+    For the oracle in the :func:`jasp_uncompute` example, the analysis finds
+    (with ``qf`` as input):
+
+    * ``qf < 3``: an allocation of ``flag1`` and classically controlled
+      blocks that write ``flag1`` (and write and restore ``qf``).
+    * ``qf == 7``: the gate-wrapped function ``equal``, which allocates
+      ``flag2`` and is permeable on ``qf``.
+    * ``flag1 | flag2``: an allocation of ``flag_any``, X gates that write
+      ``flag1`` and ``flag2`` before and after the Balauca MCX, the MCX
+      itself, which is permeable on ``flag1`` and ``flag2`` and writes
+      ``flag_any``, and a final X gate that writes ``flag_any``.
+    * ``z(flag_any)``: a Z gate that is permeable on ``flag_any``.
+
+    The temporaries are ``flag1``, ``flag2`` and ``flag_any``. The last
+    equation that writes one of them is the final X gate of
+    ``flag1 | flag2``, which ends the computation, and the Z gate forms the
+    use.
+
+    The methods build on this: :meth:`split_index` finds the end of the
+    computation, :meth:`check` verifies the conditions of
+    :func:`jasp_uncompute` for that split, and :meth:`use_measures` and
+    :meth:`use_permeability` describe the use.
+
+    The analysis is also applied to the bodies of top-level ``cond`` and
+    ``while`` equations, to detect temporaries created inside classical
+    control flow.
+
+    Attributes
+    ----------
+    body : Jaxpr | Jaspr
+        The analyzed body.
+    roots : dict[Var, Roots]
+        The roots of every qubit-type variable of the body.
+    inputs : set[Var]
+        The qubit-type invars of the body.
+    origin : dict[Var, int]
+        For every allocation, the index of the equation that allocates it.
+    effects : dict[int, Effects]
+        For every equation that acts on the quantum state, its effects.
+    deleted : set[Var]
+        The roots that are deleted.
+    temporaries : list[Var]
+        The temporaries, in the order of their allocation.
+
+    """
 
     def __init__(self, body: Jaxpr | Jaspr) -> None:
         """Analyze the top-level equations of ``body``."""
