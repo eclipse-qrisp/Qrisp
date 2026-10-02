@@ -112,6 +112,16 @@ Improvements
   ``encode(..., rounding=True)`` (now O(1))
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+- **Permeability and qfree-ness in Jasp**
+  :func:`~qrisp.gate_wrap` now records its ``permeability`` and ``is_qfree``
+  specification on the Jaspr of qached functions (``@gate_wrap`` placed on top
+  of ``@qache``). The specification is preserved through environment
+  collection and flattening, inversion and control, where the control qubits
+  are marked as permeable. The Jasp implementation of the Balauca
+  multi-controlled X gate is annotated accordingly (controls permeable,
+  target not), so that analyses of a Jaspr can treat it as a single block
+  (`PR #924 <https://github.com/eclipse-qrisp/Qrisp/pull/924>`_).
+
 Other New Features
 ------------------
 
