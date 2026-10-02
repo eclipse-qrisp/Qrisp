@@ -17,9 +17,11 @@
 """Implements the jasp_uncompute decorator, which uncomputes the temporary QuantumVariables of a function in Jasp."""
 
 import functools
+from collections.abc import Callable
+from typing import Any
 
 import jax
-from jax.extend.core import ClosedJaxpr, Literal, Var
+from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Literal, Var
 
 from qrisp.environments import QuantumEnvironment
 from qrisp.jasp import (
@@ -37,11 +39,12 @@ from qrisp.jasp import (
     insert_outvalues,
     make_jaspr,
 )
+from qrisp.jasp.interpreter_tools.abstract_interpreter import ContextDict
 from qrisp.jasp.jasp_expression.environment_collection import dummy_debug_info
 from qrisp.jasp.primitives import delete_qubits_p
 
 
-def jasp_uncompute(function):
+def jasp_uncompute(function: Callable[..., Any]) -> Callable[..., Any]:
     r"""Decorator that uncomputes the temporary QuantumVariables of a function in Jasp.
 
     A temporary is a :ref:`QuantumVariable` that the decorated function allocates
@@ -165,7 +168,8 @@ def jasp_uncompute(function):
     auto_uncomputed_function = auto_uncompute(function)
 
     @functools.wraps(function)
-    def uncomputed_function(*args, **kwargs):
+    def uncomputed_function(*args: Any, **kwargs: Any) -> Any:
+        """Call ``function`` and uncompute its temporaries."""
         if not check_for_tracing_mode():
             return auto_uncomputed_function(*args, **kwargs)
 
@@ -178,7 +182,7 @@ def jasp_uncompute(function):
 class JaspUncomputationEnvironment(QuantumEnvironment):
     """Environment behind :func:`jasp_uncompute`. Its body is uncomputed when the environments are flattened."""
 
-    def __init__(self, function_name):
+    def __init__(self, function_name: str) -> None:
         """Create the environment for the decorated function ``function_name``."""
         QuantumEnvironment.__init__(self)
         # Not called name, since the environment instance is also the JAX primitive.
@@ -289,7 +293,7 @@ class JaspUncomputationEnvironment(QuantumEnvironment):
     # cancelled by C^dagger, and an equation of C that ended up in U would
     # leave the temporaries dirty.
 
-    def jcompile(self, eqn, context_dic):
+    def jcompile(self, eqn: JaxprEqn, context_dic: ContextDict) -> None:
         """Replace the collected body by its uncomputed version."""
         args = extract_invalues(eqn, context_dic)
         body = eqn.params["jaspr"].flatten_environments()
@@ -316,11 +320,24 @@ class JaspUncomputationError(Exception):
 # Effects of an equation on a root, ordered by severity
 PERMEABLE, UNKNOWN, WRITE, MEASURE, DELETE = range(5)
 
+
+class _Fresh:
+    """Type of the FRESH marker."""
+
+
 # Marks qubit arrays that a block returns without having received them
-FRESH = object()
+FRESH = _Fresh()
+
+# The roots of a qubit array: the invars and allocations it stems from
+Roots = frozenset[Var]
+# The roots of a qubit array returned by a block, where FRESH marks an allocation inside the block
+OutRoots = frozenset[Var | _Fresh]
+# The effects of an equation: root -> effect kind
+Effects = dict[Var, int]
+EffectHandler = Callable[[JaxprEqn, list[Roots]], tuple[Effects, list[OutRoots]]]
 
 
-def _uncompute(body, name):
+def _uncompute(body: Jaspr, name: str) -> Jaspr | None:
     """Return the uncomputed version of ``body``, or None if it has no temporaries."""
     analysis = _TopLevelAnalysis(body)
 
@@ -364,8 +381,11 @@ def _uncompute(body, name):
 
     use = _sub_jaspr(body, [*body.invars[:-1], *crossing, state_after_compute], body.eqns[split + 1 :], body.outvars)
 
-    def conjugate_with(use_jaspr, ctrl=()):
-        def conjugated(*args):
+    def conjugate_with(use_jaspr: Jaspr, ctrl: tuple[AbstractQubit, ...] = ()) -> Jaspr:
+        """Return the Jaspr of C_fwd ; use_jaspr ; C_inv ; delete temporaries, controlled on ``ctrl``."""
+
+        def conjugated(*args: Any) -> Any:
+            """Execute C_fwd, the use, C_inv and delete the temporaries."""
             ctrl_args, args = args[: len(ctrl)], args[len(ctrl) :]
             values = dict(zip(compute_outvars, _as_tuple(c_fwd.embedd(*args, name=f"{name}_compute"))))
             res = use_jaspr.embedd(*ctrl_args, *args, *[values[var] for var in crossing], inline=True)
@@ -397,7 +417,7 @@ def _uncompute(body, name):
     return res
 
 
-def _crossing_variables(body, split):
+def _crossing_variables(body: Jaspr, split: int) -> tuple[list[Var], Var]:
     """Return the variables that C defines and U or the caller needs, and the quantum state after C."""
     used_after = {var for eqn in body.eqns[split + 1 :] for var in eqn.invars if isinstance(var, Var)}
     used_after.update(var for var in body.outvars if isinstance(var, Var))
@@ -416,15 +436,16 @@ def _crossing_variables(body, split):
 class _TopLevelAnalysis:
     """Roots and effects of the top-level quantum equations of a Jaspr."""
 
-    def __init__(self, body):
+    def __init__(self, body: Jaxpr | Jaspr) -> None:
+        """Analyze the top-level equations of ``body``."""
         self.body = body
-        self.roots = {var: frozenset([var]) for var in body.invars if _is_quantum(var)}
-        self.inputs = set(self.roots)
+        self.roots: dict[Var, Roots] = {var: frozenset([var]) for var in body.invars if _is_quantum(var)}
+        self.inputs: set[Var] = set(self.roots)
         # Allocation root -> index of the allocating equation
-        self.origin = {}
+        self.origin: dict[Var, int] = {}
         # Index of every quantum equation -> its effects
-        self.effects = {}
-        self.deleted = set()
+        self.effects: dict[int, Effects] = {}
+        self.deleted: set[Var] = set()
 
         for i, eqn in enumerate(body.eqns):
             effects, out_roots = _eqn_effects(eqn, self.roots_of)
@@ -439,23 +460,30 @@ class _TopLevelAnalysis:
                 self.deleted.update(root for root, kind in effects.items() if kind == DELETE)
 
         returned = set().union(*[self.roots_of(var) for var in body.outvars])
-        self.temporaries = [root for root in self.origin if root not in self.deleted and root not in returned]
+        self.temporaries: list[Var] = [
+            root for root in self.origin if root not in self.deleted and root not in returned
+        ]
 
-    def roots_of(self, var):
+    def roots_of(self, var: Var | Literal) -> Roots:
+        """Return the roots of ``var``."""
         if isinstance(var, Literal):
             return frozenset()
         return self.roots.get(var, frozenset())
 
-    def allocations(self, before):
+    def allocations(self, before: int) -> list[Var]:
+        """Return the allocations made by the equations up to and including index ``before``."""
         return [root for root, i in self.origin.items() if i <= before]
 
-    def split_index(self, name):
+    def split_index(self, name: str) -> int:
+        """Return the index of the last equation of the computation C."""
         temporaries = set(self.temporaries)
         split = None
         for i, effects in self.effects.items():
             allocates = any(self.origin.get(root) == i for root in temporaries)
             if allocates or any(effects.get(root, PERMEABLE) in (UNKNOWN, WRITE) for root in temporaries):
                 split = i
+        # Temporaries are allocated by quantum equations, so there is at least one candidate
+        assert split is not None
 
         effects = self.effects[split]
         allocates = any(self.origin.get(root) == split for root in temporaries)
@@ -467,7 +495,8 @@ class _TopLevelAnalysis:
             )
         return split
 
-    def check(self, split, name):
+    def check(self, split: int, name: str) -> None:
+        """Raise a JaspUncomputationError if the function can't be uncomputed with this split."""
         temporaries = set(self.temporaries)
         allocated = set()
         compute_roots = set()
@@ -521,14 +550,16 @@ class _TopLevelAnalysis:
                     )
                 compute_roots.add(root)
 
-    def use_measures(self, split):
+    def use_measures(self, split: int) -> bool:
+        """Return True if the use U contains a measurement."""
         return any(
             self.body.eqns[i].primitive.name == "jasp.measure" or MEASURE in effects.values()
             for i, effects in self.effects.items()
             if i > split
         )
 
-    def use_permeability(self, split, root):
+    def use_permeability(self, split: int, root: Var) -> bool | None:
+        """Return whether the use U is permeable on ``root``, or None if this is unknown."""
         kinds = [effects.get(root, PERMEABLE) for i, effects in self.effects.items() if i > split]
         kind = max(kinds, default=PERMEABLE)
         if kind == PERMEABLE:
@@ -538,7 +569,7 @@ class _TopLevelAnalysis:
         return None
 
 
-def _eqn_effects(eqn, roots_of):
+def _eqn_effects(eqn: JaxprEqn, roots_of: Callable[[Var | Literal], Roots]) -> tuple[Effects, list[OutRoots]]:
     """Return the effects of ``eqn`` (root -> kind) and the roots of its outvars."""
     in_roots = [roots_of(var) for var in eqn.invars]
     handler = _EFFECT_HANDLERS.get(eqn.primitive.name)
@@ -551,7 +582,8 @@ def _eqn_effects(eqn, roots_of):
     return effects, [quantum_in if _is_quantum(var) else frozenset() for var in eqn.outvars]
 
 
-def _gate_effects(eqn, in_roots):
+def _gate_effects(eqn: JaxprEqn, in_roots: list[Roots]) -> tuple[Effects, list[OutRoots]]:
+    """Return the effects of a gate, given by the permeability of its Operation."""
     gate = eqn.params["gate"]
     effects = {}
     for i in range(gate.num_qubits):
@@ -561,7 +593,8 @@ def _gate_effects(eqn, in_roots):
     return effects, _no_roots(eqn)
 
 
-def _jit_effects(eqn, in_roots):
+def _jit_effects(eqn: JaxprEqn, in_roots: list[Roots]) -> tuple[Effects, list[OutRoots]]:
+    """Return the effects of a jit block, preferring the permeability specification of its Jaspr."""
     sub_jaspr = eqn.params["jaxpr"]
     effects, out_roots = _analyze(sub_jaspr, in_roots)
     # The permeability specification of the whole block takes precedence
@@ -576,8 +609,10 @@ def _jit_effects(eqn, in_roots):
     return effects, out_roots
 
 
-def _cond_effects(eqn, in_roots):
-    effects, out_roots = {}, _no_roots(eqn)
+def _cond_effects(eqn: JaxprEqn, in_roots: list[Roots]) -> tuple[Effects, list[OutRoots]]:
+    """Return the combined effects of all branches of a cond equation."""
+    effects: Effects = {}
+    out_roots = _no_roots(eqn)
     for branch in eqn.params["branches"]:
         branch_effects, branch_roots = _analyze(branch, in_roots[1:])
         _merge(effects, branch_effects)
@@ -585,13 +620,15 @@ def _cond_effects(eqn, in_roots):
     return effects, out_roots
 
 
-def _while_effects(eqn, in_roots):
+def _while_effects(eqn: JaxprEqn, in_roots: list[Roots]) -> tuple[Effects, list[OutRoots]]:
+    """Return the effects of a while loop body."""
     cond_nconsts, body_nconsts = eqn.params["cond_nconsts"], eqn.params["body_nconsts"]
     consts = in_roots[cond_nconsts : cond_nconsts + body_nconsts]
-    carry = in_roots[cond_nconsts + body_nconsts :]
+    carry: list[OutRoots] = list(in_roots[cond_nconsts + body_nconsts :])
     # Iterate until the carried roots are stable, since iterations may permute them
+    effects: Effects = {}
     for _ in range(len(carry) + 1):
-        effects, out_roots = _analyze(eqn.params["body_jaxpr"], consts + carry)
+        effects, out_roots = _analyze(eqn.params["body_jaxpr"], consts + [_drop_fresh(roots) for roots in carry])
         new_carry = [a | b for a, b in zip(carry, out_roots)]
         if new_carry == carry:
             break
@@ -599,38 +636,61 @@ def _while_effects(eqn, in_roots):
     return effects, carry
 
 
-_EFFECT_HANDLERS = {
+def _create_effects(eqn: JaxprEqn, in_roots: list[Roots]) -> tuple[Effects, list[OutRoots]]:
+    """Return the effects of a qubit allocation, whose array is its own root."""
+    return {}, [frozenset([eqn.outvars[0]]), frozenset()]
+
+
+def _delete_effects(eqn: JaxprEqn, in_roots: list[Roots]) -> tuple[Effects, list[OutRoots]]:
+    """Return the effects of a qubit deletion."""
+    return dict.fromkeys(in_roots[0], DELETE), _no_roots(eqn)
+
+
+def _measure_effects(eqn: JaxprEqn, in_roots: list[Roots]) -> tuple[Effects, list[OutRoots]]:
+    """Return the effects of a measurement."""
+    return dict.fromkeys(in_roots[0], MEASURE), _no_roots(eqn)
+
+
+_EFFECT_HANDLERS: dict[str, EffectHandler] = {
     "jasp.quantum_gate": _gate_effects,
-    "jasp.create_qubits": lambda eqn, in_roots: ({}, [frozenset([eqn.outvars[0]]), frozenset()]),
-    "jasp.delete_qubits": lambda eqn, in_roots: (dict.fromkeys(in_roots[0], DELETE), _no_roots(eqn)),
-    "jasp.measure": lambda eqn, in_roots: (dict.fromkeys(in_roots[0], MEASURE), _no_roots(eqn)),
+    "jasp.create_qubits": _create_effects,
+    "jasp.delete_qubits": _delete_effects,
+    "jasp.measure": _measure_effects,
     "jit": _jit_effects,
     "cond": _cond_effects,
     "while": _while_effects,
 }
 
 
-def _no_roots(eqn):
+def _no_roots(eqn: JaxprEqn) -> list[OutRoots]:
+    """Return empty roots for all outvars of ``eqn``."""
     return [frozenset()] * len(eqn.outvars)
 
 
-def _resolve_fresh(roots, var):
+def _resolve_fresh(roots: OutRoots, var: Var) -> Roots:
     """Replace the FRESH marker by ``var``, the qubit array that a block newly returns."""
-    return (roots - {FRESH}) | {var} if FRESH in roots else roots
+    resolved = _drop_fresh(roots)
+    return resolved | {var} if FRESH in roots else resolved
 
 
-def _analyze(jaxpr, in_roots):
+def _drop_fresh(roots: OutRoots) -> Roots:
+    """Return ``roots`` without the FRESH marker."""
+    return frozenset(root for root in roots if isinstance(root, Var))
+
+
+def _analyze(jaxpr: Jaxpr | ClosedJaxpr, in_roots: list[Roots]) -> tuple[Effects, list[OutRoots]]:
     """Return the effects of a sub-jaxpr on the given roots of its invars, and the roots of its outvars."""
     jaxpr = _open(jaxpr)
-    roots = {var: r for var, r in zip(jaxpr.invars, in_roots) if r}
+    roots: dict[Var, Roots] = {var: r for var, r in zip(jaxpr.invars, in_roots) if r}
     outer = frozenset().union(*in_roots)
 
-    def roots_of(var):
+    def roots_of(var: Var | Literal) -> Roots:
+        """Return the roots of ``var`` inside ``jaxpr``."""
         if isinstance(var, Literal):
             return frozenset()
         return roots.get(var, frozenset())
 
-    effects = {}
+    effects: Effects = {}
     for eqn in jaxpr.eqns:
         eqn_effects, out_roots = _eqn_effects(eqn, roots_of)
         _merge(effects, eqn_effects)
@@ -640,16 +700,19 @@ def _analyze(jaxpr, in_roots):
                 roots[var] = var_roots
 
     effects = {root: kind for root, kind in effects.items() if root in outer}
-    out_roots = [frozenset(root if root in outer else FRESH for root in roots_of(var)) for var in jaxpr.outvars]
+    out_roots: list[OutRoots] = [
+        frozenset(root if root in outer else FRESH for root in roots_of(var)) for var in jaxpr.outvars
+    ]
     return effects, out_roots
 
 
-def _merge(effects, new_effects):
+def _merge(effects: Effects, new_effects: Effects) -> None:
+    """Merge ``new_effects`` into ``effects``, keeping the more severe kind per root."""
     for root, kind in new_effects.items():
         effects[root] = max(effects.get(root, PERMEABLE), kind)
 
 
-def _creates_temporaries(eqn):
+def _creates_temporaries(eqn: JaxprEqn) -> bool:
     """Return True if a cond or while equation allocates qubits that it neither deletes nor returns."""
     if eqn.primitive.name == "cond":
         bodies = eqn.params["branches"]
@@ -658,7 +721,7 @@ def _creates_temporaries(eqn):
     return any(_TopLevelAnalysis(_open(body)).temporaries for body in bodies)
 
 
-def _is_injectable(jaxpr, var):
+def _is_injectable(jaxpr: Jaxpr | ClosedJaxpr, var: Var | Literal) -> bool:
     """Return True if ``var`` is allocated by a create_qubits equation, possibly inside (nested) jit equations."""
     for eqn in _open(jaxpr).eqns:
         if var in eqn.outvars:
@@ -671,7 +734,8 @@ def _is_injectable(jaxpr, var):
     return False
 
 
-def _sub_jaspr(body, invars, eqns, outvars):
+def _sub_jaspr(body: Jaspr, invars: list[Var], eqns: list[JaxprEqn], outvars: list[Var | Literal]) -> Jaspr:
+    """Return a Jaspr with the given signature and equations, sharing the constants of ``body``."""
     return Jaspr(
         constvars=list(body.constvars),
         invars=list(invars),
@@ -682,26 +746,30 @@ def _sub_jaspr(body, invars, eqns, outvars):
     )
 
 
-def _open(jaxpr):
+def _open(jaxpr: Jaxpr | ClosedJaxpr) -> Jaxpr:
     """Return the Jaxpr of a ClosedJaxpr (including Jasprs)."""
     return jaxpr.jaxpr if isinstance(jaxpr, ClosedJaxpr) else jaxpr
 
 
-def _acts_on_state(eqn):
+def _acts_on_state(eqn: JaxprEqn) -> bool:
+    """Return True if ``eqn`` receives the quantum state, i.e. acts on qubits."""
     return any(isinstance(getattr(var, "aval", None), AbstractQuantumState) for var in eqn.invars)
 
 
-def _is_quantum(var):
+def _is_quantum(var: Any) -> bool:
+    """Return True if ``var`` (a Var, Literal or tracer) is a qubit or qubit array."""
     return isinstance(getattr(var, "aval", None), (AbstractQubit, AbstractQubitArray))
 
 
-def _as_tuple(res):
+def _as_tuple(res: Any) -> tuple:
+    """Return the results of Jaspr.embedd as a tuple."""
     if res is None:
         return ()
     return tuple(res) if isinstance(res, (tuple, list)) else (res,)
 
 
-def _describe(eqn):
+def _describe(eqn: JaxprEqn) -> str:
+    """Describe ``eqn`` in user-facing terms for error messages."""
     if eqn.primitive.name == "jasp.quantum_gate":
         return f"the gate {eqn.params['gate'].name}"
     if eqn.primitive.name == "jit":
