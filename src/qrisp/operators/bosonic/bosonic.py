@@ -1,5 +1,5 @@
 # ********************************************************************************
-# * Copyright (c) 2024 the Qrisp authors
+# * Copyright (c) 2026 the Qrisp authors
 # *
 # * This program and the accompanying materials are made available under the
 # * terms of the Eclipse Public License 2.0 which is available at
@@ -14,40 +14,47 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Defines the a() and c() factory functions for fermionic annihilation/creation operators."""
+"""Provides shorthand functions a_b, c_b returning BosonicOperator instances for single ladder operators."""
 
-import warnings
-from qrisp.operators.fermionic.fermionic_operator import FermionicOperator
-from qrisp.operators.fermionic.fermionic_term import FermionicTerm
+from qrisp.operators.bosonic.bosonic_operator import BosonicOperator
+from qrisp.operators.bosonic.bosonic_term import BosonicTerm
 
 
-def a_f(arg: int):
+def a_b(arg: int):
+    """Return BosonicOperator containing a single annihilation operator.
+
+    Parameters
+    ----------
+    arg : int
+        The index of the annihilation operator.
+
+    Returns
+    -------
+    BosonicOperator
+        The single annihilation operator.
+
+    """
     if isinstance(arg, int):
-        return FermionicOperator({FermionicTerm([(arg, False)]): 1})
+        return BosonicOperator({BosonicTerm([(arg, False)]): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
 
 
-def c_f(arg: int):
+def c_b(arg: int):
+    """BosonicOperator containing a single creation operator.
+
+    Parameters
+    ----------
+    arg : int
+        The index of the creation operator.
+
+    Returns
+    -------
+    BosonicOperator
+        The single creation operator.
+
+    """
     if isinstance(arg, int):
-        return FermionicOperator({FermionicTerm([(arg, True)]): 1})
+        return BosonicOperator({BosonicTerm([(arg, True)]): 1})
     else:
         raise Exception("Cannot initialize operator from type " + str(type(arg)))
-
-
-def a(arg: int):
-    warnings.warn(
-        "Using 'a' for the fermionic annihilation operator is deprecated; use 'a_f' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return a_f(arg)
-
-
-def c(arg: int):
-    warnings.warn(
-        "Using 'c' for the fermionic creation operator is deprecated; use 'c_f' instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return c_f(arg)

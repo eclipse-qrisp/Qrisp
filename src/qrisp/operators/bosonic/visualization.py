@@ -14,38 +14,38 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests FermionicTerm equality, hermitize, and reduce in qrisp.operators.fermionic."""
+"""Provides functions for visualizing ladder operators."""
 
-from qrisp import *
+#
+# ONLY USED FOR LATEX PRINTING
+#
+
+from sympy import Symbol
+
+#
+# Bosonic symbols (only used for visualization, i.e., LateX printing with SymPy)
+#
 
 
-def test_fermionic_term():
-    from qrisp.operators.fermionic import a_f as a, c_f as c
+class a_(Symbol):
+    """Latex representation of annihilator."""
 
-    O_0 = a(0) * c(1)
-    O_1 = c(1) * a(0)
+    __slots__ = ("ladder", "index")
 
-    assert (O_0 == O_1) == False
+    def __new__(cls, index: int):
+        """Return representation of annihilator."""
+        obj = Symbol.__new__(cls, "%s%s" % ("a", index), commutative=False, hermitian=True)
+        obj.index = index
+        return obj
 
-    O_0 = a(0) * c(1)
-    O_1 = -c(1) * a(0)
 
-    assert (O_0.hermitize() == O_1.hermitize()) == True
+class c_(Symbol):
+    """Latex representation of creator."""
 
-    O_0 = a(0) * c(1)
-    O_1 = -1 * c(1) * a(0)
+    __slots__ = ("ladder", "index")
 
-    assert (O_0.hermitize() == O_1.hermitize()) == True
-
-    O_0 = a(0) * c(1) * a(2)
-    O_1 = c(2) * a(1) * c(0)
-
-    assert (O_0 == O_1) == True
-
-    O = 3 * a(0) * c(1) + c(1) * a(0)
-    O = O.reduce()
-    assert str(O) == "2*a0*c1"
-
-    O = a(0) * a(1) - c(1) * c(0)
-    O = O.reduce(assume_hermitian=True)
-    assert str(O) == "0"
+    def __new__(cls, index: int):
+        """Return representation of creator."""
+        obj = Symbol.__new__(cls, "%s%s" % ("c", index), commutative=False, hermitian=True)
+        obj.index = index
+        return obj
