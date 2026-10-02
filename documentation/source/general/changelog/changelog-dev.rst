@@ -121,6 +121,11 @@ Improvements
   multi-controlled X gate is annotated accordingly (controls permeable,
   target not), so that analyses of a Jaspr can treat it as a single block
   (`PR #924 <https://github.com/eclipse-qrisp/Qrisp/pull/924>`_).
+  The specification is now also recorded for gate-wrapped functions that are
+  not qached, such as the :class:`~qrisp.QuantumFloat` and
+  :class:`~qrisp.QuantumModulus` arithmetic: their body is traced inline as
+  before and emitted as a single ``jit`` equation carrying the specification
+  (`PR #926 <https://github.com/eclipse-qrisp/Qrisp/pull/926>`_).
 
 Other New Features
 ------------------
