@@ -72,11 +72,21 @@ class BosonicOperator(Hamiltonian):
     The representation of bosonic ladder operators by finite matrices comes with the particular problem
     that it is impossible to get the correct bosonic commutation relations with finite matrices,
     as for a finite matrix $a$ we have $\mathrm{Tr}(aa^\dagger-a^\dagger a) = 0 \neq \mathrm{Tr}(\mathbb{1})$.
-    As a consequence, there is an ambiguity in the representation of bosonic operators,
-    because applying the Fock space truncation before or after the application of a commutation relation
+    As a consequence, there is an ambiguity if we replace single ladder operators in a product by matrices
+    and then multiply these matrices, because the application of commutation relations before this replacement
     can lead to different results.
-    Here, this ambiguity is removed by truncating the normal-ordered version
-    (with all creators moved to the left) of an operator.
+    For this reason, we make sure that entire products of ladder operators are assigned
+    their correct matrix representation in the Fock basis instead of simply multiplying
+    the single-operator matrices, which also improves numerical accuracy.
+    In our implementation, this is straightforwardly achieved by still multiplying matrix representations
+    of single operators, but with the truncation temporarily increased by the number of creation operators
+    present in the product, and then in the end projecting to the subspace of the original truncation.
+    In this way it is impossible that creation operators temporarily increase particle number
+    beyond the truncation space.
+    Equivalently, one could transform a product of operators to a sum of normal ordered products
+    (with creation operators to the left and annihilation operators to the right) by applying
+    commutation relations before substituting in matrices for the operators, as this also avoids
+    said temporary particle number increase beyond the truncation.
 
     Both the truncation and the encoding need not to be specified until the point
     where a ``BosonicOperator`` is converted to a ``QubitOperator``.

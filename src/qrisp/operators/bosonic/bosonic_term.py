@@ -189,7 +189,7 @@ class BosonicTerm:
                 truncation + k
             )  # by temporarily increasing the matrix size to truncation+k we avoid ambiguities
             # due to intermediate running out of truncated space
-            # (corresponds to normal ordering the operator before truncation)
+            # (corresponds to bringing the operators to normal ordered form before truncation)
 
             for lad in ladder_ops:
                 if lad:
