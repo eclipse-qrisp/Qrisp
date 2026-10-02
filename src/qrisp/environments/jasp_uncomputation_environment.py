@@ -236,32 +236,58 @@ class JaspUncomputationEnvironment(QuantumEnvironment):
     # Why this is correct
     # -------------------
     #
-    # Let D be the qubits C acts on: its inputs and the temporaries (its
-    # ancillas start and end in |0> and can be ignored). Because C is qfree, it
-    # maps every basis state |d> of D, with the temporaries in |0>, to a single
-    # basis state up to a phase:
+    # Setup. We split the qubits into two groups:
+    #
+    # - D: the qubits C acts on, i.e. the inputs that C reads (e.g. the
+    #   QuantumFloat of an oracle) and the temporaries. The ancillas that C
+    #   allocates and deletes internally are not part of D, since C returns
+    #   them to |0> before deleting them.
+    # - R: all other qubits, e.g. a target qubit that only U writes, ancillas
+    #   of U, or the control qubit if the function is called in a controlled
+    #   context.
+    #
+    # The state space is H_D (x) H_R. We write |d>, |e> for computational
+    # basis states (bitstrings) of D and |psi> for an arbitrary state of R.
+    # C acts as the identity on R.
+    #
+    # The computation. Because C is qfree, it maps every basis state |d> of D
+    # whose temporaries are in |0> to a single basis state, up to a phase:
     #
     #     C |d> = e^{i phi(d)} |pi(d)>
     #
-    # Here pi(d) contains the computed temporaries. C doesn't need to leave its
-    # inputs unchanged; pi may also permute them. Because U is permeable on all
-    # of D, it is block diagonal in the computational basis of D:
+    # pi(d) contains the computed values of the temporaries. C doesn't need to
+    # leave its inputs unchanged; pi may also permute them.
+    #
+    # The use. U is permeable on every qubit q of D, i.e. it commutes with Z_q.
+    # Hence it also commutes with the projectors (1 + Z_q)/2 = |0><0|_q and
+    # (1 - Z_q)/2 = |1><1|_q, and with their products, which are the
+    # projectors |e><e| onto the basis states of D. Inserting
+    # 1 = sum_e |e><e| on both sides of U, all terms |e><e| U |e'><e'| with
+    # e != e' vanish, so U is block diagonal in the basis of D:
     #
     #     U = sum_e |e><e| (x) W_e
     #
-    # where W_e acts on the remaining qubits. Hence
+    # where W_e = <e|U|e> is a unitary on R: the operation U applies to R if
+    # D is in the state |e>. For example, for U = z(flag), W_e is the phase
+    # (-1)^flag, and for U = cx(flag, target), W_e is X on the target if
+    # flag = 1 and the identity otherwise. U never changes the bitstring on D.
+    #
+    # Putting it together:
     #
     #     C^dagger U C |d>|psi> = C^dagger e^{i phi(d)} |pi(d)> W_{pi(d)}|psi>
-    #                           = |d> W_{pi(d)}|psi>.
+    #                           = |d> W_{pi(d)}|psi>
     #
     # The temporaries are back in |0> and can be deleted, the inputs are
-    # unchanged, the phase phi cancels, and the remaining qubits received
-    # exactly the action U had on them for the computed temporaries. The same
-    # argument applies to K's custom inverse with U^dagger and to the controlled
-    # version with the controlled U, both of which are permeable on D as well.
-    # This is also why the split must be exact: an equation of U that ended up
-    # in C would be cancelled by C^dagger, and an equation of C that ended up in
-    # U would leave the temporaries dirty.
+    # unchanged, the phase phi cancels, and R received exactly the operation U
+    # applies for the computed temporaries. By linearity, this also holds for
+    # superpositions over d and for states that are entangled between D and R.
+    #
+    # The same argument applies to K's custom inverse with U^dagger and to the
+    # controlled version with the controlled U: both are permeable on D as
+    # well, with blocks W_e^dagger and controlled W_e. This is also why the
+    # split must be exact: an equation of U that ended up in C would be
+    # cancelled by C^dagger, and an equation of C that ended up in U would
+    # leave the temporaries dirty.
 
     def jcompile(self, eqn, context_dic):
         """Replace the collected body by its uncomputed version."""
