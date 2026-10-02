@@ -301,7 +301,7 @@ def _solve_alpha(h, J, lam, B_val=0.0, Bp_val=0.0):
 
 
 def _solve_alpha_gamma_chi(h, J, lam, B_val=0.0, Bp_val=0.0, uniform=False):  # noqa: PLR0913, PLR0917
-    """Solve minimal action for 2nd order AGP (leading two three parameters alpha, gamma, chi).
+    """Solve minimal action for 2nd order AGP (leading to three parameters alpha, gamma, chi).
 
     - uniform=False: each is length N
     - uniform=True: each is length N with identical entries

@@ -21,14 +21,14 @@ from qubo_problems import Q_coupled, field_blind_coupled, solution_coupled
 from qrisp.algorithms.cold import solve_QUBO
 
 
-def test_lcd_order1_uniform():
+def test_lcd_local_uniform():
     """LCD with 1st-order AGP, uniform coefficients, finds the known solution."""
 
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"
 
-    problem_args = {"method": "LCD", "agp_type": "order1", "uniform": True}
+    problem_args = {"method": "LCD", "agp_type": "local", "uniform": True}
     run_args = {"N_steps": 50, "T": 10}
 
     res = solve_QUBO(Q, problem_args=problem_args, run_args=run_args)
@@ -36,14 +36,14 @@ def test_lcd_order1_uniform():
     assert solution in list(res.keys())[0:5]
 
 
-def test_lcd_order1_nonuniform():
+def test_lcd_local_nonuniform():
     """LCD with 1st-order AGP, non-uniform coefficients, finds the known solution."""
 
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"
 
-    problem_args = {"method": "LCD", "agp_type": "order1", "uniform": False}
+    problem_args = {"method": "LCD", "agp_type": "local", "uniform": False}
     run_args = {"N_steps": 50, "T": 10}
 
     res = solve_QUBO(Q, problem_args=problem_args, run_args=run_args)

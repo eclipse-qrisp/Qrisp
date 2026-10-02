@@ -21,6 +21,7 @@ import pytest
 from qubo_problems import Q4, Q6, Q_coupled
 
 from qrisp.algorithms.cold.problems.QUBO import create_COLD_instance, create_LCD_instance
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators.qubit import Y, Z
 from qrisp.operators.qubit.qubit_operator import QubitOperator
 
@@ -102,7 +103,7 @@ def test_H_prob_reproduces_qubo_cost_up_to_constant(Q, label):
     and h together and fails on all three instances the moment diag(Q) is counted twice.
     """
     N = Q.shape[0]
-    H_prob = create_LCD_instance(Q, agp_type="order1", uniform_AGP_coeffs=True)[2]
+    H_prob = create_LCD_instance(Q, agp_type="local", uniform_AGP_coeffs=True)[2]
 
     matrix = H_prob.to_array()
     off_diagonal = matrix - np.diag(np.diag(matrix))
@@ -114,3 +115,14 @@ def test_H_prob_reproduces_qubo_cost_up_to_constant(Q, label):
 
     offsets = costs - energies
     assert np.allclose(offsets, offsets[0]), f"{label}: H_prob is not x^T Q x up to a constant"
+
+
+@pytest.mark.parametrize("factory", [create_LCD_instance, create_COLD_instance])
+def test_agp_type_order1_is_deprecated_alias_of_local(factory):
+    """The old agp_type name 'order1' still works, warns, and builds the same operators as 'local'."""
+    Q = np.array([[-1.0, 0.5], [0.5, 0.3]])
+    kwargs = {"uniform_AGP_coeffs": True}
+    with pytest.warns(QrispDeprecationWarning, match="order1"):
+        old = factory(Q, agp_type="order1", **kwargs)
+    new = factory(Q, agp_type="local", **kwargs)
+    assert str(old[3]) == str(new[3])

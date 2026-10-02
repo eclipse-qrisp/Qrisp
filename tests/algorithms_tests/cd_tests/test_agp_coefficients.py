@@ -103,7 +103,7 @@ def _minimise_action(ansatz, H, dH):
     return np.linalg.solve(M, g)
 
 
-def _order1_ansatz(N, uniform):
+def _local_ansatz(N, uniform):
     """A = sum_i Y_i (one shared coefficient) or the per-site operators Y_i."""
     if uniform:
         return [sum(_op(PY, i, N) for i in range(N))]
@@ -131,15 +131,15 @@ def _random_qubo(N, seed):
 
 @pytest.mark.parametrize("N", [3, 4])
 @pytest.mark.parametrize("uniform", [True, False])
-def test_lcd_order1_coefficients_minimise_the_action(N, uniform):
-    """The order1 closed forms in create_LCD_instance solve the variational problem."""
+def test_lcd_local_coefficients_minimise_the_action(N, uniform):
+    """The local closed forms in create_LCD_instance solve the variational problem."""
     Q, h, J = _random_qubo(N, seed=100 + N)
     lam = 0.37
 
-    coeff_func = create_LCD_instance(Q, agp_type="order1", uniform_AGP_coeffs=uniform)[4]
+    coeff_func = create_LCD_instance(Q, agp_type="local", uniform_AGP_coeffs=uniform)[4]
     got = np.asarray(coeff_func(lam), dtype=float)
 
-    exact = _minimise_action(_order1_ansatz(N, uniform), _hamiltonian(h, J, lam, 0.0), _d_hamiltonian(h, J, 0.0))
+    exact = _minimise_action(_local_ansatz(N, uniform), _hamiltonian(h, J, lam, 0.0), _d_hamiltonian(h, J, 0.0))
     expected = np.full(N, exact[0]) if uniform else exact
 
     np.testing.assert_allclose(got, expected, rtol=1e-10, atol=1e-12)
@@ -147,7 +147,7 @@ def test_lcd_order1_coefficients_minimise_the_action(N, uniform):
 
 @pytest.mark.parametrize("N", [3, 4])
 @pytest.mark.parametrize("uniform", [True, False])
-def test_cold_order1_coefficients_minimise_the_action(N, uniform):
+def test_cold_local_coefficients_minimise_the_action(N, uniform):
     """The COLD coefficients stay variational once the control pulse f is switched on.
 
     f and f_deriv enter d_lambda H, so a formula that is right at f = 0 can still be wrong here.
@@ -158,7 +158,7 @@ def test_cold_order1_coefficients_minimise_the_action(N, uniform):
     coeff_func = create_COLD_instance(Q, uniform_AGP_coeffs=uniform)[4]
     got = np.asarray(coeff_func(lam, f, f_deriv), dtype=float)
 
-    exact = _minimise_action(_order1_ansatz(N, uniform), _hamiltonian(h, J, lam, f), _d_hamiltonian(h, J, f_deriv))
+    exact = _minimise_action(_local_ansatz(N, uniform), _hamiltonian(h, J, lam, f), _d_hamiltonian(h, J, f_deriv))
     expected = np.full(N, exact[0]) if uniform else exact
 
     np.testing.assert_allclose(got, expected, rtol=1e-10, atol=1e-12)
@@ -208,14 +208,14 @@ def test_nc_uniform_coefficient_handles_degenerate_inputs():
     assert np.all(np.isfinite(coeff_no_field(0.5)))
 
 
-def test_order1_coefficients_are_independent_of_qubit_labelling():
+def test_local_coefficients_are_independent_of_qubit_labelling():
     """Relabelling the qubits must permute the coefficients, not change them."""
     N = 4
     Q, _, _ = _random_qubo(N, seed=500)
     perm = np.array([3, 0, 2, 1])
 
-    coeff = create_LCD_instance(Q, agp_type="order1", uniform_AGP_coeffs=False)[4]
-    coeff_permuted = create_LCD_instance(Q[np.ix_(perm, perm)], agp_type="order1", uniform_AGP_coeffs=False)[4]
+    coeff = create_LCD_instance(Q, agp_type="local", uniform_AGP_coeffs=False)[4]
+    coeff_permuted = create_LCD_instance(Q[np.ix_(perm, perm)], agp_type="local", uniform_AGP_coeffs=False)[4]
 
     got = np.asarray(coeff_permuted(0.4))[np.argsort(perm)]
     np.testing.assert_allclose(got, np.asarray(coeff(0.4)), rtol=1e-10, atol=1e-12)
@@ -231,7 +231,7 @@ def test_agp_coefficients_stay_cheap_for_a_large_dense_qubo():
     A = rng.uniform(-1.0, 1.0, (100, 100))
     Q = (A + A.T) / 2
 
-    for agp_type in ("order1", "nc"):
+    for agp_type in ("local", "nc"):
         coeff = create_LCD_instance(Q, agp_type=agp_type, uniform_AGP_coeffs=True)[4]
         values = [coeff(lam) for lam in np.linspace(0.05, 0.95, 50)]
         assert all(np.all(np.isfinite(v)) for v in values)
@@ -239,7 +239,7 @@ def test_agp_coefficients_stay_cheap_for_a_large_dense_qubo():
 
 @pytest.mark.parametrize(
     ("agp_type", "uniform"),
-    [("order1", False), ("nc", True), ("nc", False)],
+    [("local", False), ("nc", True), ("nc", False)],
 )
 def test_counterdiabatic_drive_helps_at_short_evolution_time(agp_type, uniform):
     """At short T the AGP is what suppresses excitations, so it must beat no drive at all.
@@ -321,7 +321,7 @@ def test_cold_and_lcd_agree_on_the_cost_of_every_returned_state():
 def test_every_agp_type_and_uniformity_combination_is_reachable():
     """Guards the LCD builder dispatch table against a silently dropped combination."""
     Q, _, _ = _random_qubo(4, seed=700)
-    for agp_type, uniform in itertools.product(("order1", "nc"), (True, False)):
+    for agp_type, uniform in itertools.product(("local", "nc"), (True, False)):
         coeff = create_LCD_instance(Q, agp_type=agp_type, uniform_AGP_coeffs=uniform)[4]
         assert np.all(np.isfinite(np.asarray(coeff(0.5), dtype=float)))
 
@@ -375,7 +375,7 @@ def test_invalid_agp_type_is_rejected_by_both_instance_builders():
         create_LCD_instance(Q, agp_type="bogus", uniform_AGP_coeffs=True)
 
 
-@pytest.mark.parametrize("agp_type", ["order1", "nc"])
+@pytest.mark.parametrize("agp_type", ["local", "nc"])
 def test_solve_qubo_routes_agp_type_to_both_methods(agp_type):
     """agp_type must reach COLD as well as LCD, and find the optimum at short evolution time."""
     Q = np.array(
@@ -395,7 +395,7 @@ def test_solve_qubo_routes_agp_type_to_both_methods(agp_type):
         Q,
         problem_args={"method": "LCD", "uniform": True, "agp_type": agp_type},
         # T=2, not 1: this QUBO's gap between "111110" and "111111" is 0.5, and a uniform
-        # order1 AGP does not close it inside a single time unit.
+        # local AGP does not close it inside a single time unit.
         run_args={"N_steps": 20, "T": 2},
     )
     assert solution in list(res.keys())[0:3]
@@ -441,8 +441,8 @@ def test_cold_nc_uniform_coefficient_holds_at_ten_qubits():
     np.testing.assert_allclose(got, np.full(N, exact[0]), rtol=1e-10, atol=1e-12)
 
 
-def test_order1_coefficients_hold_at_ten_qubits():
-    """Same check for the order1 closed forms, uniform and non-uniform."""
+def test_local_coefficients_hold_at_ten_qubits():
+    """Same check for the local closed forms, uniform and non-uniform."""
     N = 10
     Q, h, J = _random_qubo(N, seed=1011)
     lam, f, f_deriv = 0.33, 0.28, -0.41
@@ -450,6 +450,6 @@ def test_order1_coefficients_hold_at_ten_qubits():
     H, dH = _hamiltonian(h, J, lam, f), _d_hamiltonian(h, J, f_deriv)
     for uniform in (True, False):
         got = np.asarray(create_COLD_instance(Q, uniform_AGP_coeffs=uniform)[4](lam, f, f_deriv), dtype=float)
-        exact = _minimise_action(_order1_ansatz(N, uniform), H, dH)
+        exact = _minimise_action(_local_ansatz(N, uniform), H, dH)
         expected = np.full(N, exact[0]) if uniform else exact
         np.testing.assert_allclose(got, expected, rtol=1e-10, atol=1e-12)

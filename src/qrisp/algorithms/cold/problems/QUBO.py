@@ -17,6 +17,7 @@
 """Provides helper functions to build and solve QUBO problems using COLD/LCD counterdiabatic driving."""
 
 import itertools
+import warnings
 
 import numpy as np
 import sympy as sp
@@ -24,10 +25,23 @@ import sympy as sp
 from qrisp.algorithms.cold import DCQOProblem
 from qrisp.algorithms.cold.AGP_params import _solve_alpha
 from qrisp.core import QuantumVariable
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators.qubit import QubitOperator, X, Y, Z
 
 
-def _order1_agp_coeffs(h, J, lam, f=0.0, f_deriv=0.0, *, uniform=True):  # noqa: PLR0913 -- one coefficient formula, four call sites
+def _normalize_agp_type(agp_type):
+    """Map the deprecated agp_type ``"order1"`` to ``"local"``, with a QrispDeprecationWarning."""
+    if agp_type == "order1":
+        warnings.warn(
+            "agp_type='order1' is deprecated and will be removed in version 0.11. Use agp_type='local' instead.",
+            QrispDeprecationWarning,
+            stacklevel=3,
+        )
+        return "local"
+    return agp_type
+
+
+def _local_agp_coeffs(h, J, lam, f=0.0, f_deriv=0.0, *, uniform=True):  # noqa: PLR0913 -- one coefficient formula, four call sites
     r"""First-order AGP coefficients for the ansatz $A_\lambda = \sum_i \alpha_i \sigma^y_i$.
 
     Minimises the action $S = \mathrm{Tr}[G_\lambda^2]$ with
@@ -179,7 +193,7 @@ def _nested_commutator_operators(h, J):
     ]
 
 
-def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
+def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="local"):
     r"""Create the necessary parameters and operators to initialize a DCQO problem instance for COLD.
 
     Parameters
@@ -194,12 +208,17 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
     uniform_AGP_coeffs : bool
         Whether to approximate the AGP with uniform or non-uniform coefficients.
     agp_type : str, optional
-        Which approximation of the AGP to use, either ``order1`` (a sum of single-qubit Y
-        operators) or ``nc`` (first-order nested commutators). The default is ``order1``.
+        Which approximation of the AGP to use, either ``local`` (a sum of single-qubit Y
+        operators) or ``nc`` (first-order nested commutators). The default is ``local``.
         ``nc`` is the better approximation and is recommended for short evolution times, and
         requires ``uniform_AGP_coeffs=True``: the non-uniform coefficients have no closed form and
         their solver cannot take the symbolic control pulse COLD compiles into the circuit. Use
         :func:`create_LCD_instance` for the non-uniform nested-commutator ansatz.
+
+        .. deprecated:: 0.10
+
+            The former name ``order1`` is deprecated and will be removed in version 0.11.
+            Use ``local`` instead.
 
     Returns
     -------
@@ -210,6 +229,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
         problem Hamiltonian (J, h), inverse scheduling function (g(lam)), control Hamiltonian (H_control).
 
     """
+    agp_type = _normalize_agp_type(agp_type)
     N = len(Q[0])
     h = -0.5 * np.sum(Q, axis=1)
     J = 0.5 * Q
@@ -220,10 +240,10 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
         return lam_expr
 
     # AGP coefficients
-    if agp_type == "order1":
+    if agp_type == "local":
 
         def alpha(lam, f, f_deriv):
-            return _order1_agp_coeffs(h, J, lam, f, f_deriv, uniform=uniform_AGP_coeffs)
+            return _local_agp_coeffs(h, J, lam, f, f_deriv, uniform=uniform_AGP_coeffs)
 
     elif agp_type == "nc" and uniform_AGP_coeffs:
         alpha = _nc_uniform_agp_coeffs(h, J)
@@ -240,7 +260,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
         )
 
     else:
-        raise ValueError(f"{agp_type} is not a valid option as agp_type. Valid options are 'order1' and 'nc'.")
+        raise ValueError(f"{agp_type} is not a valid option as agp_type. Valid options are 'local' and 'nc'.")
 
     # Initial Hamiltonian
     H_init = 1 * sum([X(i) for i in range(N)])
@@ -255,7 +275,7 @@ def create_COLD_instance(Q, uniform_AGP_coeffs, agp_type="order1"):
 
     # AGP as function of alpha. A single QubitOperator signals uniform coefficients to
     # DCQOProblem, a list of them one coefficient per site.
-    if agp_type == "order1":
+    if agp_type == "local":
         A_lam = sum([Y(i) for i in range(N)]) if uniform_AGP_coeffs else [Y(i) for i in range(N)]
     else:
         site_operators = _nested_commutator_operators(h, J)
@@ -282,8 +302,8 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
         symmetric $Q$. Symmetrize an upper-triangular matrix with
         ``Q = 0.5 * (Q + Q.T)`` before passing it in.
     agp_type : str
-        Which approximation of the AGP to use. Can choose between ``order1``,
-        ``order2``, ``nc`` (nested commutators up to first order).
+        Which approximation of the AGP to use. You can choose between ``local`` and
+        ``nc`` (nested commutators up to first order).
     uniform_AGP_coeffs : bool
         Whether to approximate the AGP with uniform or non-uniform coefficients.
 
@@ -296,32 +316,33 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
         problem Hamiltonian (J, h), inverse scheduling function (g(lam)), control Hamiltonian (H_control).
 
     """
+    agp_type = _normalize_agp_type(agp_type)
 
     def build_agp(agp_type, J, h):
 
-        def order1():
+        def local():
             A_lam = [Y(i) for i in range(N)]
             return A_lam
 
         def nested_commutators(J, h):
             return _nested_commutator_operators(h, J)
 
-        builders = {"order1": order1(), "nc": nested_commutators(J, h)}
+        builders = {"local": local(), "nc": nested_commutators(J, h)}
 
         return builders[agp_type]
 
     def build_coeffs(agp_type, uniform_AGP_coeffs, J, h):
 
-        def order1_uniform(J, h):
+        def local_uniform(J, h):
             # LCD has no control Hamiltonian, so f = f_deriv = 0.
             def alpha(lam):
-                return _order1_agp_coeffs(h, J, lam, uniform=True)
+                return _local_agp_coeffs(h, J, lam, uniform=True)
 
             return alpha
 
-        def order1_nonuniform(J, h):
+        def local_nonuniform(J, h):
             def alpha(lam):
-                return _order1_agp_coeffs(h, J, lam, uniform=False)
+                return _local_agp_coeffs(h, J, lam, uniform=False)
 
             return alpha
 
@@ -337,8 +358,8 @@ def create_LCD_instance(Q, agp_type, uniform_AGP_coeffs=True):
             return alpha
 
         builders = {
-            ("order1", True): order1_uniform(J, h),
-            ("order1", False): order1_nonuniform(J, h),
+            ("local", True): local_uniform(J, h),
+            ("local", False): local_nonuniform(J, h),
             ("nc", True): nc_uniform(J, h),
             ("nc", False): nc_nonuniform(J, h),
         }
@@ -399,7 +420,7 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
 
         * ``method`` : str -- "COLD" or "LCD".
         * ``uniform`` : bool.
-        * ``agp_type`` : str, optional -- "order1" (default) or "nc". Applies to both
+        * ``agp_type`` : str, optional -- "local" (default) or "nc". Applies to both
           methods. ``nc`` approximates the AGP with first-order nested commutators and is
           the better approximation, especially at short evolution times. For COLD, ``nc``
           requires ``"uniform": True``.
@@ -455,8 +476,8 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
 
     """
     method = problem_args["method"]
-    # Both methods accept the AGP type; 1st order is the default.
-    agp_type = problem_args.get("agp_type", "order1")
+    # Both methods accept the AGP type; the local AGP is the default.
+    agp_type = problem_args.get("agp_type", "local")
 
     if method == "LCD":
         problem_operators = create_LCD_instance(Q, agp_type=agp_type, uniform_AGP_coeffs=problem_args["uniform"])

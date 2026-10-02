@@ -143,7 +143,7 @@ def test_cold_expvalue_method_backend():
     """COLD's expectation-value objective runs against an explicit measurement backend, not just the default statevector path."""
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
-    problem_args = {"method": "COLD", "uniform": True}  # , "agp_type": "order1"}
+    problem_args = {"method": "COLD", "uniform": True}  # , "agp_type": "local"}
     backend = QiskitBackend()
     run_args = {
         "N_steps": 4,

@@ -202,6 +202,11 @@ Bug Fixes
   by an import-hoisting cleanup, which broke ``ruff format --check`` on
   ``main`` right after merge.
 
+* Renamed the CD ``agp_type`` option ``"order1"`` (a sum of single-qubit Y
+  operators) to ``"local"``, to avoid confusion with the first-order nested
+  commutator ansatz ``"nc"``. ``"order1"`` still works but emits a
+  ``QrispDeprecationWarning`` and will be removed in version 0.11.
+
 * Fixed two AGP coefficient shape bugs in ``create_LCD_instance`` with
   ``agp_type="nc"``: the ``uniform`` and non-uniform coefficient builders
   each wrapped their result one list level too deep, handing a whole
