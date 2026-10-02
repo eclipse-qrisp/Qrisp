@@ -16,6 +16,9 @@
 
 """Defines GateWrapEnvironment, which bundles contained operations into a single wrapped gate instruction."""
 
+import jax
+from jax.extend.core import Var
+
 from qrisp.circuit import QuantumCircuit, QubitAlloc, QubitDealloc
 from qrisp.environments import QuantumEnvironment
 
@@ -119,11 +122,59 @@ class GateWrapEnvironment(QuantumEnvironment):
 
     """
 
-    def __init__(self, name=None):
-        super().__init__()
-        self.name = name
+    def __init__(self, name=None, arg_qubits=(), arg_permeability=(), result_permeability=None, is_qfree=None):
+        # In Jasp mode, the qubits of the wrapped function's arguments are passed
+        # as environment arguments, so that jcompile can identify them in the
+        # collected body.
+        super().__init__(env_args=list(arg_qubits))
+        self.gate_name = name
 
         self.manual_allocation_management = True
+
+        self.arg_permeability = list(arg_permeability)
+        self.result_permeability = result_permeability
+        self.is_qfree = is_qfree
+
+    def jcompile(self, eqn, context_dic):
+        """Emit the collected body as a ``jit`` equation whose Jaspr carries the gate_wrap specification.
+
+        The collected equation's invars start with the environment arguments
+        (the argument qubits), followed by the outer variables that the body
+        reads, which line up with the body's invars.
+        """
+        from qrisp.jasp import AbstractQubit, AbstractQubitArray, extract_invalues, get_last_equation, insert_outvalues
+
+        num_env_args = len(self.env_args)
+        args = extract_invalues(eqn, context_dic)[num_env_args:]
+        body_jaspr = eqn.params["jaspr"].flatten_environments().copy()
+
+        # A qubit passed in several arguments is only permeable if all of them are.
+        qubit_permeability = {}
+        for var, permeable in zip(eqn.invars[:num_env_args], self.arg_permeability):
+            if isinstance(var, Var) and permeable is not None:
+                qubit_permeability[var] = qubit_permeability.get(var, True) and permeable
+
+        for outer_var, var in zip(eqn.invars[num_env_args:-1], body_jaspr.invars[:-1]):
+            if isinstance(outer_var, Var) and outer_var in qubit_permeability:
+                body_jaspr.permeability[var] = qubit_permeability[outer_var]
+
+        if self.result_permeability is not None:
+            for var in body_jaspr.outvars[:-1]:
+                if isinstance(getattr(var, "aval", None), (AbstractQubit, AbstractQubitArray)):
+                    body_jaspr.permeability[var] = self.result_permeability
+
+        body_jaspr.isqfree = self.is_qfree
+
+        res = jax.jit(body_jaspr.eval)(*args)
+
+        jit_eqn = get_last_equation()
+        jit_eqn.params["jaxpr"] = body_jaspr
+        jit_eqn.params["name"] = self.gate_name
+
+        if not isinstance(res, tuple):
+            res = (res,)
+
+        insert_outvalues(eqn, context_dic, res)
 
     def compile(self):
         temp_data_list = list(self.env_qs.data)
@@ -183,7 +234,7 @@ class GateWrapEnvironment(QuantumEnvironment):
 
         translation_dic_inv = {translation_dic[key]: key for key in translation_dic.keys()}
 
-        gate = qc.to_gate(self.name)
+        gate = qc.to_gate(self.gate_name)
 
         alloc_list = list(set(alloc_list))
         for qb in alloc_list:

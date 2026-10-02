@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests for gate_wrap in Jasp mode: permeability/qfree metadata on the Jasprs of qached functions."""
+"""Tests for gate_wrap in Jasp mode: permeability/qfree metadata on the Jasprs of gate-wrapped functions."""
 
 from qrisp import *
 from qrisp.jasp import *
@@ -109,22 +109,64 @@ def test_gate_wrap_name():
     assert len(jit_eqns(make_jaspr(main)(), "custom_name")) == 1
 
 
-def test_gate_wrap_without_qache_is_inlined():
+def test_gate_wrap_without_qache():
 
-    @gate_wrap(permeability="args", is_qfree=True)
+    # In-place function returning its argument, with a Python-object argument
+    @gate_wrap(permeability=[], is_qfree=True)
     def flip(a, indices):
         for i in indices:
             x(a[i])
         return a
 
+    @gate_wrap(permeability="args", is_qfree=True)
+    def copy_and(a, b):
+        res = QuantumBool()
+        mcx([a[0], b[0]], res[0])
+        return res
+
     def main():
         a = QuantumVariable(3)
+        b = QuantumVariable(1)
+        x(b)
         a = flip(a, [0, 2])
-        return measure(a)
+        res = copy_and(a, b)
+        return measure(a), measure(res)
+
+    assert jaspify(main)() == (5, True)
 
     jaspr = make_jaspr(main)()
-    assert not any(eqn.primitive.name == "jit" and eqn.params["name"] == "flip" for eqn in jaspr.eqns)
-    assert jaspify(main)() == 5
+
+    flip_jaspr = jit_eqns(jaspr, "flip")[0].params["jaxpr"]
+    assert invar_permeability(flip_jaspr) == [False, None]
+    assert flip_jaspr.isqfree is True
+
+    and_jaspr = jit_eqns(jaspr, "copy_and")[0].params["jaxpr"]
+    assert invar_permeability(and_jaspr) == [True, True, None]
+    assert outvar_permeability(and_jaspr) == [False, None]
+
+
+def test_gate_wrap_without_qache_dict_argument():
+
+    # Dict keys are QuantumFloats: collecting the argument qubits must not compare
+    # them (as sorting dict keys for pytree flattening would), which traces
+    # comparison circuits.
+    @gate_wrap(permeability="args", is_qfree=True)
+    def flip_keys(dic):
+        for qf in dic:
+            x(qf)
+
+    def main():
+        a = QuantumFloat(2)
+        b = QuantumFloat(2)
+        flip_keys({a: 1, b: 2})
+        return measure(a), measure(b)
+
+    assert jaspify(main)() == (3, 3)
+
+    jaspr = make_jaspr(main)()
+    assert [eqn.params["name"] for eqn in jaspr.eqns if eqn.primitive.name == "jit"] == ["flip_keys"]
+    flip_jaspr = jit_eqns(jaspr, "flip_keys")[0].params["jaxpr"]
+    assert invar_permeability(flip_jaspr) == [True, True, None]
 
 
 def test_permeability_survives_transformations():

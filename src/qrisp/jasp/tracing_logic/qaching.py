@@ -350,16 +350,33 @@ def qache_helper(func, jax_kwargs):
 def jasp_gate_wrap(function, args, kwargs, permeability, is_qfree, name):
     """Jasp implementation of :func:`qrisp.gate_wrap`.
 
-    The permeability and qfree-ness specification is stored on the Jaspr of the
-    ``jit`` equation that a qached function creates. Functions that are not qached
-    are traced inline and carry no specification.
+    The permeability and qfree-ness specification is stored on the Jaspr of a
+    ``jit`` equation. A qached function creates this equation itself. Any other
+    function is traced inline inside a :class:`GateWrapEnvironment`, which turns
+    its body into such an equation when the environments are flattened.
     """
     jax_kwargs = getattr(function, "qache_jax_kwargs", None)
 
-    res = function(*args, **kwargs)
-
     if jax_kwargs is None:
-        return res
+        from qrisp.environments import GateWrapEnvironment
+
+        arg_qubits, arg_permeability = [], []
+        for i, arg in enumerate(args):
+            qubits = _qubit_leaves(arg)
+            arg_qubits.extend(qubits)
+            arg_permeability.extend([_arg_permeability(permeability, i)] * len(qubits))
+
+        env = GateWrapEnvironment(
+            name=function.__name__ if name is None else name,
+            arg_qubits=arg_qubits,
+            arg_permeability=arg_permeability,
+            result_permeability=None if permeability is None else permeability == "full",
+            is_qfree=is_qfree,
+        )
+        with env:
+            return function(*args, **kwargs)
+
+    res = function(*args, **kwargs)
 
     eqn = get_last_equation()
     if name is not None:
@@ -385,28 +402,62 @@ def _set_gate_wrap_properties(jaspr, dynamic_pos, dynamic_args, permeability, is
     invars receive the argument's permeability. Returned qubits are permeable
     only for ``permeability="full"``.
     """
-    from qrisp.jasp.primitives import AbstractQubit, AbstractQubitArray
-
-    def is_quantum(var):
-        return isinstance(getattr(var, "aval", None), (AbstractQubit, AbstractQubitArray))
-
     jaspr.isqfree = is_qfree
 
     if permeability is None:
         return
 
-    if isinstance(permeability, str) and permeability not in ("args", "full"):
-        raise Exception(f"Don't know permeability option {permeability}")
-
     invar_index = 0
     for i, arg in zip(dynamic_pos, dynamic_args):
         num_leaves = len(jax.tree_util.tree_leaves(arg))
-        arg_permeability = i in permeability if isinstance(permeability, list) else True
         for var in jaspr.invars[invar_index : invar_index + num_leaves]:
-            if is_quantum(var):
-                jaspr.permeability[var] = arg_permeability
+            if _is_quantum(var):
+                jaspr.permeability[var] = _arg_permeability(permeability, i)
         invar_index += num_leaves
 
     for var in jaspr.outvars[:-1]:
-        if is_quantum(var):
+        if _is_quantum(var):
             jaspr.permeability[var] = permeability == "full"
+
+
+def _arg_permeability(permeability, i):
+    """Permeability of the ``i``-th positional argument under a :func:`qrisp.gate_wrap` specification."""
+    if permeability is None:
+        return None
+    if isinstance(permeability, list):
+        return i in permeability
+    if permeability not in ("args", "full"):
+        raise Exception(f"Don't know permeability option {permeability}")
+    return True
+
+
+def _is_quantum(x):
+    """Return True if ``x`` (a Var or tracer) is a qubit or qubit array."""
+    from qrisp.jasp.primitives import AbstractQubit, AbstractQubitArray
+
+    return isinstance(getattr(x, "aval", None), (AbstractQubit, AbstractQubitArray))
+
+
+def _qubit_leaves(arg):
+    """Return the qubit and qubit-array tracers in ``arg``.
+
+    Unlike pytree flattening, this does not sort dict keys, which for keys
+    like QuantumFloats would trace comparison circuits.
+    """
+    from qrisp.core import QuantumArray, QuantumVariable
+    from qrisp.jasp.tracing_logic import DynamicQubitArray
+
+    if isinstance(arg, QuantumVariable):
+        arg = arg.reg
+    elif isinstance(arg, QuantumArray):
+        arg = arg.qb_array
+    if isinstance(arg, DynamicQubitArray):
+        arg = arg.tracer
+
+    if _is_quantum(arg):
+        return [arg]
+    if isinstance(arg, dict):
+        arg = [item for key_value in arg.items() for item in key_value]
+    if isinstance(arg, (list, tuple)):
+        return [qubit for item in arg for qubit in _qubit_leaves(item)]
+    return []
