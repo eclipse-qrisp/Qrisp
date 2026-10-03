@@ -31,9 +31,12 @@ class QuantumBool(QuantumVariable):
     Apart from their behavior as a QuantumVariable, they can also be treated like
     :ref:`ControlEnvironments <ControlEnvironment>`.
 
-    .. note:
+    .. note::
         QuantumBools that are evaluated directly after a ``with`` statement are
-        uncomputed automatically upon leaving the ControlEnvironment.
+        uncomputed automatically upon leaving the ControlEnvironment. This is not
+        supported in :ref:`Jasp <jasp>`, except for single comparisons such as
+        ``with qf == 5:``. For other expressions, use a
+        :ref:`ConditionEnvironment`.
 
     Examples
     --------

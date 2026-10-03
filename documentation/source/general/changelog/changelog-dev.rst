@@ -144,6 +144,17 @@ Other New Features
 Bug Fixes
 ---------
 
+* :class:`~qrisp.ConditionEnvironment` now works in Jasp. The condition is
+  evaluated, the body is controlled on the truth value, and the truth value and
+  all intermediate results of the evaluation are uncomputed and deleted
+  afterwards. Comparisons that are entered directly in a ``with`` statement,
+  such as ``with qf < 3:``, are conditions in Jasp as well. In standard mode,
+  the intermediate results of a condition are now also uncomputed and deleted:
+  previously, they stayed allocated, and the uncomputation created a second set
+  of them. Comparisons inside a ``with`` statement that are not entered directly,
+  for instance inside a ``lambda``, are no longer mistaken for conditions
+  (`PR #929 <https://github.com/eclipse-qrisp/Qrisp/pull/929>`_).
+
 * Fixed a failure when a function decorated with
   :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
   raised ``Automatic loop inversion is only supported for jrange-based loops``.
