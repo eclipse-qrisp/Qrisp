@@ -6,10 +6,11 @@
 [![License](https://img.shields.io/badge/License-EPL_2.0-brightgreen.svg)](https://opensource.org/licenses/EPL-2.0)
 ![PyPI - Version](https://img.shields.io/pypi/v/qrisp?color=brightgreen)
 ![PyPI Python Version](https://img.shields.io/pypi/pyversions/qrisp)
+[![PyPI - Version](https://img.shields.io/pypi/v/qrisp?color=brightgreen&label=PyPI)](https://pypi.org/project/qrisp/)
+[![Total Downloads](https://img.shields.io/pepy/dt/qrisp?label=Total%20Downloads)](https://pepy.tech/project/qrisp)
+[![Monthly Downloads](https://static.pepy.tech/badge/qrisp/month)](https://pepy.tech/project/qrisp)
 [![Discord](https://img.shields.io/discord/1471858163908214870?style=plastic&logo=Discord&label=discord)](https://discord.gg/v5np7DeBaq)
 [![Pytest](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml/badge.svg)](https://github.com/eclipse-qrisp/Qrisp/actions/workflows/qrisp_test.yml)
-[![Downloads](https://img.shields.io/pypi/dm/qrisp.svg)](https://pypi.org/project/qrisp/)
-[![CodeFactor](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/badge/main)](https://www.codefactor.io/repository/github/eclipse-qrisp/qrisp/overview/main)
 
 [![Paper](https://img.shields.io/badge/DOI-10.1038%2Fs41586--020--2649--2-brightgreen)](https://doi.org/10.48550/arXiv.2406.14792)
 [![Forks](https://img.shields.io/github/forks/eclipse-qrisp/Qrisp.svg)](https://github.com/eclipse-qrisp/Qrisp/network/members)
@@ -38,7 +39,7 @@ You can install Qrisp using pip:
 pip install qrisp
 ```
 
-Qrisp has been confirmed to work with Python version 3.11 & 3.12.
+Qrisp requires Python 3.11 or later, up to and including Python 3.13 (`>=3.11, <3.14`).
 
 Qrisp is compatible with any QASM-capable quantum backend! In particular, it offers convenient interfaces for using IBM, IQM and AQT quantum computers, and any quantum backend provider is invited to reach out for a tight integration! 
 

@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests the Catalyst/QIR/MLIR compilation interface for Jasp programs via qjit."""
 
 import itertools
 import time
@@ -297,6 +298,44 @@ def test_scan_catalyst_num_carry_one():
 
     result = test_scan_under_qjit()
     assert result == 8, f"Expected 8, got {result}"
+
+
+def test_nested_jit_with_closure_in_qjit():
+    """Regression test for nested jitted (jit) equations whose jaxpr carries
+    non-empty consts (closed-over array values). Previously,
+    ``get_traced_fun`` in ``catalyst_interpreter.py`` called
+    ``eval_jaxpr(catalyst_jaxpr.jaxpr, [], *args)``, always passing an empty
+    consts list. This raises
+    ``ValueError: foreach() argument 2 is shorter than argument 1`` whenever
+    the converted sub-jaxpr actually has constvars.
+
+    A plain ``jax.jit`` closing over a Python int/scalar does not reproduce
+    this, because such values get embedded as jaxpr literals rather than
+    consts. Closing over a >1-element array and indexing into it (as happens
+    e.g. inside ``qache``-d functions that reference module-level coefficient
+    arrays) reliably produces a sub-jaxpr with non-empty constvars/consts.
+    """
+    try:
+        import catalyst
+    except ModuleNotFoundError:
+        return
+
+    import jax.numpy as jnp
+
+    angles = jnp.array([0.1, 0.2, 0.3])
+
+    @qache
+    def apply_rotation(qf):
+        ry(angles[0], qf[0])
+        return measure(qf[0])
+
+    @qjit
+    def main():
+        qf = QuantumFloat(2)
+        return apply_rotation(qf)
+
+    # Must not raise ValueError: foreach() argument 2 is shorter than argument 1
+    main()
 
 
 def test_qjit_pytree():

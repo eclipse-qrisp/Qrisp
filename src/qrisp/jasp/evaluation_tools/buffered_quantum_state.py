@@ -56,7 +56,6 @@ class BufferedQuantumState:
     """
 
     def __init__(self, simulator: Literal["qrisp", "stim"] = "qrisp") -> None:
-
         self.quantum_state: "QuantumState | stim.TableauSimulator"
         if simulator == "qrisp":
             self.quantum_state = QuantumState(n=0)
@@ -99,7 +98,19 @@ class BufferedQuantumState:
             self._bump_gate_count(op.name)
 
     def apply_buffer(self) -> None:
-        """Flush every buffered gate into the backend quantum state."""
+        """Flush every buffered gate into the backend quantum state.
+
+        For the "qrisp" backend, the buffered circuit is handed to
+        qrisp.simulator.advance_quantum_state, which preprocesses
+        (e.g. gate-grouping via ``_group_qc``) and executes it, advancing
+        ``self.quantum_state`` in place. For the "stim" backend, each
+        buffered instruction is dispatched to the corresponding
+        stim.TableauSimulator method.
+
+        Afterwards, qubits marked for deallocation (``qb_dealloc``) are
+        removed from ``buffer_qc`` and ``qubit_to_index_dict``, and the
+        buffer is cleared.
+        """
         if self.simulator == "qrisp":
             assert isinstance(self.quantum_state, QuantumState)
             self.quantum_state = advance_quantum_state(
