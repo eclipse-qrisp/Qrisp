@@ -510,6 +510,7 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
             balauca_anc.delete()
 
 
+@gate_wrap(permeability=[1], is_qfree=True)
 @qache
 def jasp_balauca_mcp(phi, ctrls, ctrl_state):
 

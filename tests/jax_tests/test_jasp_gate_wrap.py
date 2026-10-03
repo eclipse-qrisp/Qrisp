@@ -163,16 +163,22 @@ def test_permeability_survives_transformations():
     assert invar_permeability(base.control(2, ctrl_state=1)) == [True, True, True, False, None]
 
 
-def test_balauca_mcx_permeability():
+def find_jaspr(jaspr, name):
+    """Return the Jaspr of the first (possibly nested) jit equation called ``name``."""
+    for eqn in jaspr.eqns:
+        if eqn.primitive.name == "jit":
+            if eqn.params["name"] == name:
+                return eqn.params["jaxpr"]
+            res = find_jaspr(eqn.params["jaxpr"], name)
+            if res is not None:
+                return res
 
-    def find_balauca(jaspr):
-        for eqn in jaspr.eqns:
-            if eqn.primitive.name == "jit":
-                if eqn.params["name"] == "jasp_balauca_mcx":
-                    return eqn.params["jaxpr"]
-                res = find_balauca(eqn.params["jaxpr"])
-                if res is not None:
-                    return res
+
+def qubit_permeability(jaspr):
+    return [jaspr.permeability[var] for var in jaspr.invars if str(var.aval) in ("Qubit", "QubitArray")]
+
+
+def test_balauca_mcx_permeability():
 
     def main(n):
         ctrls = QuantumVariable(n)
@@ -183,14 +189,25 @@ def test_balauca_mcx_permeability():
 
     # Static and dynamic control-register size
     for jaspr in [make_jaspr(main)(4), make_jaspr(lambda: main(4))()]:
-        balauca_jaspr = find_balauca(jaspr)
-        qubit_permeability = [
-            balauca_jaspr.permeability[var] for var in balauca_jaspr.invars if str(var.aval) in ("Qubit", "QubitArray")
-        ]
-        assert qubit_permeability == [True, False]
+        balauca_jaspr = find_jaspr(jaspr, "jasp_balauca_mcx")
+        assert qubit_permeability(balauca_jaspr) == [True, False]
         assert balauca_jaspr.isqfree is True
 
         # Repeated calls reuse the cached Jaspr
         balauca_eqns = jit_eqns(jaspr, "jasp_balauca_mcx")
         assert len(balauca_eqns) == 2
         assert balauca_eqns[0].params["jaxpr"] is balauca_eqns[1].params["jaxpr"]
+
+
+def test_balauca_mcp_permeability():
+
+    def main(n):
+        qubits = QuantumVariable(n)
+        mcp(0.5, qubits)
+        return measure(qubits)
+
+    # Static and dynamic register size
+    for jaspr in [make_jaspr(main)(4), make_jaspr(lambda: main(4))()]:
+        balauca_jaspr = find_jaspr(jaspr, "jasp_balauca_mcp")
+        assert qubit_permeability(balauca_jaspr) == [True]
+        assert balauca_jaspr.isqfree is True
