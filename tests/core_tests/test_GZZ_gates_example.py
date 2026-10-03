@@ -17,6 +17,7 @@
 """Tests for the GZZ_converter and gms_multi_cx_fan_in functions in qrisp.misc.GMS_tools."""
 
 # Created by ann81984 at 05.05.2022
+import random
 import numpy as np
 
 from qrisp import QuantumCircuit
@@ -24,6 +25,8 @@ from qrisp.misc.GMS_tools import (
     GZZ_converter,
     gms_multi_cx_fan_in,
 )
+
+rng = random.Random(42)
 
 
 def test_GZZ_gates_example():
@@ -41,7 +44,7 @@ def test_GZZ_gates_example():
             matrix = np.zeros((n, n))
             for i in range(n):
                 for j in range(n):
-                    matrix[i, j] = random.randint(0, 2**bit - 1)
+                    matrix[i, j] = rng.randint(0, 2**bit - 1)
 
             det = np.round(np.linalg.det(matrix) % 2**bit)
 
