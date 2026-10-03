@@ -305,28 +305,35 @@ class ConditionEnvironment(QuantumEnvironment):
     body is controlled on the truth value, and afterwards the truth value and all
     intermediate results of the evaluation are uncomputed and deleted. If the
     condition is itself controlled, only the body is controlled. As an example, we
-    tag the states of a :ref:`QuantumFloat` that are smaller than 3 or equal to 7.
-    The comparisons create two intermediate :ref:`QuantumBools <QuantumBool>`,
-    which are uncomputed together with the truth value: ::
+    search for the states of a :ref:`QuantumFloat` that are smaller than 3 or equal
+    to 7 with :ref:`Grover's algorithm <grovers_alg>`. The oracle tags these states
+    with a phase. The comparisons create two intermediate
+    :ref:`QuantumBools <QuantumBool>`, which are uncomputed together with the
+    truth value: ::
 
-        from qrisp import QuantumFloat, h, quantum_condition, z
+        from qrisp import QuantumFloat, quantum_condition, z
+        from qrisp.grover import grovers_alg
         from qrisp.jasp import terminal_sampling
 
         @quantum_condition
         def small_or_seven(qf):
             return (qf < 3) | (qf == 7)
 
-        @terminal_sampling
-        def main():
-            qf = QuantumFloat(3)
-            h(qf)
+        def oracle(qf):
             with small_or_seven(qf) as cond_bool:
                 z(cond_bool)
-            h(qf)
+
+        @terminal_sampling
+        def main():
+            qf = QuantumFloat(4)
+            grovers_alg(qf, oracle, iterations=1)
             return qf
 
+    Four of the 16 states are tagged, so a single Grover iteration finds them with
+    certainty:
+
     >>> main()
-    {4.0: 0.25, 5.0: 0.25, 6.0: 0.25, 7.0: 0.25}
+    {0.0: 0.25, 1.0: 0.25, 2.0: 0.25, 7.0: 0.25}
 
     Comparisons that are entered directly, such as ``with qf == 5:`` or
     ``with qf < 3:``, are conditions as well. Compound expressions such as
