@@ -89,6 +89,25 @@ def test_condition_with_intermediates(capsys):
     assert "Faulty uncomputation" not in capsys.readouterr().out
 
 
+@quantum_condition
+@qache
+def small_or_seven_qached(qf):
+    return (qf < 3) | (qf == 7)
+
+
+def test_qached_condition(capsys):
+    # The intermediates are allocated inside of the qached function
+
+    def body(qf, t, u):
+        with small_or_seven_qached(qf):
+            t.flip()
+
+    assert run_classical(body) == [(v, v < 3 or v == 7, 0) for v in range(8)]
+
+    jax.effects_barrier()
+    assert "Faulty uncomputation" not in capsys.readouterr().out
+
+
 def test_infix_conditions():
 
     def equal(qf, t, u):
@@ -247,7 +266,14 @@ def test_nested():
             with qf > 2:
                 t.flip()
 
+    def mixed(qf, t, u):
+        with small_or_seven(qf):
+            with qf > 1:
+                t.flip()
+
+    # The inner conditions change qf temporarily, but leave it unchanged as a whole
     assert run_classical(body) == [(v, 2 < v < 6, 0) for v in range(8)]
+    assert run_classical(mixed) == [(v, v in (2, 7), 0) for v in range(8)]
 
 
 def test_static_and_dynamic_size():
@@ -329,13 +355,82 @@ def test_error_intermediate_modified():
         trace(body)
 
 
-def test_error_measurement():
+@qache
+def measure_inside(qv):
+    return measure(qv)
 
-    def body(qf, t):
+
+def test_error_measurement_or_reset():
+    # Measurements of qubits that a function allocates itself are allowed, see
+    # test_balauca_on_truth_value
+
+    def direct(qf, t):
         with small_or_seven(qf):
             measure(t)
 
-    with pytest.raises(ConditionCompilationError, match="performs a measurement"):
+    def in_function(qf, t):
+        with small_or_seven(qf):
+            measure_inside(t)
+
+    def reset_qubit(qf, t):
+        with small_or_seven(qf):
+            reset(t)
+
+    def reset_truth_value(qf, t):
+        with small_or_seven(qf) as flag:
+            reset(flag)
+
+    for body in (direct, in_function, reset_qubit, reset_truth_value):
+        with pytest.raises(ConditionCompilationError, match="performs a measurement or a reset"):
+            trace(body)
+
+
+def test_input_used_as_control():
+
+    def body(qf, t, u):
+        with small_or_seven(qf):
+            cx(qf[0], t[0])
+
+    assert run_classical(body) == [(v, (v < 3 or v == 7) and v % 2 == 1, 0) for v in range(8)]
+
+
+def test_error_input_modified():
+
+    def flip_input(qf, t):
+        with small_or_seven(qf):
+            x(qf[0])
+
+    def compare_input(qf, t):
+        # The comparison changes qf temporarily
+        with small_or_seven(qf):
+            cx(qf > 2, t)
+
+    for body in (flip_input, compare_input):
+        with pytest.raises(ConditionCompilationError, match="changes one of its arguments"):
+            trace(body)
+
+
+@qache
+def phase_and_flip(flag, t):
+    z(flag)
+    x(t)
+
+
+def test_block_on_truth_value():
+
+    def oracle(qf):
+        with small_or_seven(qf) as flag:
+            for i in jrange(1):
+                z(flag)
+
+    assert phase_distribution(oracle) == phase_distribution(reference_oracle)
+
+    def body(qf, t):
+        # x(t) would be executed even if the condition is false
+        with small_or_seven(qf) as flag:
+            phase_and_flip(flag, t)
+
+    with pytest.raises(ConditionCompilationError, match="together with operations that don't involve it"):
         trace(body)
 
 
@@ -348,9 +443,23 @@ def test_error_temporary_in_classical_control_flow():
             cx(qf[0], tmp[0])
         return qf == 1
 
-    def body(qf, t):
-        with loop_condition(qf):
-            t.flip()
+    @qache
+    def allocate(qf):
+        tmp = QuantumBool()
+        cx(qf[0], tmp[0])
 
-    with pytest.raises(ConditionCompilationError, match="inside classical control flow"):
-        trace(body)
+    @quantum_condition
+    def hidden_loop_condition(qf):
+        # The QuantumBool is hidden inside of the qached function
+        for i in jrange(2):
+            allocate(qf)
+        return qf == 1
+
+    for condition in (loop_condition, hidden_loop_condition):
+
+        def body(qf, t):
+            with condition(qf):
+                t.flip()
+
+        with pytest.raises(ConditionCompilationError, match="inside classical control flow"):
+            trace(body)

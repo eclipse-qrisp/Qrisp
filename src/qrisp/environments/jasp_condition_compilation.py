@@ -16,7 +16,8 @@
 
 """Compiles a ConditionEnvironment in Jasp, including the uncomputation of the condition and its intermediates."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from typing import Any
 
 from jax.core import DropVar
@@ -31,6 +32,7 @@ from qrisp.jasp import (
     injection_transform,
     make_jaspr,
 )
+from qrisp.jasp.interpreter_tools import eval_jaxpr, extract_invalues, insert_call_outvalues
 from qrisp.jasp.jasp_expression.control_transform import control_eqn
 from qrisp.jasp.jasp_expression.environment_collection import dummy_debug_info
 from qrisp.jasp.primitives import delete_qubits_p, get_qubit
@@ -48,25 +50,33 @@ from qrisp.jasp.primitives import delete_qubits_p, get_qubit
 #
 # The temporaries are the qubit arrays that C allocates and doesn't delete: the
 # QuantumBool holding the truth value and intermediate results, such as the
-# QuantumBools of the comparisons in (qf < 3) | (qf == 7). C_fwd is C,
-# additionally returning the temporaries it doesn't return. C_inv is the
-# inverse of C with the temporaries turned into inputs by injection_transform,
+# QuantumBools of the comparisons in (qf < 3) | (qf == 7). The functions that C
+# calls are inlined first, so that the temporaries they allocate are visible.
+# C_fwd is C, additionally returning the temporaries it doesn't return. C_inv is
+# the inverse of C with the temporaries turned into inputs by injection_transform,
 # so that it uncomputes the existing qubits instead of allocating new ones.
 #
 # Why the temporaries end up in |0>: since C maps computational basis states to
-# computational basis states (up to a phase), and U acts on the qubits of C only
-# as a control or through phases, U never changes the values of the qubits C
-# acted on. C_inv therefore finds them as C left them and maps them back.
+# computational basis states (up to a phase), and U acts on the qubits of C (its
+# inputs and the temporaries) only as a control or through phases, U never
+# changes the values of the qubits C acted on. C_inv therefore finds them as C
+# left them and maps them back.
 #
 # Operations in U that involve the truth value itself are not controlled on it:
 # phases on the truth value are applied as they are, and flips of the truth
 # value (QuantumBool.flip) invert the condition for the subsequent operations.
-# An odd number of flips is undone before C_inv.
+# An odd number of flips is undone before C_inv. A block (a function or
+# classical control flow) that involves the truth value is not controlled
+# either, so all of its operations must involve the truth value, unless its
+# permeability is declared with gate_wrap. Measurements and resets can't be
+# controlled and are rejected anywhere in U.
 #
 # The result carries a custom inverse (C_fwd ; U^dagger ; C_inv ; delete) and a
 # custom controlled version (C_fwd ; controlled U ; C_inv ; delete), because
 # structural inversion would reverse the allocation inside C_fwd, and plain
-# control would control C as well.
+# control would control C as well. All three are marked as permeable on the
+# inputs of C, which they leave unchanged. An enclosing condition on the same
+# inputs can therefore contain them.
 
 
 class ConditionCompilationError(Exception):
@@ -93,7 +103,7 @@ def compile_condition(body: Jaspr, name: str, description: str) -> Jaspr:
 
     """
     condition_eqn, truth_eqn = body.eqns[0], body.eqns[1]
-    condition = condition_eqn.params["jaxpr"]
+    condition = _inline_functions(condition_eqn.params["jaxpr"])
     analysis = _AllocationAnalysis(condition)
     temporaries = analysis.temporaries
     _check_temporaries(condition, temporaries, description)
@@ -107,12 +117,17 @@ def compile_condition(body: Jaspr, name: str, description: str) -> Jaspr:
     results = [Var(aval=var.aval) if isinstance(var, DropVar) else var for var in condition_eqn.outvars]
     use = _sub_jaspr(body, [*body.invars[:-1], *results], body.eqns[1:], body.outvars)
 
-    # Track the temporaries returned by the condition through the body
+    # Track the qubits that the body receives, including the inputs of the
+    # condition and the temporaries it returns, through the body
+    inputs = [var for var in condition_eqn.invars[:-1] if isinstance(var, Var) and _is_quantum(var)]
+    input_roots = [frozenset([var]) if _is_quantum(var) else frozenset() for var in body.invars[:-1]]
     result_roots = [analysis.roots_of(var) & set(temporaries) for var in returned]
-    use_analysis = _AllocationAnalysis(use, [frozenset()] * (len(body.invars) - 1) + result_roots + [frozenset()])
+    use_analysis = _AllocationAnalysis(use, input_roots + result_roots + [frozenset()])
     _check_body(use, use_analysis, temporaries, description)
 
-    controlled_use, flips = _control_on_truth_value(use, use_analysis, truth_eqn.outvars[0], temporaries, description)
+    truth_qubit = truth_eqn.outvars[0]
+    protected = _Protected(use_analysis.roots_of(truth_qubit), frozenset(temporaries), frozenset(inputs))
+    controlled_use, flips = _control_on_truth_value(use, use_analysis, truth_qubit, protected, description)
     truth_position = len(body.invars) - 1 + condition_eqn.outvars.index(truth_eqn.invars[0])
     use_jaspr = _undo_flips(controlled_use, flips, truth_position)
 
@@ -128,7 +143,7 @@ def compile_condition(body: Jaspr, name: str, description: str) -> Jaspr:
 
             outputs = _as_tuple(forward.embedd(*condition_args, name=name))
             result_values = outputs[: len(returned)]
-            temporary_values = dict(zip(extra, outputs[len(returned) :]))
+            temporary_values: dict[Any, Any] = dict(zip(extra, outputs[len(returned) :]))
             for var, value in zip(returned, result_values):
                 if _contains(temporaries, var):
                     temporary_values[var] = value
@@ -144,18 +159,37 @@ def compile_condition(body: Jaspr, name: str, description: str) -> Jaspr:
 
         return make_jaspr(conditioned)(*ctrl, *[var.aval for var in body.invars[:-1]])
 
-    res = condition_with(use_jaspr)
-    res.ctrl_jaspr = condition_with(control_jaspr(use_jaspr), ctrl=(AbstractQubit(),))
+    input_positions = [i for i, var in enumerate(body.invars[:-1]) if _contains(inputs, var)]
+    return _complete_condition(condition_with, use_jaspr, input_positions)
 
-    # A body with measurements can't be inverted. Inverting the condition then
-    # fails as for any other function with measurements.
+
+def _complete_condition(condition_with: Callable[..., Jaspr], use_jaspr: Jaspr, input_positions: list[int]) -> Jaspr:
+    """Return the condition executing ``use_jaspr``, with its inverse and controlled versions.
+
+    All of them are marked as permeable on the inputs of the condition, which
+    are the invars at ``input_positions`` (after the control qubit).
+    """
+
+    def with_controlled(use_jaspr: Jaspr) -> Jaspr:
+        """Return the condition executing ``use_jaspr``, with its controlled version."""
+        res = condition_with(use_jaspr)
+        res.ctrl_jaspr = condition_with(control_jaspr(use_jaspr), ctrl=(AbstractQubit(),))
+        res.permeability.update({res.invars[i]: True for i in input_positions})
+        res.ctrl_jaspr.permeability.update(
+            {res.ctrl_jaspr.invars[0]: True, **{res.ctrl_jaspr.invars[i + 1]: True for i in input_positions}}
+        )
+        return res
+
+    res = with_controlled(use_jaspr)
+
+    # Some bodies can't be inverted, for instance loops that are not based on
+    # jrange. Inverting the condition then fails as for any such function.
     try:
         use_inverse = use_jaspr.inverse()
     except Exception:
         return res
 
-    res_inverse = condition_with(use_inverse)
-    res_inverse.ctrl_jaspr = condition_with(control_jaspr(use_inverse), ctrl=(AbstractQubit(),))
+    res_inverse = with_controlled(use_inverse)
     res_inverse.inv_jaspr = res
     res.inv_jaspr = res_inverse
     return res
@@ -163,7 +197,7 @@ def compile_condition(body: Jaspr, name: str, description: str) -> Jaspr:
 
 def _check_temporaries(condition: Jaspr, temporaries: list[Var], description: str) -> None:
     """Raise an error if the condition creates temporaries that can't be uncomputed."""
-    leaks = any(_leaks_allocations(eqn) for eqn in _open(condition).eqns if eqn.primitive.name in ("cond", "while"))
+    leaks = any(_leaks_allocations(eqn) for eqn in _open(condition).eqns if eqn.primitive.name in _BLOCKS)
     if leaks or not all(_is_injectable(condition, temporary) for temporary in temporaries):
         raise ConditionCompilationError(
             f"{_capitalized(description)} creates a QuantumVariable inside classical control flow (a jrange loop "
@@ -215,50 +249,49 @@ def _undo_flips(controlled_use: Jaspr, flips: int, truth_position: int) -> Jaspr
     return make_jaspr(use_with_restore)(*[var.aval for var in controlled_use.invars[:-1]])
 
 
+@dataclass(frozen=True)
+class _Protected:
+    """The roots of the qubits that the body of a condition may only act on permeably."""
+
+    truth_value: frozenset
+    temporaries: frozenset
+    inputs: frozenset
+
+
 def _control_on_truth_value(
-    use: Jaspr, use_analysis: "_AllocationAnalysis", truth_qubit: Var, temporaries: list[Var], description: str
+    use: Jaspr, use_analysis: "_AllocationAnalysis", truth_qubit: Var, protected: _Protected, description: str
 ) -> tuple[Jaspr, int]:
     """Control the operations of the body on the truth value.
 
-    Operations that involve the truth value are not controlled. Operations that
-    involve the temporaries must act on them permeably (as a control or through
-    phases), except for flips of the truth value, which are counted.
+    Operations that involve the truth value are not controlled. Operations on
+    the protected qubits must be permeable on them, except for flips of the truth
+    value, which are counted. Measurements and resets are rejected, except for
+    those of qubits that a block allocates itself.
 
     Returns the controlled body and the number of flips.
     """
-    truth_roots = use_analysis.roots_of(truth_qubit)
-    temporary_roots = frozenset(temporaries)
+    # The qubits that exist at the level of the body
+    known = frozenset().union(*use_analysis.roots.values())
     new_eqns = []
     flips = 0
 
     for eqn in use.eqns:
-        name = eqn.primitive.name
-
-        if name == "jasp.measure":
+        in_roots = [use_analysis.roots_of(var) for var in eqn.invars]
+        if _measures_or_resets(eqn, in_roots, known):
             raise ConditionCompilationError(
-                f"The body of {description} performs a measurement, which can not be controlled on the "
-                "condition.\n\nMove the measurement out of the condition."
+                f"The body of {description} performs a measurement or a reset, which can not be controlled on "
+                "the condition.\n\nMove it out of the condition."
             )
 
-        if name not in ("jasp.quantum_gate", "jit", "cond", "while"):
+        if eqn.primitive.name not in ("jasp.quantum_gate", *_BLOCKS):
             new_eqns.append(eqn)
             continue
 
-        in_roots = [use_analysis.roots_of(var) for var in eqn.invars]
-        if not any(roots & temporary_roots for roots in in_roots):
-            new_eqns.append(control_eqn(eqn, truth_qubit))
-            continue
-
-        uses_truth_value = any(roots & truth_roots for roots in in_roots)
-        if uses_truth_value and name == "jasp.quantum_gate" and eqn.params["gate"].name == "x":
+        if _is_flip(eqn, in_roots, protected.truth_value):
             flips += 1
-        elif not _acts_permeably(eqn, in_roots, temporary_roots):
-            raise ConditionCompilationError(
-                f"The body of {description} applies an operation to its truth value or to one of its "
-                "intermediate results that is not supported. Inside of a condition, they can be used as a "
-                "control and for phases, and the truth value can be flipped with QuantumBool.flip() to invert "
-                "the condition.\n\nFor other operations, compute a separate QuantumBool."
-            )
+        else:
+            _check_operation(eqn, in_roots, protected, description)
+        uses_truth_value = any(roots & protected.truth_value for roots in in_roots)
         new_eqns.append(eqn if uses_truth_value else control_eqn(eqn, truth_qubit))
 
     controlled = Jaspr(
@@ -272,47 +305,107 @@ def _control_on_truth_value(
     return controlled, flips
 
 
+def _is_flip(eqn: JaxprEqn, in_roots: list[frozenset], truth_roots: frozenset) -> bool:
+    """Return True if ``eqn`` is an x gate on the truth value."""
+    is_x = eqn.primitive.name == "jasp.quantum_gate" and eqn.params["gate"].name == "x"
+    return is_x and bool(in_roots[0]) and in_roots[0] <= truth_roots
+
+
+def _check_operation(eqn: JaxprEqn, in_roots: list[frozenset], protected: _Protected, description: str) -> None:
+    """Raise an error if an operation of the body can't be executed inside of the condition."""
+    if any(roots & protected.temporaries for roots in in_roots) and not _acts_permeably(
+        eqn, in_roots, protected.temporaries
+    ):
+        raise ConditionCompilationError(
+            f"The body of {description} applies an operation to its truth value or to one of its "
+            "intermediate results that is not supported. Inside of a condition, they can be used as a "
+            "control and for phases, and the truth value can be flipped with QuantumBool.flip() to invert "
+            "the condition.\n\nFor other operations, compute a separate QuantumBool."
+        )
+    if any(roots & protected.inputs for roots in in_roots) and not _acts_permeably(eqn, in_roots, protected.inputs):
+        raise ConditionCompilationError(
+            f"The body of {description} changes one of its arguments. They must stay unchanged, since the "
+            "condition is uncomputed from them afterwards. Inside of a condition, its arguments can be used as "
+            "a control and for phases. This also excludes functions that change them only temporarily, such "
+            "as the comparisons <, >, <= and >=.\n\nChange the arguments outside of the condition, and enter "
+            "such comparisons as nested conditions, for instance with qf < 3:."
+        )
+    if any(roots & protected.truth_value for roots in in_roots) and not _acts_only_on(
+        eqn, in_roots, protected.truth_value
+    ):
+        raise ConditionCompilationError(
+            f"The body of {description} contains a function or classical control flow that uses the truth value "
+            "together with operations that don't involve it. Such blocks are not controlled on the condition, "
+            "so these operations would be executed even if the condition is false.\n\nMove these operations "
+            "out of the block. If the block is a function that uses the truth value as a control for them, "
+            "declare its permeability with gate_wrap on top of qache."
+        )
+
+
 def _acts_permeably(eqn: JaxprEqn, in_roots: list[frozenset], targets: frozenset) -> bool:
     """Return True if every gate in ``eqn`` that acts on ``targets`` is permeable on them.
 
     Blocks are analyzed recursively, unless they are a function whose arguments
-    acting on ``targets`` are declared permeable with ``gate_wrap``. Measurements
-    and deletions of the targets are not permeable.
+    acting on ``targets`` are declared permeable with ``gate_wrap``. Other
+    operations on the targets, such as measurements and deletions, are not
+    permeable.
     """
-    name = eqn.primitive.name
-
-    if name == "jasp.quantum_gate":
+    if eqn.primitive.name == "jasp.quantum_gate":
         gate = eqn.params["gate"]
         return all(gate.permeability.get(i) is True for i in range(gate.num_qubits) if in_roots[i] & targets)
 
-    if name in ("jasp.measure", "jasp.delete_qubits"):
-        return not any(roots & targets for roots in in_roots)
-
-    if name == "jit":
-        jaspr = eqn.params["jaxpr"]
-        declared = getattr(jaspr, "permeability", {})
-        is_declared = all(
-            declared.get(var) is True for var, roots in zip(_open(jaspr).invars, in_roots) if roots & targets
+    if eqn.primitive.name in _BLOCKS:
+        return _is_declared(eqn, in_roots, targets) or all(
+            _acts_permeably(sub_eqn, sub_roots, targets)
+            for sub_eqn, sub_roots in _sub_equations(eqn, in_roots)
+            if any(roots & targets for roots in sub_roots)
         )
-        bodies = [] if is_declared else [(jaspr, in_roots)]
-    elif name == "cond":
-        bodies = [(branch, in_roots[1:]) for branch in eqn.params["branches"]]
-    elif name == "while":
-        cond_nconsts = eqn.params["cond_nconsts"]
-        bodies = [(eqn.params["body_jaxpr"], in_roots[cond_nconsts:])]
-    elif not _acts_on_state(eqn):
-        # Qubit array operations like get_qubit don't act on the qubits
-        return True
-    else:
-        return not any(roots & targets for roots in in_roots)
 
-    for jaxpr, roots in bodies:
-        analysis = _AllocationAnalysis(jaxpr, roots)
-        for sub_eqn in _open(jaxpr).eqns:
-            sub_roots = [analysis.roots_of(var) for var in sub_eqn.invars]
-            if any(r & targets for r in sub_roots) and not _acts_permeably(sub_eqn, sub_roots, targets):
-                return False
+    # Qubit array operations like get_qubit don't act on the qubits
+    return not _acts_on_state(eqn) or not any(roots & targets for roots in in_roots)
+
+
+def _acts_only_on(eqn: JaxprEqn, in_roots: list[frozenset], targets: frozenset) -> bool:
+    """Return True if every gate in ``eqn`` certainly acts on a qubit that stems from ``targets``.
+
+    Blocks are analyzed recursively, unless they are a function whose arguments
+    acting on ``targets`` are declared permeable with ``gate_wrap``, which counts
+    as a single gate.
+    """
+    if eqn.primitive.name == "jasp.quantum_gate" or _is_declared(eqn, in_roots, targets):
+        return any(roots and roots <= targets for roots in in_roots)
+
+    if eqn.primitive.name in _BLOCKS:
+        return all(_acts_only_on(sub_eqn, sub_roots, targets) for sub_eqn, sub_roots in _sub_equations(eqn, in_roots))
+
     return True
+
+
+def _is_declared(eqn: JaxprEqn, in_roots: list[frozenset], targets: frozenset) -> bool:
+    """Return True if ``eqn`` calls a function that declares its arguments acting on ``targets`` permeable."""
+    if eqn.primitive.name != "jit":
+        return False
+    jaspr = eqn.params["jaxpr"]
+    declared = getattr(jaspr, "permeability", {})
+    involved = [var for var, roots in zip(_open(jaspr).invars, in_roots) if roots & targets]
+    return bool(involved) and all(declared.get(var) is True for var in involved)
+
+
+def _block_analyses(eqn: JaxprEqn, in_roots: list[frozenset]) -> list[tuple[Any, "_AllocationAnalysis"]]:
+    """Return the jaxprs of a jit, cond or while equation with the analyses of their roots."""
+    name = eqn.primitive.name
+    if name == "jit":
+        return [(eqn.params["jaxpr"], _AllocationAnalysis(eqn.params["jaxpr"], in_roots))]
+    if name == "cond":
+        return [(branch, _AllocationAnalysis(branch, in_roots[1:])) for branch in eqn.params["branches"]]
+    return [(eqn.params["body_jaxpr"], _while_analysis(eqn, in_roots))]
+
+
+def _sub_equations(eqn: JaxprEqn, in_roots: list[frozenset]) -> Iterator[tuple[JaxprEqn, list[frozenset]]]:
+    """Yield the equations of a block with the roots of their invars."""
+    for jaxpr, analysis in _block_analyses(eqn, in_roots):
+        for sub_eqn in _open(jaxpr).eqns:
+            yield sub_eqn, [analysis.roots_of(var) for var in sub_eqn.invars]
 
 
 class _Fresh:
@@ -396,17 +489,11 @@ def _eqn_roots(eqn: JaxprEqn, in_roots: list[frozenset]) -> tuple[list[frozenset
     if name == "jasp.delete_qubits":
         return [frozenset()] * len(eqn.outvars), set(in_roots[0])
 
-    if name in ("jit", "cond", "while"):
+    if name in _BLOCKS:
         outer = frozenset().union(*in_roots)
-        if name == "jit":
-            analyses = [_AllocationAnalysis(eqn.params["jaxpr"], in_roots)]
-        elif name == "cond":
-            analyses = [_AllocationAnalysis(branch, in_roots[1:]) for branch in eqn.params["branches"]]
-        else:
-            analyses = [_while_analysis(eqn, in_roots)]
         out_roots = [frozenset() for _ in eqn.outvars]
         deleted = set()
-        for analysis in analyses:
+        for _, analysis in _block_analyses(eqn, in_roots):
             out_roots = [
                 roots | {root if root in outer else _FRESH for root in analysis_roots}
                 for roots, analysis_roots in zip(out_roots, analysis.out_roots)
@@ -436,14 +523,63 @@ def _while_analysis(eqn: JaxprEqn, in_roots: list[frozenset]) -> _AllocationAnal
 
 
 def _leaks_allocations(eqn: JaxprEqn) -> bool:
-    """Return True if a cond or while equation allocates qubits that it neither deletes nor returns."""
-    bodies = eqn.params["branches"] if eqn.primitive.name == "cond" else [eqn.params["body_jaxpr"]]
-    for body in bodies:
+    """Return True if a block allocates qubits that it neither deletes nor returns, also inside of nested blocks."""
+    for body in _block_bodies(eqn):
         analysis = _AllocationAnalysis(body)
         returned = frozenset().union(*analysis.out_roots)
         if any(temporary not in returned for temporary in analysis.temporaries):
             return True
+        if any(_leaks_allocations(sub_eqn) for sub_eqn in _open(body).eqns if sub_eqn.primitive.name in _BLOCKS):
+            return True
     return False
+
+
+# Primitives of equations that contain jaxprs
+_BLOCKS = ("jit", "cond", "while")
+
+
+def _block_bodies(eqn: JaxprEqn) -> list:
+    """Return the jaxprs of a jit, cond or while equation."""
+    name = eqn.primitive.name
+    if name == "jit":
+        return [eqn.params["jaxpr"]]
+    if name == "cond":
+        return list(eqn.params["branches"])
+    return [eqn.params["cond_jaxpr"], eqn.params["body_jaxpr"]]
+
+
+def _measures_or_resets(eqn: JaxprEqn, in_roots: list[frozenset], targets: frozenset) -> bool:
+    """Return True if ``eqn`` measures or resets a qubit that stems from ``targets``, also inside of blocks.
+
+    Measurements and resets of qubits that a block allocates itself, for
+    instance in measurement-based uncomputation, don't stem from ``targets``.
+    """
+    if eqn.primitive.name in ("jasp.measure", "jasp.reset"):
+        return any(roots & targets for roots in in_roots)
+    return eqn.primitive.name in _BLOCKS and any(
+        _measures_or_resets(sub_eqn, sub_roots, targets) for sub_eqn, sub_roots in _sub_equations(eqn, in_roots)
+    )
+
+
+def _inline_functions(jaspr: Jaspr) -> Jaspr:
+    """Return ``jaspr`` with its jit equations inlined, including nested ones outside of classical control flow."""
+
+    def eqn_evaluator(eqn: JaxprEqn, context_dic: Any) -> bool | None:
+        """Evaluate jit equations by inlining their equations, and all others as they are."""
+        if eqn.primitive.name != "jit":
+            return True
+        res = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*extract_invalues(eqn, context_dic))
+        insert_call_outvalues(eqn, context_dic, res, len(eqn.outvars))
+        return None
+
+    def inlined(*args: Any) -> Any:
+        """Execute ``jaspr`` with its jit equations inlined."""
+        qs = TracingQuantumSession.get_instance()
+        res = _as_tuple(eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)(*args, qs.abs_qst))
+        qs.abs_qst = res[-1]
+        return res[:-1]
+
+    return make_jaspr(inlined)(*[var.aval for var in jaspr.invars[:-1]])
 
 
 def _is_injectable(jaxpr: Jaxpr | ClosedJaxpr, var: Var | Literal) -> bool:

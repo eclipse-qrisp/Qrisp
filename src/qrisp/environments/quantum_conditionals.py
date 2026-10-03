@@ -347,11 +347,20 @@ class ConditionEnvironment(QuantumEnvironment):
 
     Inside of the body, the truth value can be used as a control, for phases, and
     flipped with :meth:`QuantumBool.flip <qrisp.QuantumBool.flip>` to invert the
-    condition for the subsequent operations. Other operations on the truth value
-    and measurements inside of the body raise an error, as do intermediate results
-    that are created inside of classical control flow. A function that uses the
-    truth value as a control or for phases only as a whole, for instance by
-    flipping it before and after, can be declared with
+    condition for the subsequent operations. The arguments of the condition can be
+    used as a control and for phases, but not changed, not even temporarily as by
+    the comparisons ``<``, ``>``, ``<=`` and ``>=``. Such comparisons can be
+    entered as nested conditions instead, e.g. ``with qf > 2:``. Qubits taken from
+    the arguments before the ``with`` statement, as in ``q = qf[0]``, are not
+    recognized as part of the arguments, so use ``qf[0]`` inside. Other operations
+    on the truth value or the arguments, measurements and resets raise an error,
+    as do intermediate results that are created inside of classical control flow.
+
+    Operations that involve the truth value are not controlled on it. Therefore, a
+    function or classical control flow that involves the truth value may only
+    contain operations that involve it as well. A function that uses the truth
+    value as a control or for phases only as a whole, for instance by flipping it
+    before and after, can be declared with
     ``@gate_wrap(permeability=..., is_qfree=...)`` on top of ``@qache``. The truth
     value and the intermediate results can not be used after the condition.
 
