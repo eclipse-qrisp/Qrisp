@@ -1344,6 +1344,26 @@ def find_calling_line(level=0):
     return str(traceback.format_list(stack)[1].split("\n")[1].strip())  # prints "a = fct1()"
 
 
+def enters_with_statement(level=0):
+    """Return True if the result of the call ``level`` frames above the caller is entered by a with statement.
+
+    This is the case for ``with qf == 3:``, but not for ``with conjugate(lambda qf: qf == 3)(qf):``
+    or ``with (qf == 3) | (qf == 5):``, where the result is processed further first.
+    Uses the same ``level`` as :func:`find_calling_line`.
+    """
+    import dis
+    import sys
+
+    frame = sys._getframe(level + 1)
+    instructions = list(dis.get_instructions(frame.f_code))
+    # During a call, f_lasti can point into the inline cache that follows the
+    # calling instruction (Python 3.11 and 3.12), so find the instruction it belongs to
+    for i, instruction in enumerate(instructions[:-1]):
+        if instruction.offset <= frame.f_lasti < instructions[i + 1].offset:
+            return instructions[i + 1].opname in ("BEFORE_WITH", "SETUP_WITH")
+    return False
+
+
 def retarget_instructions(data, source_qubits, target_qubits):
     from qrisp import QuantumEnvironment
 

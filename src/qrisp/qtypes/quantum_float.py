@@ -891,10 +891,10 @@ class QuantumFloat(QuantumVariable):
     def __lt__(self, other: QuantumFloat | int | float) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (<)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
-        from qrisp.alg_primitives.arithmetic import gidney_adder, lt, uint_lt
+        from qrisp.alg_primitives.arithmetic import lt, uint_lt_condition
 
         if check_for_tracing_mode():
-            return uint_lt(self, other, gidney_adder)  # pyright: ignore[reportReturnType]
+            return uint_lt_condition(self, other)  # pyright: ignore[reportReturnType]
         if not isinstance(other, (QuantumFloat, int, float)):
             raise TypeError(f"Comparison with type {type(other)} not implemented")
 
@@ -903,10 +903,10 @@ class QuantumFloat(QuantumVariable):
     def __gt__(self, other: QuantumFloat | int | float) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (>)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
-        from qrisp.alg_primitives.arithmetic import gidney_adder, gt, uint_gt
+        from qrisp.alg_primitives.arithmetic import gt, uint_gt_condition
 
         if check_for_tracing_mode():
-            return uint_gt(self, other, gidney_adder)  # pyright: ignore[reportReturnType]
+            return uint_gt_condition(self, other)  # pyright: ignore[reportReturnType]
         if not isinstance(other, (QuantumFloat, int, float)):
             raise TypeError(f"Comparison with type {type(other)} not implemented")
 
@@ -915,10 +915,10 @@ class QuantumFloat(QuantumVariable):
     def __le__(self, other: QuantumFloat | int | float) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (<=)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
-        from qrisp.alg_primitives.arithmetic import gidney_adder, leq, uint_le
+        from qrisp.alg_primitives.arithmetic import leq, uint_le_condition
 
         if check_for_tracing_mode():
-            return uint_le(self, other, gidney_adder)
+            return uint_le_condition(self, other)
         if not isinstance(other, (QuantumFloat, int, float)):
             raise TypeError(f"Comparison with type {type(other)} not implemented")
 
@@ -927,10 +927,10 @@ class QuantumFloat(QuantumVariable):
     def __ge__(self, other: QuantumFloat | int | float) -> "QuantumBool":
         """Compare this QuantumFloat to another QuantumFloat or a classical scalar (>=)."""
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
-        from qrisp.alg_primitives.arithmetic import geq, gidney_adder, uint_ge
+        from qrisp.alg_primitives.arithmetic import geq, uint_ge_condition
 
         if check_for_tracing_mode():
-            return uint_ge(self, other, gidney_adder)
+            return uint_ge_condition(self, other)
         if not isinstance(other, (QuantumFloat, int, float)):
             raise TypeError(f"Comparison with type {type(other)} not implemented")
 

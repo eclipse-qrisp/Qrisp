@@ -21,10 +21,9 @@ from qrisp.core.gate_application_functions import p, rz, x, z
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import merge
 from qrisp.environments.quantum_environments import QuantumEnvironment
-from qrisp.environments.quantum_inversion import invert
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.misc import (
-    find_calling_line,
+    enters_with_statement,
     perm_lock,
     perm_unlock,
     redirect_qfunction,
@@ -51,8 +50,9 @@ def quantum_condition(function):
 # Finally, the function evaluating the truth value will be uncomputed and
 # the environment is reset for it's next use.
 class ConditionEnvironment(QuantumEnvironment):
-    r"""This class enables the usage of *if*-conditionals as we are used to from
-    classical programming: ::
+    r"""This class enables the usage of *if*-conditionals as we are used to from classical programming.
+
+    For example: ::
 
         from qrisp import QuantumChar, QuantumFloat, h, multi_measurement
 
@@ -300,12 +300,80 @@ class ConditionEnvironment(QuantumEnvironment):
     >>> print("Excpected outcomes:", [n*(n+1)/2 for n in n_results.keys()])
     Excpected outcomes: [10.0, 15.0]
 
+    **Quantum conditions in Jasp**
+
+    Conditions also work in :ref:`Jasp <jasp>`. The condition is evaluated, the
+    body is controlled on the truth value, and afterwards the truth value and all
+    intermediate results of the evaluation are uncomputed and deleted. If the
+    condition is itself controlled, only the body is controlled. As an example, we
+    search for the states of a :ref:`QuantumFloat` that are smaller than 3 or equal
+    to 7 with :ref:`Grover's algorithm <grovers_alg>`. The oracle tags these states
+    with a phase. The comparisons create two intermediate
+    :ref:`QuantumBools <QuantumBool>`, which are uncomputed together with the
+    truth value: ::
+
+        from qrisp import QuantumFloat, quantum_condition, z
+        from qrisp.grover import grovers_alg
+        from qrisp.jasp import terminal_sampling
+
+        @quantum_condition
+        def small_or_seven(qf):
+            return (qf < 3) | (qf == 7)
+
+        def oracle(qf):
+            with small_or_seven(qf) as cond_bool:
+                z(cond_bool)
+
+        @terminal_sampling
+        def main():
+            qf = QuantumFloat(4)
+            grovers_alg(qf, oracle, iterations=1)
+            return qf
+
+    Four of the 16 states are tagged, so a single Grover iteration finds them with
+    certainty:
+
+    >>> main()
+    {0.0: 0.25, 1.0: 0.25, 2.0: 0.25, 7.0: 0.25}
+
+    Comparisons that are entered directly, such as ``with qf == 5:`` or
+    ``with qf < 3:``, are conditions as well. Compound expressions such as
+    ``with (qf < 3) | (qf == 7):`` are not: they are evaluated before the ``with``
+    statement, and in Jasp neither their result nor the intermediate results can
+    be uncomputed afterwards, so they are not supported. Enter them with
+    ``quantum_condition`` instead: ::
+
+        with quantum_condition(lambda qf: (qf < 3) | (qf == 7))(qf) as cond_bool:
+            z(cond_bool)
+
+    Inside of the body, the truth value can be used as a control, for phases, and
+    flipped with :meth:`QuantumBool.flip <qrisp.QuantumBool.flip>` to invert the
+    condition for the subsequent operations. The arguments of the condition can be
+    used as a control and for phases, but not changed, not even temporarily as by
+    the comparisons ``<``, ``>``, ``<=`` and ``>=``. Such comparisons can be
+    entered as nested conditions instead, e.g. ``with qf > 2:``. Qubits taken from
+    the arguments before the ``with`` statement, as in ``q = qf[0]``, are not
+    recognized as part of the arguments, so use ``qf[0]`` inside. Other operations
+    on the truth value or the arguments, measurements and resets raise an error,
+    as do intermediate results that are created inside of classical control flow.
+
+    Operations that involve the truth value are not controlled on it. Therefore, a
+    function or classical control flow that involves the truth value may only
+    contain operations that involve it as well. A function that uses the truth
+    value as a control or for phases only as a whole, for instance by flipping it
+    before and after, can be declared with
+    ``@gate_wrap(permeability=..., is_qfree=...)`` on top of ``@qache``. The truth
+    value and the intermediate results can not be used after the condition.
+
     """
 
     # Constructor of the class
 
     def __init__(self, cond_eval_function, args, kwargs={}):
+        QuantumEnvironment.__init__(self)
+
         # The function which evaluates the condition - should return a QuantumBool
+        self.condition_function = cond_eval_function
 
         def save_cond_eval(*args, **kwargs):
             with fast_append(0):
@@ -320,15 +388,36 @@ class ConditionEnvironment(QuantumEnvironment):
         # Save the keyword arguments
         self.kwargs = kwargs
 
+        self.manual_allocation_management = True
+
+        if check_for_tracing_mode():
+            return
+
         # Note the QuantumSession of the arguments of the arguments
 
         self.arg_qs = merge(args)
 
-        self.manual_allocation_management = True
-
     # Method to enter the environment
     def __enter__(self):
         from qrisp.qtypes.quantum_bool import QuantumBool
+
+        if check_for_tracing_mode():
+            from qrisp.environments.conjugation_environment import PJITEnvironment
+
+            QuantumEnvironment.__enter__(self)
+
+            # The condition is evaluated in a block of its own, which jcompile
+            # finds as the first equation of the body.
+            with PJITEnvironment():
+                res = self.condition_function(*self.args, **self.kwargs)
+
+            if not isinstance(res, QuantumBool):
+                raise Exception("Tried to enter a quantum condition whose function doesn't return a QuantumBool")
+
+            # Extracting the truth value right after the evaluation marks it for
+            # jcompile as the second equation of the body.
+            self.condition_truth_value = res[0]
+            return res
 
         # For more information on why this attribute is neccessary check the comment
         # on the line containing subcondition_truth_values = []
@@ -354,6 +443,9 @@ class ConditionEnvironment(QuantumEnvironment):
 
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
 
+        if check_for_tracing_mode():
+            return
+
         for env in self.env_qs.env_stack[::-1]:
             if isinstance(env, (ConditionEnvironment, ControlEnvironment)):
                 self.parent_cond_env = env
@@ -361,6 +453,28 @@ class ConditionEnvironment(QuantumEnvironment):
             if not isinstance(env, (InversionEnvironment, ConjugationEnvironment)):
                 if not type(env) == QuantumEnvironment:
                     break
+
+    def jcompile(self, eqn, context_dic):
+        """Replace the collected condition by the evaluation, the controlled body and the uncomputation."""
+        import jax
+
+        from qrisp.environments.jasp_condition_compilation import compile_condition, describe_condition
+        from qrisp.jasp import extract_invalues, get_last_equation, insert_outvalues
+
+        args = extract_invalues(eqn, context_dic)
+        body = eqn.params["jaspr"].flatten_environments()
+
+        name = getattr(self.condition_function, "__name__", "<lambda>")
+        compiled = compile_condition(
+            body, "condition" if name == "<lambda>" else name, describe_condition(self.condition_function)
+        )
+
+        res = jax.jit(compiled.eval)(*args)
+        jit_eqn = get_last_equation()
+        jit_eqn.params["jaxpr"] = compiled
+        jit_eqn.params["name"] = "condition_env"
+
+        insert_outvalues(eqn, context_dic, res if isinstance(res, tuple) else (res,))
 
     # Compile method
     def compile(self):
@@ -382,6 +496,10 @@ class ConditionEnvironment(QuantumEnvironment):
             # this environments quantum condition. For this we differentiate between
             # the case that this condition is embedded in another condition or not
 
+            # The instructions of the evaluation are recorded, so that it can be
+            # uncomputed by appending their inverse (see below).
+            evaluation_start = len(self.env_qs.data)
+
             if self.parent_cond_env is not None:
                 # In the parent case we also need to make sure that the code is executed
                 # if the parent environment is executed. For this a possible approach
@@ -400,6 +518,8 @@ class ConditionEnvironment(QuantumEnvironment):
                         "a condition evaluation function not returning a QuantumBool"
                     )
 
+                evaluation = self.compile_evaluation(evaluation_start)
+
                 # Create and execute phase tolerant toffoli gate
                 toffoli_qb_list = [
                     self.parent_cond_env.condition_truth_value,
@@ -416,9 +536,7 @@ class ConditionEnvironment(QuantumEnvironment):
 
                 redirect_qfunction(self.cond_eval_function)(*self.args, target=self.qbool, **self.kwargs)
 
-                if isinstance(self.env_qs.data[-1], QuantumEnvironment):
-                    env = self.env_qs.data.pop(-1)
-                    env.compile()
+                evaluation = self.compile_evaluation(evaluation_start)
 
                 cond_eval_bool = self.qbool
 
@@ -521,36 +639,45 @@ class ConditionEnvironment(QuantumEnvironment):
                 self.qbool.delete()
 
             # We now uncompute the environments' truth value
+            self.uncompute_evaluation(evaluation)
 
-            # For this we can use the uncompute method, which will however not
-            # recompute any intermediate values, therefore blocking alot of qubits
-            # during execution. Especially in nested environments this can quickly
-            # become a problem, because the blocked ancillae can not be reused
-            # for further condition evaluations.
-
-            # For the condition environment examples we saw an increase from 36 to 44
-            # qubits without recomputation while only lowering the depth by about 25%
-
-            # There might be cases where recomputation based uncomputation
-            # is not worth it but for now, we leave it
-
-            recompute = True
-            # if not recompute:
-            #     try:
-            #         cond_eval_bool.uncompute()
-            #     except:
-            #         recompute = True
-
-            if recompute:
-                with invert():
-                    redirected_qfunction = redirect_qfunction(self.cond_eval_function)
-                    redirected_qfunction(*self.args, target=cond_eval_bool, **self.kwargs)
-
-                if isinstance(self.env_qs.data[-1], QuantumEnvironment):
-                    env = self.env_qs.data.pop(-1)
-                    env.compile()
-
+            if self.parent_cond_env is None:
                 cond_eval_bool.delete()
+
+    def uncompute_evaluation(self, evaluation):
+        """Uncompute the evaluation of the condition by appending the inverse of its instructions.
+
+        The inverse acts on the qubits of the evaluation, including its
+        intermediate results, which are deleted afterwards. Re-evaluating the
+        condition function inverted would instead create new intermediate results.
+        """
+        allocated = {instr.qubits[0] for instr in evaluation if instr.op.name == "qb_alloc"}
+        deallocated = {instr.qubits[0] for instr in evaluation if instr.op.name == "qb_dealloc"}
+        intermediates = [qv for qv in self.env_qs.qv_list if qv.reg and set(qv.reg).issubset(allocated - deallocated)]
+        intermediate_qubits = {qb for qv in intermediates for qb in qv.reg}
+
+        for instr in evaluation[::-1]:
+            inverse_instr = instr.inverse()
+            # The intermediates are deallocated when they are deleted below
+            if inverse_instr.op.name == "qb_dealloc" and inverse_instr.qubits[0] in intermediate_qubits:
+                continue
+            self.env_qs.append(inverse_instr)
+
+        for qv in intermediates:
+            qv.delete()
+
+    def compile_evaluation(self, start):
+        """Compile the environments appended since index ``start`` and return the instructions of the evaluation."""
+        recorded = self.env_qs.data[start:]
+        del self.env_qs.data[start:]
+
+        for instr in recorded:
+            if isinstance(instr, QuantumEnvironment):
+                instr.compile()
+            else:
+                self.env_qs.append(instr)
+
+        return list(self.env_qs.data[start:])
 
 
 # This decorator allows to have conditional evaluations to return condition environments
@@ -585,19 +712,17 @@ def adaptive_condition(cond_eval_function):
     def new_cond_eval_function(*args, **kwargs):
         from qrisp import auto_uncompute
 
-        if check_for_tracing_mode():
-            return cond_eval_function(*args, **kwargs)
+        entered = enters_with_statement(2)
 
-        calling_line = find_calling_line(2)
+        # In Jasp, the ConditionEnvironment uncomputes intermediate results itself
+        if check_for_tracing_mode():
+            if entered:
+                return quantum_condition(cond_eval_function)(*args, **kwargs)
+            return cond_eval_function(*args, **kwargs)
 
         uncomputed_function = auto_uncompute(cond_eval_function)
 
-        if (
-            calling_line.split(" ")[0] == "with"
-            and "&" not in calling_line
-            and "|" not in calling_line
-            and "~" not in calling_line
-        ):
+        if entered:
             return quantum_condition(uncomputed_function)(*args, **kwargs)
         else:
             return uncomputed_function(*args, **kwargs)

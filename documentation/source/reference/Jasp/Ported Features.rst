@@ -44,6 +44,8 @@ Since Jasp is a fundamentally different compilation architecture, not all Qrisp 
      -    ✅
    * - :ref:`ConjugationEnvironment`
      -    ✅ 
+   * - :ref:`ConditionEnvironment`
+     -    ✅
    * - :ref:`Automatic Uncomputation <uncomputation>`
      -   	❌ 
    * - :ref:`QuantumArrays <QuantumArray>`

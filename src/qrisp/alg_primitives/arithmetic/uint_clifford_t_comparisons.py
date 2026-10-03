@@ -19,7 +19,7 @@
 import jax.numpy as jnp
 
 from qrisp.core import QuantumVariable, cx
-from qrisp.environments import conjugate, control, invert
+from qrisp.environments import adaptive_condition, conjugate, control, invert
 from qrisp.qtypes import QuantumBool
 
 
@@ -106,3 +106,40 @@ def uint_le(a, b, inpl_adder):
 
 def uint_ge(a, b, inpl_adder):
     return uint_less_than(a, b, inpl_adder).flip()
+
+
+# Comparisons used by QuantumFloat in Jasp. They return a ConditionEnvironment
+# when they are entered directly in a with statement (see adaptive_condition),
+# and a QuantumBool otherwise.
+
+
+@adaptive_condition
+def uint_lt_condition(a, b):
+    """Compare ``a < b`` with the Gidney adder."""
+    from qrisp.alg_primitives.arithmetic import gidney_adder
+
+    return uint_lt(a, b, gidney_adder)
+
+
+@adaptive_condition
+def uint_gt_condition(a, b):
+    """Compare ``a > b`` with the Gidney adder."""
+    from qrisp.alg_primitives.arithmetic import gidney_adder
+
+    return uint_gt(a, b, gidney_adder)
+
+
+@adaptive_condition
+def uint_le_condition(a, b):
+    """Compare ``a <= b`` with the Gidney adder."""
+    from qrisp.alg_primitives.arithmetic import gidney_adder
+
+    return uint_le(a, b, gidney_adder)
+
+
+@adaptive_condition
+def uint_ge_condition(a, b):
+    """Compare ``a >= b`` with the Gidney adder."""
+    from qrisp.alg_primitives.arithmetic import gidney_adder
+
+    return uint_ge(a, b, gidney_adder)
