@@ -16,6 +16,9 @@
 
 """Tests for the type aliases defined in qrisp.typing."""
 
+import typing
+from typing import Any, Sequence
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -24,11 +27,15 @@ import sympy
 from jax.core import Tracer
 from sympy import Symbol
 
+import qrisp.typing
+from qrisp import QuantumBool, QuantumFloat
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
+from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.typing import (
     ArrayLike,
     ClbitLike,
+    ControlLike,
     FloatLike,
     NDArrayLike,
     QubitLike,
@@ -229,3 +236,57 @@ class TestFloatLike:
     def test_non_floatlike_types_are_rejected(self, value):
         """Strings, lists, None, NumPy arrays, and complex numbers are not valid gate parameters."""
         assert not isinstance(value, FloatLike)
+
+
+# Type checkers reject a union containing a parameterized generic as the second
+# argument of isinstance, which works at runtime for the values that match it.
+CONTROL_LIKE: Any = ControlLike
+
+
+class TestControlLike:
+    """Tests for the ControlLike type alias."""
+
+    def test_is_built_on_first_access(self, monkeypatch):
+        """ControlLike is created by the module __getattr__ and then cached."""
+        monkeypatch.delitem(vars(qrisp.typing), "ControlLike", raising=False)
+        control_like = qrisp.typing.ControlLike
+        assert vars(qrisp.typing)["ControlLike"] is control_like
+
+    def test_members(self):
+        """ControlLike holds qubit and boolean types, and sequences of them."""
+        operand = (Qubit, QuantumVariable, bool, np.bool_, jax.Array, Tracer)
+        assert typing.get_args(ControlLike) == (
+            *operand,
+            Sequence[Qubit | QuantumVariable | bool | np.bool_ | jax.Array | Tracer],
+        )
+
+    @pytest.mark.parametrize(
+        "make_value",
+        [
+            lambda: Qubit("q"),
+            QuantumBool,
+            lambda: QuantumFloat(2),
+            lambda: True,
+            lambda: np.True_,
+            lambda: jnp.array(True),
+        ],
+    )
+    def test_accepted_values(self, make_value):
+        """Qubits, QuantumVariables, booleans and JAX arrays are instances of ControlLike."""
+        assert isinstance(make_value(), CONTROL_LIKE)
+
+    def test_jax_tracer(self):
+        """JAX tracers, such as traced measurement results, are instances of ControlLike."""
+        results = []
+
+        def f(value):
+            results.append(isinstance(value, CONTROL_LIKE))
+            return value
+
+        jax.make_jaxpr(f)(True)
+        assert results == [True]
+
+    def test_unknown_attribute_raises(self):
+        """The module __getattr__ only creates ControlLike."""
+        with pytest.raises(AttributeError, match="has no attribute 'NotAnAlias'"):
+            getattr(qrisp.typing, "NotAnAlias")

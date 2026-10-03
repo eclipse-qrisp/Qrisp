@@ -495,8 +495,9 @@ def process_measurement(invars: Sequence[Var | Literal], outvars: Sequence[Var],
         qubit_reg = context_dic[invars[0]]
         bit_array, meas_res = exec_multi_measurement(bit_array, qubit_reg)
     else:
-        # Single qubit measurement: return the bit value
-        meas_res = get_bit_array(bit_array, context_dic[invars[0]])
+        # Single qubit measurement: a boolean, as declared by the measurement
+        # primitive. The raw bit is an unsigned integer, on which ~ is not a negation.
+        meas_res = get_bit_array(bit_array, context_dic[invars[0]]).astype(bool)
 
     # Store results in context dictionary
     context_dic[outvars[1]] = (bit_array, context_dic[invars[1]][1])
