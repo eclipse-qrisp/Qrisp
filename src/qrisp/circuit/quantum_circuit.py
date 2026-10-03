@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -33,6 +34,7 @@ from qiskit.visualization import circuit_drawer
 import qrisp.circuit.standard_operations as ops
 from qrisp.circuit import Clbit, Instruction, Operation, Qubit, U3Gate
 from qrisp.misc import (
+    QrispRemovedFunctionWarning,
     cnot_count,
     cnot_depth_indicator,
     get_depth_dic,
@@ -2140,19 +2142,20 @@ class QuantumCircuit:
         return qrisp_to_stim(self, return_measurement_map, return_detector_map, return_observable_map)
 
     def to_pytket(self):
-        """Method to convert the given QuantumCircuit to a
-        `PyTket <https://cqcl.github.io/tket/pytket/api/#>`_ Circuit.
+        """Method to convert the given QuantumCircuit to a PyTket Circuit.
 
-        Returns
-        -------
-        pytket.Circuit
-            The converted PyTket circuit.
+        The ``to_pytket`` converter has been removed in Qrisp 0.10 and this
+        method is no longer functional.
 
         """
-        # NOTE: This is here to avoid circular imports
-        from qrisp.interface import pytket_converter
-
-        return pytket_converter(self)
+        warnings.warn(
+            "The 'to_pytket' converter has been removed in Qrisp 0.10 and is no longer available.",
+            QrispRemovedFunctionWarning,
+            stacklevel=2,
+        )
+        raise NotImplementedError(
+            "The 'to_pytket' converter has been removed in Qrisp 0.10 and is no longer available."
+        )
 
     def to_cirq(self):
         """Method to convert the given QuantumCircuit to a Cirq Circuit.
