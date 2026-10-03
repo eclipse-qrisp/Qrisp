@@ -24,7 +24,27 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from qrisp import *
+from qrisp import (
+    BigInteger,
+    QuantumArray,
+    QuantumBool,
+    QuantumFloat,
+    QuantumModulus,
+    QuantumVariable,
+    boolean_simulation,
+    conjugate,
+    control,
+    custom_inversion,
+    h,
+    jaspify,
+    measure,
+    measure_to_big_integer,
+    num_qubits,
+    qache,
+    x,
+)
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import bi_pow2mod
+from qrisp.qtypes.quantum_modulus import _coerce_bigint_operand, _moduli_neq
 
 CREATE_MEASURE_SEEDS = [0, 1, 2]
 CREATE_MEASURE_SIZE = [2, 4, 8]
@@ -136,8 +156,6 @@ def test_modulus_biginteger_qc_inplace(seed, size):
 
 
 def test_modulus_create_measure():
-    from qrisp import QuantumModulus, jaspify, measure
-
     @jaspify
     def test():
         a = QuantumModulus(13)
@@ -157,8 +175,6 @@ def test_modulus_create_measure():
 
 
 def test_modulus_qc_inplace_multiply():
-    from qrisp import QuantumModulus, jaspify, measure
-
     @jaspify
     def test():
         a = QuantumModulus(13)
@@ -170,8 +186,6 @@ def test_modulus_qc_inplace_multiply():
 
 
 def test_modulus_qc_multiply():
-    from qrisp import QuantumModulus, jaspify, measure
-
     @jaspify
     def test_l():
         a = QuantumModulus(13)
@@ -192,8 +206,6 @@ def test_modulus_qc_multiply():
 
 
 def test_modulus_numpy_scalar_add_with_nonzero_shift():
-    from qrisp import QuantumModulus, jaspify, measure
-
     @jaspify
     def test_add():
         a = QuantumModulus(13)
@@ -206,8 +218,6 @@ def test_modulus_numpy_scalar_add_with_nonzero_shift():
 
 
 def test_modulus_scalar_sub_with_nonzero_shift():
-    from qrisp import QuantumModulus, jaspify, measure
-
     @jaspify
     def test_sub():
         a = QuantumModulus(13)
@@ -220,8 +230,6 @@ def test_modulus_scalar_sub_with_nonzero_shift():
 
 
 def test_modulus_qq_multiply():
-    from qrisp import QuantumModulus, jaspify, measure
-
     @jaspify
     def test():
         a = QuantumModulus(13)
@@ -242,7 +250,6 @@ def test_modulus_qq_multiply_standard_form():
     directly as the reduction shift, which was 0 for standard-form inputs and
     produced wrong results.
     """
-    from qrisp import QuantumModulus, jaspify, measure
 
     @jaspify
     def test():
@@ -351,8 +358,6 @@ def test_qq_multiply_traced_biginteger_larger_prime():
 
 def test_bi_pow2mod_basic():
     """Sanity-check bi_pow2mod against Python pow(2, e, N)."""
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import bi_pow2mod
-
     for p in [7, 13, 31, 97, 1213]:
         N_bi = BigInteger.create_static(p, 1)
         for e in [0, 1, 2, 5, 10, 20, 32]:
@@ -421,8 +426,6 @@ def test_measure_traced_scalar_modulus_traced_shift():
 
 def test_moduli_neq_static_equal():
     """Static BigInteger moduli with equal values should return False."""
-    from qrisp.qtypes.quantum_modulus import _moduli_neq
-
     a = BigInteger.create_static(13, 1)
     b = BigInteger.create_static(13, 1)
     assert _moduli_neq(a, b) is False
@@ -430,8 +433,6 @@ def test_moduli_neq_static_equal():
 
 def test_moduli_neq_static_different_value():
     """Static BigInteger moduli with different values should return True."""
-    from qrisp.qtypes.quantum_modulus import _moduli_neq
-
     a = BigInteger.create_static(13, 1)
     b = BigInteger.create_static(17, 1)
     assert _moduli_neq(a, b) is True
@@ -439,8 +440,6 @@ def test_moduli_neq_static_different_value():
 
 def test_moduli_neq_static_different_shape():
     """Static BigInteger moduli with different limb counts should return True."""
-    from qrisp.qtypes.quantum_modulus import _moduli_neq
-
     a = BigInteger.create_static(13, 1)
     b = BigInteger.create_static(13, 2)
     assert _moduli_neq(a, b) is True
@@ -448,8 +447,6 @@ def test_moduli_neq_static_different_shape():
 
 def test_moduli_neq_mixed_types():
     """Comparing BigInteger(13) with int 13 should return False (they are equal)."""
-    from qrisp.qtypes.quantum_modulus import _moduli_neq
-
     a = BigInteger.create_static(13, 1)
     assert _moduli_neq(a, 13) is False
     assert _moduli_neq(13, a) is False
@@ -457,8 +454,6 @@ def test_moduli_neq_mixed_types():
 
 def test_moduli_neq_mixed_types_different():
     """Comparing BigInteger(13) with int 17 should return True."""
-    from qrisp.qtypes.quantum_modulus import _moduli_neq
-
     a = BigInteger.create_static(13, 1)
     assert _moduli_neq(a, 17) is True
     assert _moduli_neq(17, a) is True
@@ -466,15 +461,12 @@ def test_moduli_neq_mixed_types_different():
 
 def test_moduli_neq_plain_ints():
     """Plain int moduli should compare normally."""
-    from qrisp.qtypes.quantum_modulus import _moduli_neq
-
     assert _moduli_neq(13, 13) is False
     assert _moduli_neq(13, 17) is True
 
 
 def test_moduli_neq_raises_on_traced():
     """Traced BigInteger moduli must raise RuntimeError, not silently pass."""
-    from qrisp.qtypes.quantum_modulus import _moduli_neq
 
     # Create traced digits by running inside jax.jit
     @jax.jit
@@ -543,8 +535,6 @@ def test_coerce_from_biginteger_larger_raises():
 
 def test_coerce_bigint_operand_from_int():
     """_coerce_bigint_operand should convert int to BigInteger with correct limbs."""
-    from qrisp.qtypes.quantum_modulus import _coerce_bigint_operand
-
     modulus = BigInteger.create_static(13, 2)
     result = _coerce_bigint_operand(5, modulus)
     assert isinstance(result, BigInteger)
@@ -554,8 +544,6 @@ def test_coerce_bigint_operand_from_int():
 
 def test_coerce_bigint_operand_pads_smaller():
     """_coerce_bigint_operand should zero-pad a smaller BigInteger."""
-    from qrisp.qtypes.quantum_modulus import _coerce_bigint_operand
-
     modulus = BigInteger.create_static(13, 3)
     value = BigInteger.create_static(7, 1)
     result = _coerce_bigint_operand(value, modulus)
@@ -565,8 +553,6 @@ def test_coerce_bigint_operand_pads_smaller():
 
 def test_coerce_bigint_operand_same_size():
     """_coerce_bigint_operand with matching limbs returns same object."""
-    from qrisp.qtypes.quantum_modulus import _coerce_bigint_operand
-
     modulus = BigInteger.create_static(13, 2)
     value = BigInteger.create_static(7, 2)
     result = _coerce_bigint_operand(value, modulus)
@@ -575,8 +561,6 @@ def test_coerce_bigint_operand_same_size():
 
 def test_coerce_bigint_operand_larger_raises():
     """_coerce_bigint_operand should raise if BigInteger has too many limbs."""
-    from qrisp.qtypes.quantum_modulus import _coerce_bigint_operand
-
     modulus = BigInteger.create_static(13, 1)
     value = BigInteger.create_static(7, 3)
     with pytest.raises(ValueError, match="truncation"):
@@ -625,8 +609,6 @@ def test_comparison_different_shifts_raises():
 
 def test_comparison_nonzero_shift_vs_non_modulus_raises():
     """Comparing QuantumModulus(m!=0) with a QuantumFloat must raise."""
-    from qrisp import QuantumFloat
-
     a = QuantumModulus(13)
     a[:] = 5
     a.m = 2
@@ -713,3 +695,137 @@ def test_static_modulus_hardcoded_literal_repeated_calls():
 
     for _ in range(3):
         assert int(solve()) == 8
+
+
+# ----------------- Montgomery shift of the multiplication by a classical factor -----------------
+
+# The multiplication by a classical factor X uses a Montgomery reduction with a
+# shift m that must depend on the size n of the quantum register: the reduction
+# sums one partial product (reduced modulo N) per qubit, so m = ceil(log2(n))
+# is enough. The shift used to be computed from the value of X instead, which
+# was close to n for large factors and could overflow for 32-bit moduli.
+# The factors below cover both regimes: small (2, 3) and close to N.
+
+
+@pytest.mark.parametrize("N", [13, 17])
+def test_inplace_multiplication_by_classical_factor_all_inputs(N):
+    """``qm *= X`` computes X * y mod N for every input y, with and without a control qubit."""
+
+    @boolean_simulation
+    def multiply(factor, y, c):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        ctrl = QuantumBool()
+        ctrl[:] = c
+        with control(ctrl[0]):
+            qm *= factor
+        return measure(qm)
+
+    for factor in (2, 3, N - 2, N - 1):
+        for y in range(N):
+            for c in (0, 1):
+                assert int(multiply(factor, y, c)) == factor**c * y % N, (factor, y, c)
+
+
+@pytest.mark.parametrize("N", [13, 17])
+def test_multiplication_by_classical_factor_all_inputs(N):
+    """``qm * X`` computes X * y mod N for every input y and leaves ``qm`` unchanged."""
+
+    @boolean_simulation
+    def multiply(factor, y):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        res = qm * factor
+        return measure(qm), measure(res)
+
+    for factor in (2, 3, N - 2, N - 1):
+        for y in range(N):
+            assert tuple(int(v) for v in multiply(factor, y)) == (y, factor * y % N), (factor, y)
+
+
+def test_inplace_multiplication_with_32_bit_modulus():
+    """``qm *= X`` computes X * y mod N for a 32-bit integer modulus.
+
+    Regression test: the shift was computed from X * (N - 1), which overflowed
+    int64 for a 32-bit factor and modulus. The shift became 0 and the result was wrong.
+    """
+    N = 3221225473
+
+    @boolean_simulation
+    def multiply(factor, y):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        qm *= factor
+        return measure(qm)
+
+    for factor, y in [(N - 2, 12345), (N - 2, N - 1), (3, 2**31 + 5), (123456789, 987654321)]:
+        assert int(multiply(factor, y)) == factor * y % N, (factor, y)
+
+
+@pytest.mark.parametrize(
+    "N, factor, peak",
+    [(40961, 3, 58), (40961, 40959, 58), (3221225473, 3, 108), (3221225473, 3221225471, 108)],
+    ids=["16-bit N, factor 3", "16-bit N, factor N - 2", "32-bit N, factor 3", "32-bit N, factor N - 2"],
+)
+def test_multiplication_shift_depends_on_register_size(N, factor, peak):
+    """A controlled ``qm *= X`` needs the same number of qubits for every factor X.
+
+    It allocates the control qubit, the n-qubit register, a temporary copy of it,
+    m + 1 auxiliary qubits and the n + m ancillas of the widest Gidney adder:
+    3n + 2m + 2 qubits with m = ceil(log2(n)), that is 58 for n = 16 and 108 for n = 32.
+
+    Regression test: with the shift computed from the value of the factor, the
+    qubit count changed with the factor (54 and 82 for n = 16).
+    """
+
+    def main():
+        qm = QuantumModulus(N)
+        ctrl = QuantumBool()
+        h(ctrl)
+        with control(ctrl):
+            qm *= factor
+
+    assert num_qubits(meas_behavior="1")(main)()["peak_allocations"] == peak
+
+
+@pytest.mark.parametrize("factor", [3, np.int64(3), jnp.int64(3)], ids=["int", "np.int64", "jnp.int64"])
+def test_multiplication_accepts_the_same_factors_as_inplace_multiplication(factor):
+    """``qm * X`` accepts the same classical factors as ``qm *= X``, including JAX integers.
+
+    Regression test: ``qm * jnp.int64(3)`` raised a TypeError, while ``qm *= jnp.int64(3)`` worked.
+    """
+
+    @jaspify
+    def multiply():
+        qm = QuantumModulus(13)
+        qm[:] = 5
+        return measure(qm * factor)
+
+    @jaspify
+    def multiply_inplace():
+        qm = QuantumModulus(13)
+        qm[:] = 5
+        qm *= factor
+        return measure(qm)
+
+    assert int(multiply()) == 5 * 3 % 13
+    assert int(multiply_inplace()) == 5 * 3 % 13
+
+
+def test_montgomery_shift_roundtrip_with_40_bit_modulus():
+    """A QuantumModulus with a non-zero Montgomery shift measures the value it was set to, for a 40-bit modulus.
+
+    Regression test: encoding and decoding multiplied in int64, which overflowed
+    for moduli above 2**31.5.
+    """
+    N = 1000000000039
+
+    @boolean_simulation
+    def roundtrip(value):
+        qm = QuantumModulus(N)
+        qm.m = 3
+        qm[:] = value
+        return measure(qm)
+
+    for value in (1, 12345, 987654321123, N - 1):
+        assert int(roundtrip(value)) == value, value
