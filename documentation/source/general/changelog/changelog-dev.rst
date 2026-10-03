@@ -326,7 +326,6 @@ Bug Fixes
     does. With a random ``meas_behavior``, they reused the same outcome for
     every measurement of a loop, and could follow different branches than
     ``count_ops`` for the same program.
-
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
@@ -501,6 +500,15 @@ Development
   workflows into a single ``code_style.yml``, with the ``ruff format --check``
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
+
+* Removed the CodeFactor status badge from the README. It was frequently
+  broken due to upstream rate limiting and its AI-review functionality is
+  already covered by other tooling
+  (`PR #920 <https://github.com/eclipse-qrisp/Qrisp/pull/920>`_).
+
+* Removed the duplicate PyPI badge from the README, keeping a single
+  version badge linked to the PyPI project page
+  (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
 
 Dependency Upgrades
 -------------------
