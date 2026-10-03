@@ -26,10 +26,7 @@ from sympy import lambdify
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn, extract_invalues, insert_outvalues, reinterpret
-from qrisp.jasp.jasp_expression.jaxpr_utils import (
-    fold_extra_constvars_into_invars,
-    rebuild_closed_jaxpr,
-)
+from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_closed_jaxpr
 from qrisp.jasp.primitives import AbstractQuantumState, greek_letters, quantum_gate_p
 
 if TYPE_CHECKING:
@@ -198,12 +195,6 @@ def invert_jaspr(jaspr: "Jaspr") -> "Jaspr":
     temp_jaxpr = rebuild_closed_jaxpr(jaspr, eqns=non_op_eqs + op_eqs, outvars=jaspr.outvars[:-1] + [current_abs_qst])
 
     processed_jaxpr = reinterpret(temp_jaxpr, eqn_evaluator)
-
-    # The retrace above can hoist values into constvars of its own. Keep the
-    # derived inverse in the same calling convention as everything else by
-    # folding those back into invars, leaving only the Jaspr's genuine
-    # constvars behind.
-    processed_jaxpr = fold_extra_constvars_into_invars(processed_jaxpr, len(jaspr.constvars))
 
     from qrisp.jasp import Jaspr
 
