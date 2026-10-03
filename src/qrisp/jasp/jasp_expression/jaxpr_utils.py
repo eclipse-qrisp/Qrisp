@@ -167,12 +167,16 @@ def bind_variant_to_jit_call(
         else:
             operand = trace.frame.constid_to_tracer.get(id(const))
 
+        # Only the captures of the forward version are searched, not its
+        # arguments: the variant is registered once on the forward Jaspr and
+        # then serves every call site, while the arguments differ between them.
         position = next((i for i, op in enumerate(closure_operands) if op is operand), None)
         if position is None:
             raise Exception(
-                f"The custom {variant_kind} of {func_name} uses a traced value from the surrounding code "
-                f"that {func_name} itself does not use, so it cannot be passed on. Pass this value to "
-                f"{func_name} as an argument instead.\n\n(type of the value: {constvar.aval})"
+                f"The custom {variant_kind} of {func_name} uses a traced value that it captures from the "
+                f"surrounding code, but {func_name} itself does not capture it, so the value cannot be passed "
+                f"on. Pass it to {func_name} as an argument and use that argument in the {variant_kind} "
+                f"instead.\n\n(type of the value: {constvar.aval})"
             )
         closure_invars[position] = constvar
 

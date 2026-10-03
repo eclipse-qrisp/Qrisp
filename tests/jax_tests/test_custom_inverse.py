@@ -501,8 +501,53 @@ def test_custom_inverse_capturing_unused_value_raises():
         f(qv)
         return measure(qv)
 
-    with pytest.raises(Exception, match="does not use"):
+    with pytest.raises(Exception, match="does not capture it"):
         main(0.3, 1.2)
+
+
+def test_custom_variant_capturing_an_argument_raises():
+    """A variant cannot capture a value that the forward version only receives as an argument.
+
+    The variant is registered once on the Jaspr of the forward version and then
+    serves every call site, while the arguments differ between them. Binding the
+    captured value to the argument it happens to equal at the first call site
+    would make the variant read a different value at the others.
+    """
+
+    @make_jaspr
+    def inverse_main(a):
+        qv = QuantumFloat(1)
+
+        @custom_inversion
+        def f(qv, theta, inv=False):
+            if not inv:
+                rx(theta, qv[0])
+            else:
+                rx(-a, qv[0])
+
+        f(qv, a)
+        return measure(qv)
+
+    with pytest.raises(Exception, match="custom inverse of f .* does not capture it"):
+        inverse_main(0.3)
+
+    @make_jaspr
+    def control_main(a):
+        qv = QuantumFloat(1)
+
+        @custom_control
+        def f(qv, theta, ctrl=None):
+            if ctrl is None:
+                rx(theta, qv[0])
+            else:
+                with control(ctrl):
+                    rx(a, qv[0])
+
+        f(qv, a)
+        return measure(qv)
+
+    with pytest.raises(Exception, match="custom controlled version of f .* does not capture it"):
+        control_main(0.3)
 
 
 def test_custom_control_binds_captures_by_identity():

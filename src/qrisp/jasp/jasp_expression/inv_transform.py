@@ -54,9 +54,9 @@ def invert_eqn(eqn: JaxprEqn) -> JaxprEqn:
         params = dict(eqn.params)
 
         # The inverse takes the same arguments as the equation it replaces: a
-        # cached inv_jaspr was brought into pjit's calling convention when
-        # custom_inversion created it (see closure_convert_jaspr), and a derived
-        # one is built from this Jaspr's own signature.
+        # cached inv_jaspr was bound to pjit's calling convention when
+        # custom_inversion registered it (see bind_variant_to_jit_call), and a
+        # derived one is built from this Jaspr's own signature.
         params["jaxpr"] = eqn.params["jaxpr"].inverse()
 
         name = params["name"]

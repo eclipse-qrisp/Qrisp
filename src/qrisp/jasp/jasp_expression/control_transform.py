@@ -106,9 +106,9 @@ def control_eqn(eqn: JaxprEqn, ctrl_qubit_var: Var) -> JaxprEqn:
         invars = list(eqn.invars)
         if isinstance(eqn.params["jaxpr"], Jaspr):
             # The controlled version takes [ctrl_qubit] + the arguments of the
-            # equation it replaces: a cached ctrl_jaspr was brought into pjit's
-            # calling convention when custom_control created it (see
-            # closure_convert_jaspr), and a derived one is built by
+            # equation it replaces: a cached ctrl_jaspr was bound to pjit's
+            # calling convention when custom_control registered it (see
+            # bind_variant_to_jit_call), and a derived one is built by
             # multi_control_jaspr from this Jaspr's own signature. Not
             # rewrapping here is what lets a ControlledJaspr stay one, keeping
             # its efficient nested control and its custom inverse.
