@@ -19,6 +19,9 @@
 from collections.abc import Iterator
 
 import jax.numpy as jnp
+import numpy as np
+import pytest
+from jax.core import Tracer
 from jax.extend.core import Jaxpr, JaxprEqn
 
 from qrisp import *
@@ -333,11 +336,12 @@ def test_registered_inverse_matches_forward_signature():
 
     custom_inversion traces the inverse with make_jaspr, which leaves closed-over
     values in constvars/consts, while the forward version goes through qache,
-    i.e. jax.jit, which closure converts them into leading invars. The inverse is
-    brought into that same convention where it is registered, so that applying an
-    inversion is a plain swap of the callee and never has to rewrap (and thereby
-    lose) the Jaspr. This pins that: every registered inverse takes exactly the
-    arguments of the function it inverts and carries no consts of its own.
+    i.e. jax.jit, which closure converts traced ones into leading invars. Where the
+    inverse is registered, every traced value it captured is bound to the invar of
+    the forward version that carries it, so that applying an inversion is a plain
+    swap of the callee and never has to rewrap (and thereby lose) the Jaspr. This
+    pins that: every registered inverse takes exactly the arguments of the
+    function it inverts and holds no tracers in its consts.
 
     prepare with run-time amplitudes is the case that has closed-over values to
     begin with: its q_switch case functions capture the angle arrays.
@@ -359,8 +363,9 @@ def test_registered_inverse_matches_forward_signature():
             continue
         checked += 1
 
-        assert not inv_jaspr.constvars, "a registered inverse must not carry constvars"
-        assert not inv_jaspr.consts, "a registered inverse must not carry consts"
+        assert not any(isinstance(const, Tracer) for const in inv_jaspr.consts), (
+            "a registered inverse must not hold tracers in its consts"
+        )
         assert check_aval_equivalence(inv_jaspr.invars, callee.invars), (
             f"registered inverse takes {[var.aval for var in inv_jaspr.invars]}, "
             f"but the function it inverts takes {[var.aval for var in callee.invars]}"
@@ -411,3 +416,128 @@ def test_double_inversion_of_prepare_under_control_round_trips():
 
     for state in range(size):
         assert abs(expected.get(state, 0) - res.get(state, 0)) < 1e-4, f"{expected} vs {res}"
+
+
+def test_custom_inverse_binds_captures_by_identity():
+    """The inverse must receive the values it captured, whatever order it uses them in.
+
+    The forward version captures a and b in the order rx, ry use them. A
+    hand-written inverse naturally uses them in reverse, so it captures b before a.
+    """
+
+    def run(nested):
+        @terminal_sampling
+        def main(a, b):
+            qv = QuantumFloat(1)
+
+            @custom_inversion
+            def f(qv, inv=False):
+                if not inv:
+                    rx(a, qv[0])
+                    ry(b, qv[0])
+                else:
+                    ry(-b, qv[0])
+                    rx(-a, qv[0])
+
+            def round_trip(qv):
+                f(qv)
+                with invert():
+                    f(qv)
+
+            # Nested, f is registered inside the trace of an inner function, so a
+            # and b reach it from an enclosing trace.
+            if nested:
+                qache(round_trip)(qv)
+            else:
+                round_trip(qv)
+            return qv
+
+        return main(0.3, 1.2)
+
+    assert run(nested=False).get(0, 0) == pytest.approx(1.0)
+    assert run(nested=True).get(0, 0) == pytest.approx(1.0)
+
+
+def test_custom_inverse_with_constant_capture():
+    """A captured constant that is not traced stays a constant of the inverse."""
+    angles = np.array([0.3, 1.2])
+
+    @custom_inversion
+    def f(qv, theta, inv=False):
+        scaled = theta * angles
+        if not inv:
+            rx(scaled[0], qv[0])
+            ry(scaled[1], qv[0])
+        else:
+            ry(-scaled[1], qv[0])
+            rx(-scaled[0], qv[0])
+
+    @terminal_sampling
+    def main(theta):
+        qv = QuantumFloat(1)
+        f(qv, theta)
+        with invert():
+            f(qv, theta)
+        return qv
+
+    assert main(1.0).get(0, 0) == pytest.approx(1.0)
+
+
+def test_custom_inverse_capturing_unused_value_raises():
+    """An inverse cannot use a traced value that the forward version does not pass on."""
+
+    @make_jaspr
+    def main(a, b):
+        qv = QuantumFloat(1)
+
+        @custom_inversion
+        def f(qv, inv=False):
+            if not inv:
+                rx(a, qv[0])
+            else:
+                rx(-a, qv[0])
+                rz(b, qv[0])
+
+        f(qv)
+        return measure(qv)
+
+    with pytest.raises(Exception, match="does not use"):
+        main(0.3, 1.2)
+
+
+def test_custom_control_binds_captures_by_identity():
+    """The controlled version must receive the values it captured, whatever order it uses them in."""
+
+    @terminal_sampling
+    def main(a, b):
+        ctrl_qb = QuantumBool()
+        ctrl_qb.flip()
+        qv = QuantumFloat(1)
+
+        @custom_control
+        def f(qv, ctrl=None):
+            if ctrl is None:
+                rx(a, qv[0])
+                ry(jnp.sin(b), qv[0])
+            else:
+                # Touches b before a.
+                angle = jnp.sin(b)
+                with control(ctrl):
+                    rx(a, qv[0])
+                    ry(angle, qv[0])
+
+        with control(ctrl_qb[0]):
+            f(qv)
+        return qv
+
+    @terminal_sampling
+    def reference(a, b):
+        qv = QuantumFloat(1)
+        rx(a, qv[0])
+        ry(jnp.sin(b), qv[0])
+        return qv
+
+    res = main(0.3, 1.2)
+    expected = reference(0.3, 1.2)
+    for state in range(2):
+        assert abs(expected.get(state, 0) - res.get(state, 0)) < 1e-6, f"{expected} vs {res}"

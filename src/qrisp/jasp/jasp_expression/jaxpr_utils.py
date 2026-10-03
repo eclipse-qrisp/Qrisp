@@ -18,7 +18,7 @@
 
 from typing import TYPE_CHECKING
 
-from jax.extend.core import ClosedJaxpr, Jaxpr
+from jax.extend.core import ClosedJaxpr, Jaxpr, Var
 
 if TYPE_CHECKING:
     from qrisp.jasp.jasp_expression.centerclass import Jaspr
@@ -120,10 +120,7 @@ def fold_extra_constvars_into_invars(
 
     Note that the *values* of the folded constvars (``consts[:n_extra]``) are
     dropped: the folded vars become plain invars, and it is the caller's
-    responsibility to supply equivalent values positionally. That holds precisely
-    because Jax's own closure conversion put the same values in the same leading
-    positions on the forward path - see ``closure_convert_jaspr``, which pairs
-    this rewrite with a signature check against the forward Jaspr.
+    responsibility to supply equivalent values positionally.
 
     Parameters
     ----------
@@ -166,52 +163,110 @@ def fold_extra_constvars_into_invars(
     return ClosedJaxpr(new_core, new_consts)
 
 
-def closure_convert_jaspr(jaspr: "Jaspr", insert_at: int = 0) -> "Jaspr":
-    """Return ``jaspr`` in the calling convention that pjit uses for its callees.
+def bind_variant_to_jit_call(
+    variant: "Jaspr", jit_eqn, func_name: str, variant_kind: str, n_leading: int = 0
+) -> "Jaspr":
+    """Return ``variant`` in the calling convention of the ``jit`` equation it stands in for.
 
-    Every constvar is folded into an invar (see
-    ``fold_extra_constvars_into_invars``), so the result takes all of its inputs
-    through its signature and carries no ``consts``. Apply this to any Jaspr that
-    was traced with ``make_jaspr`` but is going to be used as the callee of a
-    ``jit`` equation, i.e. the cached ``inv_jaspr``/``ctrl_jaspr`` of the
-    ``custom_inversion``/``custom_control`` decorators.
+    ``custom_inversion`` and ``custom_control`` trace the forward version through
+    ``qache``, i.e. ``jax.jit``. If the function captures a traced value from the
+    surrounding code, Jax turns every captured value into a leading operand of
+    ``jit_eqn`` and a leading invar of its callee. The registered variant is traced
+    with ``make_jaspr``, which keeps captured values in ``constvars``/``consts``.
 
-    Doing this once, where the Jaspr is created, is what keeps the transformation
-    passes (``invert_eqn``, ``control_eqn``) free of rewrapping: a rewrap there
-    would have to reattach every piece of Jaspr metadata by hand, and could not
-    preserve a ``ControlledJaspr`` at all.
+    The variant runs different code, so it can capture different values or the
+    same values in a different order. Each traced value it captured is therefore
+    looked up among the operands of ``jit_eqn`` and bound to that position.
+    Captures of the forward version that the variant does not use become unused
+    invars, and constants that are not traced stay constants of the variant.
+
+    Must be called in the trace that recorded ``jit_eqn``.
 
     Parameters
     ----------
-    jaspr : Jaspr
-        The Jaspr to convert.
-    insert_at : int, optional
-        Where to insert the folded invars, see
-        ``fold_extra_constvars_into_invars``. Default is 0.
+    variant : Jaspr
+        The variant traced by ``make_jaspr``.
+    jit_eqn : TracingEqn
+        The ``jit`` equation recorded for the forward version.
+    func_name : str
+        Name of the decorated function, for error messages.
+    variant_kind : str
+        ``"inverse"`` or ``"controlled version"``, for error messages.
+    n_leading : int, optional
+        Number of invars the variant takes in front of the arguments of the
+        function, e.g. 1 for the control qubit of ``custom_control``. Default is 0.
 
     Returns
     -------
     Jaspr
-        The converted Jaspr, or ``jaspr`` itself if there was nothing to fold.
+        The bound variant, or ``variant`` itself if there was nothing to bind.
 
     """
-    from qrisp.jasp.jasp_expression.centerclass import Jaspr
+    from jax._src.core import Tracer, trace_ctx
 
-    normalized = fold_extra_constvars_into_invars(jaspr, 0, insert_at=insert_at)
-    if normalized is jaspr:
-        return jaspr
+    from qrisp.jasp.jasp_expression.centerclass import Jaspr, check_aval_equivalence
+
+    forward = jit_eqn.params["jaxpr"]
+    variant_args = list(variant.invars[n_leading:])
+    n_closure = len(forward.invars) - len(variant_args)
+
+    if n_closure < 0 or not check_aval_equivalence(variant_args, forward.invars[n_closure:]):
+        raise Exception(
+            f"The custom {variant_kind} of {func_name} does not take the same arguments as {func_name} "
+            f"itself.\n\n(argument types of the {variant_kind}: {[var.aval for var in variant_args]}, "
+            f"of {func_name}: {[var.aval for var in forward.invars[max(n_closure, 0) :]]})"
+        )
+
+    trace = trace_ctx.trace
+    closure_operands = jit_eqn.invars[:n_closure]
+    closure_invars = [Var(var.aval) for var in forward.invars[:n_closure]]
+    constvars = []
+    consts = []
+
+    for constvar, const in zip(variant.constvars, variant.consts):
+        if not isinstance(const, Tracer):
+            constvars.append(constvar)
+            consts.append(const)
+            continue
+
+        # A value of this trace is passed to jit_eqn directly, a value of an
+        # enclosing trace through the tracer that lifted it into this trace.
+        if getattr(const, "_trace", None) is trace:
+            operand = const
+        else:
+            operand = trace.frame.constid_to_tracer.get(id(const))
+
+        position = next((i for i, op in enumerate(closure_operands) if op is operand), None)
+        if position is None:
+            raise Exception(
+                f"The custom {variant_kind} of {func_name} uses a traced value from the surrounding code "
+                f"that {func_name} itself does not use, so it cannot be passed on. Pass this value to "
+                f"{func_name} as an argument instead.\n\n(type of the value: {constvar.aval})"
+            )
+        closure_invars[position] = constvar
+
+    if not closure_invars and len(constvars) == len(variant.constvars):
+        return variant
+
+    core = variant.jaxpr
+    bound = Jaxpr(
+        constvars=constvars,
+        invars=list(variant.invars[:n_leading]) + closure_invars + variant_args,
+        outvars=list(core.outvars),
+        eqns=list(core.eqns),
+        effects=core.effects,
+        debug_info=core.debug_info,
+    )
 
     # Rewrapping produces a fresh Jaspr, so every attribute that is not part of
-    # the Jaxpr itself has to be carried over explicitly. The variable objects
-    # are shared with the input, so the permeability dict keyed by them still
-    # applies.
+    # the Jaxpr itself has to be carried over explicitly.
     res = Jaspr(
-        normalized,
-        permeability=jaspr.permeability,
-        isqfree=jaspr.isqfree,
-        ctrl_jaspr=jaspr.ctrl_jaspr,
-        inv_jaspr=jaspr.inv_jaspr,
+        ClosedJaxpr(bound, consts),
+        permeability=variant.permeability,
+        isqfree=variant.isqfree,
+        ctrl_jaspr=variant.ctrl_jaspr,
+        inv_jaspr=variant.inv_jaspr,
     )
-    res.envs_flattened = jaspr.envs_flattened
+    res.envs_flattened = variant.envs_flattened
 
     return res

@@ -170,6 +170,15 @@ Bug Fixes
   :class:`~qrisp.block_encodings.BlockEncoding` simulation with traced
   coefficients.
 
+* Fixed silently wrong results from :func:`custom_inversion <qrisp.custom_inversion>`
+  and :func:`custom_control <qrisp.custom_control>` functions that use traced
+  values from the surrounding code. These values reached the custom inverse or
+  controlled version by position, so a variant that used them in a different
+  order than the function itself, as a hand-written inverse typically does,
+  received the wrong values. They are now matched by identity. A variant that
+  uses a traced value which the function itself does not use now raises an
+  error when it is traced.
+
 * Fixed two issues in :func:`q_switch <qrisp.q_switch>` affecting branch lists of
   odd length. The padding branch the ``"tree"`` method appends now accepts every
   operand, so an odd branch list no longer raises a ``TypeError`` in Jasp mode

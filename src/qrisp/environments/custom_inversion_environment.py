@@ -21,9 +21,8 @@ import functools
 import jax.numpy as jnp
 
 from qrisp.jasp import (
-    check_aval_equivalence,
+    bind_variant_to_jit_call,
     check_for_tracing_mode,
-    closure_convert_jaspr,
     get_last_equation,
     make_jaspr,
     qache,
@@ -179,21 +178,11 @@ def custom_inversion(*func, **cusi_kwargs):
 
                 inverted_jaspr = make_jaspr(ammended_func)(*args, **kwargs)
 
-                # The forward version was traced by qache, i.e. through jax.jit,
-                # so Jax closure converted whatever the function captured into
-                # leading invars of forward_jaspr. make_jaspr leaves those in
-                # constvars/consts instead, so bring the inverse into the same
-                # calling convention before caching it - it has to stand in for
-                # the forward version at a jit equation that supplies exactly
-                # forward_jaspr's arguments.
-                inverted_jaspr = closure_convert_jaspr(inverted_jaspr)
-
-                if not check_aval_equivalence(inverted_jaspr.invars, forward_jaspr.invars):
-                    raise Exception(
-                        f"Custom inverse of {func.__name__} does not take the same arguments as the "
-                        f"function itself (inverse: {[var.aval for var in inverted_jaspr.invars]}, "
-                        f"function: {[var.aval for var in forward_jaspr.invars]})."
-                    )
+                # make_jaspr leaves what the inverse captured from the surrounding
+                # code in its consts, while jit_eqn passes what the forward version
+                # captured as leading operands. Bind the former to the latter, so
+                # the inverse can replace the callee of jit_eqn.
+                inverted_jaspr = bind_variant_to_jit_call(inverted_jaspr, jit_eqn, func.__name__, "inverse")
 
                 # Store inverted version
                 forward_jaspr.inv_jaspr = inverted_jaspr

@@ -28,9 +28,8 @@ from qrisp.environments.iteration_environment import IterationEnvironment
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.jasp import (
     AbstractQubit,
-    check_aval_equivalence,
+    bind_variant_to_jit_call,
     check_for_tracing_mode,
-    closure_convert_jaspr,
     get_last_equation,
     make_jaspr,
     qache,
@@ -279,23 +278,15 @@ def custom_control(*func, **cusc_kwargs):
 
                 controlled_jaspr = make_jaspr(ammended_func, **cusc_kwargs)(*ammended_args, **kwargs)
 
-                # The uncontrolled version was traced by qache, i.e. through
-                # jax.jit, so Jax closure converted whatever the function
-                # captured into leading invars of forward_jaspr. make_jaspr
-                # leaves those in constvars/consts instead, so bring the
-                # controlled version into the same calling convention before
-                # caching it - it has to stand in for the uncontrolled version
-                # at a jit equation that supplies [ctrl_qubit] + forward_jaspr's
-                # arguments. The control qubit is invars[0] (see ammended_args
-                # above), so the folded invars go right behind it.
-                controlled_jaspr = closure_convert_jaspr(controlled_jaspr, insert_at=1)
-
-                if not check_aval_equivalence(controlled_jaspr.invars[1:], forward_jaspr.invars):
-                    raise Exception(
-                        f"Custom control of {func.__name__} does not take the same arguments as the "
-                        f"function itself (control: {[var.aval for var in controlled_jaspr.invars[1:]]}, "
-                        f"function: {[var.aval for var in forward_jaspr.invars]})."
-                    )
+                # make_jaspr leaves what the controlled version captured from the
+                # surrounding code in its consts, while jit_eqn passes what the
+                # uncontrolled version captured as leading operands. Bind the
+                # former to the latter, behind the control qubit (invars[0], see
+                # ammended_args above), so the controlled version can replace the
+                # callee of jit_eqn.
+                controlled_jaspr = bind_variant_to_jit_call(
+                    controlled_jaspr, jit_eqn, func.__name__, "controlled version", n_leading=1
+                )
 
                 # Store controlled version
                 forward_jaspr.ctrl_jaspr = controlled_jaspr
