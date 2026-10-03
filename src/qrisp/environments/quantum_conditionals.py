@@ -50,8 +50,9 @@ def quantum_condition(function):
 # Finally, the function evaluating the truth value will be uncomputed and
 # the environment is reset for it's next use.
 class ConditionEnvironment(QuantumEnvironment):
-    r"""This class enables the usage of *if*-conditionals as we are used to from
-    classical programming: ::
+    r"""This class enables the usage of *if*-conditionals as we are used to from classical programming.
+
+    For example: ::
 
         from qrisp import QuantumChar, QuantumFloat, h, multi_measurement
 

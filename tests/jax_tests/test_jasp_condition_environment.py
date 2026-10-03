@@ -259,6 +259,47 @@ def test_inverted():
     assert phase_distribution(inverted) == phase_distribution(lambda qf: reference_oracle(qf, phase=-0.3))
 
 
+def test_inverted_nested():
+    # The nested condition is executed through its controlled version
+
+    def oracle(qf):
+        with small_or_seven(qf):
+            with qf > 1:
+                p(0.3, qf[0])
+
+    def oracle_then_inverse(qf):
+        oracle(qf)
+        with invert():
+            oracle(qf)
+
+    assert phase_distribution(oracle) != {0: 1.0}
+    assert phase_distribution(oracle_then_inverse) == {0: 1.0}
+
+
+@quantum_condition
+def low_bits_set(qf):
+    # Computes and uncomputes a scratch AND, whose uncomputation has a custom inverse
+    scratch = QuantumBool()
+    mcx([qf[0], qf[1]], scratch[0], method="gidney")
+    res = QuantumBool()
+    cx(scratch[0], res[0])
+    mcx([qf[0], qf[1]], scratch[0], method="gidney_inv")
+    scratch.delete()
+    return res
+
+
+def test_condition_with_custom_inverse(capsys):
+
+    def body(qf, t, u):
+        with low_bits_set(qf):
+            t.flip()
+
+    assert run_classical(body) == [(v, v % 4 == 3, 0) for v in range(8)]
+
+    jax.effects_barrier()
+    assert "Faulty uncomputation" not in capsys.readouterr().out
+
+
 def test_nested():
 
     def body(qf, t, u):
@@ -408,6 +449,16 @@ def test_error_input_modified():
     for body in (flip_input, compare_input):
         with pytest.raises(ConditionCompilationError, match="changes one of its arguments"):
             trace(body)
+
+
+def test_error_input_deleted():
+
+    def body(qf, t):
+        with qf == 0:
+            qf.delete()
+
+    with pytest.raises(ConditionCompilationError, match="deletes one of its arguments"):
+        trace(body)
 
 
 @qache

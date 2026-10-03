@@ -1356,8 +1356,10 @@ def enters_with_statement(level=0):
 
     frame = sys._getframe(level + 1)
     instructions = list(dis.get_instructions(frame.f_code))
+    # During a call, f_lasti can point into the inline cache that follows the
+    # calling instruction (Python 3.11 and 3.12), so find the instruction it belongs to
     for i, instruction in enumerate(instructions[:-1]):
-        if instruction.offset == frame.f_lasti:
+        if instruction.offset <= frame.f_lasti < instructions[i + 1].offset:
             return instructions[i + 1].opname in ("BEFORE_WITH", "SETUP_WITH")
     return False
 

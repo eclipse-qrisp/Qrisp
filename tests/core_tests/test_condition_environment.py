@@ -17,6 +17,7 @@
 """Tests that ConditionEnvironment uncomputes the intermediate results of its condition."""
 
 from qrisp import QuantumBool, QuantumFloat, conjugate, h, multi_measurement, quantum_condition, z
+from qrisp.environments import q_eq
 
 
 @quantum_condition
@@ -49,6 +50,21 @@ def test_phase_oracle():
 
     assert qf.get_measurement() == {4: 0.25, 5: 0.25, 6: 0.25, 7: 0.25}
     assert [qv.name for qv in qf.qs.qv_list] == [qf.name]
+
+
+def is_three(qv):
+    # A function around an adaptive condition, which detects the with statement two levels above it
+    return q_eq(qv, 3)
+
+
+def test_condition_through_function():
+    qf = QuantumFloat(2)
+
+    with is_three(qf) as flag:
+        pass
+
+    # A ConditionEnvironment returns its truth value, an entered QuantumBool returns None
+    assert isinstance(flag, QuantumBool)
 
 
 def test_comparison_inside_with_line_is_not_entered():

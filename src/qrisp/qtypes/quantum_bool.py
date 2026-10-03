@@ -26,6 +26,7 @@ from qrisp.core.quantum_variable import QuantumVariable
 
 class QuantumBool(QuantumVariable):
     """QuantumBools are the quantum type, which represents boolean truth values.
+
     They are the return type of comparison operators like the equality ``==``.
 
     Apart from their behavior as a QuantumVariable, they can also be treated like

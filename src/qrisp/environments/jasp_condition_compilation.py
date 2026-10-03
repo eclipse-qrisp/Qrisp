@@ -51,7 +51,8 @@ from qrisp.jasp.primitives import delete_qubits_p, get_qubit
 # The temporaries are the qubit arrays that C allocates and doesn't delete: the
 # QuantumBool holding the truth value and intermediate results, such as the
 # QuantumBools of the comparisons in (qf < 3) | (qf == 7). The functions that C
-# calls are inlined first, so that the temporaries they allocate are visible.
+# calls and that hide temporaries are inlined first, so that these are visible.
+# The other functions are kept, since they may carry a custom inverse.
 # C_fwd is C, additionally returning the temporaries it doesn't return. C_inv is
 # the inverse of C with the temporaries turned into inputs by injection_transform,
 # so that it uncomputes the existing qubits instead of allocating new ones.
@@ -123,7 +124,7 @@ def compile_condition(body: Jaspr, name: str, description: str) -> Jaspr:
     input_roots = [frozenset([var]) if _is_quantum(var) else frozenset() for var in body.invars[:-1]]
     result_roots = [analysis.roots_of(var) & set(temporaries) for var in returned]
     use_analysis = _AllocationAnalysis(use, input_roots + result_roots + [frozenset()])
-    _check_body(use, use_analysis, temporaries, description)
+    _check_body(use, use_analysis, temporaries, inputs, description)
 
     truth_qubit = truth_eqn.outvars[0]
     protected = _Protected(use_analysis.roots_of(truth_qubit), frozenset(temporaries), frozenset(inputs))
@@ -170,17 +171,16 @@ def _complete_condition(condition_with: Callable[..., Jaspr], use_jaspr: Jaspr, 
     are the invars at ``input_positions`` (after the control qubit).
     """
 
-    def with_controlled(use_jaspr: Jaspr) -> Jaspr:
-        """Return the condition executing ``use_jaspr``, with its controlled version."""
+    def with_controlled(use_jaspr: Jaspr) -> tuple[Jaspr, Jaspr]:
+        """Return the condition executing ``use_jaspr`` and its controlled version."""
         res = condition_with(use_jaspr)
-        res.ctrl_jaspr = condition_with(control_jaspr(use_jaspr), ctrl=(AbstractQubit(),))
+        ctrl = condition_with(control_jaspr(use_jaspr), ctrl=(AbstractQubit(),))
+        res.ctrl_jaspr = ctrl
         res.permeability.update({res.invars[i]: True for i in input_positions})
-        res.ctrl_jaspr.permeability.update(
-            {res.ctrl_jaspr.invars[0]: True, **{res.ctrl_jaspr.invars[i + 1]: True for i in input_positions}}
-        )
-        return res
+        ctrl.permeability.update({ctrl.invars[0]: True, **{ctrl.invars[i + 1]: True for i in input_positions}})
+        return res, ctrl
 
-    res = with_controlled(use_jaspr)
+    res, ctrl = with_controlled(use_jaspr)
 
     # Some bodies can't be inverted, for instance loops that are not based on
     # jrange. Inverting the condition then fails as for any such function.
@@ -189,9 +189,12 @@ def _complete_condition(condition_with: Callable[..., Jaspr], use_jaspr: Jaspr, 
     except Exception:
         return res
 
-    res_inverse = with_controlled(use_inverse)
+    res_inverse, ctrl_inverse = with_controlled(use_inverse)
     res_inverse.inv_jaspr = res
     res.inv_jaspr = res_inverse
+    # Nested conditions are executed through their controlled version
+    ctrl_inverse.inv_jaspr = ctrl
+    ctrl.inv_jaspr = ctrl_inverse
     return res
 
 
@@ -219,8 +222,10 @@ def _injected_inverse(condition: Jaspr, temporaries: list[Var]) -> Jaspr:
     return injected.inverse()
 
 
-def _check_body(use: Jaspr, use_analysis: "_AllocationAnalysis", temporaries: list[Var], description: str) -> None:
-    """Raise an error if the body uses the temporaries after the condition or deletes them."""
+def _check_body(
+    use: Jaspr, use_analysis: "_AllocationAnalysis", temporaries: list[Var], inputs: list[Var], description: str
+) -> None:
+    """Raise an error if the body uses the temporaries after the condition, or deletes them or the inputs."""
     if any(use_analysis.roots_of(var) & set(temporaries) for var in use.outvars[:-1]):
         raise ConditionCompilationError(
             f"The truth value of {description} or one of its intermediate results is used after the "
@@ -231,6 +236,11 @@ def _check_body(use: Jaspr, use_analysis: "_AllocationAnalysis", temporaries: li
         raise ConditionCompilationError(
             f"The body of {description} deletes its truth value or one of its intermediate results. "
             "They are uncomputed and deleted at the end of the condition.\n\nRemove the deletion."
+        )
+    if use_analysis.deleted & set(inputs):
+        raise ConditionCompilationError(
+            f"The body of {description} deletes one of its arguments. They are needed after the body to "
+            "uncompute the condition.\n\nDelete them after the condition."
         )
 
 
@@ -562,18 +572,22 @@ def _measures_or_resets(eqn: JaxprEqn, in_roots: list[frozenset], targets: froze
 
 
 def _inline_functions(jaspr: Jaspr) -> Jaspr:
-    """Return ``jaspr`` with its jit equations inlined, including nested ones outside of classical control flow."""
+    """Return ``jaspr`` with the jit equations inlined that hide allocations, also nested ones.
+
+    Other jit equations are kept, since they may carry a custom inverse. Jit
+    equations inside of classical control flow are not inlined.
+    """
 
     def eqn_evaluator(eqn: JaxprEqn, context_dic: Any) -> bool | None:
-        """Evaluate jit equations by inlining their equations, and all others as they are."""
-        if eqn.primitive.name != "jit":
+        """Evaluate jit equations that hide allocations by inlining their equations, and all others as they are."""
+        if eqn.primitive.name != "jit" or not _leaks_allocations(eqn):
             return True
         res = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=eqn_evaluator)(*extract_invalues(eqn, context_dic))
         insert_call_outvalues(eqn, context_dic, res, len(eqn.outvars))
         return None
 
     def inlined(*args: Any) -> Any:
-        """Execute ``jaspr`` with its jit equations inlined."""
+        """Execute ``jaspr`` with the jit equations inlined that hide allocations."""
         qs = TracingQuantumSession.get_instance()
         res = _as_tuple(eval_jaxpr(jaspr, eqn_evaluator=eqn_evaluator)(*args, qs.abs_qst))
         qs.abs_qst = res[-1]
