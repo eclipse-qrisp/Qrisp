@@ -245,6 +245,40 @@ def test_error_unsupported_operation_on_truth_value():
         trace(body)
 
 
+def leaky_condition():
+    """Return a condition that leaks its intermediate result ``qf < 3`` through a list."""
+    leaked = []
+
+    @quantum_condition
+    def small_or_seven_leaky(qf):
+        small = qf < 3
+        leaked.append(small)
+        return small | (qf == 7)
+
+    return small_or_seven_leaky, leaked
+
+
+def test_intermediate_used_as_control():
+    condition, leaked = leaky_condition()
+
+    def body(qf, t, u):
+        with condition(qf):
+            cx(leaked[-1], t)
+
+    assert run_classical(body) == [(v, v < 3, 0) for v in range(8)]
+
+
+def test_error_intermediate_modified():
+    condition, leaked = leaky_condition()
+
+    def body(qf, t):
+        with condition(qf):
+            leaked[-1].flip()
+
+    with pytest.raises(ConditionCompilationError, match="intermediate results that is not supported"):
+        trace(body)
+
+
 def test_error_measurement():
 
     def body(qf, t):
@@ -270,4 +304,3 @@ def test_error_temporary_in_classical_control_flow():
 
     with pytest.raises(ConditionCompilationError, match="inside classical control flow"):
         trace(body)
-

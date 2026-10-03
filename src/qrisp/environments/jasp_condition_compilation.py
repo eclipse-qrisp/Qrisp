@@ -112,7 +112,7 @@ def compile_condition(body: Jaspr, name: str, description: str) -> Jaspr:
     use_analysis = _AllocationAnalysis(use, [frozenset()] * (len(body.invars) - 1) + result_roots + [frozenset()])
     _check_body(use, use_analysis, temporaries, description)
 
-    controlled_use, flips = _control_on_truth_value(use, use_analysis, truth_eqn.outvars[0], description)
+    controlled_use, flips = _control_on_truth_value(use, use_analysis, truth_eqn.outvars[0], temporaries, description)
     truth_position = len(body.invars) - 1 + condition_eqn.outvars.index(truth_eqn.invars[0])
     use_jaspr = _undo_flips(controlled_use, flips, truth_position)
 
@@ -216,17 +216,18 @@ def _undo_flips(controlled_use: Jaspr, flips: int, truth_position: int) -> Jaspr
 
 
 def _control_on_truth_value(
-    use: Jaspr, use_analysis: "_AllocationAnalysis", truth_qubit: Var, description: str
+    use: Jaspr, use_analysis: "_AllocationAnalysis", truth_qubit: Var, temporaries: list[Var], description: str
 ) -> tuple[Jaspr, int]:
     """Control the operations of the body on the truth value.
 
-    Operations that involve the truth value are not controlled. They must act
-    on it permeably (as a control or through phases), except for flips of the
-    truth value, which are counted.
+    Operations that involve the truth value are not controlled. Operations that
+    involve the temporaries must act on them permeably (as a control or through
+    phases), except for flips of the truth value, which are counted.
 
     Returns the controlled body and the number of flips.
     """
     truth_roots = use_analysis.roots_of(truth_qubit)
+    temporary_roots = frozenset(temporaries)
     new_eqns = []
     flips = 0
 
@@ -244,20 +245,21 @@ def _control_on_truth_value(
             continue
 
         in_roots = [use_analysis.roots_of(var) for var in eqn.invars]
-        if not any(roots & truth_roots for roots in in_roots):
+        if not any(roots & temporary_roots for roots in in_roots):
             new_eqns.append(control_eqn(eqn, truth_qubit))
             continue
 
-        if name == "jasp.quantum_gate" and eqn.params["gate"].name == "x":
+        uses_truth_value = any(roots & truth_roots for roots in in_roots)
+        if uses_truth_value and name == "jasp.quantum_gate" and eqn.params["gate"].name == "x":
             flips += 1
-        elif not _acts_permeably(eqn, in_roots, truth_roots):
+        elif not _acts_permeably(eqn, in_roots, temporary_roots):
             raise ConditionCompilationError(
-                f"The body of {description} applies an operation to its truth value that is not supported. "
-                "Inside of a condition, the truth value can be used as a control, for phases, and flipped "
-                "with QuantumBool.flip() to invert the condition.\n\nFor other operations, compute a separate "
-                "QuantumBool."
+                f"The body of {description} applies an operation to its truth value or to one of its "
+                "intermediate results that is not supported. Inside of a condition, they can be used as a "
+                "control and for phases, and the truth value can be flipped with QuantumBool.flip() to invert "
+                "the condition.\n\nFor other operations, compute a separate QuantumBool."
             )
-        new_eqns.append(eqn)
+        new_eqns.append(eqn if uses_truth_value else control_eqn(eqn, truth_qubit))
 
     controlled = Jaspr(
         constvars=list(use.constvars),
