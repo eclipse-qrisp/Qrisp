@@ -275,8 +275,9 @@ def _control_on_truth_value(
 def _acts_permeably(eqn: JaxprEqn, in_roots: list[frozenset], targets: frozenset) -> bool:
     """Return True if every gate in ``eqn`` that acts on ``targets`` is permeable on them.
 
-    Only gates are inspected, blocks are analyzed recursively. Measurements and
-    deletions of the targets are not permeable.
+    Blocks are analyzed recursively, unless they are a function whose arguments
+    acting on ``targets`` are declared permeable with ``gate_wrap``. Measurements
+    and deletions of the targets are not permeable.
     """
     name = eqn.primitive.name
 
@@ -288,7 +289,12 @@ def _acts_permeably(eqn: JaxprEqn, in_roots: list[frozenset], targets: frozenset
         return not any(roots & targets for roots in in_roots)
 
     if name == "jit":
-        bodies = [(eqn.params["jaxpr"], in_roots)]
+        jaspr = eqn.params["jaxpr"]
+        declared = getattr(jaspr, "permeability", {})
+        is_declared = all(
+            declared.get(var) is True for var, roots in zip(_open(jaspr).invars, in_roots) if roots & targets
+        )
+        bodies = [] if is_declared else [(jaspr, in_roots)]
     elif name == "cond":
         bodies = [(branch, in_roots[1:]) for branch in eqn.params["branches"]]
     elif name == "while":

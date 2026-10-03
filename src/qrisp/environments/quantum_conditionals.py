@@ -349,8 +349,11 @@ class ConditionEnvironment(QuantumEnvironment):
     flipped with :meth:`QuantumBool.flip <qrisp.QuantumBool.flip>` to invert the
     condition for the subsequent operations. Other operations on the truth value
     and measurements inside of the body raise an error, as do intermediate results
-    that are created inside of classical control flow. The truth value and the
-    intermediate results can not be used after the condition.
+    that are created inside of classical control flow. A function that uses the
+    truth value as a control or for phases only as a whole, for instance by
+    flipping it before and after, can be declared with
+    ``@gate_wrap(permeability=..., is_qfree=...)`` on top of ``@qache``. The truth
+    value and the intermediate results can not be used after the condition.
 
     """
 

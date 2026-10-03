@@ -17,6 +17,7 @@
 """Tests ConditionEnvironment in Jasp: uncomputation of intermediate results, infix conditions, control and errors."""
 
 import jax
+import numpy as np
 import pytest
 
 from qrisp import *
@@ -135,6 +136,55 @@ def test_phase_on_truth_value():
             z(flag)
 
     assert phase_distribution(oracle) == phase_distribution(reference_oracle)
+
+
+def test_balauca_on_truth_value():
+    # mcx and mcp use the Balauca implementation for a QuantumBool, which is
+    # declared permeable on its controls
+
+    def control(qf, t, u):
+        with small_or_seven(qf) as flag:
+            mcx(flag, t)
+
+    def phase(qf):
+        with small_or_seven(qf) as flag:
+            mcp(np.pi, flag)
+
+    assert run_classical(control) == [(v, v < 3 or v == 7, 0) for v in range(8)]
+    assert phase_distribution(phase) == phase_distribution(reference_oracle)
+
+
+@qache
+def flip_if_false(flag, t):
+    # Permeable on flag as a whole, but not gate by gate
+    x(flag)
+    cx(flag, t)
+    x(flag)
+
+
+@gate_wrap(permeability=[0], is_qfree=True)
+@qache
+def declared_flip_if_false(flag, t):
+    x(flag)
+    cx(flag, t)
+    x(flag)
+
+
+def test_declared_permeability():
+
+    def declared(qf, t, u):
+        with small_or_seven(qf) as flag:
+            declared_flip_if_false(flag, t)
+
+    # Operations on the truth value are not controlled on it
+    assert run_classical(declared) == [(v, not (v < 3 or v == 7), 0) for v in range(8)]
+
+    def undeclared(qf, t):
+        with small_or_seven(qf) as flag:
+            flip_if_false(flag, t)
+
+    with pytest.raises(ConditionCompilationError, match="not supported"):
+        trace(undeclared)
 
 
 def test_controlled():

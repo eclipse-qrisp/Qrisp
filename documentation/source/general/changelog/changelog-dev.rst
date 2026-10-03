@@ -167,7 +167,9 @@ Bug Fixes
   evaluated, the body is controlled on the truth value, and the truth value and
   all intermediate results of the evaluation are uncomputed and deleted
   afterwards. Comparisons that are entered directly in a ``with`` statement,
-  such as ``with qf < 3:``, are conditions in Jasp as well. In standard mode,
+  such as ``with qf < 3:``, are conditions in Jasp as well. In the body,
+  functions that use the truth value as a control or for phases only as a
+  whole can be declared with ``gate_wrap`` on top of ``qache``. In standard mode,
   the intermediate results of a condition are now also uncomputed and deleted:
   previously, they stayed allocated, and the uncomputation created a second set
   of them. Comparisons inside a ``with`` statement that are not entered directly,
