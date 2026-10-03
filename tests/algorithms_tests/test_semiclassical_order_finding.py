@@ -36,8 +36,9 @@ from qrisp import (
     p,
     x,
 )
+from qrisp.alg_primitives.iterative_qpe import _semiclassical_phase_estimation
 from qrisp.algorithms.shor import semiclassical_order_finding
-from qrisp.algorithms.shor.order_finding import _semiclassical_phase_estimation, _to_limbs
+from qrisp.algorithms.shor.order_finding import _to_limbs
 from qrisp.jasp import count_ops, jaspify, jrange, num_qubits
 
 # Largest total variation distance accepted between sampled and exact distributions
@@ -71,7 +72,7 @@ def make_phase_estimation(precision):
         def apply_power(qv, k):
             p(2 * np.pi * phase * 2.0**k, qv[0])
 
-        return _semiclassical_phase_estimation(qv, apply_power, precision)
+        return _semiclassical_phase_estimation(qv, apply_power, precision, num_limbs=-(-precision // 32))[1]
 
     return estimate
 
@@ -99,7 +100,7 @@ def test_phase_estimation_exact_phases_beyond_one_limb():
             phase = (shifted & jnp.uint64(2**precision - 1)).astype(jnp.float64) / 2**precision
             p(2 * np.pi * phase, qv[0])
 
-        return _semiclassical_phase_estimation(qv, apply_power, precision)
+        return _semiclassical_phase_estimation(qv, apply_power, precision, num_limbs=-(-precision // 32))[1]
 
     rng = random.Random(precision)
     for y in (
@@ -191,7 +192,9 @@ def semiclassical_readout(precision):
         def apply_power(_qv, _k):
             pass
 
-        return _semiclassical_phase_estimation(QuantumVariable(1), apply_power, precision)
+        return _semiclassical_phase_estimation(
+            QuantumVariable(1), apply_power, precision, num_limbs=-(-precision // 32)
+        )[1]
 
     return main
 

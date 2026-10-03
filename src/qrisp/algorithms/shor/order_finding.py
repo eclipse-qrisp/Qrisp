@@ -28,17 +28,16 @@ from __future__ import annotations
 import math
 import operator
 from collections.abc import Callable
-from typing import Any
+from typing import cast
 
 import jax.numpy as jnp
 import numpy as np
 from jax import Array
 
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-from qrisp.core import h, measure, rz
-from qrisp.environments import control
-from qrisp.jasp import check_for_tracing_mode, q_fori_loop
-from qrisp.qtypes import QuantumBool, QuantumModulus
+from qrisp.alg_primitives.iterative_qpe import _semiclassical_phase_estimation
+from qrisp.jasp import check_for_tracing_mode
+from qrisp.qtypes import QuantumModulus
 
 __all__ = ["semiclassical_order_finding"]
 
@@ -66,67 +65,6 @@ def _to_limbs(value: int, num_limbs: int) -> np.ndarray:
     """
     mask = (1 << _LIMB_BITS) - 1
     return np.array([(value >> (_LIMB_BITS * i)) & mask for i in range(num_limbs)], dtype=np.uint32)
-
-
-def _semiclassical_phase_estimation(args: Any, apply_power: Callable[[Any, Array], None], precision: int) -> BigInteger:
-    """Estimate the phase of a unitary ``U`` with one control qubit, measured after every step.
-
-    Parameters
-    ----------
-    args : Any
-        The quantum arguments on which ``U`` acts, passed on to ``apply_power``.
-    apply_power : Callable
-        ``apply_power(args, k)`` applies ``U`` to the power ``2**k``, for an integer
-        ``k`` that is traced.
-    precision : int
-        The number ``t`` of bits of the outcome.
-
-    Returns
-    -------
-    BigInteger
-        The outcome ``y``, with ``ceil(t / 32)`` limbs. The estimated phase is ``y / 2**t``.
-
-    """
-    num_limbs = -(-precision // _LIMB_BITS)
-
-    def step(j: Array, carry: tuple[Array, Array, Any]) -> tuple[Array, Array, Any]:
-        """Measure bit ``j`` of the outcome.
-
-        Parameters
-        ----------
-        j : Array
-            The step, from 0 to ``precision - 1``.
-        carry : tuple
-            The correction (the bits measured before, as a fraction of a turn), the
-            limbs of the outcome and the quantum arguments.
-
-        Returns
-        -------
-        tuple
-            The carry after the step.
-
-        """
-        correction, digits, args = carry
-        control_qubit = QuantumBool()
-        h(control_qubit)
-        with control(control_qubit):
-            apply_power(args, precision - 1 - j)
-        # For a phase y / 2**t, the power 2**(t - 1 - j) gives the phase 0.y_j y_(j-1) ... y_0
-        # in binary. The rotation removes 0.0 y_(j-1) ... y_0, half of the bits measured
-        # before, which leaves the phase y_j / 2: the Hadamard gate maps it to |y_j>.
-        rz(-np.pi * correction, control_qubit)
-        h(control_qubit)
-        bit = measure(control_qubit)
-        control_qubit.delete()
-
-        limb = j // _LIMB_BITS
-        shift = jnp.asarray(j % _LIMB_BITS, dtype=jnp.uint32)
-        digits = digits.at[limb].set(digits[limb] | (jnp.asarray(bit, dtype=jnp.uint32) << shift))
-        return (correction + bit) / 2, digits, args
-
-    initial = (jnp.asarray(0.0), jnp.zeros(num_limbs, dtype=jnp.uint32), args)
-    _, digits, _ = q_fori_loop(0, precision, step, initial)
-    return BigInteger(digits)
 
 
 def semiclassical_order_finding(
@@ -265,4 +203,7 @@ def semiclassical_order_finding(
         """
         register *= BigInteger(multipliers[k])
 
-    return _semiclassical_phase_estimation(register, multiply_by_power, precision)
+    num_outcome_limbs = -(-precision // _LIMB_BITS)
+    _, outcome = _semiclassical_phase_estimation(register, multiply_by_power, precision, num_limbs=num_outcome_limbs)
+    # The outcome is returned, since num_limbs is positive
+    return cast("BigInteger", outcome)

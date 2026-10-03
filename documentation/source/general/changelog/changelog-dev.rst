@@ -347,6 +347,13 @@ Bug Fixes
   ``qm * X`` now also accepts the same classical factors as ``qm *= X``,
   including JAX integers.
 
+* :ref:`IQPE <IQPE>` applied the powers ``U**(2**t)``, ..., ``U**2`` of the
+  unitary instead of ``U**(2**(t - 1))``, ..., ``U``, where ``t`` is the
+  precision. It therefore returned twice the phase modulo 1 and lost its most
+  significant bit: a phase of 0.75 was estimated as 0.5. It now returns the
+  phase, as documented, so code that relied on the previous values (twice the
+  phase) needs to be updated.
+
 Compatibility
 -------------
 
