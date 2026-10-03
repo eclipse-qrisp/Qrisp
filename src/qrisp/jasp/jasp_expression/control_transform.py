@@ -53,6 +53,12 @@ class ControlledJaspr(Jaspr):
         Jaspr.__init__(self, controlled_jaspr)
         self.envs_flattened = True
 
+        # Controlling preserves permeability and qfree-ness; the control qubits
+        # (the leading invars) are permeable.
+        self.inherit_permeability(base_jaspr)
+        for ctrl_var in self.invars[: len(self.ctrl_state)]:
+            self.permeability[ctrl_var] = True
+
         if self.base_jaspr.inv_jaspr and not stop_recursion:
             self.inv_jaspr = ControlledJaspr(base_jaspr.inv_jaspr, ctrl_state, stop_recursion=True)
 
@@ -124,7 +130,7 @@ def control_eqn(eqn, ctrl_qubit_var):
             # equation's [ctrl_qubit_var] + eqn.invars ordering.
             normalized = fold_extra_constvars_into_invars(controlled_jaxpr, len(orig_jaxpr.constvars), insert_at=1)
             if normalized is not controlled_jaxpr:
-                controlled_jaxpr = Jaspr(normalized)
+                controlled_jaxpr = Jaspr(normalized).inherit_permeability(controlled_jaxpr)
 
             new_params["jaxpr"] = controlled_jaxpr
             new_params["name"] = "c" + new_params["name"]

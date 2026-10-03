@@ -112,6 +112,24 @@ Improvements
   ``encode(..., rounding=True)`` (now O(1))
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+- The :ref:`num_qubits <num_qubits>` resource estimator no longer limits the
+  number of qubit allocations and deallocations. It now keeps four running
+  counters instead of recording every event in a fixed-size buffer, so large
+  programs with millions of allocations no longer overflow, and the result is
+  no longer replayed event by event in Python. The returned dictionary is
+  unchanged
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+
+- **Permeability and qfree-ness in Jasp**
+  :func:`~qrisp.gate_wrap` now records its ``permeability`` and ``is_qfree``
+  specification on the Jaspr of qached functions (``@gate_wrap`` placed on top
+  of ``@qache``). The specification is preserved through environment
+  collection and flattening, inversion and control, where the control qubits
+  are marked as permeable. The Jasp implementation of the Balauca
+  multi-controlled X gate is annotated accordingly (controls permeable,
+  target not), so that analyses of a Jaspr can treat it as a single block
+  (`PR #924 <https://github.com/eclipse-qrisp/Qrisp/pull/924>`_).
+
 Other New Features
 ------------------
 
@@ -303,6 +321,24 @@ Bug Fixes
   inconsistent error messages
   (`#877 <https://github.com/eclipse-qrisp/Qrisp/issues/877>`_).
 
+* Fixed several bugs in the Jasp resource estimators
+  :ref:`count_ops <count_ops>`, :ref:`depth <depth>` and :ref:`num_qubits <num_qubits>`:
+
+  - ``count_ops`` and ``num_qubits`` now compute the size of a sliced qubit
+    array with Python slicing semantics. Negative bounds were taken literally,
+    so for example ``x(qv[:-1])`` counted no gates, and qubits allocated with
+    the size of such a slice were miscounted.
+  - Fusing a qubit array with a single qubit no longer raises a ``TypeError``
+    in ``count_ops`` and ``num_qubits``.
+  - ``depth`` now resolves negative qubit indices such as ``qv[-1]`` correctly
+    for registers whose size is only known at run time.
+  - ``depth`` and ``num_qubits`` now number the measurements consistently
+    across loop iterations, branches and subroutine calls, as ``count_ops``
+    does. With a random ``meas_behavior``, they reused the same outcome for
+    every measurement of a loop, and could follow different branches than
+    ``count_ops`` for the same program.
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+
 Compatibility
 -------------
 
@@ -366,10 +402,28 @@ API Changes
   Code relying on the previous return values (e.g. ``result = h(qv)``) must
   use the original argument instead.
 
+* The ``max_allocations`` argument of :ref:`num_qubits <num_qubits>`,
+  ``Jaspr.num_qubits`` and
+  :func:`BlockEncoding.resources <qrisp.block_encodings.BlockEncoding.resources>`
+  is deprecated and has no effect: passing it emits a
+  ``QrispDeprecationWarning``. Programs that exceeded the old limit no longer
+  raise ``ValueError``
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+
 .. Add API changes above this line
 
 Development
 -----------
+
+* Refactored the Jasp resource estimators: the slice, fuse and register
+  handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and
+  the parity handler now have a single implementation shared by the metrics,
+  and the metric modules are clean under ruff and pyright. The tests of
+  resource estimation with Jasp now live in
+  ``tests/jax_tests/resource_estimation_tests``, which includes tests on
+  textbook circuits (GHZ, Grover, Toffoli, Bernstein-Vazirani, teleportation,
+  repetition code) whose resources are known in closed form
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 * Added Dependabot configuration for automated dependency updates
   (grouped by type, with labels applied automatically).

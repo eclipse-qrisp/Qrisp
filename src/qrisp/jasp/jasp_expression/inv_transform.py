@@ -130,7 +130,7 @@ def invert_eqn(eqn):
             # normalized Jaspr's signature matches the wrapping equation and
             # the original Jaspr referenced by the back-pointer.
             preserved_inv_jaspr = inv_jaxpr.inv_jaspr
-            inv_jaxpr = Jaspr(normalized)
+            inv_jaxpr = Jaspr(normalized).inherit_permeability(inv_jaxpr)
             inv_jaxpr.inv_jaspr = preserved_inv_jaspr
 
         params["jaxpr"] = inv_jaxpr
@@ -276,7 +276,7 @@ def invert_jaspr(jaspr):
 
     from qrisp.jasp import Jaspr
 
-    res = Jaspr(processed_jaxpr)
+    res = Jaspr(processed_jaxpr).inherit_permeability(jaspr)
 
     # res = Jaspr(
     #     constvars=jaspr.constvars,

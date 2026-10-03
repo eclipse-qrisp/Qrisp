@@ -245,6 +245,34 @@ class Jaspr(ClosedJaxpr):
 
         return res
 
+    def inherit_permeability(self, source: "Jaspr") -> "Jaspr":
+        """Copy the permeability and qfree-ness of ``source`` onto this Jaspr.
+
+        Intended for transformations that preserve both properties (rebuilding,
+        environment flattening, inversion, control). Invars and outvars are matched
+        from the end, so invars that the transformation prepended (control qubits,
+        folded constants) keep their own entries.
+
+        Parameters
+        ----------
+        source : Jaspr
+            The Jaspr this one was derived from.
+
+        Returns
+        -------
+        Jaspr
+            This Jaspr.
+
+        """
+        for own_vars, source_vars in [(self.invars, source.invars), (self.outvars, source.outvars)]:
+            for own_var, source_var in zip(reversed(own_vars), reversed(source_vars)):
+                if isinstance(own_var, Literal) or isinstance(source_var, Literal):
+                    continue
+                if source.permeability.get(source_var) is not None:
+                    self.permeability[own_var] = source.permeability[source_var]
+        self.isqfree = source.isqfree
+        return self
+
     def inverse(self) -> "Jaspr":
         """Returns the inverse Jaspr (if applicable).
 
@@ -640,17 +668,24 @@ class Jaspr(ClosedJaxpr):
         self,
         *args,
         meas_behavior: str | Callable,
-        max_allocations: int = 1000,
+        max_allocations: int | None = None,
         callback_threshold: int | None = None,
     ) -> Any:
-        """Return the peak qubit count of this Jaspr evaluated on *args*."""
+        """Return the qubit allocation statistics of this Jaspr evaluated on *args*.
+
+        ``max_allocations`` is deprecated and ignored.
+        """
         from qrisp.jasp.evaluation_tools import profile_jaspr
+
+        if max_allocations is not None:
+            from qrisp.jasp.evaluation_tools.profiler import _warn_max_allocations_deprecated
+
+            _warn_max_allocations_deprecated()
 
         return profile_jaspr(
             self,
             "num_qubits",
             meas_behavior,
-            max_allocations=max_allocations,
             callback_threshold=callback_threshold,
         )(*args)
 

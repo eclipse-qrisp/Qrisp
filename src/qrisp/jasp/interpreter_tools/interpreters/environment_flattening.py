@@ -70,7 +70,7 @@ def flatten_environments(jaspr):
     # according to their semantics
     # To perform the flattening, we evaluate with the usual tools
     reinterpreted_jaxpr = reinterpret(jaspr, eqn_evaluator)
-    res = Jaspr(reinterpreted_jaxpr)
+    res = Jaspr(reinterpreted_jaxpr).inherit_permeability(jaspr)
     res.envs_flattened = True
     return res
 

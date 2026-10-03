@@ -428,14 +428,12 @@ def gate_wrap(*args, permeability=None, is_qfree=None, name=None, verify=False):
 
 def gate_wrap_inner(function, permeability=None, is_qfree=None, name=None, verify=False):
 
-    qached_function = function
-
     def wrapped_function(*args, permeability=permeability, is_qfree=is_qfree, verify=verify, **kwargs):
 
-        from qrisp.jasp import check_for_tracing_mode
+        from qrisp.jasp import check_for_tracing_mode, jasp_gate_wrap
 
         if check_for_tracing_mode():
-            return qached_function(*args, **kwargs)
+            return jasp_gate_wrap(function, args, kwargs, permeability, is_qfree, name)
 
         wrapped_function.__name__ = function.__name__
         from qrisp import QuantumArray, QuantumVariable
