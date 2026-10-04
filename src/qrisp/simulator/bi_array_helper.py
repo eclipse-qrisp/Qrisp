@@ -314,7 +314,7 @@ def bi_array_moveaxis(data_array, index_perm, f_index_array):
 
 
 @njit(parallel=True, cache=True)
-def dense_measurement_brute(input_array, mes_amount, outcome_index, cutoff_ratio):
+def dense_measurement_brute(input_array, mes_amount, outcome_index=0):
 
     n = int(np.log2(len(input_array)))
     mes_amount = int(mes_amount)
@@ -327,24 +327,10 @@ def dense_measurement_brute(input_array, mes_amount, outcome_index, cutoff_ratio
         p_array[i] = np.vdot(new_array, new_array)
 
     p_array = np.abs(p_array)
-    max_p_array = np.max(p_array)
 
-    indices = np.nonzero(p_array > max_p_array * cutoff_ratio)[0]
+    indices = np.nonzero(p_array > 0)[0]
 
-    return reshaped_array[indices, :], p_array[indices], indices
-
-    new_arrays = []
-    p_values = []
-    outcome_indices = []
-
-    for i in range(2**mes_amount):
-        p = p_array[i]
-        if p > max_p_array * cutoff_ratio:
-            new_arrays.append(reshaped_array[i, :])
-            p_values.append(p)
-            outcome_indices.append(outcome_index + i)
-
-    return new_arrays, p_values, outcome_indices
+    return reshaped_array[indices, :], p_array[indices], outcome_index + indices
 
 
 @njit(nogil=True, cache=True)
