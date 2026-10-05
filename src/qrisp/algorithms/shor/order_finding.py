@@ -92,7 +92,8 @@ def semiclassical_order_finding(
     Fourier transform. It requires mid-circuit measurements and rotations that
     depend on their outcomes.
 
-    The classical multipliers $a^{2^k} \bmod N$ are computed exactly before the
+    The classical multipliers $a^{2^k} \bmod N$ and their inverses modulo $N$,
+    which the in-place multiplications need, are computed exactly before the
     circuit is traced, so ``a`` and ``N`` must be Python integers.
 
     .. note::
@@ -179,13 +180,17 @@ def semiclassical_order_finding(
 
     # The classical numbers share one width, large enough for the modulus and the outcome
     num_limbs = -(-max(precision, 2 * num_register_qubits) // _LIMB_BITS)
-    # Step j multiplies by a**(2**(t - 1 - j)) mod N, computed here with Python integers
+    # Step j multiplies by a**(2**(t - 1 - j)) mod N. The multipliers and their
+    # inverses modulo N are computed here exactly with Python integers.
     multipliers = np.empty((precision, num_limbs), dtype=np.uint32)
-    multiplier = a % N
+    inverses = np.empty((precision, num_limbs), dtype=np.uint32)
+    multiplier, inverse = a % N, pow(a, -1, N)
     for k in range(precision):
         multipliers[k] = _to_limbs(multiplier, num_limbs)
+        inverses[k] = _to_limbs(inverse, num_limbs)
         multiplier = multiplier * multiplier % N
-    multipliers = jnp.asarray(multipliers)
+        inverse = inverse * inverse % N
+    multipliers, inverses = jnp.asarray(multipliers), jnp.asarray(inverses)
 
     register = QuantumModulus(BigInteger.create_static(N, num_limbs), inpl_adder=inpl_adder)
     register[:] = 1
@@ -201,7 +206,7 @@ def semiclassical_order_finding(
             The exponent of the power of two.
 
         """
-        register *= BigInteger(multipliers[k])
+        register.inpl_mult(BigInteger(multipliers[k]), inverse=BigInteger(inverses[k]))
 
     num_outcome_limbs = -(-precision // _LIMB_BITS)
     _, outcome = _semiclassical_phase_estimation(register, multiply_by_power, precision, num_limbs=num_outcome_limbs)
