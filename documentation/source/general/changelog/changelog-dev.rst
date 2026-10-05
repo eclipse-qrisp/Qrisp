@@ -399,6 +399,8 @@ API Changes
 Development
 -----------
 
+* Removed a duplicate definition of ``test_reflection_quantum_array``.
+
 * Refactored the Jasp resource estimators: the slice, fuse and register
   handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and
   the parity handler now have a single implementation shared by the metrics,
