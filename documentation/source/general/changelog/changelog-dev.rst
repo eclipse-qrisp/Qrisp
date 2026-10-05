@@ -399,7 +399,8 @@ API Changes
 Development
 -----------
 
-* Removed a duplicate definition of ``test_reflection_quantum_array``.
+* Removed a duplicate definition of ``test_reflection_quantum_array``
+  (`PR #939 <https://github.com/eclipse-qrisp/Qrisp/pull/939>`_).
 
 * Refactored the Jasp resource estimators: the slice, fuse and register
   handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and
