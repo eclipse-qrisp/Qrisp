@@ -80,6 +80,13 @@ Improvements
   ``jaspification`` module (``jaspify``, ``simulate_jaspr``, ``stimulate``)
   (`PR #827 <https://github.com/eclipse-qrisp/Qrisp/pull/827>`_).
 
+- Decorators ``qache``, ``custom_inversion``, ``custom_control``,
+  ``RUS``, ``auto_uncompute`` now propagate the wrapped function's
+  docstring, name, and signature via ``functools.wraps``, removing the need
+  for manual docstring-copy workarounds at call sites. Functions decorated
+  with ``RUS`` can now also be called with keyword arguments.
+  (`PR #803 <https://github.com/eclipse-qrisp/Qrisp/pull/803>`_).
+
 - **Faster COLD/LCD circuit compilation and Hamiltonian construction**
   :meth:`compile_U_cold <qrisp.cold.DCQOProblem.compile_U_cold>` and
   :meth:`~qrisp.cold.DCQOProblem.run` no longer recompute Trotter term
@@ -104,6 +111,14 @@ Improvements
   docstring examples, and sped up ``significant()``, ``init_from()``, and
   ``encode(..., rounding=True)`` (now O(1))
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
+
+- The :ref:`num_qubits <num_qubits>` resource estimator no longer limits the
+  number of qubit allocations and deallocations. It now keeps four running
+  counters instead of recording every event in a fixed-size buffer, so large
+  programs with millions of allocations no longer overflow, and the result is
+  no longer replayed event by event in Python. The returned dictionary is
+  unchanged
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 Other New Features
 ------------------
@@ -199,6 +214,22 @@ Bug Fixes
   :func:`control <qrisp.control>` environment in Jasp mode
   (`PR #769 <https://github.com/eclipse-qrisp/Qrisp/pull/769>`_).
 
+* Fixed the custom assembly format of ``jasp.create_qubits`` in the TableGen
+  definition of the Jasp dialect, which still listed the operand types in the
+  order ``!jasp.QuantumState, tensor<i64>`` while Qrisp prints them in operand
+  order, ``tensor<i64>, !jasp.QuantumState``.  MLIR-based consumers that build
+  a parser from ``dialect_definition/JaspOps.td`` could not parse the MLIR
+  emitted by :meth:`to_mlir <qrisp.jasp.Jaspr.to_mlir>`
+  (`Issue #783 <https://github.com/eclipse-qrisp/Qrisp/issues/783>`_).
+
+* Fixed ``jasp.quantum_gate`` and ``jasp.parity`` being printed in a syntax
+  that could not be parsed back: both had a hand-written printer and no
+  matching parser, so re-reading a printed module failed with
+  ``Operation jasp.quantum_gate does not have a custom format``.  Both now use
+  the same declarative assembly format as the remaining operations, which also
+  removes the stray whitespace around ``(`` and ``,`` those printers emitted
+  and stops attributes from being dropped.
+
 * Removed reduant imports in the top-level ``qrisp`` package.
   (`PR #796 <https://github.com/eclipse-qrisp/Qrisp/pull/796>`_).
 
@@ -269,6 +300,24 @@ Bug Fixes
   inconsistent error messages
   (`#877 <https://github.com/eclipse-qrisp/Qrisp/issues/877>`_).
 
+* Fixed several bugs in the Jasp resource estimators
+  :ref:`count_ops <count_ops>`, :ref:`depth <depth>` and :ref:`num_qubits <num_qubits>`:
+
+  - ``count_ops`` and ``num_qubits`` now compute the size of a sliced qubit
+    array with Python slicing semantics. Negative bounds were taken literally,
+    so for example ``x(qv[:-1])`` counted no gates, and qubits allocated with
+    the size of such a slice were miscounted.
+  - Fusing a qubit array with a single qubit no longer raises a ``TypeError``
+    in ``count_ops`` and ``num_qubits``.
+  - ``depth`` now resolves negative qubit indices such as ``qv[-1]`` correctly
+    for registers whose size is only known at run time.
+  - ``depth`` and ``num_qubits`` now number the measurements consistently
+    across loop iterations, branches and subroutine calls, as ``count_ops``
+    does. With a random ``meas_behavior``, they reused the same outcome for
+    every measurement of a loop, and could follow different branches than
+    ``count_ops`` for the same program.
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+
 Compatibility
 -------------
 
@@ -332,10 +381,28 @@ API Changes
   Code relying on the previous return values (e.g. ``result = h(qv)``) must
   use the original argument instead.
 
+* The ``max_allocations`` argument of :ref:`num_qubits <num_qubits>`,
+  ``Jaspr.num_qubits`` and
+  :func:`BlockEncoding.resources <qrisp.block_encodings.BlockEncoding.resources>`
+  is deprecated and has no effect: passing it emits a
+  ``QrispDeprecationWarning``. Programs that exceeded the old limit no longer
+  raise ``ValueError``
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+
 .. Add API changes above this line
 
 Development
 -----------
+
+* Refactored the Jasp resource estimators: the slice, fuse and register
+  handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and
+  the parity handler now have a single implementation shared by the metrics,
+  and the metric modules are clean under ruff and pyright. The tests of
+  resource estimation with Jasp now live in
+  ``tests/jax_tests/resource_estimation_tests``, which includes tests on
+  textbook circuits (GHZ, Grover, Toffoli, Bernstein-Vazirani, teleportation,
+  repetition code) whose resources are known in closed form
+  (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 * Added Dependabot configuration for automated dependency updates
   (grouped by type, with labels applied automatically).
@@ -404,6 +471,15 @@ Development
   workflows into a single ``code_style.yml``, with the ``ruff format --check``
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
+
+* Removed the CodeFactor status badge from the README. It was frequently
+  broken due to upstream rate limiting and its AI-review functionality is
+  already covered by other tooling
+  (`PR #920 <https://github.com/eclipse-qrisp/Qrisp/pull/920>`_).
+
+* Removed the duplicate PyPI badge from the README, keeping a single
+  version badge linked to the PyPI project page
+  (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
 
 Dependency Upgrades
 -------------------
