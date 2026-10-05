@@ -402,10 +402,7 @@ Development
 * Added ``jaspr_to_static_register_jaspr``, which rewrites a Jaspr so that all
   qubits come from a single register of fixed size allocated at program start.
   The CUDA-Q backend in `qrisp-cudaq <https://github.com/eclipse-qrisp/qrisp-cudaq>`_
-  builds on it. Traced ``scan`` evaluation now decides whether to unpack a carry
-  from the number of carries instead of from the carry's Python type, so a
-  single carry that is itself a tuple is passed whole
-  (`PR #937 <https://github.com/eclipse-qrisp/Qrisp/pull/937>`_).
+  builds on it (`PR #937 <https://github.com/eclipse-qrisp/Qrisp/pull/937>`_).
 
 * Refactored the Jasp resource estimators: the slice, fuse and register
   handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and

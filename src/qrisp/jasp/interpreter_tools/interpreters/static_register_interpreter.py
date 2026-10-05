@@ -217,10 +217,6 @@ def make_static_register_interpreter(size):
         # ------------------------------------------------------------------ #
         qst_outvar_count = sum(1 for v in jaspr.jaxpr.outvars if isinstance(v.aval, AbstractQuantumState))
 
-        # If no QuantumState in outputs the inner jaxpr is already fine.
-        if qst_outvar_count == 0:
-            return inner_closed_jaxpr
-
         # ------------------------------------------------------------------ #
         # Step 3: build an outer wrapper with the *original* signature       #
         # ------------------------------------------------------------------ #
@@ -292,15 +288,17 @@ def jaspr_to_static_register_jaspr(jaspr, size):
 
     Parameters
     ----------
-    jaspr : Jaspr | ClosedJaxpr
+    jaspr : Jaspr
         The jaspr to transform.
     size : int
-        Total number of qubits to pre-allocate.
+        Total number of qubits to pre-allocate. Must be at least the peak
+        number of qubits alive at the same time; a smaller register gives
+        undefined results.
 
     Returns
     -------
-    Jaspr | ClosedJaxpr
-        A new jaspr of the same type as the input.
+    Jaspr
+        A new jaspr.
 
     """
     transform = make_static_register_interpreter(size)
