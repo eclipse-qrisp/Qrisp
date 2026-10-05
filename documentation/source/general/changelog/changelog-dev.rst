@@ -399,6 +399,10 @@ API Changes
 Development
 -----------
 
+* ``GQSP`` indexes its angle arrays from the end instead of reversing them
+  first, so the traced program contains no reversing slice, which the CUDA-Q
+  lowering does not support. The emitted circuit is unchanged.
+
 * Refactored the Jasp resource estimators: the slice, fuse and register
   handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and
   the parity handler now have a single implementation shared by the metrics,
