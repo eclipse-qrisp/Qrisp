@@ -398,6 +398,36 @@ class QuantumModulus(QuantumFloat):
 
         return montgomery_encoder(i_value, 2**self.m, modulus_value)
 
+    def _classical_operand(self, value: _ClassicalInteger) -> int | BigInteger | Array:
+        """Return a classical factor in the form that the Montgomery multiplication expects.
+
+        For a BigInteger modulus, the factor is returned with twice the limbs of the
+        modulus, so that the intermediate products cannot overflow.
+
+        Parameters
+        ----------
+        value : int, Array or BigInteger
+            The classical factor.
+
+        Returns
+        -------
+        int, Array or BigInteger
+            The factor, as a Python int for a NumPy integer.
+
+        """
+        # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+
+        # Convert np.integer to a Python int for the Montgomery helpers
+        if isinstance(value, np.integer):
+            value = int(value)
+
+        if isinstance(self.modulus, BigInteger):
+            if not isinstance(value, BigInteger):
+                value = _coerce_bigint_operand(value, self.modulus)
+            return value.get_larger()
+        return value
+
     def _classical_factor_operands(
         self, other: _ClassicalInteger
     ) -> tuple[int | BigInteger | Array, int | BigInteger | Array, int | Array]:
@@ -410,20 +440,31 @@ class QuantumModulus(QuantumFloat):
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import best_montgomery_shift
 
-        # Convert np.integer to a Python int for the Montgomery helpers
-        if isinstance(other, np.integer):
-            other = int(other)
-
         # The Montgomery reduction sums one partial product (reduced modulo N)
         # per qubit of self, so the shift depends on the size of self, not on
         # the value of the classical factor.
         shift = best_montgomery_shift(self.size, self.modulus)
 
-        if isinstance(self.modulus, BigInteger):
-            if not isinstance(other, BigInteger):
-                other = _coerce_bigint_operand(other, self.modulus)
-            return other.get_larger(), self.modulus.get_larger(), shift
-        return other, self.modulus, shift
+        modulus = self.modulus.get_larger() if isinstance(self.modulus, BigInteger) else self.modulus
+        return self._classical_operand(other), modulus, shift
+
+    def _multiply_inplace(self, factor: _ClassicalInteger, inverse: _ClassicalInteger | None) -> None:
+        """Multiply the register in place by a classical factor, with its inverse modulo N if it is given.
+
+        Parameters
+        ----------
+        factor : int, Array or BigInteger
+            The classical factor.
+        inverse : int, Array or BigInteger, optional
+            The inverse of the factor modulo N, or None to compute it.
+
+        """
+        # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
+
+        factor_operand, modulus, shift = self._classical_factor_operands(factor)
+        inverse_operand = None if inverse is None else self._classical_operand(inverse)
+        cq_montgomery_multiply_inplace(factor_operand, self, modulus, shift, self.inpl_adder, X_inverse=inverse_operand)
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __mul__(  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -461,14 +502,59 @@ class QuantumModulus(QuantumFloat):
     def __imul__(self, other: _ClassicalInteger) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Multiply the register in place by a classical factor."""
         if _is_classical_factor(other):
-            # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
-
-            factor, modulus, shift = self._classical_factor_operands(other)
-            cq_montgomery_multiply_inplace(factor, self, modulus, shift, self.inpl_adder)
+            self._multiply_inplace(other, None)
             return self
 
         raise TypeError(f"Quantum modular in-place multiplication with type {type(other)} not implemented")
+
+    @gate_wrap(permeability=[1], is_qfree=True)
+    def inpl_mult(self, factor: _ClassicalInteger, inverse: _ClassicalInteger | None = None) -> QuantumModulus:
+        r"""Multiply the register in place by a classical factor, optionally with its precomputed inverse.
+
+        ``qm.inpl_mult(X)`` is the same as ``qm *= X``. To uncompute a temporary
+        register, the in-place multiplication also multiplies by the inverse of
+        $X$ modulo $N$, and computing this inverse is its most expensive classical
+        step. If the inverse is known in advance, for example for the powers
+        $a^{2^i}$ of Shor's algorithm, passing it skips this computation. The
+        circuit is the same.
+
+        Parameters
+        ----------
+        factor : int, Array or BigInteger
+            The classical factor $X$, coprime to the modulus. NumPy integers are
+            accepted as well.
+        inverse : int, Array or BigInteger, optional
+            The inverse of $X$ modulo $N$. It is not checked. The default is None,
+            which computes it.
+
+        Returns
+        -------
+        QuantumModulus
+            The register, multiplied in place.
+
+        Raises
+        ------
+        TypeError
+            If the factor or the inverse is not a classical integer.
+
+        Examples
+        --------
+        Multiply by 7 modulo 15, whose inverse modulo 15 is 13:
+
+        >>> from qrisp import QuantumModulus
+        >>> qm = QuantumModulus(15)
+        >>> qm[:] = 2
+        >>> qm.inpl_mult(7, inverse=13)  # doctest: +SKIP
+        >>> print(qm)
+        {14: 1.0}
+
+        """
+        if not _is_classical_factor(factor) or not (inverse is None or _is_classical_factor(inverse)):
+            raise TypeError(
+                f"Quantum modular in-place multiplication with types {type(factor)}, {type(inverse)} not implemented"
+            )
+        self._multiply_inplace(factor, inverse)
+        return self
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]

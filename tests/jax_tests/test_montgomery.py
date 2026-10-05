@@ -56,6 +56,8 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
 )
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv as jasp_modinv
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+    _inverse_mod_power_of_two,
+    _partial_product_table,
     cq_montgomery_multiply,
     cq_montgomery_multiply_inplace,
     qq_montgomery_multiply,
@@ -376,3 +378,32 @@ def test_cq_montgomery_mat_multiply():
     r_array = a_array @ b_array
     (outcome,) = list(multi_measurement([r_array]).keys())
     assert outcome[0].tolist() == [[0, 3], [1, 1]]
+
+
+def test_inverse_mod_power_of_two():
+    """``_inverse_mod_power_of_two`` matches Python for Python integers, JAX integers and BigIntegers."""
+    rng = random.Random(0)
+    for num_bits in (1, 2, 5, 13, 32):
+        for _ in range(8):
+            N = rng.randrange(1, 2**62, 2)
+            expected = pow(N, -1, 2**num_bits)
+            assert _inverse_mod_power_of_two(N, num_bits) == expected
+            assert int(jax.jit(_inverse_mod_power_of_two, static_argnums=1)(jnp.int64(N), num_bits)) == expected
+            assert int(_inverse_mod_power_of_two(BigInteger.create_static(N, 2), num_bits)) == expected
+
+
+@pytest.mark.parametrize("limbs", [None, 2, 4], ids=["int", "2 limbs", "4 limbs"])
+def test_partial_product_table(limbs):
+    """Every row j < n of the table is X * 2**j mod N, as computed with Python integers."""
+    rng = random.Random(limbs or 1)
+    bits = 61 if limbs is None else 32 * limbs // 2
+    N = rng.randrange(2 ** (bits - 1) + 1, 2**bits, 2)
+    X = rng.randrange(N)
+    n = bits
+    if limbs is None:
+        table = _partial_product_table(jnp.int64(X), jnp.int64(N), n)
+        rows = [int(table[j]) for j in range(n)]
+    else:
+        table = _partial_product_table(BigInteger.create_static(X, limbs), BigInteger.create_static(N, limbs), n)
+        rows = [BigInteger(table[j])() for j in range(n)]
+    assert rows == [(X << j) % N for j in range(n)]
