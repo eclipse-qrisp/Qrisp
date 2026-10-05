@@ -121,7 +121,17 @@ def invert_eqn(eqn):
 
         normalized = fold_extra_constvars_into_invars(inv_jaxpr, len(orig_jaxpr.constvars))
         if normalized is not inv_jaxpr:
+            # Wrapping the normalized jaxpr creates a fresh Jaspr, which starts out
+            # without the inv_jaspr back-pointer custom_inversion registered on the
+            # one being replaced. Carry it over: dropping it makes a second
+            # inversion fall back to inverting the body structurally, which for a
+            # custom_inversion user is exactly the derivation that does not apply.
+            # Folding restores the reclassified constvars to invars, so the
+            # normalized Jaspr's signature matches the wrapping equation and
+            # the original Jaspr referenced by the back-pointer.
+            preserved_inv_jaspr = inv_jaxpr.inv_jaspr
             inv_jaxpr = Jaspr(normalized)
+            inv_jaxpr.inv_jaspr = preserved_inv_jaspr
 
         params["jaxpr"] = inv_jaxpr
 
