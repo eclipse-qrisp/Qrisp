@@ -346,6 +346,8 @@ New Tutorials/ Updated Documentation
   Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
   link and agenda.
 
+- Fixed the installation verification command in the getting started documentation.
+
 .. Add new tutorials above this line
 
 API Changes
