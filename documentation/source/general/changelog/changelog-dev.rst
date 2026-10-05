@@ -401,7 +401,8 @@ Development
 
 * ``GQSP`` indexes its angle arrays from the end instead of reversing them
   first, so the traced program contains no reversing slice, which the CUDA-Q
-  lowering does not support. The emitted circuit is unchanged.
+  lowering does not support. The emitted circuit is unchanged
+  (`PR #938 <https://github.com/eclipse-qrisp/Qrisp/pull/938>`_).
 
 * Refactored the Jasp resource estimators: the slice, fuse and register
   handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and
