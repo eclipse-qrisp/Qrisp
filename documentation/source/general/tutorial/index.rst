@@ -15,7 +15,7 @@ The tutorials are organized into five topics, each containing multiple hands-on 
 
 - **Scientific Computing and Quantum Numerical Linear Algebra**: Dive into high-level abstractions for quantum chemistry, physics and linear systems using our new :ref:`BlockEncoding` class.
 
-- **Quantum Machine Learning**: Explore how to leverage Qrisp for quantum machine learning applications, including quantum reservoirs for time series prediction and other machine learning tasks.
+- **Quantum Machine Learning**: Explore how to leverage Qrisp for quantum machine learning applications, including quantum reservoirs for time series prediction and quantum neural networks for classification.
 
 If you’re the type who learns best by breaking things (and then fixing them), you can download any of these tutorials as a Jupyter notebook. Just look for the download box on the right side of the page within each specific tutorial to grab the code and run it in your own local environment.
 
@@ -369,7 +369,7 @@ Learn how to implement quantum neural networks and explore the potential of quan
 
             <a href="./QRCtutorial.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text"></p>
+            <p class="sd-card-text">Explore the use of quantum reservoir computing for time series prediction.</p>
             </div>
             </a>
 
@@ -387,7 +387,7 @@ Learn how to implement quantum neural networks and explore the potential of quan
 
             <a href="./QNNtutorial.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text"></p>
+            <p class="sd-card-text">Dive into the world of quantum neural networks for classification tasks.</p>
             </div>
             </a>
 
