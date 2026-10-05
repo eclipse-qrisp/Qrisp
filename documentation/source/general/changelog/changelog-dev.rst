@@ -337,16 +337,19 @@ Compatibility
 New Tutorials/ Updated Documentation
 -------------------------------------
 
-- Fixed outdated or inaccurate docstrings and examples across the Jasp
+* Fixed outdated or inaccurate docstrings and examples across the Jasp
   module (control flow, sampling, simulators, optimization tools,
   ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
   (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
 
-- Added a :ref:`Community Day <community_day>` page announcing the first
+* Added a :ref:`Community Day <community_day>` page announcing the first
   Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
   link and agenda.
 
-- Fixed the installation verification command in the getting started documentation.
+* Fixed the installation verification command in the getting started documentation
+  (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
+
+
 
 .. Add new tutorials above this line
 
