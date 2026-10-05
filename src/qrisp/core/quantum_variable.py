@@ -281,9 +281,6 @@ class QuantumVariable:
         # Store quantum session
         self.qs = TracingQuantumSession.get_instance() if check_for_tracing_mode() else qs or QuantumSession()
 
-        # Imported locally: qrisp.core.quantum_session imports QuantumVariable from this module.
-        from qrisp.core.quantum_session import QuantumSession
-
         if isinstance(self.qs, QuantumSession):
             declaration_stack_level = 1 if type(self) is QuantumVariable else 2
             (self.name, self.is_fixed_name) = self.qs.generate_name(name, self, declaration_stack_level + 1)
