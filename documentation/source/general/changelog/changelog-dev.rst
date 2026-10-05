@@ -472,6 +472,9 @@ Development
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
+* Added Python 3.13 support to the CI pipeline according to 
+  (`Issue #823 <https://github.com/eclipse-qrisp/Qrisp/issues/823>`_)
+  (`PR #847 <https://github.com/eclipse-qrisp/Qrisp/pull/847>`_).
 * Removed the CodeFactor status badge from the README. It was frequently
   broken due to upstream rate limiting and its AI-review functionality is
   already covered by other tooling

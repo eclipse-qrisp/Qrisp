@@ -4,6 +4,8 @@
 <div align="center">
 
 [![License](https://img.shields.io/badge/License-EPL_2.0-brightgreen.svg)](https://opensource.org/licenses/EPL-2.0)
+![PyPI - Version](https://img.shields.io/pypi/v/qrisp?color=brightgreen)
+![PyPI Python Version](https://img.shields.io/pypi/pyversions/qrisp)
 [![PyPI - Version](https://img.shields.io/pypi/v/qrisp?color=brightgreen&label=PyPI)](https://pypi.org/project/qrisp/)
 [![Total Downloads](https://img.shields.io/pepy/dt/qrisp?label=Total%20Downloads)](https://pepy.tech/project/qrisp)
 [![Monthly Downloads](https://static.pepy.tech/badge/qrisp/month)](https://pepy.tech/project/qrisp)
