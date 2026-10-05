@@ -210,7 +210,9 @@ class TestTracingModeError:
         @jaspify
         def main():
             qv = QuantumVariable(2)
-            with pytest.raises(TracingModeError, match="Tried to static iteration on a dynamic QuantumVariable"):
+            with pytest.raises(
+                TracingModeError, match="Tried to perform a static iteration on a dynamic QuantumVariable"
+            ):
                 iter(qv)
             return 0
 
