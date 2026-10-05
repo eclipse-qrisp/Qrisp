@@ -160,6 +160,16 @@ Other New Features
   fully understand and take responsibility for the changes implemented
   (`PR #816 <https://github.com/eclipse-qrisp/Qrisp/pull/816>`_).
 
+- **Semiclassical order finding for Shor's algorithm**
+  :func:`~qrisp.shor.semiclassical_order_finding` runs the quantum part of
+  order finding in Jasp mode with a single control qubit, measured after every
+  step of the phase estimation, instead of a phase register of ``2n`` qubits
+  followed by the inverse QFT. The outcome has the same distribution, while the
+  circuit needs ``2n - 1`` fewer qubits (``3n + 2 ceil(log2 n) + 2`` with the
+  default adder) and ``2n`` single-qubit rotations instead of the controlled
+  phase gates of the inverse QFT. The resource estimators count the circuit
+  without simulating it.
+
 .. Add other new features above this line
 
 Bug Fixes
@@ -358,6 +368,13 @@ Bug Fixes
   gave wrong results. The partial products are now computed by doubling modulo
   ``N``, which is exact for moduli below 2**62
   (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
+
+* :ref:`IQPE <IQPE>` applied the powers ``U**(2**t)``, ..., ``U**2`` of the
+  unitary instead of ``U**(2**(t - 1))``, ..., ``U``, where ``t`` is the
+  precision. It therefore returned twice the phase modulo 1 and lost its most
+  significant bit: a phase of 0.75 was estimated as 0.5. It now returns the
+  phase, as documented, so code that relied on the previous values (twice the
+  phase) needs to be updated.
 
 Compatibility
 -------------
