@@ -54,4 +54,4 @@ jobs:
           pip install -e ".[all]"
       - name: Test with pytest (${{ matrix.test-group.name }})
         run: |
-          pytest ${{ matrix.test-group.paths }}
+          pytest ${{ matrix.test-group.paths }} -n auto -ra

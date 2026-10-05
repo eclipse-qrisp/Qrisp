@@ -494,6 +494,10 @@ Development
   version badge linked to the PyPI project page
   (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
 
+  * Added parallel test execution to the CI test workflow using 
+    the pytest-xdist plugin
+  (`PR #689 <https://github.com/eclipse-qrisp/Qrisp/pull/689>`_).
+
 Dependency Upgrades
 -------------------
 
