@@ -22,9 +22,9 @@ def qulacs_converter(qc):
     import qulacs.gate as gt
     from qulacs import QuantumCircuit
 
-    from qrisp.simulator import extract_measurements
+    from qrisp.simulator.preprocessing.measurement_handling import _extract_measurements
 
-    temp_qc, measurements = extract_measurements(qc.copy())
+    temp_qc, measurements = _extract_measurements(qc.copy())
 
     transpiled_qc = temp_qc.transpile(
         basis_gates=[

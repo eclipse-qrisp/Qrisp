@@ -26,7 +26,7 @@ from sympy import Symbol
 
 from qrisp import QuantumArray, h, x
 from qrisp.algorithms.qaoa.qaoa_benchmark_data import QAOABenchmark
-from qrisp.jasp import check_for_tracing_mode, jrange, sample
+from qrisp.jasp import QuantumVariableTemplate, check_for_tracing_mode, jrange, sample
 from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
 
 
@@ -545,14 +545,18 @@ class QAOAProblem:
         optimizer="COBYLA",
         options={},
     ):
-        r"""Run the specific QAOA problem instance with given quantum arguments, depth of QAOA circuit,
-        measurement keyword arguments (mes_kwargs) and maximum iterations for optimization (max_iter).
+        r"""Run the specific QAOA problem instance.
+
+        Takes the quantum argument, the depth of the QAOA circuit, the measurement
+        keyword arguments (mes_kwargs) and the maximum number of iterations for the
+        optimization (max_iter).
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
-            The argument to which the QAOA circuit is applied,
-            or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or QuantumVariableTemplate or callable
+            The argument to which the QAOA circuit is applied, or a
+            QuantumVariableTemplate or function returning a :ref:`QuantumVariable`
+            or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
             The amount of QAOA layers.
         mes_kwargs : dict, optional
@@ -588,6 +592,11 @@ class QAOAProblem:
 
             def qarg_prep():
                 return QuantumArray(qtype=template.construct(), shape=shape)
+
+        elif isinstance(qarg, QuantumVariableTemplate):
+
+            def qarg_prep():
+                return qarg.construct()
 
         else:
             template = qarg.template()
@@ -649,8 +658,11 @@ class QAOAProblem:
         optimizer="COBYLA",
         options={},
     ):
-        r"""This function allows for training of a circuit with a given ``QAOAProblem`` instance. It returns a function that can be applied to a ``QuantumVariable``,
-        such that it represents a solution to the problem instance. When applied to a ``QuantumVariable``, the function therefore prepares the state
+        r"""Train a circuit with a given ``QAOAProblem`` instance.
+
+        Returns a function that can be applied to a ``QuantumVariable``, such that
+        it represents a solution to the problem instance. When applied to a
+        ``QuantumVariable``, the function therefore prepares the state
 
         .. math::
 
@@ -660,9 +672,10 @@ class QAOAProblem:
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
-            The argument to which the QAOA circuit is applied,
-            or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or QuantumVariableTemplate or callable
+            The argument to which the QAOA circuit is applied, or a
+            QuantumVariableTemplate or function returning a :ref:`QuantumVariable`
+            or :ref:`QuantumArray` to which the QAOA circuit is applied.
         depth : int
             The amount of QAOA layers.
         mes_kwargs : dict, optional
@@ -735,6 +748,11 @@ class QAOAProblem:
             def qarg_prep():
                 return QuantumArray(qtype=template.construct(), shape=shape)
 
+        elif isinstance(qarg, QuantumVariableTemplate):
+
+            def qarg_prep():
+                return qarg.construct()
+
         else:
             template = qarg.template()
 
@@ -784,9 +802,10 @@ class QAOAProblem:
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or callable
-            The argument to which the QAOA circuit is applied,
-            or a function returning a :ref:`QuantumVariable` or :ref:`QuantumArray` to which the QAOA circuit is applied.
+        qarg : :ref:`QuantumVariable` or :ref:`QuantumArray` or QuantumVariableTemplate or callable
+            The argument to which the QAOA circuit is applied, or a
+            QuantumVariableTemplate or function returning a :ref:`QuantumVariable`
+            or :ref:`QuantumArray` to which the QAOA circuit is applied.
             Compare to the :meth:`.run <qrisp.qaoa.QAOAProblem.run>` method.
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of QAOA layers.
@@ -860,6 +879,11 @@ class QAOAProblem:
 
             def qarg_prep():
                 return QuantumArray(qtype=template.construct(), shape=shape)
+
+        elif isinstance(qarg, QuantumVariableTemplate):
+
+            def qarg_prep():
+                return qarg.construct()
 
         else:
             template = qarg.template()
