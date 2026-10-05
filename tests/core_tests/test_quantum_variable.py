@@ -180,3 +180,63 @@ class TestDeleteRecompute:
         qv.delete(recompute=recompute)
         _assert_deleted(qv)
         assert all(getattr(qb, "recompute", False) == recompute for qb in qv.reg)
+
+
+class TestTracingModeError:
+    """Test that operations unsupported in tracing mode raise :class:`TracingModeError`."""
+
+    def test_get_measurement_in_tracing_mode_raises(self):
+        @jaspify
+        def main():
+            qv = QuantumVariable(2)
+            with pytest.raises(TracingModeError, match="Tried to get measurement of a QuantumVariable in tracing mode"):
+                qv.get_measurement()
+            return 0
+
+        main()
+
+    def test_uncompute_in_tracing_mode_raises_and_keeps_variable(self):
+        @jaspify
+        def main():
+            qv = QuantumVariable(2)
+            with pytest.raises(TracingModeError, match="Tried to uncompute a QuantumVariable in tracing mode"):
+                qv.uncompute()
+            _assert_not_deleted(qv)
+            return 0
+
+        main()
+
+    def test_static_iteration_in_tracing_mode_raises(self):
+        @jaspify
+        def main():
+            qv = QuantumVariable(2)
+            with pytest.raises(TracingModeError, match="Tried to static iteration on a dynamic QuantumVariable"):
+                iter(qv)
+            return 0
+
+        main()
+
+    def test_init_from_in_tracing_mode_raises(self):
+        @jaspify
+        def main():
+            source = QuantumVariable(2)
+            target = QuantumVariable(2)
+            with pytest.raises(
+                TracingModeError, match="Tried to initialize a QuantumVariable from another in tracing mode"
+            ):
+                target.init_from(source)
+            return 0
+
+        main()
+
+    def test_duplicate_with_init_in_tracing_mode_raises(self):
+        @jaspify
+        def main():
+            qv = QuantumVariable(2)
+            with pytest.raises(
+                TracingModeError, match="Tried to initialize a QuantumVariable from another in tracing mode"
+            ):
+                qv.duplicate(init=True)
+            return 0
+
+        main()

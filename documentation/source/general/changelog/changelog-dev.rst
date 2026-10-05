@@ -326,13 +326,19 @@ Bug Fixes
     every measurement of a loop, and could follow different branches than
     ``count_ops`` for the same program.
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
-* Fixed a bug in :meth:`resolve_naming_collisions` where in the "qv_0 is newer" conditional branch,
-  `qv_1.is_fixed_name` (called user_given_name earlier) was checked when it should have been qv0's.
-  As a result, merging two sessions could rename a variable with an explicitly given (fixed) name. 
-  Now a fixed name is never renamed.
 
-*  Fixed a bug where calls of :meth:`duplicate` of the form `duplicate(name="foo*")` caused the variable being duplicated to change. 
-   `self.user_given_name` was set to `False`, instead of the duplicate's. This is fixed now.
+* Fixed a bug in ``resolve_naming_collisions`` where in the "qv_0 is newer" conditional branch,
+  ``qv_1.is_fixed_name`` (called ``user_given_name`` earlier) was checked 
+  when it should have been ``qv_0``'s.
+  As a result, merging two sessions could rename a variable with 
+  an explicitly given (fixed) name. Now a fixed name is never renamed.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed a bug where calls of :meth:`~qrisp.QuantumVariable.duplicate` of the form ``duplicate(name="foo*")`` 
+  caused the variable being duplicated to change.
+  There, ``self.user_given_name`` was set to ``False``, instead of the duplicate's ``user_given_name``. 
+  This is fixed now. 
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
 Compatibility
 -------------
