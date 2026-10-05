@@ -1,27 +1,28 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-import pytest
+"""Tests QET, GQET, QSVT, and GQSVT on non-Hermitian and nested block encodings."""
+
 import numpy as np
+import pytest
+from qrisp.gqsp import GQET, GQSVT, QET, QSVT
 
-from qrisp import multi_measurement, prepare, terminal_sampling, QuantumFloat
+from qrisp import QuantumFloat, multi_measurement, prepare, terminal_sampling
 from qrisp.block_encodings import BlockEncoding
-from qrisp.gqsp import GQET, QET, QSVT, GQSVT
-from qrisp.operators import X, Y, Z
+from qrisp.operators import X, Z
 
 
 def post_selection(res_dict, N):
@@ -42,7 +43,6 @@ def test_non_hermitian_block_encoding(alg, mode):
     Note: GQET relies on qubitization for a non-Hermitian block-encoding unitary (Issue #681).
     The test verifies that GQET produces the same results as the other three algorithms when applied to a non-Hermitian block-encoding of a Hermitian matrix.
     """
-
     N = 8
     I = np.eye(N)
     A = 2 * I + np.eye(N, k=1) + np.eye(N, k=-1)
@@ -105,7 +105,6 @@ def test_nested_polynomial_application(alg, mode):
     Note: We use an odd fixed parity polynomial applied to a Hermitian matrix which ensures compatibility and consistency with all four transformations.
     Note: GQET relies on qubitization for a non-Hermitian block-encoding unitary in the second application (Issue #681).
     """
-
     if alg == QET and mode == "static":
         pytest.skip("(Issue #680).")
 

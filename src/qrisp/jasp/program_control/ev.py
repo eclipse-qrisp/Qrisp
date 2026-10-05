@@ -1,24 +1,36 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Implements expectation_value, estimating expectation values via repeated quantum kernel sampling."""
 
 import jax
 import jax.numpy as jnp
 
 from qrisp.jasp.tracing_logic import quantum_kernel
+
+
+@jax.jit
+def _backend_shots_marker(val):
+    """Identity marker for the shot count.
+
+    Allows ``backend_sampler`` to reliably locate the shot count inside a traced
+    expectation_value Jaxpr.
+    """
+    return val
+
 
 # The following function implements the expectation_value feature.
 # The basic functionality would be relatively straightforward to implement,
@@ -46,7 +58,9 @@ from qrisp.jasp.tracing_logic import quantum_kernel
 
 
 def expectation_value(state_prep, shots, return_dict=False, post_processor=None):
-    r"""The ``expectation_value`` function allows to estimate the expectation value
+    r"""Estimates the expectation value from a sampling kernel.
+
+    The ``expectation_value`` function allows to estimate the expectation value
     from a *sampling kernel* — a Python function that receives only classical
     arguments and returns arbitrary values.  Any
     :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
@@ -64,7 +78,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
     Parameters
     ----------
-    state_prep : callable
+    sampling_kernel : callable
         A sampling kernel — a function receiving only classical arguments and
         returning one or more :ref:`QuantumVariables <QuantumVariable>`,
         classical measurement results, or a mixture of both.
@@ -101,7 +115,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         from qrisp.jasp import *
 
 
-        def state_prep(k):
+        def sampling_kernel(k):
             a = QuantumFloat(4)
             b = QuantumFloat(4)
 
@@ -122,16 +136,17 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         @jaspify
         def main(k):
 
-            ev_function = expectation_value(state_prep, shots = 50)
+            ev_function = expectation_value(sampling_kernel, shots = 50)
 
             return ev_function(k)
 
         print(main(3))
-        # Yields
+        # Yields e.g.
         # [1.44 1.44]
 
-    The true value 1.5 is not reached because of `shot noise <https://en.wikipedia.org/wiki/Shot_noise>`_.
-    To improve the approximation, feel free to increase the shots!
+    The true value 1.5 is not reached exactly because of `shot noise <https://en.wikipedia.org/wiki/Shot_noise>`_ —
+    the printed value fluctuates around 1.5 from run to run. To improve the
+    approximation, feel free to increase the shots!
 
     To demonstrate the ``post_processor`` keyword we define a simple post processing
     function
@@ -144,21 +159,24 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         @jaspify
         def main(k):
 
-            ev_function = expectation_value(state_prep, shots = 50)
+            ev_function = expectation_value(state_prep, shots = 50,
+                                             post_processor = post_processor)
 
             return ev_function(k)
 
         print(main(3))
-        # Yields
-        # 4.338
+        # Yields e.g.
+        # 4.86
 
     This result is expected because the inputs of ``post_processor`` are
-    either (0,0) or (3,3) with 50% probability, so we get
+    either (0,0) or (3,3) with 50% probability, so the expectation value is
 
     .. math::
 
         4.5 = \frac{3\cdot 3 + 0\cdot 0}{2}
 
+    As with the previous example, the printed value fluctuates around this
+    expectation from run to run because of shot noise.
 
     """
     from qrisp.core import QuantumVariable, measure
@@ -185,6 +203,10 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         for arg in args:
             if isinstance(arg, QuantumVariable):
                 raise Exception("Tried to sample from state preparation function taking a quantum value")
+
+        # Marker: allows backend_sampler to locate the shot count in the
+        # traced Jaxpr without fragile position-based extraction.
+        _backend_shots_marker(shots)
 
         # We now construct a loop to evaluate the expectation value via adding
         # the decoded and postprocessed measurement result into an accumulator.
@@ -291,6 +313,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
 
 
 class _MultiReturnDetected(Exception):
-    """Internal signal raised when the post-processor returns multiple values
-    (a tuple) instead of a single scalar.  This triggers a retry of the
-    sampling loop with a multi-dimensional accumulator of the correct shape."""
+    """Internal signal raised when the post-processor returns multiple values (a tuple) instead of a single scalar.
+
+    This triggers a retry of the sampling loop with a multi-dimensional accumulator of the correct shape.
+    """

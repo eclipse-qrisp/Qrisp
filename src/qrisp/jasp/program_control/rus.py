@@ -1,20 +1,22 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
+"""Implements the RUS (repeat-until-success) decorator for quantum subroutines."""
+
+import functools
 import inspect
 
 from qrisp.jasp import (
@@ -24,7 +26,9 @@ from qrisp.jasp import (
 
 
 def RUS(*trial_function, **jit_kwargs):
-    r"""Decorator to deploy repeat-until-success (RUS) components. At the core,
+    r"""Decorator to deploy repeat-until-success (RUS) components.
+
+    At the core,
     RUS repeats a given quantum subroutine followed by a qubit measurement until
     the measurement returns the value ``1``. This step is prevalent
     in many important algorithms, among them the
@@ -58,8 +62,8 @@ def RUS(*trial_function, **jit_kwargs):
     static_argnums : int or list[int], optional
         A list of integers specifying which arguments are considered static in
         the sense of `jax.jit <https://jax.readthedocs.io/en/latest/_autosummary/jax.jit.html>`_.
-        The first argument is indicated by 1, the second by 2, etc. The default
-        is ``[]``.
+        Argument positions are 0-indexed, i.e. the first argument is indicated
+        by 0, the second by 1, etc. The default is ``[]``.
     static_argnames : str or list[str], optional
         A list of strings specifying which arguments are considered static in
         the sense of `jax.jit <https://jax.readthedocs.io/en/latest/_autosummary/jax.jit.html>`_.
@@ -196,9 +200,11 @@ def RUS(*trial_function, **jit_kwargs):
     ::
 
         # Specify the corresponding arguments of the block encoding as "static",
-        # i.e. compile time constants.
+        # i.e. compile time constants. Argument positions are 0-indexed, so
+        # this marks "state_preparation" (position 1) and "case_functions"
+        # (position 2).
 
-        @RUS(static_argnums = [2,3])
+        @RUS(static_argnums = [1,2])
         def block_encoding(return_size, state_preparation, case_functions):
 
             # This QuantumFloat will be returned
@@ -269,7 +275,15 @@ def RUS(*trial_function, **jit_kwargs):
     # to collect the output QuantumVariable object.
     # From the infered output signature the q_while_loop is constructed
 
-    def return_function(*trial_args):
+    @functools.wraps(trial_function)
+    def return_function(*trial_args, **trial_kwargs):
+
+        # Bind keyword arguments to their positions so that static_argnums
+        # and the loop-carried dynamic arguments refer to the same indices.
+        bound_args = inspect.signature(trial_function).bind(*trial_args, **trial_kwargs)
+        bound_args.apply_defaults()
+        trial_args = bound_args.args
+        trial_kwargs = bound_args.kwargs
 
         # Filter out the static arguments
         if "static_argnums" in jit_kwargs:
@@ -292,7 +306,7 @@ def RUS(*trial_function, **jit_kwargs):
 
         # Execute the function
         qached_function = qache(trial_function, **jit_kwargs)
-        first_iter_res = qached_function(*trial_args)
+        first_iter_res = qached_function(*trial_args, **trial_kwargs)
 
         dynamic_args = []
 
@@ -336,7 +350,7 @@ def RUS(*trial_function, **jit_kwargs):
                 else:
                     new_trial_args.append(trial_args[i])
 
-            trial_res = qached_function(*new_trial_args)
+            trial_res = qached_function(*new_trial_args, **trial_kwargs)
 
             # Update the tuple with initial args and the new results
             combined_args = tuple(list(args[:n_arg_vals]) + list(trial_res))

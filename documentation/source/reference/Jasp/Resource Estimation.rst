@@ -28,4 +28,6 @@ Circuit depth
 Number of qubits
 ----------------
 
+.. _num_qubits:
+
 .. autofunction:: num_qubits

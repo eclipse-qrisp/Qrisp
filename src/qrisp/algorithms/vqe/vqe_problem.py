@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the VQEProblem class encapsulating a Hamiltonian, ansatz, and VQE optimization routines."""
 
 import time
 
@@ -24,7 +25,7 @@ from scipy.optimize import minimize
 from sympy import Symbol
 
 from qrisp.algorithms.vqe.vqe_benchmark_data import VQEBenchmark
-from qrisp.jasp import check_for_tracing_mode
+from qrisp.jasp import QuantumVariableTemplate, check_for_tracing_mode
 from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
 from qrisp.operators.fermionic import FermionicOperator
 from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
@@ -390,9 +391,10 @@ class VQEProblem:
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or callable
-            The argument to which the VQE circuit is applied,
-            or a function returning a :ref:`QuantumVariable` to which the VQE circuit is applied.
+        qarg : :ref:`QuantumVariable` or QuantumVariableTemplate or callable
+            The argument to which the VQE circuit is applied, or a
+            QuantumVariableTemplate or function returning a :ref:`QuantumVariable`
+            to which the VQE circuit is applied.
         depth : int
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
@@ -422,6 +424,11 @@ class VQEProblem:
         """
         if callable(qarg):
             qarg_prep = qarg
+        elif isinstance(qarg, QuantumVariableTemplate):
+
+            def qarg_prep():
+                return qarg.construct()
+
         else:
             template = qarg.template()
 
@@ -470,14 +477,19 @@ class VQEProblem:
         optimizer="COBYLA",
         options={},
     ):
-        r"""This function allows for training of a circuit with a given instance of a ``VQEProblem``. It will then return a function that can be applied to a :ref:`QuantumVariable`,
-        such that it prepares the ground state of the problem Hamiltonian. The function therefore applies a circuit for the problem instance with optimized parameters.
+        r"""Train a circuit with a given instance of a ``VQEProblem``.
+
+        Returns a function that can be applied to a :ref:`QuantumVariable`, such
+        that it prepares the ground state of the problem Hamiltonian. The function
+        therefore applies a circuit for the problem instance with optimized
+        parameters.
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or callable
-            The argument to which the VQE circuit is applied,
-            or a function returning a :ref:`QuantumVariable` to which the VQE circuit is applied.
+        qarg : :ref:`QuantumVariable` or QuantumVariableTemplate or callable
+            The argument to which the VQE circuit is applied, or a
+            QuantumVariableTemplate or function returning a :ref:`QuantumVariable`
+            to which the VQE circuit is applied.
         depth : int
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
@@ -508,6 +520,11 @@ class VQEProblem:
         """
         if callable(qarg):
             qarg_prep = qarg
+        elif isinstance(qarg, QuantumVariableTemplate):
+
+            def qarg_prep():
+                return qarg.construct()
+
         else:
             template = qarg.template()
 
@@ -570,9 +587,10 @@ class VQEProblem:
 
         Parameters
         ----------
-        qarg : :ref:`QuantumVariable` or callable
-            The argument to which the VQE circuit is applied,
-            or a function returning a :ref:`QuantumVariable` to which the VQE circuit is applied.
+        qarg : :ref:`QuantumVariable` or QuantumVariableTemplate or callable
+            The argument to which the VQE circuit is applied, or a
+            QuantumVariableTemplate or function returning a :ref:`QuantumVariable`
+            to which the VQE circuit is applied.
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE ansatz layers.
         precision_range : list[float]
@@ -638,6 +656,11 @@ class VQEProblem:
         """
         if callable(qarg):
             qarg_prep = qarg
+        elif isinstance(qarg, QuantumVariableTemplate):
+
+            def qarg_prep():
+                return qarg.construct()
+
         else:
             template = qarg.template()
 
