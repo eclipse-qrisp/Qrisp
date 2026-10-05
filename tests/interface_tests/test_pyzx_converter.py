@@ -1,3 +1,5 @@
+"""Tests for the Qrisp <-> PyZX circuit converter."""
+
 import sys
 from fractions import Fraction
 from unittest.mock import MagicMock, patch
@@ -12,10 +14,11 @@ from qrisp.circuit import standard_operations as qrisp_ops
 
 
 def test_import_error():
+    """to_pyzx raises ImportError when PyZX is not installed."""
     with pytest.raises(ImportError):
         with patch.dict(sys.modules, {"pyzx": None}):
             qc = QuantumCircuit(1)
-            c = qc.to_pyzx()
+            qc.to_pyzx()
 
 
 def _build_single_qubit_qrisp_circuit():
@@ -187,7 +190,10 @@ def test_multi_qubit_circuit_roundtrip_reverse():
 
 
 def test_qrisp_transpilation():
-    """Test transpilation capability of converter for a circuit that has to be transpiled. Example taken from test_cirq_converter.py"""
+    """Test transpilation for a circuit that has to be decomposed first.
+
+    Example adapted from test_cirq_converter.py.
+    """
     from qrisp import QPE, h, p
 
     def U(qv):
@@ -263,7 +269,7 @@ def test_convert_to_pyzx_raises(circuit_builder, match):
     """Verify convert_to_cirq raises ValueError for unsupported gates."""
     with pytest.raises(ValueError, match=match):
         qc = circuit_builder()
-        c = qc.to_pyzx()
+        qc.to_pyzx()
 
 
 def _build_pyzx_circuit_with_mock_gate():
@@ -289,15 +295,17 @@ def _build_pyzx_circuit_with_undecomposable_gate():
 
 
 def test_error_pyzx_to_qrisp_mock_gate():
+    """from_pyzx raises ValueError for a gate unknown to PyZX."""
     c = _build_pyzx_circuit_with_mock_gate()
     with pytest.raises(ValueError, match="of PyZX is unknown"):
-        qc = QuantumCircuit.from_pyzx(c)
+        QuantumCircuit.from_pyzx(c)
 
 
 def test_error_pyzx_to_qrisp_undecomposable_gat():
+    """from_pyzx raises ValueError for a gate PyZX cannot decompose."""
     c = _build_pyzx_circuit_with_undecomposable_gate()
     with pytest.raises(ValueError, match="cannot be decomposed either"):
-        qc = QuantumCircuit.from_pyzx(c)
+        QuantumCircuit.from_pyzx(c)
 
 
 # ---------------------------------------------------------------------------
