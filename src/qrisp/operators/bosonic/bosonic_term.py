@@ -168,7 +168,7 @@ class BosonicTerm:
         if binary_encoding in encoder_map:
             encoder = encoder_map[binary_encoding]
         else:
-            raise Exception(f"Don't know binary encoding type {binary_encoding}")
+            raise ValueError(f"Don't know binary encoding type {binary_encoding}")
 
         gate_mapping = {(0, 0): P0, (1, 1): P1, (0, 1): A, (1, 0): C}
 

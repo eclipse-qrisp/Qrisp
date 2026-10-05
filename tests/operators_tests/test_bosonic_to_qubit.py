@@ -1,24 +1,24 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
 from qrisp.operators.bosonic import a_b as a, c_b as c
 from qrisp.operators.bosonic.bosonic_term import gray_code, standard_binary, one_hot
 import numpy as np
 from scipy import sparse
+import pytest
 
 a_matrix = np.diag(np.sqrt(np.arange(1, 8)), k=1).astype(complex)
 c_matrix = np.diag(np.sqrt(np.arange(1, 8)), k=-1).astype(complex)
@@ -80,7 +80,23 @@ def test_bosonic_to_qubit_single_operators():
 def test_bosonic_to_qubit_multiple_operators():
     """Check whether single bosonic operators are tanslated correctly for the three binary encodings"""
     _test_bosonic_to_qubit_bin_reps(c(0) * a(0), c_matrix @ a_matrix)
+    _test_bosonic_to_qubit_bin_reps(a(0) * c(0), c_matrix @ a_matrix + np.identity(8))
     _test_bosonic_to_qubit_bin_reps(c(0) * a(1), np.kron(c_matrix, np.identity(8)) @ np.kron(np.identity(8), a_matrix))
 
     # one-hot representation gets very heavy to compute very quickly, use smaller truncation number (N=3)
     _test_bosonic_to_qubit_onehot(c(0) * a(0), c_matrix_small @ a_matrix_small)
+
+
+def test_to_sparse_matrix():
+    M = (c(0) * a(0)).to_sparse_matrix(binary_encoding="standard_binary").todense()
+    np.testing.assert_array_almost_equal(M, np.diag(np.arange(8)))
+
+
+def test_unknown_encoding():
+    with pytest.raises(ValueError, match="Don't know bosonic mapping"):
+        (c(0) * a(0)).to_qubit_operator(binary_encoding="xyz")
+
+
+def test_qubit_trunc_mismatch_warning():
+    with pytest.warns(match="truncation is not a power of 2, could be chosen larger with same amount of qubits."):
+        O = (c(0) * a(0)).to_qubit_operator(binary_encoding="gray_code", truncation=7)

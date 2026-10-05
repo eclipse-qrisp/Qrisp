@@ -668,7 +668,7 @@ class BosonicOperator(Hamiltonian):
         """
         return self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding).to_sparse_matrix()
 
-    def ground_state_energy(self, truncation: int = 8):
+    def ground_state_energy(self, truncation: int = 8, binary_encoding: str = "gray_code"):
         """Calculate the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
 
         Returns
@@ -686,7 +686,7 @@ class BosonicOperator(Hamiltonian):
             print(O.ground_state_energy())
 
         """
-        return self.to_qubit_operator(truncation=truncation).ground_state_energy()
+        return self.to_qubit_operator(truncation=truncation, binary_encoding=binary_encoding).ground_state_energy()
 
     def to_qubit_operator(self, truncation: int = 8, binary_encoding: str = "gray_code"):
         """Transform the BosonicOperator to a :ref:`QubitOperator`.
@@ -737,7 +737,7 @@ class BosonicOperator(Hamiltonian):
                 res += coeff * term.to_qubit_term(truncation=truncation, binary_encoding=binary_encoding)
             return res
         else:
-            raise Exception(f"Don't know bosonic mapping {binary_encoding}.")
+            raise ValueError(f"Don't know bosonic mapping {binary_encoding}.")
 
     def expectation_value(
         self, state_prep: callable, truncation: int = 8, binary_encoding: str = "gray_code", **measurement_kwargs
@@ -937,7 +937,7 @@ def prepare_bosonic_fock_state(n: int, truncation: int = 8, binary_encoding: str
     elif binary_encoding == "one_hot":
         qubits = one_hot(n_qubits)[n]
     else:
-        raise Exception(f"Don't know binary encoding type {binary_encoding}")
+        raise ValueError(f"Don't know binary encoding type {binary_encoding}")
 
     for i, q in enumerate(qubits):
         if q:
