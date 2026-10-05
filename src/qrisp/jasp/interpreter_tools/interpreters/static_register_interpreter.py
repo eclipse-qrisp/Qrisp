@@ -76,7 +76,6 @@
 
 import jax.numpy as jnp
 from jax import jit, make_jaxpr
-from jax.extend.core import Literal
 from jax.lax import cond, fori_loop
 from jax.lax import while_loop as jax_while_loop
 
@@ -117,14 +116,7 @@ def _build_inner_args(jaspr, size):
     """Build arguments for the expanded-signature inner jaxpr."""
     inner_args = []
     for invar in jaspr.jaxpr.invars:
-        if isinstance(invar, Literal):
-            if isinstance(invar.val, int):
-                inner_args.append(jnp.asarray(invar.val, dtype="int64"))
-            elif isinstance(invar.val, float):
-                inner_args.append(jnp.asarray(invar.val, dtype="float64"))
-            else:
-                inner_args.append(invar.val)
-        elif isinstance(invar.aval, AbstractQuantumState):
+        if isinstance(invar.aval, AbstractQuantumState):
             inner_args.append(
                 (
                     AbstractQubitArray(),
@@ -132,30 +124,9 @@ def _build_inner_args(jaspr, size):
                     AbstractQuantumState(),
                 )
             )
-        elif isinstance(invar.aval, AbstractQubitArray):
-            inner_args.append(ScalarList(max_size=size))
-        elif isinstance(invar.aval, AbstractQubit):
-            inner_args.append(jnp.asarray(0, dtype="int64"))
         else:
             inner_args.append(invar.aval)
     return inner_args
-
-
-def _build_outer_args(jaspr):
-    """Build arguments for the wrapper with the original jaspr signature."""
-    outer_args = []
-    for invar in jaspr.jaxpr.invars:
-        if isinstance(invar, Literal):
-            pass
-        elif isinstance(invar.aval, AbstractQuantumState):
-            outer_args.append(AbstractQuantumState())
-        elif isinstance(invar.aval, AbstractQubitArray):
-            outer_args.append(AbstractQubitArray())
-        elif isinstance(invar.aval, AbstractQubit):
-            outer_args.append(jnp.asarray(0, dtype="int64"))
-        else:
-            outer_args.append(invar.aval)
-    return outer_args
 
 
 def make_static_register_interpreter(size):
@@ -204,6 +175,18 @@ def make_static_register_interpreter(size):
         """
         from qrisp.jasp.interpreter_tools.abstract_interpreter import eval_jaxpr as _eval_jaxpr
 
+        # Qubits passed in or out would have to outlive the register, which
+        # is released before the function returns.
+        for var in jaspr.jaxpr.invars + jaspr.jaxpr.outvars:
+            if isinstance(var.aval, (AbstractQubitArray, AbstractQubit)):
+                raise ValueError(
+                    "The static qubit register cannot be used with a function that takes or "
+                    "returns a QuantumVariable or a qubit: all qubits live in one register "
+                    "that is released when the function returns.\n\n"
+                    "Create and measure QuantumVariables inside the function and return the "
+                    "measurement results instead."
+                )
+
         # ------------------------------------------------------------------ #
         # Step 1: build the inner (expanded-signature) jaxpr                 #
         # ------------------------------------------------------------------ #
@@ -220,7 +203,7 @@ def make_static_register_interpreter(size):
         # ------------------------------------------------------------------ #
         # Step 3: build an outer wrapper with the *original* signature       #
         # ------------------------------------------------------------------ #
-        outer_args = _build_outer_args(jaspr)
+        outer_args = [invar.aval for invar in jaspr.jaxpr.invars]
 
         # Pre-compute constant initial free-index state (captured in closure).
         # ScalarList has no backing tensor: each free-index slot is its own
@@ -559,8 +542,11 @@ _reset_jaxpr = make_jaxpr(_reset_qubit_array)(AbstractQubitArray(), AbstractQuan
 
 
 def _process_reset(eqn, context_dic, _register_size, evaluator):
-    """Reset a QubitArray to |0> by measuring each qubit and conditionally applying X."""
+    """Reset a qubit or QubitArray to |0> by measuring each qubit and conditionally applying X."""
     invalues = extract_invalues(eqn, context_dic)
+    if isinstance(eqn.invars[0].aval, AbstractQubit):
+        # The reset jaxpr is traced for a QubitArray, so wrap the single position.
+        invalues[0] = ScalarList([invalues[0]], max_size=1)
     outvalues = eval_jaxpr(_reset_jaxpr.jaxpr, eqn_evaluator=evaluator)(*invalues)
     insert_outvalues(eqn, context_dic, outvalues)
 

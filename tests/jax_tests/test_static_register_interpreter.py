@@ -29,6 +29,7 @@ from qrisp import (
     invert,
     measure,
     qache,
+    reset,
     x,
 )
 from qrisp.jasp import jaspr_to_static_register_jaspr, jrange, make_jaspr, q_while_loop
@@ -301,6 +302,36 @@ def test_static_register_invert():
 
     assert jaspr() == 0
     assert static_reg_jaspr() == 0
+
+
+def test_static_register_single_qubit_reset():
+    """``reset`` on a single qubit instead of a whole QubitArray."""
+
+    def main():
+        a = QuantumFloat(2)
+        x(a)
+        reset(a[0])
+        return measure(a)
+
+    jaspr = make_jaspr(main)()
+    static_reg_jaspr = jaspr_to_static_register_jaspr(jaspr, 4)
+
+    assert jaspr() == 2
+    assert static_reg_jaspr() == 2
+
+
+def test_static_register_rejects_quantum_output():
+    """A returned QuantumVariable cannot outlive the static register."""
+
+    def main():
+        a = QuantumFloat(3)
+        x(a[0])
+        return a
+
+    jaspr = make_jaspr(main)()
+
+    with pytest.raises(ValueError, match="QuantumVariable"):
+        jaspr_to_static_register_jaspr(jaspr, 6)
 
 
 def test_static_register_quantum_bool():
