@@ -34,6 +34,7 @@ from qrisp import (
     boolean_simulation,
     conjugate,
     control,
+    count_ops,
     custom_inversion,
     h,
     jaspify,
@@ -829,3 +830,106 @@ def test_montgomery_shift_roundtrip_with_40_bit_modulus():
 
     for value in (1, 12345, 987654321123, N - 1):
         assert int(roundtrip(value)) == value, value
+
+
+@pytest.mark.parametrize("N", [13, 17])
+def test_inpl_mult_with_inverse_matches_inplace_multiplication(N):
+    """``qm.inpl_mult(X, inverse=X^-1)`` computes X * y mod N for every input y, with and without control."""
+
+    @boolean_simulation
+    def multiply(factor, inverse, y, c):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        ctrl = QuantumBool()
+        ctrl[:] = c
+        with control(ctrl[0]):
+            qm.inpl_mult(factor, inverse=inverse)
+        return measure(qm)
+
+    for factor in (2, 3, N - 2, N - 1):
+        for y in range(N):
+            for c in (0, 1):
+                assert int(multiply(factor, pow(factor, -1, N), y, c)) == factor**c * y % N, (factor, y, c)
+
+
+def test_inpl_mult_with_inverse_biginteger_modulus():
+    """``qm.inpl_mult`` with a BigInteger modulus and a precomputed BigInteger inverse."""
+    rng = random.Random(40)
+    N = rng.randrange(2**39 + 1, 2**40, 2)
+    factor, y = rng.randrange(2, N), rng.randrange(1, N)
+    while math.gcd(factor, N) != 1:
+        factor = rng.randrange(2, N)
+
+    @boolean_simulation
+    def multiply(y):
+        qm = QuantumModulus(BigInteger.create_static(N, 2))
+        qm[:] = y
+        qm.inpl_mult(BigInteger.create_static(factor, 2), inverse=BigInteger.create_static(pow(factor, -1, N), 2))
+        return measure(qm)
+
+    assert multiply(y)() == factor * y % N
+
+
+def test_inpl_mult_with_inverse_gives_the_same_circuit():
+    """Passing the inverse only skips its classical computation: the gates and qubits are those of ``qm *= X``."""
+    rng = random.Random(64)
+    N = rng.randrange(2**63 + 1, 2**64, 2)
+    factor = rng.randrange(2, N)
+    while math.gcd(factor, N) != 1:
+        factor = rng.randrange(2, N)
+
+    def program(use_inverse):
+        def main():
+            qm = QuantumModulus(BigInteger.create_static(N, 4))
+            qm[:] = 1
+            qb = QuantumBool()
+            h(qb)
+            with control(qb):
+                if use_inverse:
+                    qm.inpl_mult(
+                        BigInteger.create_static(factor, 4), inverse=BigInteger.create_static(pow(factor, -1, N), 4)
+                    )
+                else:
+                    qm *= BigInteger.create_static(factor, 4)
+
+        return main
+
+    for metric in (count_ops, num_qubits):
+        assert metric(meas_behavior="1")(program(True))() == metric(meas_behavior="1")(program(False))()
+
+
+def test_inpl_mult_rejects_quantum_operands():
+    """``inpl_mult`` only multiplies by classical factors."""
+
+    def main(operand_is_factor):
+        qm = QuantumModulus(13)
+        other = QuantumFloat(4)
+        if operand_is_factor:
+            qm.inpl_mult(other)
+        else:
+            qm.inpl_mult(3, inverse=other)
+
+    for operand_is_factor in (True, False):
+        with pytest.raises(TypeError):
+            main(operand_is_factor)
+
+
+@pytest.mark.parametrize("bits", [36, 40, 61])
+def test_inplace_multiplication_with_large_integer_modulus(bits):
+    """``qm *= X`` computes X * y mod N for an integer modulus of up to 61 bits.
+
+    Regression test: the partial products X * 2**j mod N were computed as
+    (X << j) % N in int64, which overflowed for moduli above about 33 bits.
+    """
+    rng = random.Random(bits)
+    N = rng.randrange(2 ** (bits - 1) + 1, 2**bits, 2)
+    factor, y = rng.randrange(2, N), rng.randrange(1, N)
+
+    @boolean_simulation
+    def multiply(factor, y):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        qm *= factor
+        return measure(qm)
+
+    assert int(multiply(factor, y)) == factor * y % N
