@@ -48,6 +48,7 @@ def _approx_ratio(meas, solution):
 
 def _most_likely_cost_and_prob(meas, N):
     """Get the N most likely QUBO costs and their probabilites.
+
     Returns two dictionaries of the form {bitstring: cost/prob}.
     """
     keys = list(meas.keys())[:N]

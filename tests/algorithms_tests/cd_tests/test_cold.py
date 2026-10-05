@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the COLD algorithm: pulse basis, objectives and the end-to-end QUBO solutions."""
+
 import time
 
 import numpy as np
@@ -23,10 +25,16 @@ import sympy as sp
 from qrisp import QuantumVariable
 from qrisp import h as had_gate
 from qrisp import z as z_gate
-from qrisp.algorithms.cold import DCQOProblem, solve_QUBO
+from qrisp.algorithms.cold import DCQOProblem, create_COLD_instance, solve_QUBO
 from qrisp.interface.provider_backends.qiskit_backend import QiskitBackend
 from qrisp.operators.qubit import QubitOperator, X, Y, Z
 from qrisp.operators.qubit.qubit_term import QubitTerm
+
+_PROB_TOL = 1e-6
+_COST_TOL = 0.1
+_MAX_SECONDS = 5.0
+_MAX_G_DERIV = 1e10
+_MIN_PULSE_BUILDS = 2
 
 
 def _assert_is_a_usable_distribution(res, Q):
@@ -34,7 +42,7 @@ def _assert_is_a_usable_distribution(res, Q):
     assert res, "run returned no measurement results"
     probabilities = [prob for prob, _ in res.values()]
     assert all(p >= 0 for p in probabilities)
-    assert abs(sum(probabilities) - 1.0) < 1e-6
+    assert abs(sum(probabilities) - 1.0) < _PROB_TOL
     for state, (_, cost) in res.items():
         assert len(state) == Q.shape[0]
         x = np.array([int(b) for b in state])
@@ -140,7 +148,7 @@ def test_coldcrab_uniform_magnitude():
 
 
 def test_cold_expvalue_method_backend():
-    """COLD's expectation-value objective runs against an explicit measurement backend, not just the default statevector path."""
+    """COLD's expectation-value objective runs against an explicit measurement backend, not only the default path."""
     np.random.seed(42)  # Deterministic for reproducible test results
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
     problem_args = {"method": "COLD", "uniform": True}  # , "agp_type": "local"}
@@ -277,7 +285,7 @@ def test_cold_expvalue_fast_path_matches_hprob():
         qarg3, compile=False, subs_dic=subs_dic, precompiled_qc=qc, precision=0.01
     )()
 
-    assert abs(cost - ground_truth) < 0.1
+    assert abs(cost - ground_truth) < _COST_TOL
 
 
 def test_cold_expvalue_fast_path_handles_projectors():
@@ -333,7 +341,7 @@ def test_cold_expvalue_fast_path_handles_projectors():
         qarg3, compile=False, subs_dic=subs_dic, precompiled_qc=qc, precision=0.01
     )()
 
-    assert abs(cost - ground_truth) < 0.1
+    assert abs(cost - ground_truth) < _COST_TOL
 
 
 def test_cold_expvalue_falls_back_for_nondiagonal_hprob():
@@ -388,7 +396,7 @@ def test_cold_expvalue_falls_back_for_nondiagonal_hprob():
         qarg3, compile=False, subs_dic=subs_dic, precompiled_qc=qc, precision=0.01
     )()
 
-    assert abs(cost - ground_truth) < 0.1
+    assert abs(cost - ground_truth) < _COST_TOL
 
 
 def test_cold_no_exponential_precompute_for_non_expvalue_objective():
@@ -435,7 +443,7 @@ def test_cold_no_exponential_precompute_for_non_expvalue_objective():
     )
     elapsed = time.perf_counter() - t0
 
-    assert elapsed < 5.0
+    assert elapsed < _MAX_SECONDS
 
 
 def test_cold_g_deriv_stays_finite_for_smooth_schedule():
@@ -465,7 +473,7 @@ def test_cold_g_deriv_stays_finite_for_smooth_schedule():
     problem._precompute_timegrid(N_steps=50, T=10, method="COLD")
 
     assert np.all(np.isfinite(problem.g_deriv))
-    assert np.max(np.abs(problem.g_deriv)) < 1e10
+    assert np.max(np.abs(problem.g_deriv)) < _MAX_G_DERIV
 
 
 @pytest.mark.parametrize("n_opt", [None, 0, -1, 1.5, True, "1"])
@@ -508,7 +516,7 @@ def _record_opt_pulses(monkeypatch):
     calls = []
     original = DCQOProblem._precompute_opt_pulses
 
-    def recording(self, N_steps, T, t_list, N_opt, CRAB=False):
+    def recording(self, N_steps, T, t_list, N_opt, CRAB=False):  # noqa: PLR0913, PLR0917 -- mirrors the wrapped signature
         """Wrap ``_precompute_opt_pulses`` and record each call's CRAB flag and pulse matrices."""
         sin_matrix, cos_matrix = original(self, N_steps, T, t_list, N_opt, CRAB=CRAB)
         calls.append((CRAB, sin_matrix.copy(), cos_matrix.copy()))
@@ -543,7 +551,7 @@ def test_cold_crab_final_circuit_uses_the_optimized_basis(monkeypatch, objective
         mes_kwargs={"shots": 100},
     )
 
-    assert len(calls) >= 2, "expected the optimization and the final circuit to both build pulses"
+    assert len(calls) >= _MIN_PULSE_BUILDS, "expected the optimization and the final circuit to both build pulses"
     assert all(crab for crab, _, _ in calls), "every pulse build in a CRAB run must use the CRAB basis"
     _, sin_ref, cos_ref = calls[0]
     for _, sin_matrix, cos_matrix in calls[1:]:
@@ -592,3 +600,43 @@ def test_cold_without_crab_is_deterministic_basis():
         np.testing.assert_allclose(
             cos_matrix[:, k - 1], 2 * np.pi * k * np.cos(2 * np.pi * k * t_list / T) * problem.g_deriv
         )
+
+
+@pytest.mark.filterwarnings("ignore:Initial guess is not within the specified bounds")
+@pytest.mark.parametrize("uniform", [True, False])
+def test_cold_magnitude_objective_is_minimized(uniform):
+    """The optimizer reaches the minimum of the ``agp_coeff_magnitude`` objective it is given.
+
+    The objective is only a proxy for solution quality (see test_cold_uniform_magnitude), so what
+    can be asserted is that the optimization routine does its own job: the value it returns is the
+    objective at the returned parameters, and no point on a dense scan of the bounds beats it.
+    """
+    np.random.seed(42)  # Deterministic for reproducible test results
+    Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
+    N_steps, T, bounds = 20, 10, (-2, 2)
+
+    problem = DCQOProblem(*create_COLD_instance(Q, uniform))
+    problem._crab_r = None
+    problem._precompute_timegrid(N_steps, T, "COLD")
+
+    def optimize(bounds):
+        """Run the optimization routine for the magnitude objective within ``bounds``."""
+        return problem.optimization_routine(
+            QuantumVariable(Q.shape[0]),
+            1,
+            N_steps,
+            T,
+            None,
+            False,
+            "Powell",
+            {},
+            objective="agp_coeff_magnitude",
+            bounds=bounds,
+        )
+
+    params, cost = optimize(bounds)
+    # Pinning the bounds to a single point evaluates the objective there
+    scan = [optimize((p, p))[1] for p in np.linspace(*bounds, 41)]
+
+    assert np.isclose(cost, optimize((params[0], params[0]))[1])
+    assert cost <= min(scan) * (1 + 1e-3)

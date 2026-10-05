@@ -28,9 +28,11 @@ from qrisp.core import QuantumVariable
 from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators.qubit import QubitOperator, X, Y, Z
 
+__all__ = ["create_COLD_instance", "create_LCD_instance", "solve_QUBO"]
+
 
 def _normalize_agp_type(agp_type):
-    """Map the deprecated agp_type ``"order1"`` to ``"local"`` (with a QrispDeprecationWarning) and reject unknown values."""
+    """Map the deprecated agp_type ``"order1"`` to ``"local"`` with a deprecation warning, reject unknown values."""
     if agp_type == "order1":
         warnings.warn(
             "agp_type='order1' is deprecated and will be removed in version 0.11. Use agp_type='local' instead.",
@@ -43,7 +45,7 @@ def _normalize_agp_type(agp_type):
     return agp_type
 
 
-def _local_agp_coeffs(h, J, lam, f=0.0, f_deriv=0.0, *, uniform=True):  # noqa: PLR0913 -- one coefficient formula, four call sites
+def _local_agp_coeffs(h, J, lam, f=0.0, f_deriv=0.0, *, uniform=True):  # noqa: PLR0913 -- one coefficient formula, three call sites
     r"""First-order AGP coefficients for the ansatz $A_\lambda = \sum_i \alpha_i \sigma^y_i$.
 
     Minimises the action $S = \mathrm{Tr}[G_\lambda^2]$ with
@@ -494,7 +496,8 @@ def solve_QUBO(Q: np.array, problem_args: dict, run_args: dict):
     """
     method = problem_args["method"]
     # Both methods accept the AGP type; the local AGP is the default.
-    agp_type = problem_args.get("agp_type", "local")
+    # Normalize here so a deprecation warning points at the solve_QUBO caller, not into Qrisp
+    agp_type = _normalize_agp_type(problem_args.get("agp_type", "local"))
 
     if method == "LCD":
         problem_operators = create_LCD_instance(Q, agp_type=agp_type, uniform_AGP_coeffs=problem_args["uniform"])

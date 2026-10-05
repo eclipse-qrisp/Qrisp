@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the LCD algorithm on QUBO problems."""
+
 import numpy as np
 import pytest
 from qubo_problems import Q_coupled, field_blind_coupled, solution_coupled
@@ -23,7 +25,6 @@ from qrisp.algorithms.cold import solve_QUBO
 
 def test_lcd_local_uniform():
     """LCD with 1st-order AGP, uniform coefficients, finds the known solution."""
-
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"
@@ -38,7 +39,6 @@ def test_lcd_local_uniform():
 
 def test_lcd_local_nonuniform():
     """LCD with 1st-order AGP, non-uniform coefficients, finds the known solution."""
-
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"
@@ -53,7 +53,6 @@ def test_lcd_local_nonuniform():
 
 def test_lcd_nc_uniform():
     """LCD with nested-commutator AGP, uniform coefficients, finds the known solution."""
-
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"
@@ -68,7 +67,6 @@ def test_lcd_nc_uniform():
 
 def test_lcd_nc_nonuniform():
     """LCD with nested-commutator AGP, non-uniform coefficients, finds the known solution."""
-
     Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
 
     solution = "1011"

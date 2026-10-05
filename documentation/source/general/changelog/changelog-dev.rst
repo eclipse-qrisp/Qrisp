@@ -206,6 +206,10 @@ Bug Fixes
   operators) to ``"local"``, to avoid confusion with the first-order nested
   commutator ansatz ``"nc"``. ``"order1"`` still works but emits a
   ``QrispDeprecationWarning`` and will be removed in version 0.11.
+  The ``"order2"`` option listed in the old docstrings never existed; it has been
+  removed from the docs, and an unknown ``agp_type`` now raises a ``ValueError``
+  instead of a ``KeyError``.
+  (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
 * Fixed two AGP coefficient shape bugs in ``create_LCD_instance`` with
   ``agp_type="nc"``: the ``uniform`` and non-uniform coefficient builders
@@ -254,7 +258,7 @@ Bug Fixes
   (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
 * The COLD control pulses now use the basis :math:`\sin(2\pi k\, g(\lambda))`,
-  instead of :math:`\sin(\pi k\, g(\lambda))`, and COLD-CRAB randomizes the 
+  instead of :math:`\sin(\pi k\, g(\lambda))`, and COLD-CRAB randomizes the
   frequencies as :math:`k \to k(1 + r_k)` instead of :math:`k \to k + r_k`.
   Optimized parameters from earlier versions do not carry over.
   (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
@@ -269,7 +273,9 @@ Bug Fixes
   ``1/lamdot`` through the control-pulse derivative while the circuit applies
   them as ``dt * lamdot * alpha``, the sum was dominated by the first and last
   timestep and grew as ``N_steps**3``. It also hardcoded ``uniform=True`` when
-  scoring, so a non-uniform problem was evaluated against a uniform ansatz.
+  scoring, so a non-uniform problem was scored with uniform coefficients. The
+  objective still scores a generic second-order AGP template, not the operators
+  the circuit applies, and is now documented as experimental.
   (`PR #893 <https://github.com/eclipse-qrisp/Qrisp/pull/893>`_).
 
 * :func:`~qrisp.cold.solve_QUBO` now raises a ``ValueError`` for an unrecognised
@@ -340,12 +346,10 @@ API Changes
   (`PR #814 <https://github.com/eclipse-qrisp/Qrisp/pull/814>`_).
 
 * :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>` now defaults to
-  ``objective="exp_value"`` instead of ``"agp_coeff_magnitude"``. The latter is a
-  proxy that minimises the magnitude of the AGP coefficients without running the
-  circuit; with the scheduling function corrected it selects controls that can
-  perform worse than no control at all, placing the optimum at mean rank 3.83
-  across six 4x4 QUBOs against rank 1 for ``exp_value``. It remains available as
-  an opt-in for cases where the simulation cost of ``exp_value`` is prohibitive.
+  ``objective="exp_value"`` instead of ``"agp_coeff_magnitude"``. The latter is an
+  experimental proxy that does not run the circuit and can select controls that
+  perform worse than no control at all. It remains available as an opt-in for cases
+  where the simulation cost of ``exp_value`` is prohibitive.
   The undocumented and never-implemented ``agp_coeff_amplitude`` option has been
   removed from the docstrings.
 
@@ -360,7 +364,8 @@ API Changes
 * ``qrisp.algorithms.cold`` no longer exports the QUBO test fixtures
   ``Q3``--``Q10`` and ``solution3``--``solution10``. These were leaked into the
   public namespace by a star import and were consumed only by the test suite;
-  they now live alongside it.
+  they now live alongside it. The helpers of ``AGP_params`` and ``cold_benchmark``
+  (e.g. ``solve_alpha``, ``approx_ratio``) are now private (leading underscore).
 
 .. Add API changes above this line
 

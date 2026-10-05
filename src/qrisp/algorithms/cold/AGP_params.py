@@ -91,10 +91,10 @@ def _pauli_from_ops(ops):
     for i, p in ops.items():
         if p == 1:  # X
             X |= 1 << i
-        elif p == 2:  # Y
+        elif p == 2:  # Y  # noqa: PLR2004 -- Pauli codes 1/2/3 = X/Y/Z
             X |= 1 << i
             Z |= 1 << i
-        elif p == 3:  # Z
+        elif p == 3:  # Z  # noqa: PLR2004 -- Pauli codes 1/2/3 = X/Y/Z
             Z |= 1 << i
     return (X, Z)
 
@@ -105,8 +105,8 @@ def _pauli_from_ops(ops):
 def _build_H_and_dH(h, J, lam, B_val=0.0, Bp_val=0.0):
     """Create Hamiltonian H and derivative dH/dlam.
 
-    Using from model values h, J, lam. B_val and Bp_val.
-    The last two are only necessary for the quantum control pulse in COLD.
+    Built from the model values ``h``, ``J`` and ``lam``. ``B_val`` and ``Bp_val`` are the control-pulse
+    value and its derivative; they are only necessary for the quantum control pulse in COLD.
     """
     N = len(h)
     H = defaultdict(complex)

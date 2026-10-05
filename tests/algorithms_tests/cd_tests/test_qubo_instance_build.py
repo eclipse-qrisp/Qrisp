@@ -14,6 +14,8 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the QUBO to Ising instance builders of COLD and LCD."""
+
 import itertools
 
 import numpy as np
@@ -24,6 +26,9 @@ from qrisp.algorithms.cold.problems.QUBO import create_COLD_instance, create_LCD
 from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators.qubit import Y, Z
 from qrisp.operators.qubit.qubit_operator import QubitOperator
+
+_ATOL = 1e-9
+_DIAG_ATOL = 1e-12
 
 
 def test_qubit_operator_sum_matches_naive_sum():
@@ -37,7 +42,7 @@ def test_qubit_operator_sum_matches_naive_sum():
 
     assert fast.terms_dict.keys() == naive.terms_dict.keys()
     for term, coeff in naive.terms_dict.items():
-        assert abs(fast.terms_dict[term] - coeff) < 1e-9
+        assert abs(fast.terms_dict[term] - coeff) < _ATOL
 
 
 def test_create_cold_instance_H_prob_matches_naive_build():
@@ -55,7 +60,7 @@ def test_create_cold_instance_H_prob_matches_naive_build():
 
     assert H_prob.terms_dict.keys() == H_prob_naive.terms_dict.keys()
     for term, coeff in H_prob_naive.terms_dict.items():
-        assert abs(H_prob.terms_dict[term] - coeff) < 1e-9
+        assert abs(H_prob.terms_dict[term] - coeff) < _ATOL
 
 
 def test_create_lcd_instance_H_prob_and_nc_agp_match_naive_build():
@@ -80,13 +85,13 @@ def test_create_lcd_instance_H_prob_and_nc_agp_match_naive_build():
 
     assert H_prob.terms_dict.keys() == H_prob_naive.terms_dict.keys()
     for term, coeff in H_prob_naive.terms_dict.items():
-        assert abs(H_prob.terms_dict[term] - coeff) < 1e-9
+        assert abs(H_prob.terms_dict[term] - coeff) < _ATOL
 
     assert len(A_lam) == len(A_lam_naive)
     for op, op_naive in zip(A_lam, A_lam_naive):
         assert op.terms_dict.keys() == op_naive.terms_dict.keys()
         for term, coeff in op_naive.terms_dict.items():
-            assert abs(op.terms_dict[term] - coeff) < 1e-9
+            assert abs(op.terms_dict[term] - coeff) < _ATOL
 
 
 @pytest.mark.parametrize(
@@ -107,7 +112,7 @@ def test_H_prob_reproduces_qubo_cost_up_to_constant(Q, label):
 
     matrix = H_prob.to_array()
     off_diagonal = matrix - np.diag(np.diag(matrix))
-    assert np.abs(off_diagonal).max() < 1e-12, f"{label}: H_prob must be diagonal in the Z basis"
+    assert np.abs(off_diagonal).max() < _DIAG_ATOL, f"{label}: H_prob must be diagonal in the Z basis"
 
     # to_array() indexes basis states in the same order as the measurement keys: qubit 0 leftmost.
     energies = np.real(np.diag(matrix))

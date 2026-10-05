@@ -291,7 +291,7 @@ class DCQOProblem:
         # CRAB randomization k -> k*(1 + r_k), see Eq. (28) of https://doi.org/10.1103/PRXQuantum.4.010312.
         for k in range(N_opt):
             omega = 2 * np.pi * (k + 1) * (1 + r_params[k])
-            sin_matrix[:, k] = np.sin(omega * t_list / T)
+            sin_matrix[:, k] = np.sin(omega * self.g)
             cos_matrix[:, k] = omega * np.cos(omega * self.g) * self.g_deriv
 
         return sin_matrix, cos_matrix
@@ -572,9 +572,10 @@ class DCQOProblem:
             # Must match the midpoint grid used in _precompute_timegrid.
             t_list = (np.arange(int(N_steps)) + 0.5) * (T / N_steps)
             sin_matrix, cos_matrix = self._precompute_opt_pulses(N_steps, T, t_list, N_opt=len(params), CRAB=CRAB)
-            # Match the AGP ansatz the circuit actually applies: apply_cold_hamiltonian uses a single
-            # merged A_lam (QubitOperator) for uniform coefficients and one operator per qubit (list)
-            # for non-uniform ones.
+            # The objective always scores the second-order Y/XY/ZY template of _solve_alpha_gamma_chi,
+            # not the operator the circuit applies (local Y or nested commutators, see apply_cold_hamiltonian).
+            # It is a generic proxy for the AGP size. Only uniformity is matched: a single merged A_lam
+            # (QubitOperator) means uniform coefficients, a list one coefficient per qubit.
             uniform = isinstance(self.A_lam, QubitOperator)
             magnitude = 0
 
@@ -680,9 +681,10 @@ class DCQOProblem:
         objective : str
             The objective function to be minimized. Default is ``exp_value``, which optimizes the control
             pulses against the measured energy of ``H_prob`` and is the reliable choice. The alternative
-            ``agp_coeff_magnitude`` is a cheap proxy that minimizes the magnitude of the AGP coefficients
-            instead of running the circuit; it avoids the simulation cost but can select controls that
-            perform worse than no control at all, so opt into it only deliberately.
+            ``agp_coeff_magnitude`` is experimental. It is a cheap proxy that minimizes the magnitude of the
+            coefficients of a generic second-order AGP template instead of running the circuit, so it does
+            not score the AGP operators the circuit applies. It avoids the simulation cost but can select
+            controls that perform worse than no control at all, so opt into it only deliberately.
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
         options : dict
