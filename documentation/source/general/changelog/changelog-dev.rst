@@ -112,6 +112,12 @@ Improvements
   ``encode(..., rounding=True)`` (now O(1))
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+- Qrisp now ships a ``py.typed`` marker
+  (`PEP 561 <https://peps.python.org/pep-0561/>`_), so type checkers such as
+  mypy and pyright use Qrisp's inline type annotations when checking code
+  that imports Qrisp, instead of treating the package as untyped
+  (`PR #656 <https://github.com/eclipse-qrisp/Qrisp/pull/656>`_).
+
 - The :ref:`num_qubits <num_qubits>` resource estimator no longer limits the
   number of qubit allocations and deallocations. It now keeps four running
   counters instead of recording every event in a fixed-size buffer, so large
@@ -337,14 +343,19 @@ Compatibility
 New Tutorials/ Updated Documentation
 -------------------------------------
 
-- Fixed outdated or inaccurate docstrings and examples across the Jasp
+* Fixed outdated or inaccurate docstrings and examples across the Jasp
   module (control flow, sampling, simulators, optimization tools,
   ``BigInteger``, and ``Jaspr`` MLIR/QIR export)
   (`PR #805 <https://github.com/eclipse-qrisp/Qrisp/pull/805>`_).
 
-- Added a :ref:`Community Day <community_day>` page announcing the first
+* Added a :ref:`Community Day <community_day>` page announcing the first
   Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
   link and agenda.
+
+* Fixed the installation verification command in the getting started documentation
+  (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
+
+
 
 .. Add new tutorials above this line
 
@@ -394,6 +405,11 @@ API Changes
 Development
 -----------
 
+* ``GQSP`` indexes its angle arrays from the end instead of reversing them
+  first, so the traced program contains no reversing slice, which the CUDA-Q
+  lowering does not support. The emitted circuit is unchanged
+  (`PR #938 <https://github.com/eclipse-qrisp/Qrisp/pull/938>`_).
+
 * Refactored the Jasp resource estimators: the slice, fuse and register
   handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and
   the parity handler now have a single implementation shared by the metrics,
@@ -423,6 +439,10 @@ Development
   (`PR #712 <https://github.com/eclipse-qrisp/Qrisp/pull/712>`_,
   `PR #774 <https://github.com/eclipse-qrisp/Qrisp/pull/774>`_).
 
+* Added StepSecurity Harden-Runner to the CI test workflow and pinned 
+  GitHub Actions version to a full-length commit SHA.
+  (`PR #531 <https://github.com/eclipse-qrisp/Qrisp/pull/531>`_).
+  
 * Performed a large-scale refactoring of the jasp (JAX-tracing) interpreter
   subsystem, consolidating control-flow, equation-copying, and caching logic
   that had been independently duplicated across the Catalyst,
@@ -435,6 +455,7 @@ Development
   ``xdsl``, ``docs``, and ``dev``) and updated the Development Guide's
   installation instructions to reference it
   (`PR #807 <https://github.com/eclipse-qrisp/Qrisp/pull/807>`_).
+  
 * Added a ``reviewdog``-based CI workflow that runs ``ruff`` on pull requests
   and surfaces lint findings as annotations on the GitHub Checks tab of
   newly added lines instead of as inline review comments on the PR
@@ -472,6 +493,11 @@ Development
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
+* GitHub Actions pinned to commit SHA in CI workflows
+  (`PR #829 <https://github.com/eclipse-qrisp/Qrisp/pull/829>`_).
+* Added Python 3.13 support to the CI pipeline according to 
+  (`Issue #823 <https://github.com/eclipse-qrisp/Qrisp/issues/823>`_)
+  (`PR #847 <https://github.com/eclipse-qrisp/Qrisp/pull/847>`_).
 * Removed the CodeFactor status badge from the README. It was frequently
   broken due to upstream rate limiting and its AI-review functionality is
   already covered by other tooling
