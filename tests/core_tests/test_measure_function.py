@@ -128,8 +128,7 @@ def test_jasp_return_types():
     }
 
 
-@pytest.mark.parametrize("value", [0, 1])
-def test_boolean_simulation_measures_a_qubit_as_a_boolean(value):
+def test_boolean_simulation_measures_a_qubit_as_a_boolean():
     """Under boolean_simulation, a measured qubit is a boolean, so ~ negates it."""
 
     @boolean_simulation
@@ -139,14 +138,13 @@ def test_boolean_simulation_measures_a_qubit_as_a_boolean(value):
         result = measure(qf[0])
         return result, ~result
 
-    result, negated = main(value)
-    assert result.dtype == jnp.bool_
-    assert bool(result) == bool(value)
-    assert bool(negated) != bool(value)
+    for value in (False, True):
+        result, negated = main(int(value))
+        assert result.dtype == jnp.bool_
+        assert (bool(result), bool(negated)) == (value, not value)
 
 
-@pytest.mark.parametrize("value", [0, 5, 6])
-def test_jasp_measurement_values(value):
+def test_jasp_measurement_values():
     """The traced outcomes match the encoded state."""
 
     @boolean_simulation
@@ -159,12 +157,13 @@ def test_jasp_measurement_values(value):
         x(flags[1])
         return measure(qf), measure(qf[0]), measure(qf[1:3]), measure(flag), measure(flags)
 
-    number, first_bit, upper_bits, flag, flags = main(value)
-    assert float(number) == value
-    assert bool(first_bit) == bool(value & 1)
-    assert int(upper_bits) == value >> 1
-    assert bool(flag)
-    assert [bool(b) for b in flags] == [False, True]
+    for value in (0, 5, 6):
+        number, first_bit, upper_bits, flag, flags = main(value)
+        assert float(number) == value
+        assert bool(first_bit) == bool(value & 1)
+        assert int(upper_bits) == value >> 1
+        assert bool(flag)
+        assert [bool(b) for b in flags] == [False, True]
 
 
 @pytest.mark.parametrize(

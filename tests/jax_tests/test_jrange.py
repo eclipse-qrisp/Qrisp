@@ -16,13 +16,15 @@
 
 """Tests for jrange, JRangeIterator, make_tracer and jlen."""
 
+from contextlib import ExitStack
+
 import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
 from jax.core import Tracer
 
-from qrisp import QuantumFloat, cx, invert, measure, x
+from qrisp import QuantumFloat, control, cx, invert, measure, x
 from qrisp.jasp import boolean_simulation, jlen, jrange, make_jaspr, make_tracer, qache
 from qrisp.jasp.program_control.jrange_iterator import JRANGE_MARKER_NAME, JRangeIterator
 
@@ -110,14 +112,14 @@ def test_jasp_bounds(make_args, expected):
     assert int(boolean_simulation(flip_range(make_args))(3)) == expected
 
 
-@pytest.mark.parametrize("n", [1, 4, 6])
-def test_jasp_number_of_iterations_depends_on_the_arguments(n):
-    """One Jaspr loops over QuantumFloats of any size."""
-    assert int(boolean_simulation(flip_range(lambda qf: (qf.size,)))(n)) == 2**n - 1
+def test_jasp_number_of_iterations_depends_on_the_arguments():
+    """One compiled function loops over QuantumFloats of any size."""
+    flip_all = boolean_simulation(flip_range(lambda qf: (qf.size,)))
+    sizes = [1, 4, 6]
+    assert [int(flip_all(n)) for n in sizes] == [2**n - 1 for n in sizes]
 
 
-@pytest.mark.parametrize("n, expected", [(4, 0b0101), (5, 0b10101)])
-def test_jasp_nested_loops(n, expected):
+def test_jasp_nested_loops():
     """An inner bound can depend on the outer loop index."""
 
     @boolean_simulation
@@ -129,28 +131,72 @@ def test_jasp_nested_loops(n, expected):
                 x(qf[i])
         return measure(qf)
 
-    assert int(main(n)) == expected
+    assert [int(main(n)) for n in (4, 5)] == [0b0101, 0b10101]
 
 
-@pytest.mark.parametrize("n, expected", [(2, [0b11, 0b11]), (4, [0b1111, 0b0011])])
-def test_jasp_inverted_loop_runs_backwards(n, expected):
-    """In an InversionEnvironment, the loop runs from the last index to the first."""
+@pytest.mark.parametrize("inverted", [False, True])
+def test_jasp_classical_control_in_the_body(inverted):
+    """Each iteration can be classically controlled on a condition of the loop index."""
 
-    def cx_chain(qf):
-        for i in jrange(qf.size - 1):
-            cx(qf[i], qf[i + 1])
+    @qache
+    def encode(qf, value):
+        for i in jrange(qf.size):
+            bit_is_set = (value & (1 << i)) != 0
+            condition = control(~bit_is_set, invert=True) if inverted else control(bit_is_set)
+            with condition:
+                x(qf[i])
+
+    @boolean_simulation
+    def main(n, value):
+        qf = QuantumFloat(n)
+        encode(qf, value)
+        return measure(qf)
+
+    values = [3, 4, 6]
+    assert [int(main(3, value)) for value in values] == values
+
+
+def test_jasp_arrays_created_in_the_body():
+    """Arrays created in the loop body become constants of the compiled loop."""
 
     @boolean_simulation
     def main(n):
-        forward, backward = QuantumFloat(n), QuantumFloat(n)
-        x(forward[0])
-        x(backward[0])
-        cx_chain(forward)
-        with invert():
-            cx_chain(backward)
-        return measure(forward), measure(backward)
+        qf = QuantumFloat(n)
+        for i in jrange(qf.size):
+            offsets = jnp.array([0, 1, 2])
+            x(qf[offsets[0] + i])
+        return measure(qf)
 
-    assert [int(result) for result in main(n)] == expected
+    n = 5
+    assert int(main(n)) == 2**n - 1
+
+
+@pytest.mark.parametrize(
+    "start, inversions, expected",
+    [(None, 1, 0b0011), (1, 1, 0b0110), (1, 2, 0b1110), (1, 3, 0b0110)],
+    ids=["reversed", "reversed-with-start", "inverted-twice", "inverted-three-times"],
+)
+def test_jasp_inverted_loop_runs_backwards(start, inversions, expected):
+    """In an odd number of InversionEnvironments, the loop runs from the last index to the first.
+
+    A chain of CX gates copies its first qubit to all later qubits when it runs
+    forwards, but only to the next qubit when it runs backwards.
+    """
+    first = 0 if start is None else start
+    bounds = () if start is None else (start,)
+
+    @boolean_simulation
+    def main(n):
+        qf = QuantumFloat(n)
+        x(qf[first])
+        with ExitStack() as stack:
+            for _ in range(inversions):
+                stack.enter_context(invert())
+            for i in jrange(*bounds, qf.size - 1):
+                cx(qf[i], qf[i + 1])
+        return measure(qf)
+
+    assert int(main(4)) == expected
 
 
 def test_jasp_loop_is_traced_twice_and_compiled_into_a_while_loop():
@@ -166,15 +212,20 @@ def test_jasp_loop_is_traced_twice_and_compiled_into_a_while_loop():
     assert "jasp.q_env" not in primitives
 
 
-def test_jasp_external_carry_value_raises():
-    """Values computed in the loop cannot be used after it."""
+@pytest.mark.parametrize(
+    "escaping, message",
+    [(lambda i: i + 1, "Found jrange with external carry value"), (lambda i: i, None)],
+    ids=["computed-value", "loop-index"],
+)
+def test_jasp_external_carry_value_raises(escaping, message):
+    """Neither values computed in the loop nor the loop index can be used after it."""
 
     @qache
     def flip_all(qf):
         last = qf.size
         for i in jrange(qf.size):
             x(qf[i])
-            last = i + 1
+            last = escaping(i)
         return last
 
     def main(n):
@@ -182,7 +233,8 @@ def test_jasp_external_carry_value_raises():
         flip_all(qf)
         return measure(qf)
 
-    with pytest.raises(Exception, match="Found jrange with external carry value"):
+    # The loop index fails with an internal error instead of the message.
+    with pytest.raises(Exception, match=message):
         make_jaspr(main)(3)
 
 
