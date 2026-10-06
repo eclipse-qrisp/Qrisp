@@ -14,7 +14,8 @@ New Features
   `CUDA-Q <https://nvidia.github.io/cuda-quantum/>`_, NVIDIA's platform for
   hybrid quantum-classical computing. The interface ships as the separate
   package `qrisp-cudaq <https://github.com/eclipse-qrisp/qrisp-cudaq>`_;
-  install it with ``pip install qrisp[cudaq]``.
+  install it with ``pip install qrisp[cudaq]``
+  (`PR #943 <https://github.com/eclipse-qrisp/Qrisp/pull/943>`_).
 
   * :func:`cudaq_kernel <qrisp_cudaq.cudaq_kernel>` turns a Qrisp function into
     a CUDA-Q kernel, executable with ``cudaq.run`` or, with
@@ -363,7 +364,8 @@ New Tutorials/ Updated Documentation
 
 * :doc:`CUDA-Q tutorial </general/tutorial/CUDAQ>` - Compiling and running
   Qrisp kernels on NVIDIA's CUDA-Q platform, from a Bell-state example to
-  hybrid quantum-classical workflows.
+  hybrid quantum-classical workflows
+  (`PR #943 <https://github.com/eclipse-qrisp/Qrisp/pull/943>`_).
 
 * Fixed outdated or inaccurate docstrings and examples across the Jasp
   module (control flow, sampling, simulators, optimization tools,
