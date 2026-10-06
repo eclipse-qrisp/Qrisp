@@ -16,6 +16,8 @@
 
 """Tests for the BlockEncoding class in qrisp.block_encodings."""
 
+import warnings
+
 import numpy as np
 import pytest
 
@@ -33,6 +35,7 @@ from qrisp import (
     x,
 )
 from qrisp.block_encodings import BlockEncoding
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators import X, Y, Z
 
 
@@ -238,6 +241,21 @@ def test_block_encoding_resources():
     assert isinstance(res_dict["gate counts"], dict)
     assert isinstance(res_dict["depth"], int)
     assert isinstance(res_dict["qubits"], int)
+
+
+def test_block_encoding_resources_max_allocations_deprecated():
+    """``max_allocations`` is deprecated: it warns only when passed and does not change the result."""
+    H = X(0) * X(1) + 0.5 * Z(0) * Z(1)
+    BE = BlockEncoding.from_operator(H)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", QrispDeprecationWarning)
+        res_default = BE.resources(QuantumFloat(2))
+
+    with pytest.warns(QrispDeprecationWarning, match="max_allocations"):
+        res_deprecated = BE.resources(QuantumFloat(2), max_allocations=1)
+
+    assert res_deprecated == res_default
 
 
 def test_block_encoding_resources_value_error():
