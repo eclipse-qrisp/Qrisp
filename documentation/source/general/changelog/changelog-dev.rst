@@ -405,6 +405,11 @@ API Changes
 Development
 -----------
 
+* Added ``jaspr_to_static_register_jaspr``, which rewrites a Jaspr so that all
+  qubits come from a single register of fixed size allocated at program start.
+  The CUDA-Q backend in `qrisp-cudaq <https://github.com/eclipse-qrisp/qrisp-cudaq>`_
+  builds on it (`PR #937 <https://github.com/eclipse-qrisp/Qrisp/pull/937>`_).
+
 * ``GQSP`` indexes its angle arrays from the end instead of reversing them
   first, so the traced program contains no reversing slice, which the CUDA-Q
   lowering does not support. The emitted circuit is unchanged
