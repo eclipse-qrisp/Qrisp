@@ -527,16 +527,17 @@ def control(ctrl: Any, /, *args: Any, **kwargs: Any) -> "ControlEnvironment | Cl
     See Also
     --------
     ControlEnvironment : Quantum control on qubits.
-    ClControlEnvironment : Classical control on booleans.
+    qrisp.environments.ClControlEnvironment : Classical control on booleans.
     qrisp.jasp.q_cond : Classical branching with both a true and a false branch.
 
     Notes
     -----
     In Jasp mode, the body of the block is traced once and stored as a sub-Jaspr.
-    When :func:`qrisp.jasp.make_jaspr` flattens the environments, a
-    :ref:`ClControlEnvironment` becomes a ``cond`` primitive
-    (:func:`jax.lax.cond`) whose false branch does nothing, and a
-    :ref:`ControlEnvironment` becomes a call to the controlled body.
+    When :ref:`make_jaspr <jaspr>` flattens the environments, a
+    :ref:`ClControlEnvironment` becomes a ``cond`` primitive (see
+    `jax.lax.cond <https://docs.jax.dev/en/latest/_autosummary/jax.lax.cond.html>`__)
+    whose false branch does nothing, and a :ref:`ControlEnvironment` becomes a
+    call to the controlled body.
 
     Examples
     --------
