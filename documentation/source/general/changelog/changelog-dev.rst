@@ -112,6 +112,12 @@ Improvements
   ``encode(..., rounding=True)`` (now O(1))
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+- Qrisp now ships a ``py.typed`` marker
+  (`PEP 561 <https://peps.python.org/pep-0561/>`_), so type checkers such as
+  mypy and pyright use Qrisp's inline type annotations when checking code
+  that imports Qrisp, instead of treating the package as untyped
+  (`PR #656 <https://github.com/eclipse-qrisp/Qrisp/pull/656>`_).
+
 - The :ref:`num_qubits <num_qubits>` resource estimator no longer limits the
   number of qubit allocations and deallocations. It now keeps four running
   counters instead of recording every event in a fixed-size buffer, so large
@@ -403,6 +409,11 @@ Development
   qubits come from a single register of fixed size allocated at program start.
   The CUDA-Q backend in `qrisp-cudaq <https://github.com/eclipse-qrisp/qrisp-cudaq>`_
   builds on it (`PR #937 <https://github.com/eclipse-qrisp/Qrisp/pull/937>`_).
+
+* ``GQSP`` indexes its angle arrays from the end instead of reversing them
+  first, so the traced program contains no reversing slice, which the CUDA-Q
+  lowering does not support. The emitted circuit is unchanged
+  (`PR #938 <https://github.com/eclipse-qrisp/Qrisp/pull/938>`_).
 
 * Refactored the Jasp resource estimators: the slice, fuse and register
   handlers of ``count_ops`` and ``num_qubits``, the measurement sampling and
