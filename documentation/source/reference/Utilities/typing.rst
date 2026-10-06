@@ -73,3 +73,14 @@ Qrisp. These can be imported directly from the top-level package:
    Accepted by :func:`control`. Qubits select quantum control. Booleans,
    including JAX arrays and traced measurement results, select classical
    control.
+
+.. py:data:: QuantumOperand
+   :type: TypeAlias
+   :value: Qubit | QuantumVariable | QuantumArray | DynamicQubitArray | jax.core.Tracer | Sequence[Qubit]
+
+   Accepted as the qubits of high-level functions such as :func:`measure`:
+   :ref:`Qubit` objects, :ref:`QuantumVariables <QuantumVariable>`,
+   :ref:`QuantumArrays <QuantumArray>` and lists of qubits. In Jasp mode, a
+   single qubit is a JAX tracer and a slice of a QuantumVariable is a
+   ``DynamicQubitArray``. Unlike :data:`QubitLike`, which specifies the qubits of
+   a ``QuantumCircuit``, it does not accept integer indices.

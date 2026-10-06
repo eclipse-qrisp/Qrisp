@@ -16,7 +16,9 @@
 
 """Defines gate application functions (cx, h, mcx, rz, measure, ...) that append operations to circuits."""
 
-from typing import Any
+# Private alias, so that star imports of this module do not export it.
+from collections.abc import Sized as _Sized
+from typing import TYPE_CHECKING, Any
 
 import jax
 import jax.core
@@ -24,6 +26,9 @@ import sympy
 
 import qrisp.circuit.standard_operations as std_ops
 from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen
+
+if TYPE_CHECKING:
+    from qrisp.typing import QuantumOperand
 
 _LOST_TRACK_MESSAGE = (
     "Lost track of QuantumCircuit during tracing. This might have been caused by a missing "
@@ -1162,7 +1167,7 @@ def unitary(unitary_array, qubits):
     gphase(gphase_angle, qubits)
 
 
-def measure(qubits: Any) -> Any:
+def measure(qubits: "QuantumOperand") -> Any:
     """Measure qubits in the computational basis.
 
     In static mode, the measurement is appended to the circuit and the classical
@@ -1171,9 +1176,11 @@ def measure(qubits: Any) -> Any:
 
     Parameters
     ----------
-    qubits : Qubit or QuantumVariable or QuantumArray or DynamicQubitArray or list[Qubit]
-        The qubits to measure. In Jasp mode, a list of qubits is not accepted:
-        measure a QuantumVariable or a slice of it instead.
+    qubits : QuantumOperand
+        The qubits to measure: a :ref:`Qubit`, a :ref:`QuantumVariable`, a
+        :ref:`QuantumArray`, a slice of a QuantumVariable or a list of qubits. In
+        Jasp mode, a list of qubits is not accepted: measure a QuantumVariable or a
+        slice of it instead.
 
     Returns
     -------
@@ -1225,7 +1232,7 @@ def measure(qubits: Any) -> Any:
 
     if not isinstance(qs, TracingQuantumSession):
         # One new Clbit per element of qubits, or a single Clbit for a single qubit.
-        clbits = [qs.add_clbit() for _ in qubits] if hasattr(qubits, "__len__") else qs.add_clbit()
+        clbits = [qs.add_clbit() for _ in qubits] if isinstance(qubits, _Sized) else qs.add_clbit()
         append_operation(std_ops.Measurement(), [qubits], [clbits])
         return clbits
 
