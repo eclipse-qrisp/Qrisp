@@ -152,7 +152,8 @@ class JRangeIterator:
         """
         self.iteration += 1
         if self.iteration == 1:
-            # qrisp.environments imports qrisp.jasp, so it is imported at call time.
+            # qrisp.environments imports jlen, defined in this module, from qrisp.jasp,
+            # so importing it at module level would be circular.
             from qrisp.environments import JIterationEnvironment
 
             self.iter_env = JIterationEnvironment()

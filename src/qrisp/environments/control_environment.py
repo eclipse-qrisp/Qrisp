@@ -19,6 +19,7 @@
 from collections.abc import Sequence
 from typing import Any
 
+import jax
 import numpy as np
 from jax._src.array import ArrayImpl
 from jax.core import ShapedArray
@@ -26,9 +27,22 @@ from jax.core import ShapedArray
 from qrisp.circuit import QuantumCircuit, Qubit, XGate
 from qrisp.core import QuantumVariable, mcx, p, rz, x
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
-from qrisp.environments import ClControlEnvironment, QuantumEnvironment
-from qrisp.jasp import AbstractQubit, check_for_tracing_mode, get_last_equation
-from qrisp.misc import bin_rep, perm_lock, perm_unlock
+from qrisp.environments import (
+    ClControlEnvironment,
+    ConditionEnvironment,
+    InversionEnvironment,
+    QuantumEnvironment,
+)
+from qrisp.environments.custom_control_environment import CustomControlOperation
+from qrisp.jasp import (
+    AbstractQubit,
+    check_for_tracing_mode,
+    extract_invalues,
+    get_last_equation,
+    insert_outvalues,
+)
+from qrisp.misc import bin_rep, perm_lock, perm_unlock, retarget_instructions
+from qrisp.qtypes import QuantumBool
 
 
 class ControlEnvironment(QuantumEnvironment):
@@ -129,8 +143,6 @@ class ControlEnvironment(QuantumEnvironment):
                 # Negating the condition of several controls is not the same as
                 # negating each control: compute the condition into a helper qubit
                 # and control the body on it being 0.
-                from qrisp.qtypes.quantum_bool import QuantumBool
-
                 condition = QuantumBool()
                 self._flip_if_matching(negated_ctrl_qubits, self._negated_ctrl_state, condition)
                 self._condition = condition
@@ -138,8 +150,6 @@ class ControlEnvironment(QuantumEnvironment):
                 self.ctrl_state = "0"
             QuantumEnvironment.__enter__(self)
             return
-
-        from qrisp.qtypes.quantum_bool import QuantumBool
 
         if len(self.ctrl_qubits) == 1:
             self.condition_truth_value = self.ctrl_qubits[0]
@@ -154,12 +164,6 @@ class ControlEnvironment(QuantumEnvironment):
         return self.condition_truth_value
 
     def __exit__(self, exception_type, exception_value, traceback):
-        from qrisp.environments import (
-            ConditionEnvironment,
-            ControlEnvironment,
-            InversionEnvironment,
-        )
-
         if check_for_tracing_mode():
             QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
             negated_ctrl_qubits = getattr(self, "_negated_ctrl_qubits", None)
@@ -173,7 +177,9 @@ class ControlEnvironment(QuantumEnvironment):
 
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
 
-        from qrisp import ConjugationEnvironment
+        # qrisp.environments.conjugation_environment imports control from this module,
+        # so importing it at module level would be circular.
+        from qrisp.environments.conjugation_environment import ConjugationEnvironment
 
         # Determine the parent environment
         for env in self.env_qs.env_stack[::-1]:
@@ -185,9 +191,6 @@ class ControlEnvironment(QuantumEnvironment):
                     break
 
     def compile(self):
-        from qrisp import QuantumBool
-        from qrisp.environments import ConditionEnvironment, CustomControlOperation
-
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because
         # we use the second qubit to compute the toffoli of this one and the parent
@@ -215,8 +218,6 @@ class ControlEnvironment(QuantumEnvironment):
                 # Synthesize the condition of the environment
                 # into the condition truth value qubit
                 if len(ctrl_qubits) == 1:
-                    from qrisp.misc import retarget_instructions
-
                     self.qbool = QuantumBool(name="ctrl_env*", qs=self.env_qs)
                     retarget_instructions(self.env_data, [self.condition_truth_value], [self.qbool[0]])
 
@@ -401,17 +402,13 @@ class ControlEnvironment(QuantumEnvironment):
             x(target)
 
     def jcompile(self, eqn, context_dic):
-
-        from qrisp.jasp import extract_invalues, insert_outvalues
-
+        """Compile the environment into a call of the controlled body."""
         args = extract_invalues(eqn, context_dic)
         body_jaspr = eqn.params["jaspr"]
 
         num_ctrl = len(args) - len(body_jaspr.invars)
         flattened_jaspr = body_jaspr.flatten_environments()
         controlled_jaspr = flattened_jaspr.control(num_ctrl, ctrl_state=self.ctrl_state)
-
-        import jax
 
         res = jax.jit(controlled_jaspr.eval)(*args)
 
@@ -433,8 +430,6 @@ class ControlEnvironment(QuantumEnvironment):
 # For the conversion process, this function turns all Operations which are NO custom
 # controls into their regular controls.
 def convert_to_custom_control(instruction, control_qubit, invert_control=False):
-
-    from qrisp.environments import CustomControlOperation
 
     if invert_control:
         qc = QuantumCircuit(len(instruction.qubits))
@@ -585,10 +580,6 @@ def _as_control_list(ctrl: Any) -> list[Any]:
         The controls, in order.
 
     """
-    # qrisp.qtypes imports qrisp.environments while it is initialized, so
-    # QuantumBool can only be imported at call time.
-    from qrisp.qtypes import QuantumBool
-
     if isinstance(ctrl, QuantumBool):
         return [ctrl[0]]
     if isinstance(ctrl, QuantumVariable):
@@ -628,8 +619,6 @@ def _select_environment(
         If the controls are neither all qubits nor all booleans.
 
     """
-    from qrisp.qtypes import QuantumBool
-
     if check_for_tracing_mode():
         if all(isinstance(ctrl, bool) for ctrl in ctrl_list):
             return ClControlEnvironment, ctrl_list

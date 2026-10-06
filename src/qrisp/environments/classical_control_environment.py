@@ -21,6 +21,7 @@ from jax.lax import cond
 
 from qrisp.environments import QuantumEnvironment
 from qrisp.jasp import (
+    Jaspr,
     check_for_tracing_mode,
     extract_invalues,
     get_last_equation,
@@ -261,7 +262,5 @@ class ClControlEnvironment(QuantumEnvironment):
         branch_0 = traced_eqn.params["branches"][0]
         branch_0.jaxpr.eqns.pop(0)
         branch_0.jaxpr.outvars[-1] = branch_0.jaxpr.invars[-1]
-
-        from qrisp.jasp import Jaspr
 
         traced_eqn.params["branches"] = (Jaspr.from_cache(branch_0), body_jaspr)

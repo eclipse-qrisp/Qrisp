@@ -23,7 +23,20 @@ import jax.core
 import sympy
 
 import qrisp.circuit.standard_operations as std_ops
-from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen
+from qrisp.core.quantum_array import QuantumArray
+from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.jasp import (
+    AbstractQubit,
+    AbstractQubitArray,
+    DynamicQubitArray,
+    Measurement_p,
+    TracingQuantumSession,
+    check_for_tracing_mode,
+    jlen,
+    jrange,
+    reset_p,
+)
+from qrisp.misc.utility import find_qs
 
 _LOST_TRACK_MESSAGE = (
     "Lost track of QuantumCircuit during tracing. This might have been caused by a missing "
@@ -33,8 +46,6 @@ _LOST_TRACK_MESSAGE = (
 
 
 def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
-    from qrisp import find_qs
-
     try:
         qs = find_qs(qubits)
         qs.append(operation, qubits, clbits, param_tracers=param_tracers)
@@ -477,7 +488,6 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         jones_toffoli,
         khattar_mcx,
     )
-    from qrisp.core import QuantumVariable
     from qrisp.environments import invert
     from qrisp.misc import bin_rep
     from qrisp.qtypes import QuantumBool
@@ -1218,9 +1228,6 @@ def measure(qubits: Any) -> Any:
     (7.0, True)
 
     """
-    from qrisp import QuantumArray, QuantumVariable, find_qs
-    from qrisp.jasp import TracingQuantumSession
-
     qs = find_qs(qubits)
 
     if not isinstance(qs, TracingQuantumSession):
@@ -1234,8 +1241,6 @@ def measure(qubits: Any) -> Any:
             clbits = qs.add_clbit()
         append_operation(std_ops.Measurement(), [qubits], [clbits])
         return clbits
-
-    from qrisp.jasp import AbstractQubit, AbstractQubitArray, Measurement_p
 
     # The quantum state belongs to the trace of the enclosing Jasp function. Inside a
     # JAX control-flow primitive, such as jax.lax.fori_loop, the trace is different.
@@ -1274,18 +1279,12 @@ def reset(qubits):
         The Qubit to measure.
 
     """
-    from qrisp import QuantumArray, find_qs
-    from qrisp.jasp import TracingQuantumSession, jrange
-
     qs = find_qs(qubits)
 
     if not isinstance(qs, TracingQuantumSession):
         append_operation(std_ops.Reset(), [qubits])
         return None
     else:
-        from qrisp import QuantumVariable
-        from qrisp.jasp import AbstractQubit, AbstractQubitArray, reset_p
-
         if isinstance(qubits, QuantumVariable):
             abs_qst = reset_p.bind(qubits.reg.tracer, qs.abs_qst)
         elif isinstance(qubits, QuantumArray):
