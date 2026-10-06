@@ -75,7 +75,7 @@ class ControlEnvironment(QuantumEnvironment):
     """
 
     def __init__(self, ctrl_qubits, ctrl_state: int | str = -1, ctrl_method=None, invert=False):
-
+        """Initialize the environment on the control qubits."""
         if isinstance(ctrl_state, int):
             if ctrl_state < 0:
                 ctrl_state += 2 ** len(ctrl_qubits)
