@@ -19,7 +19,3 @@
 
 class QrispDeprecationWarning(UserWarning):
     """Warning for deprecated features in Qrisp."""
-
-
-class QrispRemovedFunctionWarning(UserWarning):
-    """Warning for removed functions in Qrisp."""

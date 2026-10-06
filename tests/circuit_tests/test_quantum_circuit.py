@@ -2586,14 +2586,11 @@ class TestQuantumCircuitExternalConversions:
     # to_pytket                                                          #
     # ------------------------------------------------------------------ #
 
-    def test_to_pytket_removed_warning(self):
-        """to_pytket warns that the converter has been removed."""
-        from qrisp.misc import QrispRemovedFunctionWarning
-
+    def test_to_pytket_removed(self):
+        """to_pytket raises because the converter has been removed."""
         qc = QuantumCircuit(1)
-        with pytest.warns(QrispRemovedFunctionWarning, match="to_pytket.*removed"):
-            with pytest.raises(NotImplementedError, match="removed"):
-                qc.to_pytket()
+        with pytest.raises(NotImplementedError, match="to_pytket.*removed"):
+            qc.to_pytket()
 
     # ------------------------------------------------------------------ #
     # to_cirq                                                            #
