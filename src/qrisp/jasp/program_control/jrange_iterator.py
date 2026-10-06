@@ -264,8 +264,10 @@ def jrange(*args: Any) -> "JRangeIterator | range":
         )
 
     if check_for_tracing_mode():
-        # Python integers become traced values, so the bounds are variables of the program.
-        bounds = [make_tracer(arg) if isinstance(arg, (int, ArrayImpl)) else arg for arg in args]
+        # A concrete array is used like the Python scalar it holds, and Python integers
+        # become traced values, so that the bounds are variables of the program.
+        scalars = [arg.item() if isinstance(arg, ArrayImpl) else arg for arg in args]
+        bounds = [make_tracer(arg) if isinstance(arg, int) else arg for arg in scalars]
         return JRangeIterator(*bounds)
 
     return range(*[arg if isinstance(arg, int) else int(arg) for arg in args])

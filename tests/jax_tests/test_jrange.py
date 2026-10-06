@@ -205,7 +205,6 @@ def test_jasp_changing_iterations_raise():
         make_jaspr(main)(3)
 
 
-@pytest.mark.xfail(strict=True, raises=TypeError, reason="make_tracer rejects concrete JAX arrays")
 @pytest.mark.parametrize(
     "start, stop, expected",
     [(None, jnp.array(2), 0b011), (jnp.array(1), None, 0b110)],
