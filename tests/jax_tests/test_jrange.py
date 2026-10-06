@@ -276,7 +276,6 @@ def test_make_tracer_dtypes(value, dtype):
     assert result == value
 
 
-@pytest.mark.xfail(strict=True, raises=AttributeError, reason="jnp.complex32 does not exist")
 def test_make_tracer_complex():
     """Complex numbers become complex128 arrays."""
     result = make_tracer(1 + 2j)

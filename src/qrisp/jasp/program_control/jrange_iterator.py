@@ -276,7 +276,8 @@ def make_tracer(x: bool | int | float | complex) -> jax.Array:
 
     In Jasp mode, the result is a traced value (the output of a ``jit`` equation
     named ``tracerizer``) instead of a constant. Booleans, integers, floats and
-    complex numbers become ``bool``, ``int64``, ``float64`` and complex arrays.
+    complex numbers become ``bool``, ``int64``, ``float64`` and ``complex128``
+    arrays.
 
     Parameters
     ----------
@@ -311,7 +312,7 @@ def make_tracer(x: bool | int | float | complex) -> jax.Array:
     elif isinstance(x, float):
         dtype = jnp.float64
     elif isinstance(x, complex):
-        dtype = jnp.complex32
+        dtype = jnp.complex128
     else:
         raise TypeError(f"Don't know how to tracerize type {type(x)}")
 
