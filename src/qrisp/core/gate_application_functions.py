@@ -1179,7 +1179,7 @@ def measure(qubits: Any) -> Any:
     -------
     Clbit or list[Clbit] or jax.Array
         In static mode, a :ref:`Clbit` for a single qubit, and otherwise a list
-        with one Clbit per element of ``qubits``. In Jasp mode, a boolean for a
+        with one Clbit per qubit. In Jasp mode, a boolean for a
         qubit, an integer for an array of qubits, and the decoded value for a
         :ref:`QuantumVariable` or a :ref:`QuantumArray`.
 
@@ -1218,18 +1218,23 @@ def measure(qubits: Any) -> Any:
     (7.0, True)
 
     """
-    from qrisp import find_qs
+    from qrisp import QuantumArray, QuantumVariable, find_qs
     from qrisp.jasp import TracingQuantumSession
 
     qs = find_qs(qubits)
 
     if not isinstance(qs, TracingQuantumSession):
-        # One new Clbit per element of qubits, or a single Clbit for a single qubit.
-        clbits = [qs.add_clbit() for _ in qubits] if hasattr(qubits, "__len__") else qs.add_clbit()
+        # One new Clbit per qubit, or a single Clbit for a single qubit. Like
+        # append_operation, count all qubits of all elements of a QuantumArray.
+        if isinstance(qubits, QuantumArray):
+            clbits = [qs.add_clbit() for qv in qubits.flatten() for _ in qv.reg]
+        elif hasattr(qubits, "__len__"):
+            clbits = [qs.add_clbit() for _ in qubits]
+        else:
+            clbits = qs.add_clbit()
         append_operation(std_ops.Measurement(), [qubits], [clbits])
         return clbits
 
-    from qrisp import QuantumArray, QuantumVariable
     from qrisp.jasp import AbstractQubit, AbstractQubitArray, Measurement_p
 
     # The quantum state belongs to the trace of the enclosing Jasp function. Inside a

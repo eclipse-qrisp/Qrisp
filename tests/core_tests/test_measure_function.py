@@ -63,6 +63,16 @@ def test_static_quantum_array():
     assert len({qubit for qubit, _ in measured}) == len(qa)
 
 
+@pytest.mark.parametrize("shape", [1, 2, (2, 2)])
+def test_static_quantum_array_of_multi_qubit_elements(shape):
+    """Each qubit of each element of a QuantumArray is measured into its own Clbit."""
+    qa = QuantumArray(QuantumFloat(2), shape=shape)
+    clbits = measure(qa)
+    qubits = [qubit for qv in qa.flatten() for qubit in qv]
+    assert len(set(clbits)) == len(qubits)
+    assert measurements(qa.qs) == list(zip(qubits, clbits))
+
+
 def test_static_repeated_measurement():
     """Measuring the same qubit twice creates two Clbits."""
     qv = QuantumVariable(1)
