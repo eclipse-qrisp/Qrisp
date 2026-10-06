@@ -16,9 +16,6 @@
 
 """Tests for the type aliases defined in qrisp.typing."""
 
-import typing
-from typing import Any, Sequence
-
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -27,19 +24,13 @@ import sympy
 from jax.core import Tracer
 from sympy import Symbol
 
-import qrisp.typing
-from qrisp import QuantumArray, QuantumBool, QuantumFloat, measure
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
-from qrisp.core.quantum_variable import QuantumVariable
-from qrisp.jasp import DynamicQubitArray, make_jaspr
 from qrisp.typing import (
     ArrayLike,
     ClbitLike,
-    ControlLike,
     FloatLike,
     NDArrayLike,
-    QuantumOperand,
     QubitLike,
     ScalarLike,
 )
@@ -238,114 +229,3 @@ class TestFloatLike:
     def test_non_floatlike_types_are_rejected(self, value):
         """Strings, lists, None, NumPy arrays, and complex numbers are not valid gate parameters."""
         assert not isinstance(value, FloatLike)
-
-
-# Type checkers reject a union containing a parameterized generic as the second
-# argument of isinstance, which works at runtime for the values that match it.
-CONTROL_LIKE: Any = ControlLike
-
-
-class TestControlLike:
-    """Tests for the ControlLike type alias."""
-
-    def test_is_built_on_first_access(self, monkeypatch):
-        """ControlLike is created by the module __getattr__ and then cached."""
-        monkeypatch.delitem(vars(qrisp.typing), "ControlLike", raising=False)
-        control_like = qrisp.typing.ControlLike
-        assert vars(qrisp.typing)["ControlLike"] is control_like
-
-    def test_members(self):
-        """ControlLike holds qubit and boolean types, and sequences of them."""
-        operand = (Qubit, QuantumVariable, bool, np.bool_, jax.Array, Tracer)
-        assert typing.get_args(ControlLike) == (
-            *operand,
-            Sequence[Qubit | QuantumVariable | bool | np.bool_ | jax.Array | Tracer],
-        )
-
-    @pytest.mark.parametrize(
-        "make_value",
-        [
-            lambda: Qubit("q"),
-            QuantumBool,
-            lambda: QuantumFloat(2),
-            lambda: True,
-            lambda: np.True_,
-            lambda: jnp.array(True),
-        ],
-    )
-    def test_accepted_values(self, make_value):
-        """Qubits, QuantumVariables, booleans and JAX arrays are instances of ControlLike."""
-        assert isinstance(make_value(), CONTROL_LIKE)
-
-    def test_jax_tracer(self):
-        """JAX tracers, such as traced measurement results, are instances of ControlLike."""
-        results = []
-
-        def f(value):
-            results.append(isinstance(value, CONTROL_LIKE))
-            return value
-
-        jax.make_jaxpr(f)(True)
-        assert results == [True]
-
-    def test_unknown_attribute_raises(self):
-        """The module __getattr__ only creates the aliases that need qrisp.core."""
-        with pytest.raises(AttributeError, match="has no attribute 'NotAnAlias'"):
-            getattr(qrisp.typing, "NotAnAlias")
-
-
-QUANTUM_OPERAND: Any = QuantumOperand
-
-
-class TestQuantumOperand:
-    """Tests for the QuantumOperand type alias."""
-
-    def test_is_built_on_first_access(self, monkeypatch):
-        """QuantumOperand is created by the module __getattr__ and then cached."""
-        monkeypatch.delitem(vars(qrisp.typing), "QuantumOperand", raising=False)
-        quantum_operand = qrisp.typing.QuantumOperand
-        assert vars(qrisp.typing)["QuantumOperand"] is quantum_operand
-
-    def test_members(self):
-        """QuantumOperand holds qubits, arrays of qubits, tracers and sequences of qubits."""
-        assert typing.get_args(QuantumOperand) == (
-            Qubit,
-            QuantumVariable,
-            QuantumArray,
-            DynamicQubitArray,
-            Tracer,
-            Sequence[Qubit],
-        )
-
-    @pytest.mark.parametrize(
-        "make_value",
-        [
-            lambda: Qubit("q"),
-            lambda: QuantumFloat(2),
-            lambda: QuantumFloat(2)[0],
-            lambda: QuantumArray(QuantumBool(), shape=2),
-        ],
-    )
-    def test_accepted_values(self, make_value):
-        """Qubits, QuantumVariables and QuantumArrays are instances of QuantumOperand."""
-        assert isinstance(make_value(), QUANTUM_OPERAND)
-
-    def test_jasp_values(self):
-        """In Jasp mode, qubits are tracers and slices are DynamicQubitArrays."""
-        results = {}
-
-        def main(n):
-            qf = QuantumFloat(n)
-            values = {"qubit": qf[0], "slice": qf[0:2], "quantum_float": qf}
-            for name, value in values.items():
-                results[name] = isinstance(value, QUANTUM_OPERAND)
-            results["slice_type"] = type(values["slice"])
-            return measure(qf)
-
-        make_jaspr(main)(3)
-        assert results == {
-            "qubit": True,
-            "slice": True,
-            "quantum_float": True,
-            "slice_type": DynamicQubitArray,
-        }

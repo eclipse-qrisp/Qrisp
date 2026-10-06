@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Sequence, TypeAlias
+from typing import Sequence, TypeAlias
 
 import jax
 import jax.core
@@ -28,11 +28,6 @@ from sympy import Expr
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
 
-if TYPE_CHECKING:
-    from qrisp.core.quantum_array import QuantumArray
-    from qrisp.core.quantum_variable import QuantumVariable
-    from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
-
 __all__ = [
     "QubitLike",
     "ClbitLike",
@@ -40,12 +35,7 @@ __all__ = [
     "NDArrayLike",
     "ArrayLike",
     "FloatLike",
-    "ControlLike",
-    "QuantumOperand",
 ]
-
-# Aliases that need qrisp.core, built by the module __getattr__ below.
-_LAZY_ALIASES = ("ControlLike", "QuantumOperand")
 
 QubitLike: TypeAlias = Qubit | int | Sequence[Qubit | int]
 """Accepted as a qubit specifier in circuit methods and gate functions.
@@ -131,83 +121,3 @@ True
 >>> isinstance(sympy.Symbol("phi"), FloatLike)
 True
 """
-
-if TYPE_CHECKING:
-    _Control: TypeAlias = Qubit | QuantumVariable | bool | np.bool_ | jax.Array | jax.core.Tracer
-
-    ControlLike: TypeAlias = _Control | Sequence[_Control]
-    """Accepted by :func:`qrisp.control`.
-
-    Qubits select quantum control. Booleans, including JAX arrays and traced
-    measurement results, select classical control.
-
-    Examples
-    --------
-
-    >>> from qrisp import QuantumBool
-    >>> from qrisp.typing import ControlLike
-    >>> isinstance(QuantumBool(), ControlLike)
-    True
-    >>> isinstance(True, ControlLike)
-    True
-    """
-
-    _QubitArray: TypeAlias = QuantumVariable | QuantumArray | DynamicQubitArray
-
-    QuantumOperand: TypeAlias = Qubit | _QubitArray | jax.core.Tracer | Sequence[Qubit]
-    """Accepted as the qubits of high-level functions such as :func:`qrisp.measure`.
-
-    Qubits are given by :ref:`Qubit` objects, :ref:`QuantumVariables <QuantumVariable>`,
-    :ref:`QuantumArrays <QuantumArray>` and lists of qubits. In Jasp mode, a single
-    qubit is a JAX tracer and a slice of a QuantumVariable is a ``DynamicQubitArray``.
-    Unlike :data:`QubitLike`, which specifies the qubits of a ``QuantumCircuit``, it
-    does not accept integer indices.
-
-    Examples
-    --------
-
-    >>> from qrisp import QuantumFloat
-    >>> from qrisp.typing import QuantumOperand
-    >>> qf = QuantumFloat(2)
-    >>> isinstance(qf, QuantumOperand), isinstance(qf[0], QuantumOperand)
-    (True, True)
-    """
-
-
-def __getattr__(name: str) -> Any:
-    """Build the aliases that need ``qrisp.core`` on first access (:pep:`562`).
-
-    ``qrisp.jasp`` imports this module while ``qrisp.core`` is being initialized, so
-    ``QuantumVariable`` can only be imported here. The unions match the
-    ``TYPE_CHECKING`` definitions above.
-
-    Parameters
-    ----------
-    name : str
-        The requested attribute.
-
-    Returns
-    -------
-    Any
-        The alias. Both aliases are then cached in the module namespace.
-
-    Raises
-    ------
-    AttributeError
-        If ``name`` is not such an alias.
-
-    """
-    if name not in _LAZY_ALIASES:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-    from qrisp.core.quantum_array import QuantumArray
-    from qrisp.core.quantum_variable import QuantumVariable
-    from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
-
-    control_operand = Qubit | QuantumVariable | bool | np.bool_ | jax.Array | jax.core.Tracer
-    qubit_array = QuantumVariable | QuantumArray | DynamicQubitArray
-    globals().update(
-        ControlLike=control_operand | Sequence[control_operand],
-        QuantumOperand=Qubit | qubit_array | jax.core.Tracer | Sequence[Qubit],
-    )
-    return globals()[name]

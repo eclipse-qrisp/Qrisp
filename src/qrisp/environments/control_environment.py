@@ -17,7 +17,7 @@
 """Defines ControlEnvironment for controlling code blocks on qubits, plus the control() dispatch function."""
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 from jax._src.array import ArrayImpl
@@ -29,9 +29,6 @@ from qrisp.core.session_merging_tools import merge, merge_sessions, multi_sessio
 from qrisp.environments import ClControlEnvironment, QuantumEnvironment
 from qrisp.jasp import AbstractQubit, check_for_tracing_mode, get_last_equation
 from qrisp.misc import bin_rep, perm_lock, perm_unlock
-
-if TYPE_CHECKING:
-    from qrisp.typing import ControlLike
 
 
 class ControlEnvironment(QuantumEnvironment):
@@ -487,14 +484,7 @@ def convert_to_custom_control(instruction, control_qubit, invert_control=False):
     return res
 
 
-# ``ctrl`` also accepts Any: pyright cannot infer the type of indexed QuantumVariables
-# (for example ``qv[0]``), so a strict ControlLike would reject valid calls.
-def control(
-    ctrl: "ControlLike | Any",
-    /,
-    *args: Any,
-    **kwargs: Any,
-) -> "ControlEnvironment | ClControlEnvironment":
+def control(ctrl: Any, /, *args: Any, **kwargs: Any) -> "ControlEnvironment | ClControlEnvironment":
     """Return the environment that controls a ``with`` block on qubits or booleans.
 
     If ``ctrl`` holds qubits, a :ref:`ControlEnvironment` is returned and the block
@@ -504,7 +494,7 @@ def control(
 
     Parameters
     ----------
-    ctrl : ControlLike
+    ctrl : Qubit or QuantumVariable or bool or jax.Array or list or tuple
         A :ref:`Qubit`, a :ref:`QuantumVariable` (all of its qubits; in Jasp mode
         only a :ref:`QuantumBool`), a boolean (``bool``, ``numpy.bool_`` outside of
         Jasp mode, a JAX array, or a traced value such as ``measure(qb)``), or a
@@ -576,7 +566,7 @@ def control(
     return environment_type(ctrl_list, *args, **kwargs)
 
 
-def _as_control_list(ctrl: "ControlLike | Any") -> list[Any]:
+def _as_control_list(ctrl: Any) -> list[Any]:
     """Return ``ctrl`` as a list of qubits or booleans.
 
     A QuantumBool becomes its qubit and any other QuantumVariable the list of its
@@ -585,7 +575,7 @@ def _as_control_list(ctrl: "ControlLike | Any") -> list[Any]:
 
     Parameters
     ----------
-    ctrl : ControlLike
+    ctrl : Qubit or QuantumVariable or bool or jax.Array or list or tuple
         The argument passed to :func:`control`.
 
     Returns
