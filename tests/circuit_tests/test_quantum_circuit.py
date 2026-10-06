@@ -2585,14 +2585,11 @@ class TestQuantumCircuitExternalConversions:
     # to_pytket                                                          #
     # ------------------------------------------------------------------ #
 
-    def test_to_pytket_basic(self):
-        """to_pytket returns a pytket.Circuit without raising."""
-        pytest.importorskip("pytket")
-        qc = QuantumCircuit(2)
-        qc.h(0)
-        qc.cx(0, 1)
-        pytket_qc = qc.to_pytket()
-        assert pytket_qc is not None
+    def test_to_pytket_removed(self):
+        """to_pytket raises because the converter has been removed."""
+        qc = QuantumCircuit(1)
+        with pytest.raises(NotImplementedError, match="to_pytket.*removed"):
+            qc.to_pytket()
 
     # ------------------------------------------------------------------ #
     # to_cirq                                                            #
