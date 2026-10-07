@@ -16,6 +16,8 @@
 
 """Tests that multiplying a QubitOperator by zero produces an operator with an empty terms dict."""
 
+# ruff: noqa: PLR2004 -- magic values are the expected term counts in these assertions
+
 import operator as op
 
 import numpy as np
@@ -32,6 +34,26 @@ GROUPING_OPERATORS = [
     A(0) * C(1) + C(0) * A(1) + Z(2),
     X(0) + Y(1) + Z(2),
 ]
+
+
+def _commute(a, b):
+    """Predicate testing full commutativity of two terms."""
+    return a.commute(b)
+
+
+def _commute_qw(a, b):
+    """Predicate testing qubit-wise commutativity of two terms."""
+    return a.commute_qw(b)
+
+
+def _always_true(a, b):
+    """Predicate placing every pair of terms in the same group."""
+    return True
+
+
+def _always_false(a, b):
+    """Predicate placing every pair of terms in separate groups."""
+    return False
 
 
 def _operator_unitary(qv):
@@ -181,13 +203,10 @@ def test_add_and_radd(scalar):
 
 
 def test_add_and_radd_operators():
-    """Tests ``__add__``/``__radd__`` with operators and invalid operands."""
+    """Tests ``__add__``/``__radd__`` with operators."""
     assert (X(0) + Z(0)).len() == 2
     assert (X(0) - X(0)).len() == 0
     assert (X(0) + (-X(0))).len() == 0
-
-    with pytest.raises(TypeError):
-        X(0) + "not an operator"
 
 
 @pytest.mark.parametrize("scalar", [1, 2.5, 1j, -3])
@@ -201,15 +220,9 @@ def test_sub_and_rsub(scalar):
 
 
 def test_sub_and_rsub_operators():
-    """Tests ``__sub__``/``__rsub__`` with operators and invalid operands."""
+    """Tests ``__sub__``/``__rsub__`` with operators."""
     diff = (X(0) + Z(0)) - (X(0) - Z(0))
     assert np.allclose(diff.to_array(1), 2 * Z(0).to_array(1))
-
-    with pytest.raises(TypeError):
-        X(0) - "not an operator"
-
-    with pytest.raises(TypeError):
-        "not an operator" - X(0)
 
 
 @pytest.mark.parametrize("scalar", [2, 2j, -0.5, 3 + 1j])
@@ -222,7 +235,7 @@ def test_mul_and_rmul(scalar):
 
 
 def test_mul_and_rmul_operators():
-    """Tests ``__mul__`` with operators and invalid operands."""
+    """Tests ``__mul__`` with operators."""
     product = X(0) * Z(0)
     assert np.allclose(product.to_array(1), X(0).to_array(1) @ Z(0).to_array(1))
 
@@ -230,8 +243,20 @@ def test_mul_and_rmul_operators():
     H2 = X(0) - Z(0)
     assert np.allclose((H1 * H2).to_array(1), H1.to_array(1) @ H2.to_array(1))
 
+
+@pytest.mark.parametrize(
+    "operation, left, right",
+    [
+        (op.add, X(0), "not an operator"),
+        (op.sub, X(0), "not an operator"),
+        (op.sub, "not an operator", X(0)),
+        (op.mul, X(0), "not an operator"),
+    ],
+)
+def test_operator_arithmetic_type_errors(operation, left, right):
+    """Tests that unsupported operand types raise ``TypeError``."""
     with pytest.raises(TypeError):
-        X(0) * "not an operator"
+        operation(left, right)
 
 
 def test_inplace_arithmetic():
@@ -369,15 +394,20 @@ def test_from_matrix_invalid_type():
         QubitOperator.from_matrix([[1, 0], [0, 1]])
 
 
-def test_to_sparse_matrix():
-    """Tests ``to_sparse_matrix`` including factor expansion and identity terms."""
-    assert np.allclose(Z(0).to_sparse_matrix().toarray(), [[1, 0], [0, -1]])
+@pytest.mark.parametrize(
+    "operator, expected",
+    [
+        (Z(0), [[1, 0], [0, -1]]),
+        (QubitOperator() + 5, [[5]]),
+        (QubitOperator(), [[0]]),
+    ],
+)
+def test_to_sparse_matrix(operator, expected):
+    """Tests ``to_sparse_matrix`` for Pauli, identity, and zero operators."""
+    assert np.allclose(operator.to_sparse_matrix().toarray(), expected)
 
     # Expansion to a larger number of factors
-    assert Z(0).to_sparse_matrix(2).shape == (4, 4)
-
-    # An operator consisting only of identity terms yields a 1x1 matrix
-    assert np.allclose((QubitOperator() + 5).to_sparse_matrix().toarray(), [[5]])
+    assert operator.to_sparse_matrix(2).shape == (4, 4)
 
 
 @pytest.mark.parametrize("operator, factor_amount", [(Z(2), 1), (X(3), 2)])
@@ -389,7 +419,7 @@ def test_to_sparse_matrix_insufficient_factor_amount(operator, factor_amount):
 
 def test_to_array():
     """Tests ``to_array`` for a simple operator and against explicit dimensions."""
-    O = X(0) * X(1) + 2 * P0(0) * P0(1) + 3 * P1(0) * P1(1)
+    operator_ = X(0) * X(1) + 2 * P0(0) * P0(1) + 3 * P1(0) * P1(1)
     expected = np.array(
         [
             [2.0, 0.0, 0.0, 1.0],
@@ -398,7 +428,7 @@ def test_to_array():
             [1.0, 0.0, 0.0, 3.0],
         ]
     )
-    assert np.allclose(O.to_array(), expected)
+    assert np.allclose(operator_.to_array(), expected)
 
     # factor_amount controls the dimension
     assert X(0).to_array(2).shape == (4, 4)
@@ -498,14 +528,14 @@ def test_ground_state_energy(operator, expected):
 @pytest.mark.parametrize("operator", GROUPING_OPERATORS)
 def test_commuting_groups(operator):
     """Tests ``commuting_groups`` partitions into commuting sets."""
-    _assert_grouping(operator, operator.commuting_groups(), lambda a, b: a.commute(b))
+    _assert_grouping(operator, operator.commuting_groups(), _commute)
 
 
 @pytest.mark.parametrize("operator", GROUPING_OPERATORS)
 def test_group_up(operator):
     """Tests ``group_up`` with a custom grouping predicate."""
-    groups = operator.group_up(lambda a, b: a.commute_qw(b))
-    _assert_grouping(operator, groups, lambda a, b: a.commute_qw(b))
+    groups = operator.group_up(_commute_qw)
+    _assert_grouping(operator, groups, _commute_qw)
 
 
 def test_group_up_edge_cases():
@@ -513,10 +543,10 @@ def test_group_up_edge_cases():
     H = A(0) * C(1) + C(0) * A(1) + Z(2)
 
     # A predicate that always returns False yields one group per term.
-    assert len(H.group_up(lambda a, b: False)) == H.len()
+    assert len(H.group_up(_always_false)) == H.len()
 
     # The empty operator is returned as a single (empty) group.
-    empty_groups = QubitOperator().group_up(lambda a, b: True)
+    empty_groups = QubitOperator().group_up(_always_true)
     assert len(empty_groups) == 1
     assert empty_groups[0].terms_dict == {}
 
@@ -526,7 +556,7 @@ def test_group_up_edge_cases():
 def test_commuting_qw_groups(operator, use_graph_coloring):
     """Tests ``commuting_qw_groups`` for both grouping strategies."""
     groups = operator.commuting_qw_groups(use_graph_coloring=use_graph_coloring)
-    _assert_grouping(operator, groups, lambda a, b: a.commute_qw(b))
+    _assert_grouping(operator, groups, _commute_qw)
 
 
 @pytest.mark.parametrize("operator", GROUPING_OPERATORS)
@@ -637,16 +667,16 @@ def _assert_grouping(operator, groups, commutes):
 
 
 @pytest.mark.parametrize(
-    "build, expected",
+    "operation, left, right, expected",
     [
-        (lambda: QubitOperator({QubitTerm(): 0.0}) + X(0), X(0)),
-        (lambda: QubitOperator({QubitTerm(): 0.0}) - X(0), -X(0)),
-        (lambda: X(0) - X(0), QubitOperator()),
+        (op.add, QubitOperator({QubitTerm(): 0.0}), X(0), X(0)),
+        (op.sub, QubitOperator({QubitTerm(): 0.0}), X(0), -X(0)),
+        (op.sub, X(0), X(0), QubitOperator()),
     ],
 )
-def test_add_sub_zero_coefficient_branches(build, expected):
+def test_add_sub_zero_coefficient_branches(operation, left, right, expected):
     """Tests the zero-coefficient cleanup branches of ``__add__``/``__sub__``."""
-    assert build().terms_dict == expected.terms_dict
+    assert operation(left, right).terms_dict == expected.terms_dict
 
 
 def test_isub_loops_over_multiple_terms():
@@ -654,13 +684,6 @@ def test_isub_loops_over_multiple_terms():
     H = X(0) + Z(0)
     H -= X(1) + Z(1)
     assert H.terms_dict == (X(0) + Z(0) - X(1) - Z(1)).terms_dict
-
-
-def test_to_sparse_matrix_empty_operator():
-    """Tests ``to_sparse_matrix`` on the zero operator."""
-    M = QubitOperator({}).to_sparse_matrix()
-    assert M.shape == (1, 1)
-    assert M.nnz == 0
 
 
 @pytest.mark.parametrize(
@@ -681,9 +704,10 @@ def test_get_conjugation_circuit_branches(operator):
     assert op.terms_dict == operator.terms_dict
 
 
-def test_commuting_qw_groups_with_bases_graph_coloring():
-    """Tests ``commuting_qw_groups(show_bases=True)`` on the graph-coloring path."""
-    groups, bases = (X(0) + Y(1)).commuting_qw_groups(show_bases=True)
+@pytest.mark.parametrize("use_graph_coloring", [True, False])
+def test_commuting_qw_groups_with_bases(use_graph_coloring):
+    """Tests ``commuting_qw_groups(show_bases=True)`` for both grouping methods."""
+    groups, bases = (X(0) + Y(1)).commuting_qw_groups(show_bases=True, use_graph_coloring=use_graph_coloring)
     assert len(groups) == len(bases)
 
 
@@ -699,3 +723,20 @@ def test_change_of_basis_non_matching_ladder_indices():
     operator = A(0) * C(1) + A(0) * C(2)
     with pytest.raises(Exception):
         operator.change_of_basis(QuantumVariable(3))
+
+
+def test_trotterization_second_order_jasp():
+    """Tests second-order Trotterization under Jasp tracing against the non-traced result."""
+    from qrisp.jasp import terminal_sampling
+
+    def main():
+        qv = QuantumVariable(2)
+        U = (Y(0) * X(1) + Z(0) * Z(1)).trotterization(order=2)
+        U(qv, 1.0, steps=2)
+        return qv
+
+    jasp_res = terminal_sampling(main)()
+    qrisp_res = main().get_measurement()
+
+    for key, value in jasp_res.items():
+        assert np.isclose(value, qrisp_res[format(int(key), "02b")], atol=1e-3)
