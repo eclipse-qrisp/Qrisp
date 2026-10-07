@@ -673,7 +673,7 @@ class FermionicOperator(Hamiltonian):
 
         Parameters
         ----------
-        mapping : str, optional
+        mapping_type : str, optional
             The mapping to transform the Hamiltonian. Available is ``jordan_wigner``.
             The default is ``jordan_wigner``.
 
@@ -889,7 +889,7 @@ class FermionicOperator(Hamiltonian):
 
         Parameters
         ----------
-        of_fermionic_operator : openfermion.FermionOperator
+        of_fermionic_hamiltonian : openfermion.FermionOperator
             The OpenFermion operator.
 
         Returns
