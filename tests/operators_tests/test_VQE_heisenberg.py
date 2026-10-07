@@ -20,10 +20,14 @@ import jax.numpy as jnp
 import networkx as nx
 import numpy as np
 import pytest
-from qrisp.vqe.problems.heisenberg import *
 
 from qrisp import QuantumFloat, QuantumVariable
 from qrisp.jasp import jaspify
+from qrisp.vqe.problems.heisenberg import (
+    create_heisenberg_ansatz,
+    greedy_edge_coloring,
+    heisenberg_problem,
+)
 
 
 def test_vqe_heisenberg():
@@ -70,10 +74,10 @@ def _cycle_graph():
     return G
 
 
-def test_greedy_edge_coloring_with_excluded_edges():
-    """Tests ``greedy_edge_coloring`` with a set of edges excluded from the first color."""
+@pytest.mark.parametrize("E", [None, [(0, 1)]])
+def test_greedy_edge_coloring(E):
+    """Tests ``greedy_edge_coloring`` with and without excluded edges."""
     G = _cycle_graph()
-    E = [(0, 1)]
     coloring = greedy_edge_coloring(G, E)
     assert len(coloring) >= 1
 
