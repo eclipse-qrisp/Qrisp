@@ -110,7 +110,7 @@ class FermionicOperator(Hamiltonian):
 
         ::
 
-            from qrisp.operators import *
+            from qrisp.operators import a
 
             O = a(0)*a(1) - a(1)*a(0)
             print(O.reduce())
@@ -251,7 +251,7 @@ class FermionicOperator(Hamiltonian):
 
         ::
 
-            from qrisp.operators import *
+            from qrisp.operators import a, c
 
             O = a(0)*c(1)*a(2) + a(3)
             print(O.dagger())
@@ -277,7 +277,7 @@ class FermionicOperator(Hamiltonian):
 
         ::
 
-            from qrisp.operators import *
+            from qrisp.operators import a, c
 
             O = a(0)*c(1)*a(2) + a(3)
             print(O.hermitize())
@@ -743,7 +743,7 @@ class FermionicOperator(Hamiltonian):
 
         ::
 
-            from qrisp import *
+            from qrisp import QuantumFloat, jaspify, ry
             from qrisp.operators import a,c
             import numpy as np
 

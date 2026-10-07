@@ -410,7 +410,7 @@ def heisenberg_problem(G: nx.Graph, J: float, B: float, ansatz_type: str = "per 
     ::
 
         from qrisp import QuantumVariable
-        from qrisp.vqe.problems.heisenberg import *
+        from qrisp.vqe.problems.heisenberg import heisenberg_problem
 
         vqe = heisenberg_problem(G,1,1)
         vqe.set_callback()
