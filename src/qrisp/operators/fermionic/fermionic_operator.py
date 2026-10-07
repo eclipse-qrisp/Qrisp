@@ -524,7 +524,7 @@ class FermionicOperator(Hamiltonian):
                 del self.terms_dict[ladder_term]
         return self
 
-    def __imul__(self, other: "int | float | complex | FermionicOperator") -> None:
+    def __imul__(self, other: "int | float | complex | FermionicOperator") -> "FermionicOperator":
         """Multiplys other to the operator self.
 
         Parameters
@@ -546,6 +546,7 @@ class FermionicOperator(Hamiltonian):
                 res_terms_dict[curr_ladder_term] = res_terms_dict.get(curr_ladder_term, 0) + coeff1 * coeff2
 
         self.terms_dict = res_terms_dict
+        return self
 
     #
     # Miscellaneous
