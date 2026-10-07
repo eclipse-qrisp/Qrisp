@@ -33,7 +33,7 @@ from qrisp.circuit import (
 )
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import multi_session_merge
-from qrisp.misc import find_calling_line, get_depth_dic
+from qrisp.misc import get_depth_dic, infer_python_var_name
 
 
 class QuantumVariableNamingError(Exception):
@@ -210,14 +210,15 @@ class QuantumSession(QuantumCircuit):
             name = next(name_generator)
         return name
 
+    # Returns the name of the Python variable ``qv`` is assigned to (see
+    # ``infer_python_var_name``), with a numerical suffix starting at 0 if that
+    # name is already taken, or None if the name can't be inferred.
+    # The parsing itself lives in ``infer_python_var_name`` so that
+    # TracingQuantumSession.generate_name can share it.
     def _generate_name_from_code_introspection(self, declaration_stack_level: int):
-
-        line = find_calling_line(declaration_stack_level)
-        split_line = line.split("=")
-        minimum_equality_splits = 2
-        if len(split_line) < minimum_equality_splits or split_line[1].replace(" ", "")[:7] != "Quantum":
+        python_var_name = infer_python_var_name(declaration_stack_level)
+        if python_var_name is None:
             return None
-        python_var_name = split_line[0].strip()
         valid_name = self._find_valid_name(self._default_name_generator(python_var_name, 0))
         return valid_name
 
@@ -225,20 +226,19 @@ class QuantumSession(QuantumCircuit):
     # a boolean indicating if name is fixed, i.e: can't be modified later on.
     # Names with a ``"*"`` suffix can be modified.
     # If name is fixed and collides with an existing QuantumVariable,
-    # a QuantumVariableNamingError object is returned.
-    def _generate_name_from_provided_name(self, name: str) -> tuple[str, bool] | QuantumVariableNamingError:
-        allows_change_suffix = False
-        if name[-1] == "*":
-            allows_change_suffix = True
-            name = name[:-1]
+    # a QuantumVariableNamingError is raised. Raising here (rather than returning
+    # the error) keeps the return type a plain ``tuple[str, bool]``.
+    def _generate_name_from_provided_name(self, name: str) -> tuple[str, bool]:
+        allows_change_suffix = name.endswith("*")
+        name = name.removesuffix("*")
 
         # If it's a fresh name return it.
         if self._is_fresh_name(name):
             return (name, not allows_change_suffix)
 
-        # If suffixes are not allowed with a '*' return an error.
+        # If suffixes are not allowed with a '*' raise an error.
         if not allows_change_suffix:
-            return QuantumVariableNamingError(f"Variable name {name} already exists in quantum session")
+            raise QuantumVariableNamingError(f"Variable name {name} already exists in quantum session")
 
         # Otherwise append name with a valid numerical suffix.
         valid_name = self._find_valid_name(self._default_name_generator(name, QuantumVariable.creation_counter))
@@ -265,9 +265,8 @@ class QuantumSession(QuantumCircuit):
             Used for its type-dependent generic-name generation method
                 in the final fallback case.
         declaration_stack_level : int
-            How many stack frames above the caller of this method the line
-            declaring ``qv`` is expected to be found, used for code introspection
-            when ``name`` is None.
+            How many stack frames above this method the line declaring ``qv`` is
+            expected to be found, used for code introspection when ``name`` is None.
         is_duplicated_name : bool, optional
             If True and ``name`` is given, a ``"_dupl*"`` suffix is appended to
             ``name`` before resolving it, allowing the duplicate to be renamed on
@@ -278,6 +277,8 @@ class QuantumSession(QuantumCircuit):
 
         Raises
         ------
+        ValueError
+            ``name`` is the empty string.
         QuantumVariableNamingError
             ``name`` (without a trailing ``"*"``) is already used in this
             QuantumSession.
@@ -289,12 +290,13 @@ class QuantumSession(QuantumCircuit):
             :attr:`QuantumVariable.is_fixed_name <qrisp.QuantumVariable.is_fixed_name>`).
 
         """
+        # Rejected explicitly so that static and tracing mode agree; otherwise an
+        # empty name would be registered as-is.
+        if name == "":
+            raise ValueError("QuantumVariable name must not be empty")
         if name is not None:
             effective_name = name + "_dupl*" if is_duplicated_name else name
-            generated_name_or_err = self._generate_name_from_provided_name(effective_name)
-            if isinstance(generated_name_or_err, QuantumVariableNamingError):
-                raise generated_name_or_err
-            return generated_name_or_err
+            return self._generate_name_from_provided_name(effective_name)
 
         # Otherwise attempt to introspect variable name:
         if (generated_name := self._generate_name_from_code_introspection(declaration_stack_level + 1)) is not None:
