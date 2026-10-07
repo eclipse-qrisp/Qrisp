@@ -16,14 +16,21 @@
 
 """Implements the FermionicOperator class for ladder-operator Hamiltonians and their arithmetic."""
 
+from collections.abc import Callable
+from typing import TYPE_CHECKING
+
 import numpy as np
 import sympy as sp
+from scipy.sparse import csr_matrix
 
 from qrisp.operators import Hamiltonian
 from qrisp.operators.fermionic.fermionic_term import FermionicTerm
 from qrisp.operators.fermionic.trotterization import fermionic_trotterization
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit import QubitOperator
+
+if TYPE_CHECKING:
+    from qrisp.core import QuantumVariable
 
 threshold = 1e-9
 
@@ -64,7 +71,7 @@ class FermionicOperator(Hamiltonian):
 
     """
 
-    def __init__(self, terms_dict={}):
+    def __init__(self, terms_dict: dict[FermionicTerm, complex] = {}) -> None:
         """Builds an operator from a dictionary of terms and coefficients.
 
         Parameters
@@ -76,7 +83,7 @@ class FermionicOperator(Hamiltonian):
         """
         self.terms_dict = dict(terms_dict)
 
-    def reduce(self, assume_hermitian=False):
+    def reduce(self, assume_hermitian: bool = False) -> "FermionicOperator":
         """Applies the fermionic anticommutation laws to bring the operator into
         a standard form. This can reduce the amount of terms because several
         terms might be the permuted version of each other and therefore their
@@ -168,7 +175,7 @@ class FermionicOperator(Hamiltonian):
 
         return FermionicOperator(new_terms_dict)
 
-    def len(self):
+    def len(self) -> int:
         """Returns the number of terms in the operator.
 
         Returns
@@ -179,7 +186,7 @@ class FermionicOperator(Hamiltonian):
         """
         return len(self.terms_dict)
 
-    def coeffs(self):
+    def coeffs(self) -> np.ndarray:
         """Returns the coefficients of the operator.
 
         Returns
@@ -201,18 +208,18 @@ class FermionicOperator(Hamiltonian):
     # Printing
     #
 
-    def _repr_latex_(self):
+    def _repr_latex_(self) -> str:
         # Convert the sympy expression to LaTeX and return it
         expr = self.to_expr()
         return f"${sp.latex(expr)}$"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Returns the operator as a readable string."""
         # Convert the sympy expression to a string and return it
         expr = self.to_expr()
         return str(expr)
 
-    def to_expr(self):
+    def to_expr(self) -> sp.Expr:
         """Returns a SymPy expression representing the operator.
 
         Returns
@@ -230,7 +237,7 @@ class FermionicOperator(Hamiltonian):
     # Arithmetic
     #
 
-    def dagger(self):
+    def dagger(self) -> "FermionicOperator":
         r"""Returns the daggered/adjoint version of self.
 
         Returns
@@ -256,7 +263,7 @@ class FermionicOperator(Hamiltonian):
             terms_dict[term.dagger()] = np.conj(coeff)
         return FermionicOperator(terms_dict)
 
-    def hermitize(self):
+    def hermitize(self) -> "FermionicOperator":
         r"""Returns the hermitized version of self.
 
         Returns
@@ -279,7 +286,7 @@ class FermionicOperator(Hamiltonian):
         """
         return 0.5 * (self + self.dagger())
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """Checks whether two operators are equal.
 
         Parameters
@@ -313,7 +320,7 @@ class FermionicOperator(Hamiltonian):
 
         return True
 
-    def __neg__(self):
+    def __neg__(self) -> "FermionicOperator":
         """Returns the operator with all coefficients negated.
 
         Returns
@@ -336,7 +343,7 @@ class FermionicOperator(Hamiltonian):
     #    else:
     #        raise TypeError("Unsupported operand type(s) for ** or pow(): "+str(type(self))+" and "+str(type(e)))
 
-    def __add__(self, other):
+    def __add__(self, other: "int | float | complex | FermionicOperator") -> "FermionicOperator":
         """Returns the sum of the operator self and other.
 
         Parameters
@@ -370,7 +377,7 @@ class FermionicOperator(Hamiltonian):
         result = FermionicOperator(res_terms_dict)
         return result
 
-    def __sub__(self, other):
+    def __sub__(self, other: "int | float | complex | FermionicOperator") -> "FermionicOperator":
         """Returns the difference of the operator self and other.
 
         Parameters
@@ -404,7 +411,7 @@ class FermionicOperator(Hamiltonian):
         result = FermionicOperator(res_terms_dict)
         return result
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: "int | float | complex | FermionicOperator") -> "FermionicOperator":
         """Returns the difference of the operator other and self.
 
         Parameters
@@ -438,7 +445,7 @@ class FermionicOperator(Hamiltonian):
         result = FermionicOperator(res_terms_dict)
         return result
 
-    def __mul__(self, other):
+    def __mul__(self, other: "int | float | complex | FermionicOperator") -> "FermionicOperator":
         """Returns the product of the operator self and other.
 
         Parameters
@@ -474,7 +481,7 @@ class FermionicOperator(Hamiltonian):
     # Inplace arithmetic
     #
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: "int | float | complex | FermionicOperator") -> "FermionicOperator":
         """Adds other to the operator self.
 
         Parameters
@@ -496,7 +503,7 @@ class FermionicOperator(Hamiltonian):
         self.terms_dict = FermionicOperator(self.terms_dict).terms_dict
         return self
 
-    def __isub__(self, other):
+    def __isub__(self, other: "int | float | complex | FermionicOperator") -> "FermionicOperator":
         """Substracts other from the operator self.
 
         Parameters
@@ -517,7 +524,7 @@ class FermionicOperator(Hamiltonian):
                 del self.terms_dict[ladder_term]
         return self
 
-    def __imul__(self, other):
+    def __imul__(self, other: "int | float | complex | FermionicOperator") -> None:
         """Multiplys other to the operator self.
 
         Parameters
@@ -544,7 +551,7 @@ class FermionicOperator(Hamiltonian):
     # Miscellaneous
     #
 
-    def apply_threshold(self, threshold):
+    def apply_threshold(self, threshold: float) -> None:
         """Removes all ladder_term terms with coefficient absolute value below the specified threshold.
 
         Parameters
@@ -560,7 +567,7 @@ class FermionicOperator(Hamiltonian):
         for ladder_term in delete_list:
             del self.terms_dict[ladder_term]
 
-    def to_sparse_matrix(self, mapping_type="jordan_wigner"):
+    def to_sparse_matrix(self, mapping_type: str = "jordan_wigner") -> csr_matrix:
         """Returns a matrix representing the operator.
 
         Returns
@@ -574,7 +581,7 @@ class FermionicOperator(Hamiltonian):
         """
         return self.to_qubit_operator(mapping_type=mapping_type).to_sparse_matrix()
 
-    def ground_state_energy(self):
+    def ground_state_energy(self) -> float:
         r"""Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
 
         Returns
@@ -601,7 +608,7 @@ class FermionicOperator(Hamiltonian):
         return self.to_qubit_operator().ground_state_energy()
 
     @classmethod
-    def from_pyscf(self, pyscf_molecular_data):
+    def from_pyscf(self, pyscf_molecular_data) -> "FermionicOperator":
         """.. _pscf_loading:
 
         Loads the data of a `PySCF molecule <https://pyscf.org/user/gto.html>`_
@@ -660,7 +667,7 @@ class FermionicOperator(Hamiltonian):
     # Transformations
     #
 
-    def to_qubit_operator(self, mapping_type="jordan_wigner"):
+    def to_qubit_operator(self, mapping_type: str = "jordan_wigner") -> QubitOperator:
         """Transforms the FermionicOperator to a :ref:`QubitOperator`.
 
         Parameters
@@ -693,7 +700,9 @@ class FermionicOperator(Hamiltonian):
         else:
             raise Exception(f"Don't know fermionic mapping {mapping_type}.")
 
-    def expectation_value(self, state_prep, mapping_type="jordan_wigner", **measurement_kwargs):
+    def expectation_value(
+        self, state_prep: Callable, mapping_type: str = "jordan_wigner", **measurement_kwargs
+    ) -> Callable:
         r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
         This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
 
@@ -779,7 +788,7 @@ class FermionicOperator(Hamiltonian):
     # Trotterization
     #
 
-    def trotterization(self, forward_evolution=True):
+    def trotterization(self, forward_evolution: bool = True) -> Callable:
         r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
         Note that this method will always simulate the **hermitized** operator, i.e.
 
@@ -848,7 +857,7 @@ class FermionicOperator(Hamiltonian):
         """
         return fermionic_trotterization(self, forward_evolution)
 
-    def group_up(self, denominator):
+    def group_up(self, denominator: Callable[[FermionicTerm, FermionicTerm], bool]) -> list["FermionicOperator"]:
         """Splits the operator into groups of terms that belong together.
 
         Parameters
@@ -874,7 +883,7 @@ class FermionicOperator(Hamiltonian):
         return groups
 
     @classmethod
-    def from_openfermion(cls, of_fermionic_hamiltonian):
+    def from_openfermion(cls, of_fermionic_hamiltonian) -> "FermionicOperator":
         """Imports a FermionicOperator from `OpenFermion <https://quantumai.google/reference/python/openfermion/ops/FermionOperator>`_.
 
         Parameters
@@ -925,7 +934,7 @@ class FermionicOperator(Hamiltonian):
 
         return FermionicOperator(terms_dict)
 
-    def find_minimal_qubit_amount(self):
+    def find_minimal_qubit_amount(self) -> int:
         """Returns the smallest number of qubits the operator fits on.
 
         Returns
@@ -943,7 +952,7 @@ class FermionicOperator(Hamiltonian):
         return max(indices) + 1
 
 
-def apply_fermionic_swap(qv, permutation):
+def apply_fermionic_swap(qv: "QuantumVariable", permutation: list) -> list:
     """Reorders the qubits of ``qv`` according to ``permutation`` using CZ gates.
 
     Parameters
@@ -970,7 +979,7 @@ def apply_fermionic_swap(qv, permutation):
     return qb_list
 
 
-def get_swaps_for_permutation(permutation):
+def get_swaps_for_permutation(permutation: list) -> list[tuple[int, int]]:
     """Returns the adjacent swaps that turn a sorted list into ``permutation``.
 
     Parameters

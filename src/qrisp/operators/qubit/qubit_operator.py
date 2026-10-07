@@ -16,7 +16,9 @@
 
 """Implements the QubitOperator class for Pauli/ladder operators, measurement, and trotterization."""
 
+from collections.abc import Callable, Iterable
 from itertools import product
+from typing import TYPE_CHECKING
 
 import jax.numpy as jnp
 import numpy as np
@@ -45,8 +47,11 @@ from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
-from qrisp.operators.qubit.measurement import get_measurement
+from qrisp.operators.qubit.measurement import QubitOperatorMeasurement, get_measurement
 from qrisp.operators.qubit.qubit_term import QubitTerm
+
+if TYPE_CHECKING:
+    from qrisp.interface.backend import BackendLike
 
 threshold = 1e-9
 
@@ -189,7 +194,7 @@ class QubitOperator(Hamiltonian):
 
     """
 
-    def __init__(self, terms_dict={}):
+    def __init__(self, terms_dict: dict[QubitTerm, complex] = {}) -> None:
         """Builds an operator from a dictionary of terms and coefficients.
 
         Parameters
@@ -201,7 +206,7 @@ class QubitOperator(Hamiltonian):
         """
         self.terms_dict = dict(terms_dict)
 
-    def len(self):
+    def len(self) -> int:
         """Returns the number of terms in the operator.
 
         Returns
@@ -212,7 +217,7 @@ class QubitOperator(Hamiltonian):
         """
         return len(self.terms_dict)
 
-    def coeffs(self):
+    def coeffs(self) -> ndarray:
         """Returns the coefficients of the operator.
 
         Returns
@@ -234,23 +239,23 @@ class QubitOperator(Hamiltonian):
     # Printing
     #
 
-    def _repr_latex_(self):
+    def _repr_latex_(self) -> str:
         # Convert the sympy expression to LaTeX and return it
         expr = self.to_expr()
         return f"${sp.latex(expr)}$"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Returns the operator as a readable string."""
         # Convert the sympy expression to a string and return it
         expr = self.to_expr()
         return str(expr)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Returns the operator as a readable string."""
         # Convert the sympy expression to a string and return it
         return str(self)
 
-    def to_expr(self):
+    def to_expr(self) -> sp.Expr:
         """Returns a SymPy expression representing the operator.
 
         Returns
@@ -269,7 +274,7 @@ class QubitOperator(Hamiltonian):
     #
 
     @classmethod
-    def sum(cls, operators):
+    def sum(cls, operators: Iterable["QubitOperator"]) -> "QubitOperator":
         """Efficiently sums many QubitOperators.
 
         Equivalent to Python's built-in ``sum(operators)``, but performs a
@@ -300,7 +305,7 @@ class QubitOperator(Hamiltonian):
                     res_terms_dict[term] = new_coeff
         return cls(res_terms_dict)
 
-    def __pow__(self, e):
+    def __pow__(self, e: int) -> "QubitOperator":
         """Raises the operator to the power ``e``.
 
         Parameters
@@ -475,7 +480,7 @@ class QubitOperator(Hamiltonian):
     # Inplace arithmetic
     #
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Adds other to the operator self.
 
         Parameters
@@ -496,7 +501,7 @@ class QubitOperator(Hamiltonian):
                 del self.terms_dict[term]
         return self
 
-    def __isub__(self, other):
+    def __isub__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Substracts other from the operator self.
 
         Parameters
@@ -517,7 +522,7 @@ class QubitOperator(Hamiltonian):
                 del self.terms_dict[term]
         return self
 
-    def __imul__(self, other):
+    def __imul__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Multiplys other to the operator self.
 
         Parameters
@@ -553,7 +558,7 @@ class QubitOperator(Hamiltonian):
     # Substitution
     #
 
-    def subs(self, subs_dict):
+    def subs(self, subs_dict: dict) -> "QubitOperator":
         """Parameters
         ----------
         subs_dict : dict
@@ -577,7 +582,7 @@ class QubitOperator(Hamiltonian):
     # Miscellaneous
     #
 
-    def find_minimal_qubit_amount(self):
+    def find_minimal_qubit_amount(self) -> int:
         """Returns the smallest number of qubits the operator fits on.
 
         Returns
@@ -591,7 +596,7 @@ class QubitOperator(Hamiltonian):
             return 0
         return max(indices) + 1
 
-    def commutator(self, other):
+    def commutator(self, other: "QubitOperator") -> "QubitOperator":
         """Computes the commutator.
 
         .. math::
@@ -633,7 +638,7 @@ class QubitOperator(Hamiltonian):
 
         return res
 
-    def apply_threshold(self, threshold):
+    def apply_threshold(self, threshold: float) -> "QubitOperator":
         """Removes all terms with coefficient absolute value below the specified threshold.
 
         Parameters
@@ -652,7 +657,7 @@ class QubitOperator(Hamiltonian):
         return QubitOperator(new_terms_dict)
 
     @classmethod
-    def from_numpy_array(cls, numpy_array, threshold=np.inf):
+    def from_numpy_array(cls, numpy_array: ndarray, threshold: float = np.inf) -> "QubitOperator":
         """Builds an operator from a matrix given as a NumPy array.
 
         Parameters
@@ -855,7 +860,7 @@ class QubitOperator(Hamiltonian):
 
         return M
 
-    def to_array(self, factor_amount=None):
+    def to_array(self, factor_amount: int | None = None) -> ndarray:
         r"""Returns a numpy array representing the operator
 
         .. math::
@@ -889,7 +894,7 @@ class QubitOperator(Hamiltonian):
         """
         return np.array(self.to_sparse_matrix(factor_amount).todense())
 
-    def to_pauli(self):
+    def to_pauli(self) -> "QubitOperator":
         """Returns an equivalent operator, which however only contains Pauli factors.
 
         Returns
@@ -973,7 +978,7 @@ class QubitOperator(Hamiltonian):
 
         return result
 
-    def adjoint(self):
+    def adjoint(self) -> "QubitOperator":
         """Returns the adjoint operator.
 
         Returns
@@ -996,7 +1001,7 @@ class QubitOperator(Hamiltonian):
             new_terms_dict[term.adjoint()] = np.conjugate(coeff)
         return QubitOperator(new_terms_dict)
 
-    def hermitize(self):
+    def hermitize(self) -> "QubitOperator":
         r"""Returns the hermitian part of self.
 
         $H = (O + O^\dagger)/2$
@@ -1018,7 +1023,7 @@ class QubitOperator(Hamiltonian):
         """
         return 0.5 * (self + self.adjoint())
 
-    def eliminate_ladder_conjugates(self):
+    def eliminate_ladder_conjugates(self) -> "QubitOperator":
         """Combines terms that are adjoints of each other.
 
         This reduces the number of terms for operators that are built from
@@ -1083,7 +1088,7 @@ class QubitOperator(Hamiltonian):
     #
 
     # Commutativity: Partitions the QubitOperator into QubitOperators with pairwise commuting QubitTerms
-    def commuting_groups(self):
+    def commuting_groups(self) -> list["QubitOperator"]:
         r"""Partitions the QubitOperator into QubitOperators with pairwise commuting terms. That is,
 
         .. math::
@@ -1119,7 +1124,7 @@ class QubitOperator(Hamiltonian):
 
         return groups
 
-    def group_up(self, group_denominator):
+    def group_up(self, group_denominator: Callable[[QubitTerm, QubitTerm], bool]) -> list["QubitOperator"]:
         """Partitions the QubitOperator into QubitOperators whose terms pairwise satisfy a predicate.
 
         Parameters
@@ -1148,7 +1153,9 @@ class QubitOperator(Hamiltonian):
         return groups
 
     # Qubit-wise commutativity: Partitions the QubitOperator into QubitOperators with pairwise qubit-wise commuting QubitTerms
-    def commuting_qw_groups(self, show_bases=False, use_graph_coloring=True):
+    def commuting_qw_groups(  # noqa: PLR0912 -- grouping heuristic has many branches
+        self, show_bases: bool = False, use_graph_coloring: bool = True
+    ) -> list["QubitOperator"] | tuple[list["QubitOperator"], list[QubitTerm]]:
         r"""Partitions the QubitOperator into QubitOperators with pairwise qubit-wise commuting terms. That is,
 
         .. math::
@@ -1213,7 +1220,9 @@ class QubitOperator(Hamiltonian):
     # Measurement settings and measurement
     #
 
-    def change_of_basis(self, qarg=None, method="commuting_qw"):
+    def change_of_basis(  # noqa: PLR0912, PLR0915 -- basis change handles many factor types
+        self, qarg: QuantumVariable | None = None, method: str = "commuting_qw"
+    ) -> "QubitOperator":
         """Performs several operations on a quantum argument such that the hermitian
         part of self is diagonal when conjugated with these operations.
 
@@ -1498,7 +1507,7 @@ class QubitOperator(Hamiltonian):
 
         return QubitOperator(new_terms_dict)
 
-    def get_conjugation_circuit(self):
+    def get_conjugation_circuit(self) -> tuple[QuantumCircuit, "QubitOperator"]:
         """Returns the circuit that changes to the basis in which the terms are diagonal.
 
         The circuit is meant to be applied before measuring operators whose
@@ -1642,7 +1651,7 @@ class QubitOperator(Hamiltonian):
 
         return qc, QubitOperator(self.terms_dict)
 
-    def get_operator_variance(self, n=1):
+    def get_operator_variance(self, n: int = 1) -> float:
         """Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
 
         Normally to compute the variance of an operator, the distribution has to be known.
@@ -1689,18 +1698,18 @@ class QubitOperator(Hamiltonian):
 
         return var * alpha_n
 
-    def expectation_value(
+    def expectation_value(  # noqa: PLR0913, PLR0917 -- public measurement API
         self,
-        state_prep,
-        precision=0.01,
-        diagonalisation_method="commuting_qw",
-        backend=None,
-        compile=True,
-        compilation_kwargs={},
-        subs_dic={},
-        precompiled_qc=None,
-        measurement_data=None,  # measurement settings
-    ):
+        state_prep: Callable,
+        precision: float = 0.01,
+        diagonalisation_method: str = "commuting_qw",
+        backend: "BackendLike | None" = None,
+        compile: bool = True,
+        compilation_kwargs: dict = {},
+        subs_dic: dict = {},
+        precompiled_qc: QuantumCircuit | None = None,
+        measurement_data: QubitOperatorMeasurement | None = None,  # measurement settings
+    ) -> Callable:
         r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
         This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
 
@@ -1901,7 +1910,7 @@ class QubitOperator(Hamiltonian):
     # Trotterization
     #
 
-    def trotterization(self, order=1, method="commuting_qw", forward_evolution=True):
+    def trotterization(self, order: int = 1, method: str = "commuting_qw", forward_evolution: bool = True) -> Callable:
         r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
         Note that this method will always simulate the **hermitized** operator, i.e.
 
@@ -2065,7 +2074,7 @@ class QubitOperator(Hamiltonian):
     # QDrift
     #
 
-    def qdrift(self, forward_evolution=True):
+    def qdrift(self, forward_evolution: bool = True) -> Callable:
         r"""Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift**
         (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) algorithm.
 
@@ -2247,7 +2256,7 @@ class QubitOperator(Hamiltonian):
     # LCU
     #
 
-    def unitaries(self):
+    def unitaries(self) -> tuple[list[Callable], ndarray]:
         r"""Returns unitiaries and coefficients for the Pauli representation of the operator.
 
         Note that this method will always consider the **hermitized** operator, i.e.
