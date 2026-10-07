@@ -1297,7 +1297,7 @@ class QubitOperator(Hamiltonian):
         # whereas the anchor qubit becomes a Z gate.
 
         n = self.find_minimal_qubit_amount()
-        if not check_for_tracing_mode() and len(qarg) < n:
+        if qarg is not None and not check_for_tracing_mode() and len(qarg) < n:
             raise Exception("Tried to change the basis of an Operator on a quantum argument with insufficient qubits.")
 
         # This dictionary will contain the new terms/coefficient comination for the

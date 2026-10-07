@@ -50,6 +50,22 @@ def test_jasp_hamiltonian_simulation():
     test_hamiltonian(H)
 
 
+def test_jasp_hamiltonian_simulation_second_order():
+
+    def main():
+        qv = QuantumFloat(2)
+        H = Y(0) * X(1) + Z(0) * Z(1)
+        U = H.trotterization(order=2)
+        U(qv, 1.0, steps=2)
+        return qv
+
+    jasp_res = terminal_sampling(main)()
+    qrisp_res = main().get_measurement()
+
+    for k in jasp_res.keys():
+        assert abs(jasp_res[k] - qrisp_res[int(k)]) < 1e-3
+
+
 import numpy as np
 
 from qrisp import *
