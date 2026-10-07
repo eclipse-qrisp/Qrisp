@@ -26,7 +26,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from qrisp import conjugate, control, cx, h, ry, x
-from qrisp.operators.fermionic import *  # noqa: F403
 from qrisp.operators.fermionic import FermionicOperator, FermionicTerm
 
 if TYPE_CHECKING:

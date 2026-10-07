@@ -883,7 +883,7 @@ class QubitOperator(Hamiltonian):
 
         Examples
         --------
-        >>> from qrisp.operators import *
+        >>> from qrisp.operators import P0, P1, X
         >>> O = X(0)*X(1) + 2*P0(0)*P0(1) + 3*P1(0)*P1(1)
         >>> O.to_array()
         matrix([[2.+0.j, 0.+0.j, 0.+0.j, 1.+0.j],
@@ -1307,7 +1307,6 @@ class QubitOperator(Hamiltonian):
         new_factor_dicts = []
         prefactors = []
 
-        ladder_conjugation_performed = False
         ladder_indices = []
 
         if method == "commuting_qw":
@@ -1774,7 +1773,7 @@ class QubitOperator(Hamiltonian):
 
         ::
 
-            from qrisp import *
+            from qrisp import QuantumFloat, jaspify, ry
             from qrisp.operators import X,Y,Z
             import numpy as np
 
