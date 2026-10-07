@@ -18,10 +18,97 @@
 
 import jax.numpy as jnp
 import numpy as np
+import pytest
 from qrisp.vqe.problems.electronic_structure import *
 
 from qrisp import QuantumFloat, QuantumVariable
 from qrisp.jasp import jaspify
+
+
+def _electronic_data(num_orb=4, num_elec=2):
+    """Builds a minimal (all-zero) electronic data dictionary."""
+    return {
+        "one_int": np.zeros((num_orb, num_orb)),
+        "two_int": np.zeros((num_orb, num_orb, num_orb, num_orb)),
+        "num_orb": num_orb,
+        "num_elec": num_elec,
+    }
+
+
+@pytest.mark.parametrize("i, j, expected", [(0, 0, 1), (0, 1, 0), (2, 2, 1), (3, 5, 0)])
+def test_delta(i, j, expected):
+    """Tests the Kronecker delta helper."""
+    assert delta(i, j) == expected
+
+
+@pytest.mark.parametrize("x, expected", [(0, 0), (1, 1), (4, 0), (5, 1)])
+def test_omega(x, expected):
+    """Tests the spin-component helper."""
+    assert omega(x) == expected
+
+
+def test_verify_symmetries():
+    """Tests symmetry verification of the two-electron integral tensor."""
+    assert verify_symmetries(np.zeros((2, 2, 2, 2)))
+
+    broken = np.zeros((2, 2, 2, 2))
+    broken[0, 1, 0, 1] = 1.0
+    assert not verify_symmetries(broken)
+
+
+def test_spacial_to_spin():
+    """Tests the spacial-to-spin orbital integral transformation."""
+    one_int = np.arange(4, dtype=float).reshape(2, 2)
+    two_int = np.zeros((2, 2, 2, 2))
+    one_int_spin, two_int_spin = spacial_to_spin(one_int, two_int)
+    assert one_int_spin.shape == (4, 4)
+    assert two_int_spin.shape == (4, 4, 4, 4)
+
+
+def test_create_electronic_hamiltonian_invalid_type():
+    """Tests that an unsupported argument type raises a ``TypeError``."""
+    with pytest.raises(TypeError):
+        create_electronic_hamiltonian("not a molecule")
+
+
+def test_create_electronic_hamiltonian_invalid_active_space():
+    """Tests that an invalid active space raises an exception."""
+    with pytest.raises(Exception):
+        create_electronic_hamiltonian(_electronic_data(num_orb=4, num_elec=2), active_orb=2, active_elec=3)
+
+
+def test_create_electronic_hamiltonian_active_space():
+    """Tests the active-space (inactive Fock operator) construction path."""
+    H = create_electronic_hamiltonian(_electronic_data(num_orb=4, num_elec=4), active_orb=2, active_elec=2)
+    assert H.find_minimal_qubit_amount() <= 2
+
+
+@pytest.mark.parametrize("M, N", [(4, 2), (8, 4)])
+def test_qccsd_ansatz_spin_combinations(M, N):
+    """Tests the QCCSD ansatz including spin-up/spin-down combination terms."""
+    ansatz, num_params = create_QCCSD_ansatz(M, N)
+    qv = QuantumVariable(M)
+    ansatz(qv, [0.1] * num_params)
+    assert num_params > 0
+
+
+def test_electronic_structure_problem_from_dict():
+    """Tests ``electronic_structure_problem`` with an electronic data dictionary."""
+    vqe = electronic_structure_problem(_electronic_data())
+    assert vqe is not None
+
+
+def test_electronic_structure_problem_active_space():
+    """Tests ``electronic_structure_problem`` with an explicit active space."""
+    vqe = electronic_structure_problem(_electronic_data(num_orb=4, num_elec=4), active_orb=2, active_elec=2)
+    assert vqe is not None
+
+
+def test_electronic_structure_problem_invalid_type():
+    """Tests that an unsupported argument type raises a ``TypeError``."""
+    with pytest.raises(TypeError):
+        electronic_structure_problem("not a molecule")
+
 
 #
 # H2 molecule
