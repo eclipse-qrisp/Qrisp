@@ -40,8 +40,9 @@ threshold = 1e-9
 
 
 class FermionicOperator(Hamiltonian):
-    r"""This class provides an efficient implementation of ladder term operators, i.e.,
-    operators of the form
+    r"""Provides an efficient implementation of ladder term operators.
+
+    These are operators of the form
 
     .. math::
         
@@ -84,10 +85,10 @@ class FermionicOperator(Hamiltonian):
         self.terms_dict = dict(terms_dict)
 
     def reduce(self, assume_hermitian: bool = False) -> "FermionicOperator":
-        """Applies the fermionic anticommutation laws to bring the operator into
-        a standard form. This can reduce the amount of terms because several
-        terms might be the permuted version of each other and therefore their
-        coefficients add up.
+        """Applies the fermionic anticommutation laws to bring the operator into a standard form.
+
+        This can reduce the amount of terms because several terms might be the
+        permuted version of each other and therefore their coefficients add up.
 
         This function can reduce the amount of terms even further if the user
         can guarantee that the operator will be hermitized. In this case more
@@ -704,8 +705,12 @@ class FermionicOperator(Hamiltonian):
     def expectation_value(
         self, state_prep: Callable, mapping_type: str = "jordan_wigner", **measurement_kwargs
     ) -> Callable:
-        r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
-        This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
+        r"""Estimates the expectation value of a Hamiltonian for a prepared state.
+
+        The ``expectation value`` function allows to estimate the expectation value of a
+        Hamiltonian for a state that is specified by a preparation procedure. This
+        preparation procedure can be supplied via a Python function that returns a
+        :ref:`QuantumVariable`.
 
         Note that this method measures the **hermitized** version of the operator:
 
@@ -790,8 +795,10 @@ class FermionicOperator(Hamiltonian):
     #
 
     def trotterization(self, forward_evolution: bool = True) -> Callable:
-        r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
-        Note that this method will always simulate the **hermitized** operator, i.e.
+        r"""Returns a function for performing Hamiltonian simulation via Trotterization.
+
+        This approximately implements the unitary operator $U(t) = e^{-itH}$. Note that
+        this method will always simulate the **hermitized** operator, i.e.
 
         .. math::
 
