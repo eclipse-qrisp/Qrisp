@@ -634,3 +634,68 @@ def _assert_grouping(operator, groups, commutes):
             reconstructed[term] = reconstructed.get(term, 0) + coeff
 
     assert reconstructed == operator.terms_dict
+
+
+@pytest.mark.parametrize(
+    "build, expected",
+    [
+        (lambda: QubitOperator({QubitTerm(): 0.0}) + X(0), X(0)),
+        (lambda: QubitOperator({QubitTerm(): 0.0}) - X(0), -X(0)),
+        (lambda: X(0) - X(0), QubitOperator()),
+    ],
+)
+def test_add_sub_zero_coefficient_branches(build, expected):
+    """Tests the zero-coefficient cleanup branches of ``__add__``/``__sub__``."""
+    assert build().terms_dict == expected.terms_dict
+
+
+def test_isub_loops_over_multiple_terms():
+    """Tests ``__isub__`` when ``other`` has more than one term."""
+    H = X(0) + Z(0)
+    H -= X(1) + Z(1)
+    assert H.terms_dict == (X(0) + Z(0) - X(1) - Z(1)).terms_dict
+
+
+def test_to_sparse_matrix_empty_operator():
+    """Tests ``to_sparse_matrix`` on the zero operator."""
+    M = QubitOperator({}).to_sparse_matrix()
+    assert M.shape == (1, 1)
+    assert M.nnz == 0
+
+
+@pytest.mark.parametrize(
+    "operator",
+    [
+        X(0),
+        Y(0),
+        Z(0) * Z(2) + Z(0),
+        A(0),
+        C(0) * A(1),
+        X(0) * Y(1) + X(0) * Z(2),
+    ],
+)
+def test_get_conjugation_circuit_branches(operator):
+    """Tests ``get_conjugation_circuit`` across Pauli, sparse, and ladder factors."""
+    qc, op = operator.get_conjugation_circuit()
+    assert qc.num_qubits() == operator.find_minimal_qubit_amount()
+    assert op.terms_dict == operator.terms_dict
+
+
+def test_commuting_qw_groups_with_bases_graph_coloring():
+    """Tests ``commuting_qw_groups(show_bases=True)`` on the graph-coloring path."""
+    groups, bases = (X(0) + Y(1)).commuting_qw_groups(show_bases=True)
+    assert len(groups) == len(bases)
+
+
+def test_change_of_basis_commuting_without_qarg():
+    """Tests the ``commuting`` method when no quantum argument is supplied."""
+    res = (X(0) * Z(1) + Z(0) * X(1)).change_of_basis(method="commuting")
+    for term in res.terms_dict:
+        assert all(factor in ("I", "Z", "P0", "P1") for factor in term.factor_dict.values())
+
+
+def test_change_of_basis_non_matching_ladder_indices():
+    """Tests that mismatched ladder index sets raise an exception."""
+    operator = A(0) * C(1) + A(0) * C(2)
+    with pytest.raises(Exception):
+        operator.change_of_basis(QuantumVariable(3))
