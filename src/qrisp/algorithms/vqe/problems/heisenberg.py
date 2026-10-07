@@ -16,14 +16,25 @@
 
 """Builds VQE problem instances for the isotropic Heisenberg model using a Hamiltonian variational ansatz."""
 
+from __future__ import annotations
+
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
+
 import networkx as nx
 
 from qrisp.core import cp, cx, gphase, h, rz, x
 from qrisp.environments import conjugate
 from qrisp.operators.qubit import X, Y, Z
 
+if TYPE_CHECKING:
+    from qrisp.algorithms.vqe.vqe_problem import VQEProblem
+    from qrisp.core import QuantumVariable
+    from qrisp.operators.qubit import QubitOperator
+    from qrisp.typing import FloatLike, QubitLike
 
-def greedy_edge_coloring(G, E=None):
+
+def greedy_edge_coloring(G: nx.Graph, E: list | None = None) -> list:
     """This methods computes an edge coloring of a given graph.
 
     Parameters
@@ -58,28 +69,28 @@ def greedy_edge_coloring(G, E=None):
     return edge_coloring
 
 
-# sing gate corresponding to the singlet state $\ket{10}-\ket{01} of two qubits
-def sing(a, b):
+def sing(a: QubitLike, b: QubitLike) -> None:
+    r"""Prepares the singlet state $\ket{10}-\ket{01}$ of two qubits."""
     x(a)
     h(a)
     x(b)
     cx(a, b)
 
 
-# change of basis
-def conjugator(a, b):
+def conjugator(a: QubitLike, b: QubitLike) -> None:
+    """Conjugates qubits ``a`` and ``b`` into the Bell basis."""
     cx(a, b)
     h(a)
 
 
-#  heis gate corresponding to the unitary exp(-i*theta*(XX+YY+ZZ))
-def heis(theta, a, b):
+def heis(theta: FloatLike, a: QubitLike, b: QubitLike) -> None:
+    r"""Applies the Heisenberg interaction unitary $e^{-i\theta(XX+YY+ZZ)}$ to qubits ``a`` and ``b``."""
     with conjugate(conjugator)(a, b):
         cp(theta, a, b)
         gphase(-theta / 2, a)
 
 
-def create_heisenberg_hamiltonian(G, J, B):
+def create_heisenberg_hamiltonian(G: nx.Graph, J: float, B: float) -> QubitOperator:
     """This method creates the Hamiltonian for the Heisenberg model.
 
     Parameters
@@ -114,7 +125,9 @@ def create_heisenberg_hamiltonian(G, J, B):
     return H
 
 
-def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
+def create_heisenberg_ansatz(  # noqa: PLR0913, PLR0917 -- public ansatz factory API
+    G: nx.Graph, J: float, B: float, M: list, C: list, ansatz_type: str = "per hamiltonian"
+) -> Callable:
     """This method creates a function for applying one layer of the ansatz.
 
     Parameters
@@ -130,7 +143,8 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
     C : list
         An edge coloring of the graph ``G`` given by a list of lists of edges.
     ansatz_type : string, optional
-        Specifies the Hamiltonian Variational Ansatz. Available are ``per hamiltonian``, ``per edge color``, ``per edge``.
+        Specifies the Hamiltonian Variational Ansatz. Available are ``per hamiltonian``,
+        ``per edge color``, ``per edge``.
         The default is ``per hamiltonian``.
 
     Returns
@@ -172,8 +186,8 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
 
     """
 
-    # per hamiltonian
-    def ansatz(qv, theta):
+    def ansatz(qv: QuantumVariable, theta: Sequence[FloatLike]) -> None:
+        """Applies one layer of the ansatz with one parameter per Hamiltonian."""
         # apply H
         rz(B * theta[1], qv)
 
@@ -185,8 +199,8 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
         for i, j in M:
             heis(theta[0], qv[i], qv[j])
 
-    # per edge color
-    def ansatz_per_edge_color(qv, theta):
+    def ansatz_per_edge_color(qv: QuantumVariable, theta: Sequence[FloatLike]) -> None:
+        """Applies one layer of the ansatz with one parameter per edge color."""
         # apply H
         rz(B * theta[1], qv)
 
@@ -200,8 +214,8 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
         for i, j in M:
             heis(theta[0], qv[i], qv[j])
 
-    # per edge
-    def ansatz_per_edge(qv, theta):
+    def ansatz_per_edge(qv: QuantumVariable, theta: Sequence[FloatLike]) -> None:
+        """Applies one layer of the ansatz with one parameter per edge."""
         # apply H
         rz(B * theta[1], qv)
 
@@ -222,7 +236,7 @@ def create_heisenberg_ansatz(G, J, B, M, C, ansatz_type="per hamiltonian"):
     return ansatz
 
 
-def create_heisenberg_init_function(M):
+def create_heisenberg_init_function(M: list) -> Callable:
     """Creates the initialization function for a given matching.
 
     When applied to a :ref:`QuantumVariable`, the function initializes a tensor
@@ -266,8 +280,8 @@ def create_heisenberg_init_function(M):
 
     """
 
-    def init_function(qv):
-
+    def init_function(qv: QuantumVariable) -> None:
+        """Initializes ``qv`` in a tensor product of singlet states for the matching ``M``."""
         # tensor product of singlet states
         for i, j in M:
             sing(qv[i], qv[j])
@@ -275,9 +289,11 @@ def create_heisenberg_init_function(M):
     return init_function
 
 
-def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
-    r"""Creates a VQE problem instance for an isotropic Heisenberg model defined by a graph $G=(V,E)$,
-    the coupling constant $J>0$ (antiferromagnetic), and the magnetic field strength $B$. The model Hamiltonian is given by:
+def heisenberg_problem(G: nx.Graph, J: float, B: float, ansatz_type: str = "per hamiltonian") -> VQEProblem:
+    r"""Creates a VQE problem instance for an isotropic Heisenberg model.
+
+    The model is defined by a graph $G=(V,E)$, the coupling constant $J>0$
+    (antiferromagnetic), and the magnetic field strength $B$. The Hamiltonian is given by:
 
     .. math::
 
@@ -287,14 +303,14 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
 
     * $\ket{00}$
     * $\ket{11}$
-    * $\frac{1}{\sqrt{2}}\left(\ket{10}+\ket{01}\right)$  
+    * $\frac{1}{\sqrt{2}}\left(\ket{10}+\ket{01}\right)$
 
     and one eigenvector for eigenvalue $-3$ (singlet state):
 
-    * $\frac{1}{\sqrt{2}}\left(\ket{10}-\ket{01}\right)$ 
+    * $\frac{1}{\sqrt{2}}\left(\ket{10}-\ket{01}\right)$
 
     For the problem specific VQE ansatz, we choose a Hamiltonian Variational Ansatz as proposed `here <https://arxiv.org/abs/2108.08086>`_.
-    This ansatz is inspired by the adiabatic theorem of quantum mechanics: A system is prepared in the ground state of 
+    This ansatz is inspired by the adiabatic theorem of quantum mechanics: A system is prepared in the ground state of
     an initial Hamiltonian $H_0$ and then slowly evolved under a time-dependet Hamiltoniam $H(t)$. Here, we set
 
     .. math::
@@ -307,15 +323,16 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
 
         H_0 = \sum\limits_{(i,j)\in M}(X_iX_j+Y_iY_j+Z_iZ_j)
 
-    for a maximal matching $M\subset E$ of the graph $G$. 
+    for a maximal matching $M\subset E$ of the graph $G$.
 
     For $J>0$ the ground state of the initial Hamiltonian $H_0$ is given by a tensor product of
     singlet states corresponding to the maximal matching $M$.
 
-    The time evolution of $H(t)$ is approximately implemented by trotterization, i.e., alternatingly applying 
+    The time evolution of $H(t)$ is approximately implemented by trotterization, i.e., alternatingly applying
     $e^{-iH_0\Delta t}$ and $e^{-iH\Delta t}$, and if necessary trotterizing $e^{-iH\Delta t}$.
 
-    In the scope of VQE, the short evolution times $\Delta t$ are replaced by parameters $\theta_i$ which are then optimized.
+    In the scope of VQE, the short evolution times $\Delta t$ are replaced by parameters
+    $\theta_i$ which are then optimized.
     This yields the following unitary ansatz with $p$ layers:
 
     .. math::
@@ -329,12 +346,12 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
         U_H(\theta) = e^{-i\theta H_B}\prod\limits_{k=1}^{q}\prod_{(i,j)\in E_k}e^{-i\theta H_{ij}}
 
     where $E_1,\dotsc,E_q$ is an edge coloring of the graph $G$, and $H_B$ is the magnetic field Hamiltonian.
-    Then all unitaries $e^{-i\theta H_{ij}}$ for $(i,j)\in E_k$ commute. 
+    Then all unitaries $e^{-i\theta H_{ij}}$ for $(i,j)\in E_k$ commute.
     For implementing such unitaries, note that each two-qubit `Heisenberg interaction unitary <https://arxiv.org/abs/2108.02175>`_
-    
-    .. math:: 
 
-        \text{Heis}(\theta) \equiv e^{-i\theta/4}e^{-i\theta H_{ij}} = 
+    .. math::
+
+        \text{Heis}(\theta) \equiv e^{-i\theta/4}e^{-i\theta H_{ij}} =
         \begin{pmatrix}
         e^{-i\theta/2}&0&0&0\\
         0&\cos(\theta/2)&-i\sin(\theta/2)&0\\
@@ -360,7 +377,8 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
     B : float
         fhe magnetic field strength.
     ansatz_type : string, optional
-        Specifies the Hamiltonian Variational Ansatz. Available are ``per hamiltonian``, ``per edge color``, ``per edge``.
+        Specifies the Hamiltonian Variational Ansatz. Available are ``per hamiltonian``,
+        ``per edge color``, ``per edge``.
         The default is ``per hamiltonian``.
 
     Returns
@@ -399,14 +417,14 @@ def heisenberg_problem(G, J, B, ansatz_type="per hamiltonian"):
         energy = vqe.run(QuantumVariable(G.number_of_nodes()),depth=2,max_iter=50)
         print(energy)
         # Yields -8.0
-    
+
     We visualize the optimization process:
 
     >>> vqe.visualize_energy(exact=True)
 
     .. figure:: /_static/heisenberg_energy.png
         :scale: 80%
-        :align: center  
+        :align: center
 
     """
     from qrisp.vqe import VQEProblem

@@ -16,45 +16,63 @@
 
 """Builds VQE problem instances for molecular electronic structure using a QCCSD ansatz."""
 
+from __future__ import annotations
+
 import itertools
 import math
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from qrisp import conjugate, control, cx, h, ry, x
-from qrisp.operators.fermionic import *
+from qrisp.operators.fermionic import *  # noqa: F403
+from qrisp.operators.fermionic import FermionicOperator, FermionicTerm
+
+if TYPE_CHECKING:
+    import pyscf
+
+    from qrisp.algorithms.vqe.vqe_problem import VQEProblem
+    from qrisp.core import QuantumVariable
+    from qrisp.typing import FloatLike, QubitLike
+
+# Tolerance used when verifying the symmetries of the two-electron integrals.
+_SYMMETRY_THRESHOLD = 1e-9
 
 #
 # helper functions
 #
 
 
-def verify_symmetries(two_int):
+def verify_symmetries(two_int: np.ndarray) -> bool:
     """Checks the symmetries of the two_electron integrals tensor in physicist's notation.
 
     Parameters
     ----------
-    int_two : numpy.ndarray
+    two_int : numpy.ndarray
         The two-electron integrals w.r.t. spin orbitals in physicist's notation.
 
     Returns
     -------
+    bool
+        ``True`` if the tensor satisfies the symmetries, ``False`` otherwise.
 
     """
     M = two_int.shape[0]
     for i in range(M):
         for j in range(M):
             for k in range(M):
-                for l in range(M):
-                    test1 = abs(two_int[i][j][k][l] - two_int[j][i][l][k])
-                    test2 = abs(two_int[i][j][k][l] - two_int[k][l][i][j])
-                    test3 = abs(two_int[i][j][k][l] - two_int[l][k][j][i])
-                    if test1 > 1e-9 or test2 > 1e-9 or test3 > 1e-9:
+                for m in range(M):
+                    test1 = abs(two_int[i][j][k][m] - two_int[j][i][m][k])
+                    test2 = abs(two_int[i][j][k][m] - two_int[k][m][i][j])
+                    test3 = abs(two_int[i][j][k][m] - two_int[m][k][j][i])
+                    if test1 > _SYMMETRY_THRESHOLD or test2 > _SYMMETRY_THRESHOLD or test3 > _SYMMETRY_THRESHOLD:
                         return False
     return True
 
 
-def delta(i, j):
+def delta(i: int, j: int) -> int:
+    """Returns the Kronecker delta of ``i`` and ``j``."""
     if i == j:
         return 1
     else:
@@ -66,13 +84,17 @@ def delta(i, j):
 #
 
 
-def omega(x):
+def omega(x: int) -> int:
+    """Returns the spin component ``x % 2`` of the spin-orbital index ``x``."""
     return x % 2
 
 
-def spacial_to_spin(one_int, two_int):
-    r"""Transforms one- and two-electron integrals w.r.t. $M$ spacial orbitals $\psi_0,\dotsc,\psi_{M-1}$ to
-    one- and two-electron integrals w.r.t. $2M$ spin orbitals $\chi_{2i}=\psi_{i}\alpha$, 
+def spacial_to_spin(one_int: np.ndarray, two_int: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    r"""Transforms one- and two-electron integrals from spacial to spin orbitals.
+
+    Given one- and two-electron integrals w.r.t. $M$ spacial orbitals
+    $\psi_0,\dotsc,\psi_{M-1}$, this method computes one- and two-electron integrals
+    w.r.t. $2M$ spin orbitals $\chi_{2i}=\psi_{i}\alpha$,
     $\chi_{2i+1}=\psi_{i}\beta$ for $i=0,\dotsc,M-1$.
 
     That is, given one- and two-electron integrals for spacial orbitals:
@@ -122,19 +144,19 @@ def spacial_to_spin(one_int, two_int):
     for i in range(num_spacial_orbs):
         for j in range(num_spacial_orbs):
             for k in range(num_spacial_orbs):
-                for l in range(num_spacial_orbs):
-                    two_int_spin[2 * i][2 * j + 1][2 * k + 1][2 * l] = two_int[i][j][k][l]
+                for m in range(num_spacial_orbs):
+                    two_int_spin[2 * i][2 * j + 1][2 * k + 1][2 * m] = two_int[i][j][k][m]
 
-                    two_int_spin[2 * i + 1][2 * j][2 * k][2 * l + 1] = two_int[i][j][k][l]
+                    two_int_spin[2 * i + 1][2 * j][2 * k][2 * m + 1] = two_int[i][j][k][m]
 
-                    two_int_spin[2 * i][2 * j][2 * k][2 * l] = two_int[i][j][k][l]
+                    two_int_spin[2 * i][2 * j][2 * k][2 * m] = two_int[i][j][k][m]
 
-                    two_int_spin[2 * i + 1][2 * j + 1][2 * k + 1][2 * l + 1] = two_int[i][j][k][l]
+                    two_int_spin[2 * i + 1][2 * j + 1][2 * k + 1][2 * m + 1] = two_int[i][j][k][m]
 
     return one_int_spin, two_int_spin
 
 
-def electronic_data(mol):
+def electronic_data(mol: pyscf.gto.Mole) -> dict:
     """Gets the electronic data needed to define an electronic structure problem.
 
     The data is obtained from a `restricted Hartree-Fock (RHF) <https://pyscf.org/user/scf.html>`_
@@ -184,7 +206,8 @@ def electronic_data(mol):
 
     threshold = 1e-9
 
-    def apply_threshold(matrix, threshold):
+    def apply_threshold(matrix: np.ndarray, threshold: float) -> np.ndarray:
+        """Zeroes out the entries of ``matrix`` whose absolute value is below ``threshold``."""
         matrix[np.abs(matrix) < threshold] = 0
         return matrix
 
@@ -218,9 +241,13 @@ def electronic_data(mol):
     return data
 
 
-def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
+def create_electronic_hamiltonian(  # noqa: PLR0912 -- active-space construction
+    arg: pyscf.gto.Mole | dict, active_orb: int | None = None, active_elec: int | None = None
+) -> FermionicOperator:
     """Creates the qubit Hamiltonian for an electronic structure problem.
-    If an Active Space (AS) is specified, the Hamiltonian is calculated following this `paper <https://arxiv.org/abs/2009.01872>`_.
+
+    If an Active Space (AS) is specified, the Hamiltonian is calculated following this
+    `paper <https://arxiv.org/abs/2009.01872>`_.
 
     Parameters
     ----------
@@ -249,7 +276,8 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
 
     Examples
     --------
-    We calucalte the fermionic Hamiltonian for the Hydrogen molecule, and transform it to a Pauli Hamiltonian via Jordan-Wigner transform.
+    We calculate the fermionic Hamiltonian for the Hydrogen molecule, and transform it to
+    a Pauli Hamiltonian via Jordan-Wigner transform.
 
     ::
 
@@ -268,11 +296,14 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
 
     .. math::
 
-        -&0.812170607248714 - 0.0453026155037992 X_0X_1Y_2Y_3 + 0.0453026155037992 X_0Y_1Y_2X_3 - 0.0453026155037992 Y_0Y_1X_2X_3
+        -&0.812170607248714 - 0.0453026155037992 X_0X_1Y_2Y_3 + 0.0453026155037992 X_0Y_1Y_2X_3
+        - 0.0453026155037992 Y_0Y_1X_2X_3
 
-        &+0.171412826447769 Z_0 + 0.168688981703612 Z_0Z_1 + 0.120625234833904 Z_0Z_2 + 0.165927850337703 Z_0Z_3 + 0.171412826447769 Z_1
+        &+0.171412826447769 Z_0 + 0.168688981703612 Z_0Z_1 + 0.120625234833904 Z_0Z_2
+        + 0.165927850337703 Z_0Z_3 + 0.171412826447769 Z_1
 
-        &+0.165927850337703 Z_1Z_2 + 0.120625234833904 Z_1Z_3 - 0.223431536908133 Z_2 + 0.174412876122615Z Z_2Z_3 - 0.223431536908133 Z_3
+        &+0.165927850337703 Z_1Z_2 + 0.120625234833904 Z_1Z_3 - 0.223431536908133 Z_2
+        + 0.174412876122615Z Z_2Z_3 - 0.223431536908133 Z_3
 
     """
     import pyscf
@@ -301,19 +332,19 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
         raise Exception("Invalid number of active electrons or orbitals")
 
     # number of inactive electrons
-    I = N - L
+    n_inact = N - L
 
     # inactive Fock operator
     F = one_int.copy()
     for p in range(M):
         for q in range(M):
-            for i in range(I):
+            for i in range(n_inact):
                 # F[p][q] += (two_int[i][p][i][q]-two_int[i][q][p][i])
                 F[p][q] += two_int[i][p][q][i] - two_int[i][q][i][p]
 
     # inactive energy
     E = 0
-    for j in range(I):
+    for j in range(n_inact):
         E += (one_int[j][j] + F[j][j]) / 2
 
     # Hamiltonian
@@ -321,19 +352,19 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
     res_dict = {}
     for i in range(K):
         for j in range(K):
-            if F[I + i][I + j] != 0:
+            if F[n_inact + i][n_inact + j] != 0:
                 term = FermionicTerm([(j, False), (i, True)])
-                res_dict[term] = F[I + i][I + j]
-                # H += F[I+i][I+j]*c(i)*a(j)
+                res_dict[term] = F[n_inact + i][n_inact + j]
+                # H += F[n_inact+i][n_inact+j]*c(i)*a(j)
 
     for i in range(K):
         for j in range(K):
             for k in range(K):
-                for l in range(K):
-                    if two_int[I + i][I + j][I + k][I + l] != 0 and i != j and k != l:
-                        term = FermionicTerm([(l, False), (k, False), (j, True), (i, True)])
-                        res_dict[term] = 0.5 * two_int[I + i][I + j][I + k][I + l]
-                        # H += (0.5*two_int[I+i][I+j][I+k][I+l])*c(i)*c(j)*a(k)*a(l)
+                for m in range(K):
+                    if two_int[n_inact + i][n_inact + j][n_inact + k][n_inact + m] != 0 and i != j and k != m:
+                        term = FermionicTerm([(m, False), (k, False), (j, True), (i, True)])
+                        res_dict[term] = 0.5 * two_int[n_inact + i][n_inact + j][n_inact + k][n_inact + m]
+                        # H += (0.5*two_int[n_inact+i][n_inact+j][n_inact+k][n_inact+m])*c(i)*c(j)*a(k)*a(m)
     temp_H = FermionicOperator(res_dict)
     H = E + temp_H
     return H.reduce()
@@ -344,41 +375,45 @@ def create_electronic_hamiltonian(arg, active_orb=None, active_elec=None):
 #
 
 
-def conjugator(i, j):
+def conjugator(i: QubitLike, j: QubitLike) -> None:
+    """Conjugates qubits ``i`` and ``j`` for the single-excitation swap."""
     h(i)
     cx(i, j)
 
 
-def pswap(phi, i, j):
+def pswap(phi: FloatLike, i: QubitLike, j: QubitLike) -> None:
+    """Applies the single-excitation swap between qubits ``i`` and ``j`` by angle ``phi``."""
     with conjugate(conjugator)(i, j):
         ry(-phi / 2, [i, j])
 
 
-def conjugator2(i, j, k, l):
+def conjugator2(i: QubitLike, j: QubitLike, k: QubitLike, l: QubitLike) -> None:  # noqa: E741
+    """Conjugates qubits ``i, j`` and ``k, l`` for the double-excitation swap."""
     cx(i, j)
     cx(k, l)
 
 
-def pswap2(phi, i, j, k, l):
+def pswap2(phi: FloatLike, i: QubitLike, j: QubitLike, k: QubitLike, l: QubitLike) -> None:  # noqa: E741
+    """Applies the double-excitation swap between qubit pairs ``i, j`` and ``k, l`` by angle ``phi``."""
     with conjugate(conjugator2)(i, j, k, l):
         with control([j, l], ctrl_state="00"):
             pswap(phi, i, k)
 
 
-def create_QCCSD_ansatz(M, N):
+def create_QCCSD_ansatz(M: int, N: int) -> tuple[Callable, int]:
     r"""This method creates a function for applying one layer of the `QCCSD ansatz <https://arxiv.org/abs/2005.08451>`_.
 
-    The chemistry-inspired Qubit Coupled Cluster Single Double (QCCSD) ansatz evolves the initial state, 
+    The chemistry-inspired Qubit Coupled Cluster Single Double (QCCSD) ansatz evolves the initial state,
     usually, the Hartree-Fock state
 
     .. math::
 
         \ket{\Psi_{\text{HF}}}=\ket{1_0,\dotsc,1_N,0_{N+1},\dotsc,0_M}
-    
+
     under the action of parametrized (non-commuting) single and double excitation unitaries.
-    
+
     The single (S) excitation unitaries $U_i^r$ implement a continuous swap for qubits $i$ and $r$:
-    
+
     .. math::
 
         U_i^r(\theta) = \begin{pmatrix}
@@ -388,9 +423,9 @@ def create_QCCSD_ansatz(M, N):
                         0&0&0&1
                         \end{pmatrix}
 
-    Similarly, the double (D) excitation unitaries $U_{ij}^{rs}(\theta)$ implement a continuous swap 
+    Similarly, the double (D) excitation unitaries $U_{ij}^{rs}(\theta)$ implement a continuous swap
     for qubit pairs $i,j$ and $r,s$.
-        
+
     Parameters
     ----------
     M : int
@@ -434,8 +469,8 @@ def create_QCCSD_ansatz(M, N):
 
     num_params = num_singles + num_doubles
 
-    def ansatz(qv, theta):
-
+    def ansatz(qv: QuantumVariable, theta: Sequence[FloatLike]) -> None:
+        """Applies one layer of the QCCSD ansatz to ``qv`` with parameters ``theta``."""
         num_params = 0
         # Single excitations
         for i in spin_down_occupied:
@@ -452,24 +487,24 @@ def create_QCCSD_ansatz(M, N):
         for i in spin_down_occupied:
             for j in spin_up_occupied:
                 for k in spin_down_virtual:
-                    for l in spin_up_virtual:
-                        pswap2(theta[num_params], qv[i], qv[j], qv[k], qv[l])
+                    for m in spin_up_virtual:
+                        pswap2(theta[num_params], qv[i], qv[j], qv[k], qv[m])
                         num_params += 1
 
         for i, j in itertools.combinations(spin_down_occupied, 2):
-            for k, l in itertools.combinations(spin_down_virtual, 2):
-                pswap2(theta[num_params], qv[i], qv[j], qv[k], qv[l])
+            for k, m in itertools.combinations(spin_down_virtual, 2):
+                pswap2(theta[num_params], qv[i], qv[j], qv[k], qv[m])
                 num_params += 1
 
         for i, j in itertools.combinations(spin_up_occupied, 2):
-            for k, l in itertools.combinations(spin_up_virtual, 2):
-                pswap2(theta[num_params], qv[i], qv[j], qv[k], qv[l])
+            for k, m in itertools.combinations(spin_up_virtual, 2):
+                pswap2(theta[num_params], qv[i], qv[j], qv[k], qv[m])
                 num_params += 1
 
     return ansatz, num_params
 
 
-def create_hartree_fock_init_function(M, N):
+def create_hartree_fock_init_function(M: int, N: int) -> Callable:
     r"""Creates the Hartree-Fock initialization function.
 
     Consistent with the Jordan-Wigner mapping, the first ``N`` qubits are
@@ -513,7 +548,8 @@ def create_hartree_fock_init_function(M, N):
 
     """
 
-    def init_function(qv):
+    def init_function(qv: QuantumVariable) -> None:
+        """Initializes the first ``N`` qubits of ``qv`` in the ``|1>`` state."""
         for i in range(N):
             x(qv[i])
 
@@ -531,15 +567,24 @@ def create_hartree_fock_init_function(M, N):
     return init_function
 
 
-def electronic_structure_problem(arg, active_orb=None, active_elec=None, ansatz_type="QCCSD", threshold=1e-4):
-    r"""Creates a VQE problem instance for an electronic structure problem defined by the
-    one-electron and two-electron integrals for the spin orbitals (in physicists' notation).
+def electronic_structure_problem(
+    arg: pyscf.gto.Mole | dict,
+    active_orb: int | None = None,
+    active_elec: int | None = None,
+    ansatz_type: str = "QCCSD",
+    threshold: float = 1e-4,
+) -> VQEProblem:
+    r"""Creates a VQE problem instance for an electronic structure problem.
+
+    The problem is defined by the one-electron and two-electron integrals for the spin
+    orbitals (in physicists' notation).
 
     The problem Hamiltonian is given by:
 
     .. math::
 
-        H = \sum\limits_{i,j=0}^{M-1}h_{i,j}a^{\dagger}_ia_j + \sum\limits_{i,j,k,l=0}^{M-1}h_{i,j,k,l}a^{\dagger}_ia^{\dagger}_ja_ka_l
+        H = \sum\limits_{i,j=0}^{M-1}h_{i,j}a^{\dagger}_ia_j
+        + \sum\limits_{i,j,k,l=0}^{M-1}h_{i,j,k,l}a^{\dagger}_ia^{\dagger}_ja_ka_l
 
     for one-electron integrals:
 
@@ -575,7 +620,8 @@ def electronic_structure_problem(arg, active_orb=None, active_elec=None, ansatz_
     ansatz_type : string, optional
         The ansatz type. Availabe is ``QCCSD``. The default is ``QCCSD``.
     threshold : float, optional
-        The threshold for the absolute value of the coefficients of Pauli products in the quantum Hamiltonian. The default is 1e-4.
+        The threshold for the absolute value of the coefficients of Pauli products in the
+        quantum Hamiltonian. The default is 1e-4.
 
     Returns
     -------
