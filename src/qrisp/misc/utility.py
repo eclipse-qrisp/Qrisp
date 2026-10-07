@@ -17,6 +17,7 @@
 """Miscellaneous utility functions for gate wrapping, measurement, uncomputation locks, and debugging."""
 
 import functools
+import re
 import traceback
 import warnings
 from typing import TYPE_CHECKING
@@ -1347,6 +1348,31 @@ def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "
 def find_calling_line(level=0):
     stack = traceback.extract_stack(limit=level + 3)
     return str(traceback.format_list(stack)[1].split("\n")[1].strip())  # prints "a = fct1()"
+
+
+def infer_python_var_name(level=0):
+    """Infer the name of the Python variable a ``Quantum...`` object is assigned to.
+
+    Parameters
+    ----------
+    level : int, optional
+        How many stack frames above the caller of this function the assignment
+        line is expected to be found. The default is 0.
+
+    Returns
+    -------
+    str or None
+        The (first) assignment target of that line, or None if the line is not of
+        the form ``var = Quantum...``.
+
+    """
+    line = find_calling_line(level + 1)
+    split_line = line.split("=")
+    minimum_equality_splits = 2
+    if len(split_line) < minimum_equality_splits or split_line[1].replace(" ", "")[:7] != "Quantum":
+        return None
+    # Keep only the first target name, e.g. "a" for "a: QuantumFloat" or "a, b".
+    return re.sub(r"[,:].*", "", split_line[0]).strip()
 
 
 def retarget_instructions(data, source_qubits, target_qubits):

@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, ClassVar
 from weakref import ReferenceType
 
 import jax.numpy as jnp
@@ -228,9 +228,14 @@ class QuantumVariable:
     is_fixed_name: bool
     reg: Any  # pyright: ignore[reportExplicitAny, reportUninitializedInstanceVariable]
     creation_time: int  # pyright: ignore[reportUninitializedInstanceVariable]
-    live_qvs: list[ReferenceType[Self]] = []
-    creation_counter: int = 0
-    name_tracker: dict[str, int] = {}
+    # Registries shared by all QuantumVariables. ClassVar keeps type checkers from
+    # accepting e.g. ``self.creation_counter += 1``, which would silently create an
+    # instance attribute instead of advancing the shared counter. ``live_qvs`` is
+    # typed with QuantumVariable rather than Self since it holds variables of
+    # every quantum type.
+    live_qvs: ClassVar[list[ReferenceType[QuantumVariable]]] = []
+    creation_counter: ClassVar[int] = 0
+    name_tracker: ClassVar[dict[str, int]] = {}
     qs: QuantumSession | TracingQuantumSession
     static_attributes: list[str]
     traced_attributes: list[str]
@@ -281,15 +286,8 @@ class QuantumVariable:
         # Store quantum session
         self.qs = TracingQuantumSession.get_instance() if check_for_tracing_mode() else qs or QuantumSession()
 
-        if isinstance(self.qs, QuantumSession):
-            declaration_stack_level = 1 if type(self) is QuantumVariable else 2
-            (self.name, self.is_fixed_name) = self.qs.generate_name(name, self, declaration_stack_level + 1)
-        elif name is None:
-            self.name = self.get_unique_name()
-            self.is_fixed_name = False
-        else:
-            self.is_fixed_name = not name.endswith("*")
-            self.name = name.removesuffix("*")
+        declaration_stack_level = 1 if type(self) is QuantumVariable else 2
+        (self.name, self.is_fixed_name) = self.qs.generate_name(name, self, declaration_stack_level + 1)
         self.qs.register_qv(self, size)
 
         # Imported locally to avoid a circular import: qrisp.jasp.tracing_logic
@@ -434,7 +432,10 @@ class QuantumVariable:
                 del QuantumVariable.live_qvs[i]
                 continue
 
-            if live_qv.name == self.name:
+            # Compare by identity rather than by name: names are only unique
+            # within a single QuantumSession, so a name match could remove a
+            # different variable that happens to share this one's name.
+            if live_qv is self:
                 del QuantumVariable.live_qvs[i]
                 break
 
@@ -515,17 +516,14 @@ class QuantumVariable:
             size = self.size
 
         # Set name of duplicate variable.
-        if isinstance(new_qs, QuantumSession):
-            declaration_stack_level = 1 if type(self) is QuantumVariable else 2
-            (duplicate.name, duplicate.is_fixed_name) = new_qs.generate_name(
-                name if name is not None else self.name,
-                duplicate,
-                declaration_stack_level,
-                name is None,
-            )
-        else:
-            duplicate.name = name.removesuffix("*") if name is not None else self.name + "_dupl"
-            duplicate.is_fixed_name = not (name is None or name.endswith("*"))
+        # The name passed is never None, so no code introspection happens and
+        # the declaration stack level is irrelevant.
+        (duplicate.name, duplicate.is_fixed_name) = new_qs.generate_name(
+            name if name is not None else self.name,
+            duplicate,
+            declaration_stack_level=0,
+            is_duplicated_name=name is None,
+        )
 
         # Register duplicate variable in session.
         new_qs.register_qv(duplicate, size)

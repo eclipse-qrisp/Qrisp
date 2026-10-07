@@ -110,6 +110,41 @@ class TestIntrospectedName:
         assert qv.name == "qv"
         assert qv.is_fixed_name is False
 
+    def test_name_generation_introspection_ignores_type_annotation(self):
+        qs = QuantumSession()
+        qv: QuantumVariable = QuantumVariable(2, qs=qs)
+        assert qv.name == "qv"
+        assert qv.is_fixed_name is False
+
+    def test_name_generation_introspection_uses_first_unpacking_target(self):
+        qs = QuantumSession()
+        qv, _ = QuantumVariable(2, qs=qs), 1
+        assert qv.name == "qv"
+        assert qv.is_fixed_name is False
+
+    def test_name_generation_introspection_in_tracing_mode(self):
+        @jaspify
+        def main():
+            qv = QuantumVariable(2)
+            assert qv.name == "qv"
+            assert qv.is_fixed_name is False
+            return 0
+
+        main()
+
+    # Tracing sessions don't check for collisions, so the inferred name is not suffixed.
+    def test_name_generation_introspection_in_tracing_mode_allows_duplicates(self):
+        @jaspify
+        def main():
+            first_qv = QuantumVariable(2)
+            qv = QuantumVariable(2)  # noqa: F841
+            first_qv, qv = QuantumVariable(2), first_qv
+            assert first_qv.name == "first_qv"
+            assert qv.name == "first_qv"
+            return 0
+
+        main()
+
     # Code introspection always numbers its suffix starting from 0, independent of
     # how many other QuantumVariables (same or different names) already exist.
     def test_name_generation_introspection_collision_suffix_starts_at_zero(self):
@@ -185,6 +220,23 @@ def _make_colliding_pair(qv_0_fixed: bool, qv_1_fixed: bool, qv_0_newer: bool):
     return qs_0, qv_0, qs_1, qv_1
 
 
+class TestEmptyName:
+    """Test that an empty name is rejected in static and tracing mode."""
+
+    def test_empty_name_raises_in_static_mode(self):
+        with pytest.raises(ValueError, match="must not be empty"):
+            QuantumVariable(1, name="")
+
+    def test_empty_name_raises_in_tracing_mode(self):
+        @jaspify
+        def main():
+            QuantumVariable(1, name="")
+            return 0
+
+        with pytest.raises(ValueError, match="must not be empty"):
+            main()
+
+
 class TestResolveNamingCollisions:
     """Test :func:`resolve_naming_collisions` for same-named variables in two sessions."""
 
@@ -217,17 +269,32 @@ class TestResolveNamingCollisions:
             resolve_naming_collisions(qs_0, qs_1)
 
 
-class TestDuplicateNaming:
-    """Test the names :meth:`QuantumVariable.duplicate` gives in tracing mode."""
+_DUPLICATE_NAMING_CASES = pytest.mark.parametrize(
+    ("requested_name", "expected_name", "expected_is_fixed_name"),
+    [
+        pytest.param(None, "alice_dupl", False, id="no_name"),
+        pytest.param("bob", "bob", True, id="explicit_name"),
+        pytest.param("bob*", "bob", False, id="wildcard_name"),
+    ],
+)
 
-    @pytest.mark.parametrize(
-        ("requested_name", "expected_name", "expected_is_fixed_name"),
-        [
-            pytest.param(None, "alice_dupl", False, id="no_name"),
-            pytest.param("bob", "bob", True, id="explicit_name"),
-            pytest.param("bob*", "bob", False, id="wildcard_name"),
-        ],
-    )
+
+class TestDuplicateNaming:
+    """Test the names :meth:`QuantumVariable.duplicate` gives in static and tracing mode."""
+
+    @_DUPLICATE_NAMING_CASES
+    def test_duplicate_naming_in_static_mode(
+        self, requested_name: str | None, expected_name: str, expected_is_fixed_name: bool
+    ):
+        qv = QuantumVariable(2, name="alice")
+        duplicate = qv.duplicate(name=requested_name)
+        assert duplicate.name == expected_name
+        assert duplicate.is_fixed_name is expected_is_fixed_name
+        # The source variable's name must be left untouched.
+        assert qv.name == "alice"
+        assert qv.is_fixed_name is True
+
+    @_DUPLICATE_NAMING_CASES
     def test_duplicate_naming_in_tracing_mode(
         self, requested_name: str | None, expected_name: str, expected_is_fixed_name: bool
     ):
@@ -240,3 +307,14 @@ class TestDuplicateNaming:
             return 0
 
         main()
+
+
+# Names are only unique within a QuantumSession, so deleting a variable must only
+# remove that exact variable from QuantumVariable.live_qvs.
+def test_delete_only_removes_deleted_variable_from_live_qvs():
+    a = QuantumVariable(1, name="anc")
+    b = QuantumVariable(1, name="anc")
+    b.delete()
+    live_qvs = [ref() for ref in QuantumVariable.live_qvs]
+    assert any(live_qv is a for live_qv in live_qvs)
+    assert not any(live_qv is b for live_qv in live_qvs)
