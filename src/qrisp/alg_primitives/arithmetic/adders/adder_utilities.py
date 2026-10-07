@@ -14,14 +14,21 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Shared helpers for all the Qrisp adder implementations."""
 
-from qrisp.alg_primitives.arithmetic.adders.adder_tools import *
-from qrisp.alg_primitives.arithmetic.adders.qcla import *
-from qrisp.alg_primitives.arithmetic.adders.gidney_adder import *
-from qrisp.alg_primitives.arithmetic.adders.fourier_adder import *
-from qrisp.alg_primitives.arithmetic.adders.incrementation import *
-from qrisp.alg_primitives.arithmetic.adders.remaud import *
-from qrisp.alg_primitives.arithmetic.adders.cuccaro_adder import *
-from qrisp.alg_primitives.arithmetic.adders.thapliyal_adder import *
-from qrisp.alg_primitives.arithmetic.adders.ripple_carry_adder import *
-from qrisp.alg_primitives.arithmetic.adders.gidney_venting_adder import *
+from qrisp.circuit import Qubit
+from qrisp.core import QuantumVariable
+from qrisp.jasp import DynamicQubitArray
+
+
+def _is_quantum_register(obj):
+    """Return True if ``obj`` is a quantum register.
+
+    A quantum register is a QuantumVariable (or subclass thereof), a
+    DynamicQubitArray or a list of Qubits.
+    """
+    if isinstance(obj, (QuantumVariable, DynamicQubitArray)):
+        return True
+    if isinstance(obj, list):
+        return all(isinstance(qb, Qubit) for qb in obj)
+    return False
