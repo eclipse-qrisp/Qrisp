@@ -61,8 +61,9 @@ threshold = 1e-9
 
 
 class QubitOperator(Hamiltonian):
-    r"""This class provides an efficient implementation of QubitOperators, i.e.
-    Operators, that act on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
+    r"""Provides an efficient implementation of QubitOperators.
+
+    QubitOperators act on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
     Supported are operators of the following form:
     
     .. math::
@@ -559,7 +560,9 @@ class QubitOperator(Hamiltonian):
     #
 
     def subs(self, subs_dict: dict) -> "QubitOperator":
-        """Parameters
+        """Substitutes qubit indices by scalar values.
+
+        Parameters
         ----------
         subs_dict : dict
             A dictionary with indices (int) as keys and numbers (int, float, complex) as values.
@@ -743,7 +746,6 @@ class QubitOperator(Hamiltonian):
             # Yields: A_0*A_1 + C_0*C_1 + 5*P^0_0*A_1 + 5*P^0_0*C_1 + 2*P^1_0*A_1 + 2*P^1_0*C_1
 
         """
-
         OPERATOR_TABLE = {(0, 0): "P0", (0, 1): "A", (1, 0): "C", (1, 1): "P1"}
 
         if isinstance(matrix, ndarray):
@@ -1223,7 +1225,9 @@ class QubitOperator(Hamiltonian):
     def change_of_basis(  # noqa: PLR0912, PLR0915 -- basis change handles many factor types
         self, qarg: QuantumVariable | None = None, method: str = "commuting_qw"
     ) -> "QubitOperator":
-        """Performs several operations on a quantum argument such that the hermitian
+        """Performs a change of basis so that the hermitian part of self is diagonal.
+
+        Several operations are applied to a quantum argument such that the hermitian
         part of self is diagonal when conjugated with these operations.
 
         Parameters
@@ -1709,8 +1713,12 @@ class QubitOperator(Hamiltonian):
         precompiled_qc: QuantumCircuit | None = None,
         measurement_data: QubitOperatorMeasurement | None = None,  # measurement settings
     ) -> Callable:
-        r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
-        This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
+        r"""Estimates the expectation value of a Hamiltonian for a prepared state.
+
+        The ``expectation value`` function allows to estimate the expectation value of a
+        Hamiltonian for a state that is specified by a preparation procedure. This
+        preparation procedure can be supplied via a Python function that returns a
+        :ref:`QuantumVariable`.
 
         Note that this method measures the **hermitized** version of the operator:
 
@@ -1910,8 +1918,10 @@ class QubitOperator(Hamiltonian):
     #
 
     def trotterization(self, order: int = 1, method: str = "commuting_qw", forward_evolution: bool = True) -> Callable:
-        r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
-        Note that this method will always simulate the **hermitized** operator, i.e.
+        r"""Returns a function for performing Hamiltonian simulation via Trotterization.
+
+        This approximately implements the unitary operator $U(t) = e^{-itH}$. Note that
+        this method will always simulate the **hermitized** operator, i.e.
 
         .. math::
 
@@ -2074,8 +2084,10 @@ class QubitOperator(Hamiltonian):
     #
 
     def qdrift(self, forward_evolution: bool = True) -> Callable:
-        r"""Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift**
-        (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) algorithm.
+        r"""Simulates time-evolution under a Hamiltonian using the **QDrift** algorithm.
+
+        This uses the `Quantum Stochastic Drift Protocol
+        <https://arxiv.org/pdf/1811.08017>`_ algorithm.
 
         QDrift approximates the exact time-evolution operator
 
@@ -2220,7 +2232,6 @@ class QubitOperator(Hamiltonian):
         making it a powerful tool for large-scale quantum simulations with bounded resources.
 
         """
-
         # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
         # We create a list of term.simulate functions for all terms in the operator
         # and use the q_switch with classical index to apply the j-th function
