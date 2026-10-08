@@ -247,7 +247,6 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
         "CSX": _CSX_gate,
         "CPhase": qc.cp,
         "ParityPhase": None,
-        "PhaseGadget": None,
         "XCX": None,
         "SWAP": qc.swap,
         "CSWAP": lambda x, y, z: qc.append(SwapGate().control(), [x, y, z]),
@@ -320,6 +319,8 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
                 add_gate(gate)
             else:
                 # try with pyzx's basic gate decomposition
+                if gate.name == "ParityPhase":
+                    gate.as_gadget = False
                 for _gate in gate.to_basic_gates():
                     if _gate.name in gate_map and gate_map[_gate.name] is not None:
                         add_gate(_gate)

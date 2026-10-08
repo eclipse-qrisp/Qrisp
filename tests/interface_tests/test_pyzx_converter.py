@@ -92,6 +92,7 @@ def _build_multi_qubit_pyzx_circuit():
     c.add_gate("CRZ", 0, 2, Fraction(1, 2))
     c.add_gate("CPhase", 0, 1, Fraction(4, 5))
     c.add_gate("ParityPhase", Fraction(6, 5), 0, 2, 3)
+    c.add_gate("PhaseGadget", Fraction(3, 5), 1, 2, 3)
     c.add_gate("XCX", 0, 1)
     c.add_gate("CSX", 0, 1)
     c.add_gate("SWAP", 0, 2)
