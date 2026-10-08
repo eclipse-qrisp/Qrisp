@@ -322,6 +322,7 @@ Bug Fixes
     does. With a random ``meas_behavior``, they reused the same outcome for
     every measurement of a loop, and could follow different branches than
     ``count_ops`` for the same program.
+
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 Compatibility
