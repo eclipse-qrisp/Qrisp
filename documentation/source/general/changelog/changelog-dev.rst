@@ -127,9 +127,8 @@ Improvements
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 - Refactored :func:`control <qrisp.control>`, :func:`measure <qrisp.measure>`
-  and :func:`jrange <qrisp.jasp.jrange>`, which the Qrisp School tutorials
-  build on, without breaking changes. They now have type hints and dedicated
-  tests that cover every line the refactoring changed, and ``control`` also
+  and :func:`jrange <qrisp.jasp.jrange>`. 
+  They now have type hints and dedicated tests, and ``control`` also
   accepts a tuple of controls and raises a ``TypeError`` for unsupported or
   mixed controls. Across ``src/qrisp``, pyright now reports 1538 errors
   instead of 1747, mostly because the loop variable of ``jrange`` now has a
