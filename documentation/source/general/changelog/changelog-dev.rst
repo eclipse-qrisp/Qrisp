@@ -336,8 +336,29 @@ Bug Fixes
 
 * Fixed a bug where calls of :meth:`~qrisp.QuantumVariable.duplicate` of the form ``duplicate(name="foo*")`` 
   caused the variable being duplicated to change.
-  There, ``self.user_given_name`` was set to ``False``, instead of the duplicate's ``user_given_name``. 
-  This is fixed now. 
+  There, ``self.is_fixed_name`` (called ``user_given_name`` earlier) was set to ``False``, instead of the duplicate's ``is_fixed_name``.
+  This is fixed now.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed a bug where a :ref:`QuantumVariable <QuantumVariable>` created at the top level of a
+  plain Python script (e.g. ``qv = QuantumVariable(2)``) was not named after its Python variable,
+  but received a generic name such as ``qv_0`` instead. ``find_calling_line`` picked the wrong
+  stack frame whenever the declaring line was the bottom of the call stack. Inside functions,
+  pytest or Jupyter the inferred name was already correct; at module level, scripts now get the
+  inferred name too, which changes the names shown e.g. in printed circuits.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed the name inferred for a :ref:`QuantumVariable <QuantumVariable>` declared with a type
+  annotation or through tuple unpacking. ``x: QuantumFloat = QuantumFloat(3)`` was named ``x:``
+  and ``a, b = QuantumFloat(2), QuantumFloat(2)`` named its first variable ``a,``; they are now
+  named ``x`` and ``a`` respectively.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed a bug where deleting a :ref:`QuantumVariable <QuantumVariable>` could remove a different
+  variable with the same name, living in another QuantumSession, from ``QuantumVariable.live_qvs``.
+  Names are only unique within a single QuantumSession, so variables are now matched by their
+  creation time instead. Since the ``auto_uncompute`` decorator uses ``live_qvs`` to find the
+  variables a function created, it could previously miss such a variable.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
 Compatibility

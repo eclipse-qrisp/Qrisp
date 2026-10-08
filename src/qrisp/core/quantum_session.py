@@ -210,13 +210,8 @@ class QuantumSession(QuantumCircuit):
             name = next(name_generator)
         return name
 
-    # Returns the name of the Python variable ``qv`` is assigned to (see
-    # ``infer_python_var_name``), with a numerical suffix starting at 0 if that
-    # name is already taken, or None if the name can't be inferred.
-    # The parsing itself lives in ``infer_python_var_name`` so that
-    # TracingQuantumSession.generate_name can share it.
     def _generate_name_from_code_introspection(self, declaration_stack_level: int):
-        python_var_name = infer_python_var_name(declaration_stack_level)
+        python_var_name = infer_python_var_name(declaration_stack_level + 1)
         if python_var_name is None:
             return None
         valid_name = self._find_valid_name(self._default_name_generator(python_var_name, 0))
@@ -254,7 +249,7 @@ class QuantumSession(QuantumCircuit):
         suffix is appended on collision instead of raising. If ``name`` is None,
         the name of the Python variable ``qv`` is being assigned to is inferred via
         code introspection; if that also fails, a generic unique name is generated
-        (see :meth:`QuantumVariable.get_unique_name <qrisp.QuantumVariable.get_unique_name>`).
+        (see ``QuantumVariable.get_unique_name``).
 
         Parameters
         ----------
@@ -265,8 +260,9 @@ class QuantumSession(QuantumCircuit):
             Used for its type-dependent generic-name generation method
                 in the final fallback case.
         declaration_stack_level : int
-            How many stack frames above this method the line declaring ``qv`` is
-            expected to be found, used for code introspection when ``name`` is None.
+            How many stack frames above the caller of this method the line
+            declaring ``qv`` is expected to be found (0 being the caller's own
+            line), used for code introspection when ``name`` is None.
         is_duplicated_name : bool, optional
             If True and ``name`` is given, a ``"_dupl*"`` suffix is appended to
             ``name`` before resolving it, allowing the duplicate to be renamed on
@@ -287,11 +283,9 @@ class QuantumSession(QuantumCircuit):
         -------
         tuple[str, bool]
             The resolved name, and whether that name is fixed (see
-            :attr:`QuantumVariable.is_fixed_name <qrisp.QuantumVariable.is_fixed_name>`).
+            ``QuantumVariable.is_fixed_name``).
 
         """
-        # Rejected explicitly so that static and tracing mode agree; otherwise an
-        # empty name would be registered as-is.
         if name == "":
             raise ValueError("QuantumVariable name must not be empty")
         if name is not None:
