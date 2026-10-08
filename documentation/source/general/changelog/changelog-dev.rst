@@ -405,6 +405,8 @@ API Changes
 Development
 -----------
 
+* Added a PyZX bidirectional conversion interface
+  (`PR #782 <https://github.com/eclipse-qrisp/Qrisp/pull/782>`_).
 * Added ``jaspr_to_static_register_jaspr``, which rewrites a Jaspr so that all
   qubits come from a single register of fixed size allocated at program start.
   The CUDA-Q backend in `qrisp-cudaq <https://github.com/eclipse-qrisp/qrisp-cudaq>`_
@@ -550,6 +552,7 @@ Dependency Upgrades
 First Time Contributors 🎉
 --------------------------
 
+* `philipp-heinen <https://github.com/philipp-heinen>`_
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
