@@ -228,11 +228,6 @@ class QuantumVariable:
     is_fixed_name: bool
     reg: Any  # pyright: ignore[reportExplicitAny, reportUninitializedInstanceVariable]
     creation_time: int  # pyright: ignore[reportUninitializedInstanceVariable]
-    # Registries shared by all QuantumVariables. ClassVar keeps type checkers from
-    # accepting e.g. ``self.creation_counter += 1``, which would silently create an
-    # instance attribute instead of advancing the shared counter. ``live_qvs`` is
-    # typed with QuantumVariable rather than Self since it holds variables of
-    # every quantum type.
     live_qvs: ClassVar[list[ReferenceType[QuantumVariable]]] = []
     creation_counter: ClassVar[int] = 0
     name_tracker: ClassVar[dict[str, int]] = {}
@@ -287,7 +282,7 @@ class QuantumVariable:
         self.qs = TracingQuantumSession.get_instance() if check_for_tracing_mode() else qs or QuantumSession()
 
         declaration_stack_level = 1 if type(self) is QuantumVariable else 2
-        (self.name, self.is_fixed_name) = self.qs.generate_name(name, self, declaration_stack_level + 1)
+        (self.name, self.is_fixed_name) = self.qs.generate_name(name, self, declaration_stack_level)
         self.qs.register_qv(self, size)
 
         # Imported locally to avoid a circular import: qrisp.jasp.tracing_logic
@@ -432,10 +427,8 @@ class QuantumVariable:
                 del QuantumVariable.live_qvs[i]
                 continue
 
-            # Compare by identity rather than by name: names are only unique
-            # within a single QuantumSession, so a name match could remove a
-            # different variable that happens to share this one's name.
-            if live_qv is self:
+            # creation_time is a unique identifier across sessions.
+            if live_qv.creation_time == self.creation_time:
                 del QuantumVariable.live_qvs[i]
                 break
 

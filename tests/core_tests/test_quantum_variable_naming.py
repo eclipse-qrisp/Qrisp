@@ -16,6 +16,9 @@
 
 """Tests the different cases for variable naming."""
 
+import subprocess
+import sys
+
 import pytest
 
 from qrisp import QuantumSession, QuantumVariable, QuantumVariableNamingError
@@ -103,6 +106,20 @@ class TestRequestedName:
 
 class TestIntrospectedName:
     """Test names inferred from the Python variable a QuantumVariable is assigned to."""
+
+    # Under pytest there are always frames below the declaring line, so the
+    # module-level case (where the declaring line is the bottom of the stack)
+    # can only be reproduced by running a standalone script.
+    def test_name_generation_introspection_at_module_level(self, tmp_path):
+        script = tmp_path / "module_level.py"
+        script.write_text(
+            "from qrisp import QuantumFloat, QuantumVariable\n"
+            "qv = QuantumVariable(2)\n"
+            "qf = QuantumFloat(3)\n"
+            "print(qv.name, qf.name)\n"
+        )
+        result = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, check=True)
+        assert result.stdout.split() == ["qv", "qf"]
 
     def test_name_generation_introspection_infers_python_variable_name(self):
         qs = QuantumSession()
@@ -304,17 +321,9 @@ class TestDuplicateNaming:
             duplicate = qv.duplicate(name=requested_name)
             assert duplicate.name == expected_name
             assert duplicate.is_fixed_name is expected_is_fixed_name
+            # The source variable's name must be left untouched.
+            assert qv.name == "alice"
+            assert qv.is_fixed_name is True
             return 0
 
         main()
-
-
-# Names are only unique within a QuantumSession, so deleting a variable must only
-# remove that exact variable from QuantumVariable.live_qvs.
-def test_delete_only_removes_deleted_variable_from_live_qvs():
-    a = QuantumVariable(1, name="anc")
-    b = QuantumVariable(1, name="anc")
-    b.delete()
-    live_qvs = [ref() for ref in QuantumVariable.live_qvs]
-    assert any(live_qv is a for live_qv in live_qvs)
-    assert not any(live_qv is b for live_qv in live_qvs)

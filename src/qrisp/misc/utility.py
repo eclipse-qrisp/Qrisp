@@ -1346,11 +1346,28 @@ def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "
 
 
 def find_calling_line(level=0):
-    stack = traceback.extract_stack(limit=level + 3)
-    return str(traceback.format_list(stack)[1].split("\n")[1].strip())  # prints "a = fct1()"
+    """Return the source line being executed a given number of frames up the call stack.
+
+    Parameters
+    ----------
+    level : int, optional
+        How many stack frames above the caller of this function the line is
+        expected to be found (0 being the caller's own line). The default is 0.
+
+    Returns
+    -------
+    str
+        The stripped source line, or an empty string if it is unavailable.
+
+    """
+    # Exactly the frames from the target line down to this function. This
+    # ensures that the target is the oldest (first) element in `stack`, regardless
+    # of whether the call is at module level or inside a function (e.g. pytest).
+    stack = traceback.extract_stack(limit=level + 2)
+    return (stack[0].line or "").strip()  # prints "a = fct1()"
 
 
-def infer_python_var_name(level=0):
+def infer_python_var_name(level: int = 0):
     """Infer the name of the Python variable a ``Quantum...`` object is assigned to.
 
     Parameters

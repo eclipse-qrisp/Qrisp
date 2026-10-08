@@ -91,6 +91,13 @@ class TestDelete:
         _assert_deleted(to_be_deleted)
         assert len(QuantumVariable.live_qvs) == 1
 
+    def test_delete_leaves_same_named_variable_in_other_session_untouched(self):
+        kept = QuantumVariable(1, name="anc")
+        to_be_deleted = QuantumVariable(1, name="anc")
+        to_be_deleted.delete()
+        _assert_not_deleted(kept)
+        _assert_deleted(to_be_deleted)
+
     def test_operation_on_deleted_qubit_raises(self):
         qv = QuantumVariable(2)
         _assert_not_deleted(qv)

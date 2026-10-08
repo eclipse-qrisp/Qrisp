@@ -227,30 +227,29 @@ class TracingQuantumSession:
     ) -> tuple[str, bool]:
         """Determine the name to register ``qv`` under in this TracingQuantumSession.
 
-        Mirrors :meth:`QuantumSession.generate_name <qrisp.QuantumSession.generate_name>`,
+        Mirrors ``QuantumSession.generate_name``,
         so that QuantumVariable can name itself the same way in static and
         tracing mode, except that names are never checked for collisions, so no
-        numerical suffixes are appended and no error is raised. This preserves the
-        tracing-mode naming of earlier versions, where unnamed variables are named
-        after the Python variable they are assigned to (inferred via
-        ``infer_python_var_name``), falling back to a generic
-        unique name.
+        numerical suffixes are appended and no error is raised.
 
         Parameters
         ----------
         name : str or None
-            The name to register ``qv`` under, or None to infer/generate one. A
-            trailing ``"*"`` is dropped and marks the name as not fixed.
+            The name to register ``qv`` under, or None to infer/generate one.
         qv : QuantumVariable
             The QuantumVariable being named.
             Used for its type-dependent generic-name generation method
                 in the final fallback case.
         declaration_stack_level : int
-            How many stack frames above this method the line declaring ``qv`` is
-            expected to be found, used for code introspection when ``name`` is None.
+            How many stack frames above the caller of this method the line
+            declaring ``qv`` is expected to be found (0 being the caller's own
+            line), used for code introspection when ``name`` is None.
         is_duplicated_name : bool, optional
             If True and ``name`` is given, a ``"_dupl"`` suffix is appended to
-            ``name`` and the result is not fixed. The default is False.
+            ``name`` and the result is not fixed.
+            Used by :meth:`QuantumVariable.duplicate <qrisp.QuantumVariable.duplicate>`
+            when no explicit name was requested for the duplicate. The default is
+            False.
 
         Raises
         ------
@@ -261,11 +260,9 @@ class TracingQuantumSession:
         -------
         tuple[str, bool]
             The resolved name, and whether that name is fixed (see
-            :attr:`QuantumVariable.is_fixed_name <qrisp.QuantumVariable.is_fixed_name>`).
+            ``QuantumVariable.is_fixed_name``).
 
         """
-        # Rejected explicitly so that static and tracing mode agree; otherwise an
-        # empty name would be registered as-is.
         if name == "":
             raise ValueError("QuantumVariable name must not be empty")
         if name is not None:
@@ -273,7 +270,7 @@ class TracingQuantumSession:
                 return (name + "_dupl", False)
             return (name.removesuffix("*"), not name.endswith("*"))
 
-        return (infer_python_var_name(declaration_stack_level) or qv.get_unique_name(), False)
+        return (infer_python_var_name(declaration_stack_level + 1) or qv.get_unique_name(), False)
 
     def register_qv(self, qv: QuantumVariable, size: int | Tracer | None) -> None:
         """Register a quantum variable in this session and optionally allocate qubits.
