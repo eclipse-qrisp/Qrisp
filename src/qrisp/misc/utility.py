@@ -17,6 +17,7 @@
 """Miscellaneous utility functions for gate wrapping, measurement, uncomputation locks, and debugging."""
 
 import functools
+import re
 import traceback
 import warnings
 from typing import TYPE_CHECKING
@@ -703,8 +704,9 @@ def find_qs(args):
 
 # Function to measure multiple quantum variables at once to assess their entanglement
 def multi_measurement(qv_list, shots=None, backend=None):
-    """This functions facilitates the measurement of multiple QuantumVariables at the same
-    time. This can be used if the entanglement structure between several
+    """Measure multiple QuantumVariables at the same time.
+
+    This can be used if the entanglement structure between several
     QuantumVariables is of interest.
 
     Parameters
@@ -721,6 +723,8 @@ def multi_measurement(qv_list, shots=None, backend=None):
     ------
     Exception
         Tried to perform measurement with open environments.
+    TracingModeError
+        Tried to perform measurement in tracing mode.
 
     Returns
     -------
@@ -745,10 +749,10 @@ def multi_measurement(qv_list, shots=None, backend=None):
 
     """
     from qrisp.interface.measurement_result import MultiMeasurementResult
-    from qrisp.jasp import check_for_tracing_mode
+    from qrisp.jasp import TracingModeError, check_for_tracing_mode
 
     if check_for_tracing_mode():
-        raise Exception("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
+        raise TracingModeError("Tried to call multi_measurement in Jasp mode. Please use terminal_sampling instead")
 
     if backend is None:
         if qv_list[0].qs.backend is None:
@@ -1342,8 +1346,50 @@ def get_measurement_from_qc(qc, qubits, backend: "BackendLike", shots=None) -> "
 
 
 def find_calling_line(level=0):
-    stack = traceback.extract_stack(limit=level + 3)
-    return str(traceback.format_list(stack)[1].split("\n")[1].strip())  # prints "a = fct1()"
+    """Return the source line being executed a given number of frames up the call stack.
+
+    Parameters
+    ----------
+    level : int, optional
+        How many stack frames above the caller of this function the line is
+        expected to be found (0 being the caller's own line). The default is 0.
+
+    Returns
+    -------
+    str
+        The stripped source line, or an empty string if it is unavailable.
+
+    """
+    # Exactly the frames from the target line down to this function. This
+    # ensures that the target is the oldest (first) element in `stack`, regardless
+    # of whether the call is at module level or inside a function (e.g. pytest).
+    stack = traceback.extract_stack(limit=level + 2)
+    return (stack[0].line or "").strip()  # prints "a = fct1()"
+
+
+def infer_python_var_name(level: int = 0):
+    """Infer the name of the Python variable a ``Quantum...`` object is assigned to.
+
+    Parameters
+    ----------
+    level : int, optional
+        How many stack frames above the caller of this function the assignment
+        line is expected to be found. The default is 0.
+
+    Returns
+    -------
+    str or None
+        The (first) assignment target of that line, or None if the line is not of
+        the form ``var = Quantum...``.
+
+    """
+    line = find_calling_line(level + 1)
+    split_line = line.split("=")
+    minimum_equality_splits = 2
+    if len(split_line) < minimum_equality_splits or split_line[1].replace(" ", "")[:7] != "Quantum":
+        return None
+    # Keep only the first target name, e.g. "a" for "a: QuantumFloat" or "a, b".
+    return re.sub(r"[,:].*", "", split_line[0]).strip()
 
 
 def retarget_instructions(data, source_qubits, target_qubits):
