@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=61", # first version that reads [project] and [tool.setuptools] from pyproject.toml
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
@@ -96,6 +96,10 @@ all = [
 [project.urls]
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 "Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
+
+[tool.setuptools.package-data]
+# PEP 561 marker telling type checkers that qrisp ships inline type annotations
+qrisp = ["py.typed"]
 
 [tool.ruff]
 exclude = ["__init__.py", "*.ipynb"]
