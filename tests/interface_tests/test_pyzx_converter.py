@@ -218,18 +218,21 @@ def test_qrisp_transpilation():
 
 def test_non_unitaries():
     """Test measurement and reset"""
-    qc = QuantumCircuit(2)
-    qc.measure(0)
+    qc = QuantumCircuit(2, 1)
+    qc.measure(0, 0)
     qc.reset(1)
     c = qc.to_pyzx()
     assert [g.name for g in c.gates] == ["Measurement", "Reset"]
     assert [g.target for g in c.gates] == [0, 1]
+    assert c.gates[0].result_bit == 0
 
-    c = Circuit(2)
-    c.add_gate("Measurement", 0)
+    c = Circuit(2, bit_amount=2)
+    c.add_gate("Measurement", 0, 1)
     c.add_gate("Reset", 1)
     qc = QuantumCircuit.from_pyzx(c)
     assert [g.op.name for g in qc.data] == ["measure", "reset"]
+    assert [g.qubits[0] for g in qc.data] == [qc.qubits[0], qc.qubits[1]]
+    assert qc.data[0].clbits[0] == qc.clbits[1]
 
 
 def _mock_unknown_circuit():
@@ -305,7 +308,7 @@ def test_error_pyzx_to_qrisp_mock_gate():
         QuantumCircuit.from_pyzx(c)
 
 
-def test_error_pyzx_to_qrisp_undecomposable_gat():
+def test_error_pyzx_to_qrisp_undecomposable_gate():
     """from_pyzx raises ValueError for a gate PyZX cannot decompose."""
     c = _build_pyzx_circuit_with_undecomposable_gate()
     with pytest.raises(ValueError, match="cannot be decomposed either"):
@@ -449,7 +452,7 @@ def pyzx_gap_params():
 def test_pyzx_gate_key_smoke(key):
     """Every PyZX gate key either converts or raises a clear ValueError."""
     canonical = PYZX_ALIASES.get(key, key)
-    c = Circuit(4)
+    c = Circuit(4, bit_amount=1)
     c.add_gate(pyzx_gate_instance(canonical))
     try:
         result = QuantumCircuit.from_pyzx(c)
@@ -636,7 +639,7 @@ def test_measurement_qasm_export_qrisp_to_pyzx():
 @pytest.mark.xfail(reason="known bug: result_bit is dropped on PyZX -> Qrisp", strict=False)
 def test_measurement_destination_pyzx_to_qrisp():
     """PyZX measurements sharing a result_bit must share a Qrisp clbit."""
-    c = Circuit(2)
+    c = Circuit(2, bit_amount=2)
     c.add_gate("Measurement", 0, result_bit=1)
     c.add_gate("Measurement", 1, result_bit=1)
 

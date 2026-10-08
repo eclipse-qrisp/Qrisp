@@ -136,19 +136,25 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
     qrisp_circuit = _transpile(qrisp_circuit, gate_map)
 
     num_qubits = qrisp_circuit.num_qubits()
-    pyzx_circuit = Circuit(num_qubits)
+    num_clbits = len(qrisp_circuit.clbits)
+    pyzx_circuit = Circuit(qubit_amount=num_qubits, bit_amount=num_clbits)
 
     qubit_map = {}
     for i, q in enumerate(qrisp_circuit.qubits):
         qubit_map[q] = i
+    clbit_map = {}
+    for i, c in enumerate(qrisp_circuit.clbits):
+        clbit_map[c] = i
 
     for instr in qrisp_circuit.data:
         name = instr.op.name
         qubits = instr.qubits
+        clbits = instr.clbits
         params = instr.op.params if hasattr(instr.op, "params") else []
 
         pyxz_gate = gate_map[name]
         pyxz_op_qubits = [qubit_map[q] for q in qubits]
+        pyxz_op_clbits = [clbit_map[c] for c in clbits]
 
         special_gate_actions = {
             **dict.fromkeys(["id", "barrier", "gphase", "qb_alloc", "qb_dealloc"], lambda: None),
@@ -178,10 +184,15 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
                 raise ValueError(f"{name} gate has no PyZX equivalent and no definition to decompose.")
             continue
 
-        if params:
-            pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, *[Fraction.from_float(float(p / np.pi)) for p in params])
+        if name == "measure" and clbits:
+            pyzx_circuit.add_gate("Measurement", pyxz_op_qubits[0], pyxz_op_clbits[0])
         else:
-            pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits)
+            if params:
+                pyzx_circuit.add_gate(
+                    pyxz_gate, *pyxz_op_qubits, *[Fraction.from_float(float(p / np.pi)) for p in params]
+                )
+            else:
+                pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits)
 
     return pyzx_circuit
 
@@ -217,7 +228,7 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
     or it is used PyZX's to_basic_gates() method to decompose those gates.
 
     """
-    qc = QuantumCircuit(pyzx_circuit.qubits)
+    qc = QuantumCircuit(pyzx_circuit.qubits, pyzx_circuit.bits)
 
     def _CSX_gate(x, y):
         qc.append(SXGate().control(), [x, y])
@@ -268,6 +279,10 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
     }
 
     def add_gate(gate):
+        # measurements
+        def _measurement(gate):
+            gate_map[gate.name](gate.target, gate.result_bit)
+
         # single-qubit, parameter-free gates without adjoint version and non-unitary operations
         def _single_qubit_parameter_free(gate):
             gate_map[gate.name](gate.target)
@@ -301,7 +316,8 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
             gate_map[gate.name](gate.ctrl1, gate.ctrl2, gate.target)
 
         function_map = {
-            **dict.fromkeys(["NOT", "Y", "Z", "HAD", "Measurement", "Reset"], _single_qubit_parameter_free),
+            **dict.fromkeys(["Measurement"], _measurement),
+            **dict.fromkeys(["NOT", "Y", "Z", "HAD", "Reset"], _single_qubit_parameter_free),
             **dict.fromkeys(["SX", "S", "T"], _single_qubit_with_adjoint_version),
             **dict.fromkeys(["XPhase", "YPhase", "ZPhase"], _single_qubit_one_parameter),
             **dict.fromkeys(["U2", "U3"], _single_qubit_multi_parameter),
