@@ -9,7 +9,7 @@ import pytest
 from pyzx import Circuit
 from pyzx.circuit import gates as pyzx_gates
 
-from qrisp import QuantumCircuit, QuantumVariable
+from qrisp import QuantumCircuit, QuantumVariable, U1Gate
 from qrisp.circuit import standard_operations as qrisp_ops
 
 
@@ -31,7 +31,9 @@ def _build_single_qubit_qrisp_circuit():
     qc.rx(0.3, 3)
     qc.ry(0.4, 1)
     qc.rz(0.2, 2)
+    qc.append(U1Gate(1.2), 0)
     qc.u3(0.2, 0.3, 0.4, 0)
+    qc.r(0.1, 0.5, 2)
     qc.p(0.6, 0)
     qc.s(0)
     qc.t(1)
@@ -41,6 +43,7 @@ def _build_single_qubit_qrisp_circuit():
     qc.sx_dg(3)
     qc.gphase(0.5, 0)
     qc.id(0)
+    qc.barrier()
     return qc
 
 
