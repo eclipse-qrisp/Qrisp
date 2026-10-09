@@ -160,8 +160,8 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
     Parameters
     ----------
     a : ArrayLike
-        1-D array containing the coefficients of $a^*$, the complementary polynomial of $b$ with $|a^*|^2+|b|^2=1$ on the unit circle,
-        ordered from lowest order term to highest.
+        1-D array containing the coefficients of $a^*$, the complementary polynomial of $b$
+        with $|a^*|^2+|b|^2=1$ on the unit circle, ordered from lowest order term to highest.
     b : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
 
