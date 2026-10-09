@@ -160,7 +160,8 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
     Parameters
     ----------
     a : ArrayLike
-        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+        1-D array containing the coefficients of $a^*$, the complementary polynomial of $b$ with $|a^*|^2+|b|^2=1$ on the unit circle,
+        ordered from lowest order term to highest.
     b : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
 
@@ -190,7 +191,7 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
         return (a_star_new, b_new), Fk
 
     # Initial state for the carry
-    initial_carry = (jnp.conjugate(a), b)
+    initial_carry = (a, b)
 
     # Execute the scan loop for the length of 'a'
     # jax.lax.scan returns the final state (which we ignore with '_') and the stacked outputs
