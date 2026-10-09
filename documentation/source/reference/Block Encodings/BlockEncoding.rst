@@ -22,7 +22,7 @@ Constructors
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_eye`
      - Constructs a BlockEncoding of a 2-D array with ones on the diagonal and zeros elsewhere.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_lcu`
-     - Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
+     - Constructs a BlockEncoding from a sequence of unitaries using the Linear Combination of Unitaries (LCU) protocol.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_operator`
      - Constructs a BlockEncoding from an operator.
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_foqcs_lcu_operator`
@@ -34,7 +34,7 @@ Constructors
    * - :func:`~qrisp.block_encodings.BlockEncoding.from_projector`
      - Constructs a BlockEncoding of a projector.
    * - :func:`~qrisp.block_encodings.BlockEncoding.linear_combination`
-     - Constructs a BlockEncoding using the Linear Combination of Unitaries (LCU) protocol.
+     - Constructs a BlockEncoding from a sequence of block encodings using the Linear Combination of Unitaries (LCU) protocol.
 
 .. toctree:: 
    :hidden:
