@@ -1,5 +1,11 @@
 """Example QUBO matrices and their known optimal solutions, indexed by problem size N."""
 
+"""QUBO instances with their known optimal solutions, used as test fixtures.
+
+These used to live in ``qrisp.algorithms.cold.problems`` and were re-exported into the public
+namespace by a star import, although nothing outside the test suite ever consumed them.
+"""
+
 import numpy as np
 
 # N = 3
@@ -102,4 +108,28 @@ Q10 = np.array(
         [0.0, 0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, -0.5],
     ]
 )
-solution10 = {"1011010010": -4.0}
+solution10 = {"0111001101": -5.4, "1011010101": -5.4}
+
+# A coupling-dominated instance.
+#
+# The 4x4 matrix the COLD and AGP tests hard-code, and the 6x6 one in the CD tutorial, are both
+# field-dominated: the state that minimises sum_i h_i z_i on its own, with h_i = -0.5 sum_j Q_ij,
+# already is the optimum, so their couplings never have to be taken into account at all. Q4 and Q5
+# above share that property. An encoding that gets the local fields only roughly right still solves
+# every one of them, which is how a QUBO-to-Ising conversion that double-counted diag(Q) survived
+# in the source for as long as it did.
+#
+# Here the couplings decide. The field-blind answer "00110" is one bit away from the optimum and
+# costs 0.6 more, -0.8 against -1.4, and the double-counting encoding puts its ground state at
+# "00010" -- neither of them the optimum.
+Q_coupled = np.array(
+    [
+        [0.6, 0.1, -0.6, 0.0, 0.4],
+        [0.1, 0.6, -0.2, 0.6, 0.2],
+        [-0.6, -0.2, 0.5, -0.4, 0.6],
+        [0.0, 0.6, -0.4, -0.5, -0.1],
+        [0.4, 0.2, 0.6, -0.1, 0.4],
+    ]
+)
+solution_coupled = {"10110": -1.4}
+field_blind_coupled = "00110"
