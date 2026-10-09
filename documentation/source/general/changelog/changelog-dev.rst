@@ -498,6 +498,9 @@ Development
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
+* Added a CI test workflow for macOS and Windows, in addition to the existing Linux workflow.
+  The new ``multi.yml`` workflow runs on Python 3.11, 3.12, and 3.13 on the latest macOS and Windows runners.
+  (`PR #697 <https://github.com/eclipse-qrisp/Qrisp/pull/697>`_).
 * GitHub Actions pinned to commit SHA in CI workflows
   (`PR #829 <https://github.com/eclipse-qrisp/Qrisp/pull/829>`_).
 * Added Python 3.13 support to the CI pipeline according to 
