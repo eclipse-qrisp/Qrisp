@@ -640,17 +640,24 @@ class Jaspr(ClosedJaxpr):
         self,
         *args,
         meas_behavior: str | Callable,
-        max_allocations: int = 1000,
+        max_allocations: int | None = None,
         callback_threshold: int | None = None,
     ) -> Any:
-        """Return the peak qubit count of this Jaspr evaluated on *args*."""
+        """Return the qubit allocation statistics of this Jaspr evaluated on *args*.
+
+        ``max_allocations`` is deprecated and ignored.
+        """
         from qrisp.jasp.evaluation_tools import profile_jaspr
+
+        if max_allocations is not None:
+            from qrisp.jasp.evaluation_tools.profiler import _warn_max_allocations_deprecated
+
+            _warn_max_allocations_deprecated()
 
         return profile_jaspr(
             self,
             "num_qubits",
             meas_behavior,
-            max_allocations=max_allocations,
             callback_threshold=callback_threshold,
         )(*args)
 
@@ -767,7 +774,7 @@ class Jaspr(ClosedJaxpr):
         --------
         We create a simple script and inspect the QIR string:
 
-        ::
+        .. code-block:: python
 
             from qrisp import *
             from qrisp.jasp import make_jaspr
@@ -784,8 +791,7 @@ class Jaspr(ClosedJaxpr):
             jaspr = make_jaspr(example_function)(2)
             print(jaspr.to_qir())
 
-        Yields
-        ------
+        This yields:
 
         .. code-block:: none
 

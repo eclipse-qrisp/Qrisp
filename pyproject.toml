@@ -1,13 +1,13 @@
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=61", # first version that reads [project] and [tool.setuptools] from pyproject.toml
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "qrisp"
-version = "0.9.7"
+version = "0.9.9"
 authors = [
     {name = "The Qrisp authors"},
 ]
@@ -67,7 +67,7 @@ docs = [
     "pydata-sphinx-theme==0.17.1",
 ]
 dev-code-style = [
-    "ruff==0.16.4",
+    "ruff==0.16.5",
 ]
 dev-testing = [
     "pytest==9.1.1",
@@ -95,6 +95,10 @@ all = [
 [project.urls]
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 "Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
+
+[tool.setuptools.package-data]
+# PEP 561 marker telling type checkers that qrisp ships inline type annotations
+qrisp = ["py.typed"]
 
 [tool.ruff]
 exclude = ["__init__.py", "*.ipynb"]
