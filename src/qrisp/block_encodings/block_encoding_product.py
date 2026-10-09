@@ -146,8 +146,9 @@ class ProductBlockEncoding(BlockEncoding):
     Factors are stored in mathematical order. The unitary applies them in
     reverse order, so ``A @ B`` applies ``B`` before ``A``. By default, the
     qubit-efficient strategy packs the factor ancillas into one shared
-    workspace and uses a shift register to separate the garbage generated at
-    successive steps. The separate strategy retains distinct ancillas for
+    workspace and uses a counter to separate the garbage generated at
+    successive steps (the compression gadget of Low and Wiebe,
+    arXiv:1805.00675). The separate strategy retains distinct ancillas for
     every factor.
 
     Parameters
@@ -157,7 +158,9 @@ class ProductBlockEncoding(BlockEncoding):
     strategy : {"separate", "qubit_efficient"}
         Unitary implementation strategy. ``"qubit_efficient"`` is the default;
         it reuses one workspace and records failed factor applications in a
-        shift register. ``"separate"`` uses distinct ancillas for every factor.
+        counter. A product with at most one factor that owns ancillas has no
+        garbage to separate, so it uses that factor's ancillas directly.
+        ``"separate"`` uses distinct ancillas for every factor.
 
     """
 
@@ -241,32 +244,34 @@ class ProductBlockEncoding(BlockEncoding):
         return layouts
 
     @property
+    def _num_factors_with_ancillas(self) -> int:
+        """Return how many factors own ancillas and can therefore leave garbage."""
+        return sum(factor.num_ancs != 0 for factor in self.factors)
+
+    @property
+    def _uses_shared_workspace(self) -> bool:
+        """Return whether the factor ancillas are packed into one workspace with a counter."""
+        return self.strategy == "qubit_efficient" and self._num_factors_with_ancillas > 1
+
+    @property
     def _anc_templates(self) -> list[QuantumVariableTemplate]:
         cached = self.__dict__.get("_cached_anc_templates")
         if cached is not None:
             return list(cached)
 
-        cacheable = True
-        if self.strategy == "qubit_efficient":
-            if len(self.factors) == 1:
-                templates = tuple(self.factors[0]._anc_templates)
-                cacheable = _is_trace_independent(templates)
-            elif all(factor.num_ancs == 0 for factor in self.factors):
-                templates = ()
-            else:
-                layouts = self._product_layouts
-                shift_size = (len(self.factors) - 1).bit_length()
-                workspace_size = _maximum_layout_size(layouts)
-                templates = (
-                    _template_of_size(QuantumFloat(shift_size), shift_size),
-                    _template_of_size(QuantumFloat(workspace_size), workspace_size),
-                )
-                cacheable = _is_trace_independent(templates)
+        if self._uses_shared_workspace:
+            # The counter is incremented after every factor with ancillas except
+            # the last one applied, and it must never wrap around to zero.
+            counter_size = (self._num_factors_with_ancillas - 1).bit_length()
+            workspace_size = _maximum_layout_size(self._product_layouts)
+            templates = (
+                _template_of_size(QuantumFloat(counter_size), counter_size),
+                _template_of_size(QuantumFloat(workspace_size), workspace_size),
+            )
         else:
             templates = tuple(template for factor in self.factors for template in factor._anc_templates)
-            cacheable = _is_trace_independent(templates)
 
-        if cacheable:
+        if _is_trace_independent(templates):
             object.__setattr__(self, "_cached_anc_templates", templates)
         return list(templates)
 
@@ -277,19 +282,11 @@ class ProductBlockEncoding(BlockEncoding):
         if cached is not None:
             return cached
 
-        unitary = (
-            self._build_unitary_qubit_efficient()
-            if self.strategy == "qubit_efficient"
-            else self._build_unitary_separate()
-        )
+        uses_shared_workspace = self._uses_shared_workspace
+        unitary = self._build_unitary_qubit_efficient() if uses_shared_workspace else self._build_unitary_separate()
 
-        uses_shared_layouts = (
-            self.strategy == "qubit_efficient"
-            and len(self.factors) > 1
-            and any(factor.num_ancs != 0 for factor in self.factors)
-        )
         cacheable = all(factor._has_reusable_unitary for factor in self.factors) and (
-            not uses_shared_layouts or all(layout.has_static_sizes for layout in self._product_layouts)
+            not uses_shared_workspace or all(layout.has_static_sizes for layout in self._product_layouts)
         )
         if cacheable:
             object.__setattr__(self, "_cached_unitary", unitary)
@@ -320,44 +317,32 @@ class ProductBlockEncoding(BlockEncoding):
         return unitary
 
     def _build_unitary_qubit_efficient(self) -> Callable[..., None]:
-        """Build the unitary using one shared workspace and a shift register."""
-        if len(self.factors) == 1 or all(factor.num_ancs == 0 for factor in self.factors):
-            num_ancs = self.num_ancs
-            steps = _build_product_steps(self.factors, None)
-
-            def unitary(*args):
-                operands = args[num_ancs:]
-                factor_ancillas = args[:num_ancs]
-                for step in reversed(steps):
-                    step(*factor_ancillas, *operands)
-
-            return unitary
-
+        """Build the unitary using one shared workspace and a counter."""
         factor_layouts = self._product_layouts
         workspace_steps = _build_product_steps(self.factors, factor_layouts)
+        # Factors are applied in reverse order, so this is the last factor with
+        # ancillas to be applied. No later factor touches the workspace, so the
+        # final projection onto a zero workspace discards its garbage directly.
+        last_with_ancillas = next(index for index, factor in enumerate(self.factors) if factor.num_ancs != 0)
 
-        def unitary(*args):
-            shift_register = args[0]
-            shared_workspace = args[1]
-            operands = args[2:]
+        def unitary(counter, shared_workspace, *operands):
             zero_flag = QuantumBool()
 
-            for factor_index in range(len(self.factors)):
-                layout_index = len(self.factors) - 1 - factor_index
-                factor_layout = factor_layouts[layout_index]
-                workspace_steps[layout_index](shared_workspace, *operands)
+            for index in reversed(range(len(self.factors))):
+                factor_layout = factor_layouts[index]
+                workspace_steps[index](shared_workspace, *operands)
 
-                if factor_index == len(self.factors) - 1 or len(factor_layout.sizes) == 0:
+                if index == last_with_ancillas or len(factor_layout.sizes) == 0:
                     continue
 
                 # Implement |s, w> -> |s + 1, w> for w != 0 and leave w = 0
                 # fixed on the workspace used by this factor.
                 # This permutation moves newly generated garbage out of
-                # shift zero without modifying its workspace value.
+                # counter zero without modifying its workspace value.
                 active_workspace = shared_workspace.reg[: factor_layout.total_size]
                 with conjugate(mcx)(active_workspace, zero_flag, ctrl_state=0):
                     with control(zero_flag, ctrl_state=0):
-                        shift_register += 1
+                        counter += 1
 
             zero_flag.delete()
 
@@ -371,9 +356,7 @@ class ProductBlockEncoding(BlockEncoding):
     @property
     def num_ancs(self) -> int:
         """Return the number of ancilla variables used by the strategy."""
-        if self.strategy == "qubit_efficient":
-            return len(self._anc_templates)
-        return sum(factor.num_ancs for factor in self.factors)
+        return len(self._anc_templates)
 
     @property
     def is_hermitian(self) -> bool:

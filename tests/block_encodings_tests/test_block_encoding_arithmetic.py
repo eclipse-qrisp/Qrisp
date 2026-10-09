@@ -366,7 +366,7 @@ def test_block_encoding_product_defaults_to_qubit_efficient_strategy():
 
 
 def test_block_encoding_qubit_efficient_product_reuses_heterogeneous_ancillas():
-    """Verify that factors share the largest workspace plus a logarithmic shift register."""
+    """Verify that factors share the largest workspace plus a logarithmic counter."""
     first = BlockEncoding(1, [QuantumFloat(2), QuantumBool()], lambda *args: None)
     second = BlockEncoding(1, [QuantumFloat(1)], lambda *args: None)
     third = BlockEncoding(1, [QuantumBool(), QuantumBool()], lambda *args: None)
@@ -375,6 +375,19 @@ def test_block_encoding_qubit_efficient_product_reuses_heterogeneous_ancillas():
 
     assert product.num_ancs == 2
     assert [template.qv_size for template in product._anc_templates] == [2, 3]
+
+
+def test_block_encoding_qubit_efficient_product_counts_only_factors_with_ancillas():
+    """Verify that factors without ancillas neither enlarge the counter nor require a shared workspace."""
+    first = BlockEncoding(1, [QuantumFloat(2)], lambda *args: None)
+    second = BlockEncoding(1, [QuantumBool()], lambda *args: None)
+    unitary = BlockEncoding(1, [], lambda *args: None)
+
+    product = ProductBlockEncoding([unitary, first, unitary, second, unitary], strategy="qubit_efficient")
+    assert [template.qv_size for template in product._anc_templates] == [1, 2]
+
+    product = ProductBlockEncoding([unitary, first, unitary], strategy="qubit_efficient")
+    assert [template.qv_size for template in product._anc_templates] == [2]
 
 
 @pytest.mark.parametrize(
@@ -388,8 +401,16 @@ def test_block_encoding_qubit_efficient_product_reuses_heterogeneous_ancillas():
             Z(0) * Z(1) + 0.2 * X(0),
             X(0) + 0.1 * Y(1),
         ],
+        [X(0), Y(0) + 0.3 * Z(0), Z(0)],
+        [X(0) + 0.4 * Z(0), Y(0), X(0) + 0.2 * Y(0), Z(0)],
     ],
-    ids=["two_factors", "three_factors", "four_multiqubit_factors"],
+    ids=[
+        "two_factors",
+        "three_factors",
+        "four_multiqubit_factors",
+        "one_factor_with_ancillas",
+        "factors_without_ancillas_interleaved",
+    ],
 )
 def test_block_encoding_qubit_efficient_product_matches_separate_strategy(operators):
     """Verify shared-workspace products against the Jasp-compiled reference strategy."""
