@@ -25,7 +25,9 @@ from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_sum_path imp
 
 
 def qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None):
-    r"""Implementation of the higher radix quantum carry lookahead adder (QCLA) as described
+    r"""Higher radix quantum carry lookahead adder (QCLA).
+
+    Implementation of the higher radix QCLA as described
     `here <https://arxiv.org/abs/2304.02921>`__. This adder stands out for having logarithmic
     T-depth like `Drapers QCLA <https://arxiv.org/abs/quant-ph/0406142>`_. Compared to Drapers
     QCLA, the higher radix QCLA allows a more dynamic structure and the use of customizable
