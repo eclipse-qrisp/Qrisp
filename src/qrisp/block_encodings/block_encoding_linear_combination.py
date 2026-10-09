@@ -96,7 +96,7 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     return terms
 
 
-def _identity_lcu_branch(shared_ancilla: QuantumVariable, *operands: QuantumVariable) -> None:
+def _identity_lcu_branch(*args: QuantumVariable) -> None:
     """Pad the SELECT to a power of two; selected only for zero-amplitude indices."""
 
 
@@ -399,13 +399,12 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         # PREP acts on magnitudes. Each branch applies its term's coefficient phase together
         # with the corresponding block encoding unitary, so the overall construction is
         # PREP† · SELECT · PREP.
-        def unitary(*args):
-            selector = args[0]
-            shared_ancilla = args[1]
-            operands = args[2:]
-
+        # The arguments after the selector start with the shared workspace only if the
+        # combination has one, and the branches are built to match, so they are handed
+        # on as they are.
+        def unitary(selector, *args):
             with conjugate(prepare)(selector, self._lcu_amplitudes):
-                q_switch(selector, branches, shared_ancilla, *operands)
+                q_switch(selector, branches, *args)
 
         cacheable = all(layout.has_static_sizes for layout in layouts) and all(
             block_encoding._has_reusable_unitary for _, block_encoding in self.terms
