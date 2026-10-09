@@ -16,11 +16,17 @@
 
 """Implements Shor's integer factorization algorithm via quantum order finding."""
 
-import numpy as np
+import math
+from collections.abc import Callable
+from typing import TYPE_CHECKING
+
 from sympy import Rational, continued_fraction_convergents, continued_fraction_iterator
 
 from qrisp import QuantumFloat, QuantumModulus, control, h
 from qrisp.alg_primitives import QFT
+
+if TYPE_CHECKING:
+    from qrisp.interface.measurement_result import DecodedMeasurementResult
 from qrisp.alg_primitives.arithmetic.modular_arithmetic import find_optimal_m, modinv
 
 depths = []
@@ -28,21 +34,24 @@ cnot_count = []
 qubits = []
 
 
-def find_optimal_a(N):
-    n = int(np.ceil(np.log2(N)))
+def _find_optimal_a(N: int) -> list[int]:
+    # N.bit_length() would be off by one for N an exact power of two; this
+    # is the exact-integer equivalent of ceil(log2(N)), safe for N far
+    # beyond float64/int64 range (unlike np.log2/np.ceil).
+    n = (N - 1).bit_length() if N > 1 else 0
     proposals = []
 
     # Search through the first O(1) possibilities to find a good a
     for a in range(2, min(100, N - 1)):
         # We only append non-trivial proposals
-        if np.gcd(a, N) == 1:
+        if math.gcd(a, N) == 1:
             proposals.append(a)
 
     cost_dic = {}
     for a in proposals:
         m_values = []
         for k in range(2 * n + 1):
-            inpl_multiplier = (a ** (2**k)) % N
+            inpl_multiplier = pow(a, 2**k, N)
 
             if inpl_multiplier == 1:
                 continue
@@ -57,40 +66,36 @@ def find_optimal_a(N):
 
     proposals.sort(key=lambda a: cost_dic[a])
 
-    optimal_a = proposals[0]
-
-    m_values = []
-
-    for k in range(2 * n + 1):
-        inpl_multiplier = ((optimal_a) ** (2**k)) % N
-
-        if inpl_multiplier == 1:
-            continue
-
-        m_values.append(find_optimal_m(inpl_multiplier, N))
-
     return proposals
 
 
-def find_order(a, N, inpl_adder=None, mes_kwargs={}):
+def _find_order(a: int, N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | None = None) -> int:
+    if mes_kwargs is None:
+        mes_kwargs = {}
+    orig_a = a
     qg = QuantumModulus(N, inpl_adder)
     qg[:] = 1
     qpe_res = QuantumFloat(2 * qg.size + 1, exponent=-(2 * qg.size + 1))
     h(qpe_res)
-    for i in range(len(qpe_res)):
-        with control(qpe_res[i]):
+    for qb in qpe_res:
+        with control(qb):
             qg *= a
             a = (a * a) % N
     QFT(qpe_res, inv=True, inpl_adder=inpl_adder)
 
     mes_res = qpe_res.get_measurement(**mes_kwargs)
 
-    return extract_order(mes_res, a, N)
+    return _extract_order(mes_res, orig_a, N)
 
 
-def extract_order(mes_res, a, N):
+def _extract_order(mes_res: "DecodedMeasurementResult", a: int, N: int) -> int:
+    # Caps the accumulated-candidate search so it stays polynomial (not
+    # exponential) in the number of outcomes examined, even adversarially.
+    # Two or three independent QPE measurements are, in practice, almost
+    # always enough to recover the true order.
+    max_candidates = 64
 
-    collected_r_values = []
+    accumulated_r_values: list[int] = []
 
     approximations = list(mes_res.keys())
 
@@ -99,30 +104,47 @@ def extract_order(mes_res, a, N):
     except ValueError:
         pass
 
-    while True:
-        r_values = get_r_values(approximations.pop(0))
+    while approximations:
+        r_values = _get_r_values(approximations.pop(0))
 
         for r in r_values:
-            if (a**r) % N == 1:
+            if pow(a, r, N) == 1:
                 return r
 
-        collected_r_values.append(r_values)
-        from itertools import product
+        # Combine this outcome's candidates with every LCM accumulated from
+        # all outcomes seen so far, so an order that only emerges from
+        # combining three or more outcomes (e.g. 30 = lcm(2, 3, 5), where no
+        # pairwise combination alone divides 30) is still found.
+        new_candidates = []
+        for prev_r in accumulated_r_values:
+            for r in r_values:
+                combined = math.lcm(r, prev_r)
+                if pow(a, combined, N) == 1:
+                    return combined
+                if combined not in accumulated_r_values and combined not in new_candidates:
+                    new_candidates.append(combined)
 
-        for comb in product(*collected_r_values):
-            r = np.lcm.reduce(comb)
-            if (a**r) % N == 1:
-                return r
+        accumulated_r_values.extend(r_values)
+        accumulated_r_values.extend(new_candidates)
+        if len(accumulated_r_values) > max_candidates:
+            accumulated_r_values = accumulated_r_values[-max_candidates:]
+
+    # Noisy or finite-shot measurements can produce outcomes that never yield
+    # a valid order; let the caller decide whether to retry with another base
+    # instead of crashing on a bare IndexError from the exhausted list.
+    raise RuntimeError(f"could not recover the order of {a} mod {N} from the given measurement outcomes")
 
 
-def get_r_values(approx):
+def _get_r_values(approx: int | float) -> list[int]:
     rationals = continued_fraction_convergents(continued_fraction_iterator(Rational(approx)))
     return [rat.q for rat in rationals if 1 < rat.q]
 
 
-def shors_alg(N, inpl_adder=None, mes_kwargs={}):
+def shors_alg(N: int, inpl_adder: Callable | None = None, mes_kwargs: dict | None = None) -> int:
     """Performs `Shor's factorization algorithm <https://arxiv.org/abs/quant-ph/9508027>`_ on a given integer N.
-    The adder used for factorization can be customized. To learn more about this feature, please read :ref:`QuantumModulus`
+
+    The adder used for factorization can be customized. To learn more about
+    this feature, please read :ref:`QuantumModulus`
 
     Parameters
     ----------
@@ -131,7 +153,8 @@ def shors_alg(N, inpl_adder=None, mes_kwargs={}):
     inpl_adder : callable, optional
         A function that performs in-place addition. The default is None.
     mes_kwargs : dict, optional
-        A dictionary of keyword arguments for :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>`. This especially allows you to specify an execution backend. The default is {}.
+        A dictionary of keyword arguments for :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>`.
+        This especially allows you to specify an execution backend. The default is {}.
 
     Returns
     -------
@@ -150,23 +173,37 @@ def shors_alg(N, inpl_adder=None, mes_kwargs={}):
     if not N % 2:
         return 2
 
-    a_proposals = find_optimal_a(N)
+    if mes_kwargs is None:
+        mes_kwargs = {}
+
+    a_proposals = _find_optimal_a(N)
 
     for a in a_proposals:
-        K = np.gcd(a, N)
+        K = math.gcd(a, N)
 
         if K != 1:
             res = K
             break
 
-        r = find_order(a, N, inpl_adder, mes_kwargs)
+        try:
+            r = _find_order(a, N, inpl_adder, mes_kwargs)
+        except RuntimeError:
+            continue
 
         if r % 2:
             continue
 
-        g = int(np.gcd(a ** (r // 2) + 1, N))
+        # gcd(x, N) == gcd(x mod N, N) for any integer x, so reducing a**(r//2)
+        # modulo N before the +1 is mathematically exact and avoids computing
+        # a**(r//2) in full precision, which can be an enormous number for
+        # large r.
+        g = math.gcd(pow(a, r // 2, N) + 1, N)
 
         if g not in [N, 1]:
             res = g
             break
+    else:
+        raise RuntimeError(
+            f"Shor's algorithm failed to find a nontrivial factor of {N} using the given candidate bases"
+        )
     return res
