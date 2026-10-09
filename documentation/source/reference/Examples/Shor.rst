@@ -107,7 +107,7 @@ Now the :meth:`qcla <qrisp.qcla>`:
     print(qc.num_qubits())
     # Yields 57   
 
-We see that the T-depth is reduced by $\approx 20 \%$. Due to the logarithmic scaling of the adder, larger scales will profit even more! Note that we granted the compiler 10 qubits of :ref:`workspace <workspace>`, as this adder can profit a lot from this resource.
+We see that the T-depth is reduced by $\approx 28 \%$. Due to the logarithmic scaling of the adder, larger scales will profit even more! Note that we granted the compiler 10 qubits of :ref:`workspace <workspace>`, as this adder can profit a lot from this resource.
 
 The comparison analysis is intriguing on its own, but here we wanted to emphasize the simplicity of improving the performance of Shor's algorithm by the means of implementing possible new shiny adders with the least amount of headaches. Future 👏🏻 proven 👏🏻
 
