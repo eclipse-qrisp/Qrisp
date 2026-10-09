@@ -345,22 +345,15 @@ class ProductBlockEncoding(BlockEncoding):
             for factor_index in range(len(self.factors)):
                 layout_index = len(self.factors) - 1 - factor_index
                 factor_layout = factor_layouts[layout_index]
-
-                # Only the shift-zero sector carries the still-valid product
-                # branch. Other sectors contain garbage from earlier factors.
-                with conjugate(mcx)(shift_register, zero_flag, ctrl_state=0):
-                    with control(zero_flag):
-                        workspace_steps[layout_index](shared_workspace, *operands)
+                workspace_steps[layout_index](shared_workspace, *operands)
 
                 if factor_index == len(self.factors) - 1 or len(factor_layout.sizes) == 0:
                     continue
 
                 # Implement |s, w> -> |s + 1, w> for w != 0 and leave w = 0
-                # fixed on the workspace prefix used by this factor. This
-                # reversible permutation moves newly generated garbage out of
-                # shift zero without modifying its workspace value. The
-                # compute-control-uncompute pattern restores the temporary
-                # predicate qubit after every permutation.
+                # fixed on the workspace used by this factor.
+                # This permutation moves newly generated garbage out of
+                # shift zero without modifying its workspace value.
                 active_workspace = shared_workspace.reg[: factor_layout.total_size]
                 with conjugate(mcx)(active_workspace, zero_flag, ctrl_state=0):
                     with control(zero_flag, ctrl_state=0):
