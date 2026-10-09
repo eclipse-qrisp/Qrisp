@@ -324,6 +324,12 @@ Bug Fixes
     ``count_ops`` for the same program.
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* :func:`~qrisp.t_depth_indicator` now costs each of the three angles of a
+  ``u3`` gate. Previously, it counted the first angle three times and ignored
+  the other two, so :meth:`QuantumCircuit.t_depth
+  <qrisp.QuantumCircuit.t_depth>` misestimated circuits containing ``u3``
+  gates.
+
 Compatibility
 -------------
 

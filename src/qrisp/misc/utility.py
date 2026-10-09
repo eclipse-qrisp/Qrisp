@@ -1977,7 +1977,7 @@ def _t_depth_indicator(op, epsilon=None):
     elif op.name == "u3":
         res = 0
         for i in range(3):
-            res += _rotation_t_depth(op, op.params[0], epsilon)
+            res += _rotation_t_depth(op, op.params[i], epsilon)
         return res
     else:
         raise Exception(f"Gate {op.name} not implemented")

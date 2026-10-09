@@ -913,6 +913,33 @@ class TestQuantumCircuitMethods:
             warnings.simplefilter("error")
             assert t_depth_indicator(qc.data[0].op) == expected
 
+    @pytest.mark.parametrize(
+        "angles, expected",
+        [
+            ((np.pi / 4, 0, 0), 1),
+            ((0, np.pi / 4, 0), 1),
+            ((0, 0, np.pi / 4), 1),
+            ((np.pi / 4, np.pi / 2, 3 * np.pi / 4), 2),
+        ],
+    )
+    def test_t_depth_indicator_u3_costs_each_angle(self, angles, expected):
+        """Each of the three angles of a u3 gate is costed separately."""
+        from qrisp import t_depth_indicator
+
+        qc = QuantumCircuit(1)
+        qc.u3(*angles, 0)
+        assert t_depth_indicator(qc.data[0].op) == expected
+
+    @pytest.mark.parametrize("angles", [(0.3, 0, 0), (0, 0.3, 0), (0, 0, 0.3)])
+    def test_t_depth_indicator_u3_raises_for_other_rotations(self, angles):
+        """A u3 gate raises if any of its angles is neither a Clifford nor a T angle."""
+        from qrisp import t_depth_indicator
+
+        qc = QuantumCircuit(1)
+        qc.u3(*angles, 0)
+        with pytest.raises(ValueError, match="custom depth indicator"):
+            t_depth_indicator(qc.data[0].op)
+
     @pytest.mark.parametrize("gate", ["rx", "ry", "rz", "p"])
     def test_t_depth_indicator_raises_for_other_rotations(self, gate):
         """The default indicator raises for rotations that are neither Clifford nor T gates."""
