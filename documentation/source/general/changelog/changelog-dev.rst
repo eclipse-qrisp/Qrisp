@@ -240,6 +240,14 @@ Compatibility
   generic ``Exception``. Code using ``except Exception:`` is unaffected
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+* :meth:`BlockEncoding.dagger <qrisp.block_encodings.BlockEncoding.dagger>`
+  now guarantees only that the result encodes the Hermitian conjugate
+  :math:`A^\dagger` with the same normalization. Its unitary is no longer
+  guaranteed to be the inverse of the original unitary. For products of block
+  encodings, ``dagger()`` returns the product of the reversed, individually
+  conjugated factors, so its unitary differs from the inverse
+  (`PR #892 <https://github.com/eclipse-qrisp/Qrisp/pull/892>`_).
+
 .. Add compatibility notes above this line
 
 New Tutorials/ Updated Documentation
