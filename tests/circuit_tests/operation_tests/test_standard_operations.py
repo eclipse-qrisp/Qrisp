@@ -64,13 +64,13 @@ class TestSXGate:
         assert gate.is_qfree is False
 
     def test_sx_unitary(self):
-        """SXGate unitary matches RX(π/2) = (1/√2)*[[1, -i], [-i, 1]]."""
+        """SXGate unitary matches √X = (1/2)*[[1 + i, 1 -i], [1 - i, 1 + i]]."""
         gate = SXGate()
         expected = (1 / 2) * np.array([[1 + 1j, 1 - 1j], [1 - 1j, 1 + 1j]], dtype=complex)
         assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
 
     def test_sx_squared_is_x_up_to_phase(self):
-        """SX @ SX = -i·X (RX(π/2) composed twice = RX(π) = -i·X)."""
+        """SX @ SX = X"""
         sx = SXGate().get_unitary()
         x = np.array([[0, 1], [1, 0]], dtype=complex)
         assert np.allclose(sx @ sx, x, atol=1e-6)

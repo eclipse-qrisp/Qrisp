@@ -70,13 +70,13 @@ if has_pennylane:
         "s": QMLGateDescriptor(qml.S),
         "t": QMLGateDescriptor(qml.T),
         "id": QMLGateDescriptor(qml.Identity, param_fn=lambda _: []),
-        "sx": QMLGateDescriptor(qml.RX, param_fn=lambda _: [np.pi / 2]),  # SXGate() -> qml.RX(pi/2)
+        "sx": QMLGateDescriptor(qml.SX),
         "gphase": QMLGateDescriptor(
             qml.GlobalPhase, param_fn=lambda op: [-op.params[0]]
         ),  # GPhaseGate(phi) -> qml.GlobalPhase(-phi)
         "r": QMLGateDescriptor(
-            qml.Rot, param_fn=lambda op: [-op.params[1], -op.params[0], op.params[1]]
-        ),  # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
+            qml.Rot, param_fn=lambda op: [np.pi / 2 - op.params[1], op.params[0], op.params[1] - np.pi / 2]
+        ),  # RGate(theta, phi) = RZ(phi) RX(theta) RZ(-phi) -> qml.Rot(pi/2 - phi, theta, phi - pi/2)
         "measure": QMLGateDescriptor(qml.measurements.MidMeasureMP),
     }
 
