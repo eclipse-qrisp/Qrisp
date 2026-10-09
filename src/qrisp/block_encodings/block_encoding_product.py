@@ -58,19 +58,6 @@ from qrisp.qtypes import QuantumBool, QuantumFloat
 _MAX_SEPARATE_QUANTUM_BOOL_FACTORS = 5
 
 
-def _validate_product_factors(factors: _ProductFactors) -> _ProductFactors:
-    factors = tuple(factors)
-    for factor in factors:
-        if not isinstance(factor, BlockEncoding):
-            raise TypeError(f"Expected every factor to be a BlockEncoding, but got {type(factor).__name__}.")
-
-    if factors:
-        num_ops = factors[0].num_ops
-        if any(factor.num_ops != num_ops for factor in factors):
-            raise ValueError("All product factors must have the same number of operands.")
-    return factors
-
-
 def _make_product_step(child_unitary: Callable[..., None], factor_index: int) -> Callable[..., None]:
     """Build one product step applying ``child_unitary`` to the ancillas it is handed.
 

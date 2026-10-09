@@ -38,11 +38,8 @@ import numpy as np
 from jax.typing import ArrayLike
 
 from qrisp.block_encodings.block_encoding_base import BlockEncoding, _LCUTerm
-from qrisp.block_encodings.block_encoding_linear_combination import (
-    LinearCombinationBlockEncoding,
-    _validate_lcu_terms,
-)
-from qrisp.block_encodings.block_encoding_product import ProductBlockEncoding, _validate_product_factors
+from qrisp.block_encodings.block_encoding_linear_combination import LinearCombinationBlockEncoding
+from qrisp.block_encodings.block_encoding_product import ProductBlockEncoding
 
 
 # The functions below are written as methods but defined at module level, and
@@ -90,31 +87,22 @@ def build_linear_combination(  # noqa: D417
         If an item is not a BlockEncoding.
 
     """
-    if len(block_encodings) == 0:
-        raise ValueError("At least one block-encoding is required.")
-
     if coefficients is None:
         coefficients = [1] * len(block_encodings)
     elif len(coefficients) != len(block_encodings):
         raise ValueError("The number of coefficients must match the number of block-encodings.")
 
-    terms = []
-    for block_encoding, coefficient in zip(block_encodings, coefficients):
-        if not isinstance(block_encoding, BlockEncoding):
-            raise TypeError(f"Expected every item to be a BlockEncoding, but got {type(block_encoding).__name__}.")
-        terms.append((coefficient, block_encoding))
-
-    return cls._from_lcu_terms(terms)
+    return cls._from_lcu_terms(list(zip(coefficients, block_encodings)))
 
 
 def build_from_lcu_terms(cls, terms: Sequence[_LCUTerm]) -> BlockEncoding:
     """Build a linear-combination block encoding from weighted terms."""
-    terms = _validate_lcu_terms(terms)
-    if len(terms) == 1:
-        coefficient, block_encoding = terms[0]
+    combination = LinearCombinationBlockEncoding(terms)
+    if len(combination.terms) == 1:
+        coefficient, block_encoding = combination.terms[0]
         if isinstance(coefficient, (int, float, complex, np.number)) and coefficient == 1:
             return block_encoding
-    return LinearCombinationBlockEncoding(terms)
+    return combination
 
 
 def apply_add(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
@@ -389,8 +377,7 @@ def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
     """
     if not isinstance(other, BlockEncoding):
         return NotImplemented
-    factors = _validate_product_factors(self._get_product_factors() + other._get_product_factors())
-    return ProductBlockEncoding(factors)
+    return ProductBlockEncoding((self, other))
 
 
 def apply_kron(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
