@@ -126,6 +126,15 @@ Improvements
   unchanged
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+- Fewer qubits for :func:`reflection <qrisp.reflection>`:
+  :func:`reflection <qrisp.reflection>` no longer bundles its operations into a
+  single gate. The bundling kept every ancilla of the ``state_function`` allocated
+  for the whole reflection, so compiled circuits could not reuse these qubits.
+  Circuits built with :func:`amplitude_amplification <qrisp.amplitude_amplification>`,
+  :func:`QAE <qrisp.QAE>` or :ref:`IQAE <IQAE>` now need fewer qubits whenever the
+  state function uses ancillas. Printed circuits show the individual
+  operations instead of a single ``reflection`` gate. Jasp mode is unaffected.
+
 Other New Features
 ------------------
 
