@@ -2249,7 +2249,7 @@ def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jax.Array:
     return vec[r]
 
 
-def append_gate(gate, gate_list=[]):
+def append_gate(gate, gate_list=None):
     """Append ``gate`` to ``gate_list`` and return the updated list.
 
     Parameters
@@ -2257,7 +2257,7 @@ def append_gate(gate, gate_list=[]):
     gate : Any
         The gate to append.
     gate_list : list, optional
-        The list of gates to append to, by default [].
+        The list of gates to append to. If None, a new empty list is created.
 
     Returns
     -------
@@ -2265,5 +2265,7 @@ def append_gate(gate, gate_list=[]):
         The updated list of gates.
 
     """
+    if gate_list is None:
+        gate_list = []
     gate_list.append(gate)
     return gate_list
