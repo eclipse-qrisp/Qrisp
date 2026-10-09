@@ -22,7 +22,6 @@ from .block_encoding_arithmetic import (
     apply_matmul,
     apply_mul,
     apply_neg,
-    apply_radd,
     apply_sub,
     build_from_lcu_terms,
     build_linear_combination,
@@ -55,7 +54,6 @@ BlockEncoding._from_lcu_terms = classmethod(build_from_lcu_terms)
 # Special methods are looked up on the type, so assigning them here is equivalent
 # to defining them in the class body.
 BlockEncoding.__add__ = apply_add
-BlockEncoding.__radd__ = apply_radd
 BlockEncoding.__sub__ = apply_sub
 BlockEncoding.__mul__ = apply_mul
 BlockEncoding.__rmul__ = apply_mul

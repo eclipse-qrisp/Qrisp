@@ -33,8 +33,6 @@ transformations in transformations/ already are.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from types import NotImplementedType
-from typing import Any
 
 import numpy as np
 from jax.typing import ArrayLike
@@ -393,13 +391,6 @@ def apply_matmul(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417
         return NotImplemented
     factors = _validate_product_factors(self._get_product_factors() + other._get_product_factors())
     return ProductBlockEncoding(factors)
-
-
-def apply_radd(self, other: Any) -> BlockEncoding | NotImplementedType:
-    """Support adding a BlockEncoding to the start value used by sum()."""
-    if other == 0:
-        return self
-    return NotImplemented
 
 
 def apply_kron(self, other: BlockEncoding) -> BlockEncoding:  # noqa: D417

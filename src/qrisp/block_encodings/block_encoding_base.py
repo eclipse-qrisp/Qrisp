@@ -1078,7 +1078,6 @@ class BlockEncoding:
             apply_matmul,
             apply_mul,
             apply_neg,
-            apply_radd,
             apply_sub,
             build_from_lcu_terms,
             build_linear_combination,
@@ -1118,7 +1117,6 @@ class BlockEncoding:
         _from_lcu_terms = classmethod(build_from_lcu_terms)
 
         __add__ = apply_add
-        __radd__ = apply_radd
         __sub__ = apply_sub
         __mul__ = apply_mul
         __rmul__ = apply_mul
