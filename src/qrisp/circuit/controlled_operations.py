@@ -93,11 +93,14 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
 
     elif u3_gate.name in ["rx", "sx", "sx_dg"]:
         # Same thing as with rz but now we use RX = H RZ H
+        # Once controlled, the base gate's global phase (non-zero for sx and sx_dg)
+        # becomes a relative phase, and thus is added to both target phases.
         qc.h(target_qubit)
         gray_phase_synth_qb_list(
             qc,
             qc.qubits,
-            (2 ** (control_amount + 1) - 2) * [0] + [-u3_gate.theta / 2, u3_gate.theta / 2],
+            (2 ** (control_amount + 1) - 2) * [0]
+            + [u3_gate.global_phase - u3_gate.theta / 2, u3_gate.global_phase + u3_gate.theta / 2],
             phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
         )
         qc.h(target_qubit)
