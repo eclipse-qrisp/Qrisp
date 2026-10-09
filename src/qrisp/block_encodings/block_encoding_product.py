@@ -51,6 +51,12 @@ from qrisp.jasp import qache
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
 from qrisp.qtypes import QuantumBool, QuantumFloat
 
+# For m factors with a single QuantumBool ancilla each, the shared workspace needs
+# one workspace qubit, a counter of (m - 1).bit_length() qubits and a temporary
+# flag. That is fewer than the m qubits of separate ancillas only from m = 6 on,
+# and separate ancillas need no counter arithmetic.
+_MAX_SEPARATE_QUANTUM_BOOL_FACTORS = 5
+
 
 def _validate_product_factors(factors: _ProductFactors) -> _ProductFactors:
     factors = tuple(factors)
@@ -158,8 +164,9 @@ class ProductBlockEncoding(BlockEncoding):
     strategy : {"separate", "qubit_efficient"}
         Unitary implementation strategy. ``"qubit_efficient"`` is the default;
         it reuses one workspace and records failed factor applications in a
-        counter. A product with at most one factor that owns ancillas has no
-        garbage to separate, so it uses that factor's ancillas directly.
+        counter. It uses separate ancillas wherever sharing would not save
+        qubits: when at most one factor owns ancillas, or when at most five do
+        and each of them owns a single QuantumBool.
         ``"separate"`` uses distinct ancillas for every factor.
 
     """
@@ -250,8 +257,21 @@ class ProductBlockEncoding(BlockEncoding):
 
     @property
     def _uses_shared_workspace(self) -> bool:
-        """Return whether the factor ancillas are packed into one workspace with a counter."""
-        return self.strategy == "qubit_efficient" and self._num_factors_with_ancillas > 1
+        """Return whether the factor ancillas are packed into one workspace with a counter.
+
+        For factors owning at most one QuantumBool each, the choice depends on their
+        number alone. Unlike the ancilla sizes, which are traced once the product is
+        passed to a traced function, this number is always known statically.
+        """
+        num_factors_with_ancillas = self._num_factors_with_ancillas
+        if self.strategy != "qubit_efficient" or num_factors_with_ancillas <= 1:
+            return False
+
+        only_quantum_bools = all(
+            factor.num_ancs == 0 or (factor.num_ancs == 1 and isinstance(factor._anc_templates[0].qv, QuantumBool))
+            for factor in self.factors
+        )
+        return not only_quantum_bools or num_factors_with_ancillas > _MAX_SEPARATE_QUANTUM_BOOL_FACTORS
 
     @property
     def _anc_templates(self) -> list[QuantumVariableTemplate]:

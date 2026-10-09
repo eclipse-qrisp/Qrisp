@@ -390,6 +390,36 @@ def test_block_encoding_qubit_efficient_product_counts_only_factors_with_ancilla
     assert [template.qv_size for template in product._anc_templates] == [2]
 
 
+def test_block_encoding_qubit_efficient_product_keeps_few_quantum_bool_ancillas_separate():
+    """Verify that up to five single QuantumBool ancillas stay separate, since sharing them saves no qubits."""
+
+    def boolean_factor():
+        return BlockEncoding(1, [QuantumBool()], lambda *args: None)
+
+    unitary = BlockEncoding(1, [], lambda *args: None)
+
+    five = ProductBlockEncoding([boolean_factor() for _ in range(5)] + [unitary], strategy="qubit_efficient")
+    assert [template.qv_size for template in five._anc_templates] == [1] * 5
+
+    six = ProductBlockEncoding([boolean_factor() for _ in range(6)], strategy="qubit_efficient")
+    assert [template.qv_size for template in six._anc_templates] == [3, 1]
+
+    float_factor = BlockEncoding(1, [QuantumFloat(1)], lambda *args: None)
+    mixed = ProductBlockEncoding([boolean_factor(), float_factor], strategy="qubit_efficient")
+    assert [template.qv_size for template in mixed._anc_templates] == [1, 1]
+
+    # The choice must not change once the ancilla sizes are traced.
+    observed = []
+
+    def main(product):
+        observed.append(product.num_ancs)
+        return QuantumFloat(1)
+
+    make_jaspr(main)(five)
+    make_jaspr(main)(six)
+    assert observed == [5, 2]
+
+
 @pytest.mark.parametrize(
     "operators",
     [
