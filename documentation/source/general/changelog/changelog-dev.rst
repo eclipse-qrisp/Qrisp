@@ -160,7 +160,7 @@ Bug Fixes
 
 * Fixed the :func:`GQSP angle computation <qrisp.gqsp.gqsp_angles>` for
   polynomials with complex coefficients. Unless
-  $|p(e^{i\theta})| = |p(e^{-i\theta})|$ for all $\theta$, the angles implemented
+  :math:`|p(e^{i\theta})| = |p(e^{-i\theta})|` for all :math:`\theta`, the angles implemented
   a different polynomial, so :func:`GQSP <qrisp.gqsp.GQSP>`,
   :func:`GQET <qrisp.gqsp.GQET>`, :func:`GQSVT <qrisp.gqsp.GQSVT>` and other
   functions taking user-supplied coefficients applied the wrong transformation,
@@ -169,7 +169,7 @@ Bug Fixes
   $p(z) = (1+iz)/2$ applied to $U = \mathrm{diag}(1, i)$ now correctly suppresses
   the eigenvalue $i$. Real coefficients and
   :func:`hamiltonian_simulation <qrisp.gqsp.hamiltonian_simulation>` were not
-  affected.
+  affected (`PR #953 <https://github.com/eclipse-qrisp/Qrisp/pull/953>`_).
 
 * Fixed a failure when a function decorated with
   :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
