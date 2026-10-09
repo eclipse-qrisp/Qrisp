@@ -37,6 +37,7 @@ from qrisp.circuit.standard_operations import (
     RYGate,
     RZGate,
     SGate,
+    SXDGGate,
     SXGate,
     TGate,
 )
@@ -524,6 +525,8 @@ class TestU3GateNamedVariantControl:
             ("rz", RZGate, (2.0,)),
             ("rx", RXGate, (1.2,)),
             ("ry", RYGate, (0.8,)),
+            ("sx", SXGate, ()),
+            ("sx_dg", SXDGGate, ()),
         ],
     )
     def test_named_variant_controlled_unitary_vs_transpiled(self, name, gate_factory, args):
