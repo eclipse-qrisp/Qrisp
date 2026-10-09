@@ -288,6 +288,12 @@ def test_block_encoding_linear_combination_validates_inputs():
     with pytest.raises(ValueError, match="number of coefficients"):
         BlockEncoding.linear_combination([block_encoding], coefficients=[1, 2])
 
+    with pytest.raises(ValueError, match="one-dimensional sequence"):
+        BlockEncoding.linear_combination([block_encoding], coefficients=2.0)
+
+    with pytest.raises(ValueError, match="one-dimensional sequence"):
+        BlockEncoding.linear_combination([block_encoding], coefficients=np.array([[1.0]]))
+
     with pytest.raises(TypeError, match="Expected every item to be a BlockEncoding"):
         BlockEncoding.linear_combination([object()])
 
@@ -1072,6 +1078,10 @@ def test_a_mutable_coefficient_cannot_make_the_derived_values_stale():
             lambda be: BlockEncoding.linear_combination([be], coefficients=[jnp.array([1.0, 2.0])]),
         ),
         ("as a traced array", lambda be: make_jaspr(lambda c: c * be)(jnp.array([1.0, 2.0]))),
+        (
+            "as a nested list",
+            lambda be: BlockEncoding.linear_combination([be, be], coefficients=[[1.0], [2.0]]),
+        ),
     ],
 )
 def test_a_non_scalar_coefficient_is_rejected(name, build):

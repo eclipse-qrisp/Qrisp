@@ -61,21 +61,24 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
 
     The shape check reads ``ndim`` instead of testing for a NumPy array, so that a
     JAX array or a traced one is rejected the same way rather than silently giving
-    the derived amplitudes an extra axis. Objects without ``ndim`` are left alone,
-    which keeps plain scalars and the placeholders JAX builds its argument metadata
-    from out of the check.
+    the derived amplitudes an extra axis. Sequences have no ``ndim`` and are
+    rejected explicitly. Other objects without ``ndim`` are left alone, which keeps
+    plain scalars and the placeholders JAX builds its argument metadata from out of
+    the check.
 
     A NumPy array coefficient is also detached here. The terms are the
     authoritative representation and everything else is derived from them and
     cached, so a coefficient the caller can still write to would leave those
     derived values describing a combination that no longer exists. Only NumPy
-    arrays need this: every other kind of coefficient that reaches here, tracers
-    included, is already immutable.
+    arrays need this: the other scalars that pass the checks, tracers included,
+    are immutable.
     """
     checked: list[_LCUTerm] = []
     for coefficient, block_encoding in terms:
         if not isinstance(block_encoding, BlockEncoding):
             raise TypeError(f"Expected every item to be a BlockEncoding, but got {type(block_encoding).__name__}.")
+        if isinstance(coefficient, Sequence):
+            raise ValueError(f"Expected every coefficient to be a scalar, but got a {type(coefficient).__name__}.")
         if getattr(coefficient, "ndim", 0) != 0:
             raise ValueError(
                 f"Expected every coefficient to be a scalar, but got an array of shape {coefficient.shape}."

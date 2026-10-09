@@ -81,7 +81,8 @@ def build_linear_combination(  # noqa: D417
     Raises
     ------
     ValueError
-        If no block-encodings are supplied, the coefficient count does
+        If no block-encodings are supplied, the coefficients are not a
+        one-dimensional sequence of scalars, the coefficient count does
         not match, or operand counts differ.
     TypeError
         If an item is not a BlockEncoding.
@@ -89,6 +90,8 @@ def build_linear_combination(  # noqa: D417
     """
     if coefficients is None:
         coefficients = [1] * len(block_encodings)
+    elif not hasattr(coefficients, "__len__") or getattr(coefficients, "ndim", 1) != 1:
+        raise ValueError("Expected the coefficients to be a one-dimensional sequence.")
     elif len(coefficients) != len(block_encodings):
         raise ValueError("The number of coefficients must match the number of block-encodings.")
 
