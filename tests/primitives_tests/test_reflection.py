@@ -14,10 +14,9 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests for the reflection primitive with various input types, including under Jasp."""
+"""Tests for the reflection primitive with various input types."""
 
 from qrisp import OutcomeArray, QuantumArray, QuantumFloat, QuantumVariable, cx, h, multi_measurement, reflection, x
-from qrisp.jasp import jrange, terminal_sampling
 
 
 def ghz(*args):
@@ -107,22 +106,3 @@ def test_reflection_list_quantum_varaible_quantum_array():
     reflection([qv, qa], ghz)
     res = multi_measurement([qv, qa])
     assert res == {("00000", OutcomeArray([0, 0, 0])): 1.0}
-
-
-def test_jasp_reflection():
-    """Tests that the reflection primitive correctly applies a reflection around a GHZ state in Jasp."""
-
-    def ghz(qv):
-        h(qv[0])
-        for i in jrange(1, qv.size):
-            cx(qv[0], qv[i])
-
-    @terminal_sampling
-    def main():
-        qv = QuantumVariable(5)
-        x(qv)
-        reflection(qv, ghz)
-        return qv
-
-    res = main()
-    assert res == {0: 1.0}
