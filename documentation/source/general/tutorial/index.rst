@@ -51,6 +51,46 @@ shifting away from low-level circuit manipulation and toward intuitive, high-lev
 
         .. raw:: html
 
+            <a href="./Jasp.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Learn how this new compilation pipeline accelerates quantum algorithm compilation, and allows for hybrid real-time computations.</p>
+            </div>
+            </a>
+
+        .. image:: ../../_static/hybrid_realtime.png
+            :width: 180
+            :alt: Jasp Tutorial
+
+        +++
+        **How to think in Jasp**
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: sm
+        :text-align: center
+
+        .. raw:: html
+
+            <a href="./RunQrisp.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Learn the different ways to run Qrisp programs and integrate Qrisp cleanly into your workflow.</p>
+            </div>
+            </a>
+
+        .. image:: ../../_static/quantum.png
+            :width: 180
+            :alt: Run Qrisp Tutorial
+
+        +++
+        **How to run Qrisp programs**
+
+    .. grid-item-card::
+        :shadow: sm
+        :text-align: center
+
+        .. raw:: html
+
             <a href="./Shor.html">
             <div class="example-img-plot-overlay">
             <p class="sd-card-text">Factor numbers and experiment with encrypting and decrypting hidden messages using our state-of-the-art implementation.</p>
@@ -198,25 +238,6 @@ Explore the Jasp pipeline to build highly performant algorithms, and ensure your
 
         .. raw:: html
 
-            <a href="./Jasp.html">
-            <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Learn how this new compilation pipeline accelerates quantum algorithm compilation, and allows for hybrid real-time computations.</p>
-            </div>
-            </a>
-
-        .. image:: ../../_static/hybrid_realtime.png
-            :width: 180
-            :alt: Hybrid Realtime Tutorial
-
-        +++
-        **Hybrid real-time algorithm control with Jasp**
-
-    .. grid-item-card::
-        :shadow: sm
-        :text-align: center
-
-        .. raw:: html
-
             <a href="./JaspQAOAtutorial.html">
             <div class="example-img-plot-overlay">
             <p class="sd-card-text">Build an efficient custom QAOA implementation in Jasp using a JAX-traceable objective function for the MaxCut problem.</p>
@@ -228,8 +249,6 @@ Explore the Jasp pipeline to build highly performant algorithms, and ensure your
 
         +++
         **Building a QAOA implementation in Jasp**
-
-.. grid:: 1 1 2 2
 
     .. grid-item-card::
         :shadow: sm
@@ -248,6 +267,8 @@ Explore the Jasp pipeline to build highly performant algorithms, and ensure your
 
         +++
         **Fault-Tolerant compilation**
+
+.. grid:: 1 1 1 2
 
     .. grid-item-card::
         :shadow: sm
@@ -364,6 +385,8 @@ So, take these concepts, experiment, and start building the future of quantum co
    :hidden:
    
    tutorial.ipynb
+   Jasp.ipynb
+   RunQrisp.ipynb
    Shor.ipynb
    TSP.ipynb
    QAOAtutorial/index
@@ -371,7 +394,6 @@ So, take these concepts, experiment, and start building the future of quantum co
    CD.ipynb
    Sudoku.ipynb
    QMCItutorial.ipynb
-   Jasp.ipynb
    JaspQAOAtutorial.ipynb
    FT_compilation.ipynb
    BigInteger.ipynb

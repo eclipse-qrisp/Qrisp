@@ -209,6 +209,14 @@ tutorial_authors = {
             "linkedin": None,
         },
     ],
+    "general/tutorial/RunQrisp": [
+        {
+            "name": "Michael Papaodpoulos",
+            "affiliation": "Eclipse Qrisp Contributors",
+            "role": "Eclipse Qrisp Contributors",
+            "linkedin": None,
+        },
+    ],
     "general/tutorial/Shor": [
         {
             "name": "Raphael Seidel",
