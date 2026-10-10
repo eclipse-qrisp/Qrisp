@@ -353,6 +353,8 @@ New Tutorials/ Updated Documentation
   Eclipse Qrisp Community Day (Berlin, October 29th, 2026) with registration
   link and agenda.
 
+- Minor fixes to :class:`~qrisp.operators.qubit.QubitOperator`
+  (`PR #911 <https://github.com/eclipse-qrisp/Qrisp/pull/911>`_).
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
