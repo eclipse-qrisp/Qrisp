@@ -16,16 +16,36 @@
 
 """Defines gate application functions (cx, h, mcx, rz, measure, ...) that append operations to circuits."""
 
+from typing import Any
+
 import jax
+import jax.core
 import sympy
 
 import qrisp.circuit.standard_operations as std_ops
-from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen
+from qrisp.core.quantum_array import QuantumArray
+from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.jasp import (
+    AbstractQubit,
+    AbstractQubitArray,
+    DynamicQubitArray,
+    Measurement_p,
+    TracingQuantumSession,
+    check_for_tracing_mode,
+    jlen,
+    jrange,
+    reset_p,
+)
+from qrisp.misc.utility import find_qs
+
+_LOST_TRACK_MESSAGE = (
+    "Lost track of QuantumCircuit during tracing. This might have been caused by a missing "
+    "quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). "
+    "Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"
+)
 
 
 def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
-    from qrisp import find_qs
-
     try:
         qs = find_qs(qubits)
         qs.append(operation, qubits, clbits, param_tracers=param_tracers)
@@ -468,7 +488,6 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         jones_toffoli,
         khattar_mcx,
     )
-    from qrisp.core import QuantumVariable
     from qrisp.environments import invert
     from qrisp.misc import bin_rep
     from qrisp.qtypes import QuantumBool
@@ -1153,60 +1172,89 @@ def unitary(unitary_array, qubits):
     gphase(gphase_angle, qubits)
 
 
-def measure(qubits):
-    """Performs a measurement of the specified Qubit.
+def measure(qubits: Any) -> Any:
+    """Measure qubits in the computational basis.
+
+    In static mode, the measurement is appended to the circuit and the classical
+    bits holding the outcome are returned. In :ref:`Jasp <jasp>` mode, the outcome
+    itself is returned as a traced value.
 
     Parameters
     ----------
-    qubit : Qubit or list[Qubit] or QuantumVariable
-        The Qubit to measure.
-    clbit : Clbit, optional
-        The Clbit to store the result in. By default, a new Clbit will be created.
+    qubits : Qubit or QuantumVariable or QuantumArray or DynamicQubitArray or list[Qubit]
+        The qubits to measure. In Jasp mode, a list of qubits is not accepted:
+        measure a QuantumVariable or a slice of it instead.
+
+    Returns
+    -------
+    Clbit or list[Clbit] or jax.Array
+        In static mode, a :ref:`Clbit` for a single qubit, and otherwise a list
+        with one Clbit per qubit. In Jasp mode, a boolean for a
+        qubit, an integer for an array of qubits, and the decoded value for a
+        :ref:`QuantumVariable` or a :ref:`QuantumArray`.
+
+    Raises
+    ------
+    TypeError
+        In Jasp mode, if ``qubits`` has a type that cannot be measured.
+    RuntimeError
+        In Jasp mode, if the quantum state was lost, for example because
+        ``measure`` was called inside ``jax.lax.fori_loop`` instead of
+        :func:`qrisp.jasp.q_fori_loop`.
+
+    See Also
+    --------
+    QuantumVariable.get_measurement : Simulate a QuantumVariable and return its measurement results.
+
+    Examples
+    --------
+    >>> from qrisp import QuantumFloat, QuantumVariable, measure, x
+    >>> from qrisp.jasp import boolean_simulation
+    >>> qv = QuantumVariable(2)
+    >>> clbits = measure(qv)
+    >>> len(clbits), qv.qs.data[-1].op.name
+    (2, 'measure')
+
+    In Jasp mode, the outcome is a traced value:
+
+    >>> @boolean_simulation
+    ... def main():
+    ...     a = QuantumFloat(3)
+    ...     a[:] = 5
+    ...     x(a[1])
+    ...     return measure(a), measure(a[0])
+    >>> value, first_qubit = main()
+    >>> float(value), bool(first_qubit)
+    (7.0, True)
 
     """
-    from qrisp import find_qs
-    from qrisp.jasp import TracingQuantumSession
-
     qs = find_qs(qubits)
 
     if not isinstance(qs, TracingQuantumSession):
-        clbits = []
-        if hasattr(qubits, "__len__"):
-            for qb in qubits:
-                try:
-                    clbits.append(qs.add_clbit())
-                except AttributeError:
-                    clbits.append(qs.add_clbit())
-
+        # One new Clbit per qubit, or a single Clbit for a single qubit. Like
+        # append_operation, count all qubits of all elements of a QuantumArray.
+        if isinstance(qubits, QuantumArray):
+            clbits = [qs.add_clbit() for qv in qubits.flatten() for _ in qv.reg]
+        elif hasattr(qubits, "__len__"):
+            clbits = [qs.add_clbit() for _ in qubits]
         else:
             clbits = qs.add_clbit()
-
         append_operation(std_ops.Measurement(), [qubits], [clbits])
-
         return clbits
-    else:
-        from qrisp import QuantumArray, QuantumVariable
-        from qrisp.jasp import (
-            AbstractQubit,
-            AbstractQubitArray,
-            DynamicQubitArray,
-            Measurement_p,
-        )
 
-        if qs.abs_qst._trace is not jax.core.trace_ctx.trace:
-            raise Exception(
-                """Lost track of QuantumCircuit during tracing. This might have been caused by a missing quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). Please visit https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"""
-            )
+    # The quantum state belongs to the trace of the enclosing Jasp function. Inside a
+    # JAX control-flow primitive, such as jax.lax.fori_loop, the trace is different.
+    if qs.abs_qst._trace is not jax.core.trace_ctx.trace:
+        raise RuntimeError(_LOST_TRACK_MESSAGE)
 
-        if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
-            res = qubits.measure()
-        elif isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, (AbstractQubitArray, AbstractQubit)):
-            res, abs_qst = Measurement_p.bind(qubits, qs.abs_qst)
-            qs.abs_qst = abs_qst
-        else:
-            raise Exception(f"Tried to measure type {type(qubits)}")
+    if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
+        return qubits.measure()
+    qubit_avals = (AbstractQubitArray, AbstractQubit)
+    if isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, qubit_avals):
+        result, qs.abs_qst = Measurement_p.bind(qubits, qs.abs_qst)
+        return result
 
-        return res
+    raise TypeError(f"Tried to measure type {type(qubits)}")
 
 
 def measure_to_big_integer(qv, size):
@@ -1231,18 +1279,12 @@ def reset(qubits):
         The Qubit to measure.
 
     """
-    from qrisp import QuantumArray, find_qs
-    from qrisp.jasp import TracingQuantumSession, jrange
-
     qs = find_qs(qubits)
 
     if not isinstance(qs, TracingQuantumSession):
         append_operation(std_ops.Reset(), [qubits])
         return None
     else:
-        from qrisp import QuantumVariable
-        from qrisp.jasp import AbstractQubit, AbstractQubitArray, reset_p
-
         if isinstance(qubits, QuantumVariable):
             abs_qst = reset_p.bind(qubits.reg.tracer, qs.abs_qst)
         elif isinstance(qubits, QuantumArray):

@@ -16,16 +16,33 @@
 
 """Defines ControlEnvironment for controlling code blocks on qubits, plus the control() dispatch function."""
 
+from collections.abc import Sequence
+from typing import Any
+
+import jax
 import numpy as np
 from jax._src.array import ArrayImpl
 from jax.core import ShapedArray
 
 from qrisp.circuit import QuantumCircuit, Qubit, XGate
-from qrisp.core import mcx, p, rz, x
+from qrisp.core import QuantumVariable, mcx, p, rz, x
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
-from qrisp.environments import ClControlEnvironment, QuantumEnvironment
-from qrisp.jasp import check_for_tracing_mode, get_last_equation
-from qrisp.misc import bin_rep, perm_lock, perm_unlock
+from qrisp.environments import (
+    ClControlEnvironment,
+    ConditionEnvironment,
+    InversionEnvironment,
+    QuantumEnvironment,
+)
+from qrisp.environments.custom_control_environment import CustomControlOperation
+from qrisp.jasp import (
+    AbstractQubit,
+    check_for_tracing_mode,
+    extract_invalues,
+    get_last_equation,
+    insert_outvalues,
+)
+from qrisp.misc import bin_rep, perm_lock, perm_unlock, retarget_instructions
+from qrisp.qtypes import QuantumBool
 
 
 class ControlEnvironment(QuantumEnvironment):
@@ -68,8 +85,8 @@ class ControlEnvironment(QuantumEnvironment):
 
     """
 
-    def __init__(self, ctrl_qubits, ctrl_state=-1, ctrl_method=None, invert=False):
-
+    def __init__(self, ctrl_qubits, ctrl_state: int | str = -1, ctrl_method=None, invert=False):
+        """Initialize the environment on the control qubits."""
         if isinstance(ctrl_state, int):
             if ctrl_state < 0:
                 ctrl_state += 2 ** len(ctrl_qubits)
@@ -82,6 +99,18 @@ class ControlEnvironment(QuantumEnvironment):
             QuantumEnvironment.__init__(self, list(ctrl_qubits))
             if not isinstance(ctrl_qubits, list):
                 ctrl_qubits = [ctrl_qubits]
+
+            self.invert = invert
+            # Controls and state of an inverted environment with several controls,
+            # whose condition is computed into the helper QuantumBool _condition.
+            self._negated_ctrl_qubits = None
+            self._negated_ctrl_state = self.ctrl_state
+            self._condition = None
+            if invert and len(self.env_args) == 1:
+                # Inverting a single control means controlling on its other state.
+                self.ctrl_state = "0" if self.ctrl_state == "1" else "1"
+            elif invert:
+                self._negated_ctrl_qubits = list(self.env_args)
 
         else:
             if isinstance(ctrl_qubits, list):
@@ -109,10 +138,18 @@ class ControlEnvironment(QuantumEnvironment):
     def __enter__(self):
 
         if check_for_tracing_mode():
+            negated_ctrl_qubits = getattr(self, "_negated_ctrl_qubits", None)
+            if negated_ctrl_qubits is not None:
+                # Negating the condition of several controls is not the same as
+                # negating each control: compute the condition into a helper qubit
+                # and control the body on it being 0.
+                condition = QuantumBool()
+                self._flip_if_matching(negated_ctrl_qubits, self._negated_ctrl_state, condition)
+                self._condition = condition
+                self.env_args = [condition[0]]
+                self.ctrl_state = "0"
             QuantumEnvironment.__enter__(self)
             return
-
-        from qrisp.qtypes.quantum_bool import QuantumBool
 
         if len(self.ctrl_qubits) == 1:
             self.condition_truth_value = self.ctrl_qubits[0]
@@ -127,20 +164,22 @@ class ControlEnvironment(QuantumEnvironment):
         return self.condition_truth_value
 
     def __exit__(self, exception_type, exception_value, traceback):
-        from qrisp.environments import (
-            ConditionEnvironment,
-            ControlEnvironment,
-            InversionEnvironment,
-        )
-
         if check_for_tracing_mode():
             QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
+            negated_ctrl_qubits = getattr(self, "_negated_ctrl_qubits", None)
+            condition = getattr(self, "_condition", None)
+            if negated_ctrl_qubits is not None and condition is not None:
+                # Uncompute and release the helper qubit.
+                self._flip_if_matching(negated_ctrl_qubits, self._negated_ctrl_state, condition)
+                condition.delete()
             return
         self.parent_cond_env = None
 
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
 
-        from qrisp import ConjugationEnvironment
+        # qrisp.environments.conjugation_environment imports control from this module,
+        # so importing it at module level would be circular.
+        from qrisp.environments.conjugation_environment import ConjugationEnvironment
 
         # Determine the parent environment
         for env in self.env_qs.env_stack[::-1]:
@@ -152,9 +191,6 @@ class ControlEnvironment(QuantumEnvironment):
                     break
 
     def compile(self):
-        from qrisp import QuantumBool
-        from qrisp.environments import ConditionEnvironment, CustomControlOperation
-
         # Create the quantum variable where the condition truth value should be saved
         # Incase we have a parent environment we create two qubits because
         # we use the second qubit to compute the toffoli of this one and the parent
@@ -182,8 +218,6 @@ class ControlEnvironment(QuantumEnvironment):
                 # Synthesize the condition of the environment
                 # into the condition truth value qubit
                 if len(ctrl_qubits) == 1:
-                    from qrisp.misc import retarget_instructions
-
                     self.qbool = QuantumBool(name="ctrl_env*", qs=self.env_qs)
                     retarget_instructions(self.env_data, [self.condition_truth_value], [self.qbool[0]])
 
@@ -361,18 +395,20 @@ class ControlEnvironment(QuantumEnvironment):
         if self.parent_cond_env is not None:
             self.parent_cond_env.sub_condition_envs.extend(self.sub_condition_envs + [self])
 
+    @staticmethod
+    def _flip_if_matching(ctrl_qubits, ctrl_state, target):
+        """Flip ``target`` if ``ctrl_qubits`` are in ``ctrl_state``, in Jasp mode."""
+        with ControlEnvironment(ctrl_qubits, ctrl_state=ctrl_state):
+            x(target)
+
     def jcompile(self, eqn, context_dic):
-
-        from qrisp.jasp import extract_invalues, insert_outvalues
-
+        """Compile the environment into a call of the controlled body."""
         args = extract_invalues(eqn, context_dic)
         body_jaspr = eqn.params["jaspr"]
 
         num_ctrl = len(args) - len(body_jaspr.invars)
         flattened_jaspr = body_jaspr.flatten_environments()
         controlled_jaspr = flattened_jaspr.control(num_ctrl, ctrl_state=self.ctrl_state)
-
-        import jax
 
         res = jax.jit(controlled_jaspr.eval)(*args)
 
@@ -394,8 +430,6 @@ class ControlEnvironment(QuantumEnvironment):
 # For the conversion process, this function turns all Operations which are NO custom
 # controls into their regular controls.
 def convert_to_custom_control(instruction, control_qubit, invert_control=False):
-
-    from qrisp.environments import CustomControlOperation
 
     if invert_control:
         qc = QuantumCircuit(len(instruction.qubits))
@@ -445,34 +479,167 @@ def convert_to_custom_control(instruction, control_qubit, invert_control=False):
     return res
 
 
-def control(*args, **kwargs):
-    args = list(args)
-    from qrisp import QuantumBool, QuantumVariable, Qubit
-    from qrisp.jasp import AbstractQubit, check_for_tracing_mode
+def control(ctrl: Any, /, *args: Any, **kwargs: Any) -> "ControlEnvironment | ClControlEnvironment":
+    """Return the environment that controls a ``with`` block on qubits or booleans.
 
-    if isinstance(args[0], QuantumVariable):
-        if isinstance(args[0], QuantumBool):
-            args[0] = [args[0][0]]
-        else:
-            args[0] = list(args[0])
-    if not isinstance(args[0], list):
-        args[0] = [args[0]]
+    If ``ctrl`` holds qubits, a :ref:`ControlEnvironment` is returned and the block
+    is quantum-controlled on them. If it holds booleans, such as measurement results
+    in :ref:`Jasp <jasp>` mode, a :ref:`ClControlEnvironment` is returned and the
+    block only takes effect if they match ``ctrl_state``.
 
+    Parameters
+    ----------
+    ctrl : Qubit or QuantumVariable or bool or jax.Array or list or tuple
+        A :ref:`Qubit`, a :ref:`QuantumVariable` (all of its qubits; in Jasp mode
+        only a :ref:`QuantumBool`), a boolean (``bool``, ``numpy.bool_`` outside of
+        Jasp mode, a JAX array, or a traced value such as ``measure(qb)``), or a
+        list or tuple of either kind.
+    *args : Any
+        Positional arguments forwarded to the environment after ``ctrl``, starting
+        with ``ctrl_state``.
+    **kwargs : Any
+        Keyword arguments forwarded to the environment: ``ctrl_state`` (int or str,
+        all ones by default), ``invert`` (bool) and, for quantum control only,
+        ``ctrl_method`` (str).
+
+    Returns
+    -------
+    ControlEnvironment or ClControlEnvironment
+        The environment to enter with ``with``.
+
+    Raises
+    ------
+    TypeError
+        If ``ctrl`` has an unsupported type or mixes qubits and booleans.
+
+    Warnings
+    --------
+    For an integer ``ctrl_state``, bit ``i`` is the state of the ``i``-th control.
+    For a string, character ``i`` is the state of the ``i``-th qubit in quantum
+    control, while classical control reads the string as a binary number, so its
+    last character is the state of the first boolean.
+
+    See Also
+    --------
+    ControlEnvironment : Quantum control on qubits.
+    qrisp.environments.ClControlEnvironment : Classical control on booleans.
+    qrisp.jasp.q_cond : Classical branching with both a true and a false branch.
+
+    Notes
+    -----
+    In Jasp mode, the body of the block is traced once and stored as a sub-Jaspr.
+    When :ref:`make_jaspr <jaspr>` flattens the environments, a
+    :ref:`ClControlEnvironment` becomes a ``cond`` primitive (see
+    `jax.lax.cond <https://docs.jax.dev/en/latest/_autosummary/jax.lax.cond.html>`__)
+    whose false branch does nothing, and a :ref:`ControlEnvironment` becomes a
+    call to the controlled body.
+
+    Examples
+    --------
+    >>> from qrisp import QuantumBool, QuantumFloat, control, measure, x
+    >>> from qrisp.jasp import boolean_simulation, make_jaspr
+    >>> type(control(QuantumBool())).__name__
+    'ControlEnvironment'
+    >>> type(control(True)).__name__
+    'ClControlEnvironment'
+
+    In Jasp mode, a measurement result is a traced boolean, and the controlled
+    block becomes a ``cond`` primitive:
+
+    >>> def flip_if_one(value):
+    ...     a = QuantumFloat(2)
+    ...     a[:] = value
+    ...     with control(measure(a[0])):
+    ...         x(a[1])
+    ...     return measure(a)
+    >>> "cond" in [eqn.primitive.name for eqn in make_jaspr(flip_if_one)(1).eqns]
+    True
+    >>> int(boolean_simulation(flip_if_one)(1))
+    3
+
+    """
+    environment_type, ctrl_list = _select_environment(_as_control_list(ctrl))
+    return environment_type(ctrl_list, *args, **kwargs)
+
+
+def _as_control_list(ctrl: Any) -> list[Any]:
+    """Return ``ctrl`` as a list of qubits or booleans.
+
+    A QuantumBool becomes its qubit and any other QuantumVariable the list of its
+    qubits. A list is returned as it is, another sequence is converted to a list
+    and anything else is wrapped into a one-element list.
+
+    Parameters
+    ----------
+    ctrl : Qubit or QuantumVariable or bool or jax.Array or list or tuple
+        The argument passed to :func:`control`.
+
+    Returns
+    -------
+    list
+        The controls, in order.
+
+    """
+    if isinstance(ctrl, QuantumBool):
+        return [ctrl[0]]
+    if isinstance(ctrl, QuantumVariable):
+        return list(ctrl)
+    if isinstance(ctrl, list):
+        return ctrl
+    if isinstance(ctrl, Sequence) and not isinstance(ctrl, str):
+        return list(ctrl)
+    return [ctrl]
+
+
+def _select_environment(
+    ctrl_list: list[Any],
+) -> "tuple[type[ControlEnvironment] | type[ClControlEnvironment], list[Any]]":
+    """Select the environment for ``ctrl_list``.
+
+    Qubits select :class:`ControlEnvironment`, booleans select
+    :class:`ClControlEnvironment`. In Jasp mode, traced values are told apart by
+    their abstract value. Outside of Jasp mode, concrete JAX arrays are converted to
+    Python booleans.
+
+    Parameters
+    ----------
+    ctrl_list : list
+        The controls, as returned by :func:`_as_control_list`.
+
+    Returns
+    -------
+    environment_type : type[ControlEnvironment] or type[ClControlEnvironment]
+        The environment class.
+    ctrl_list : list
+        The controls to pass to it.
+
+    Raises
+    ------
+    TypeError
+        If the controls are neither all qubits nor all booleans.
+
+    """
     if check_for_tracing_mode():
-        if all(isinstance(obj, bool) for obj in [x for x in args[0]]):
-            return ClControlEnvironment(*args, **kwargs)
-        elif all(isinstance(obj, AbstractQubit) for obj in [x.aval for x in args[0]]):
-            return ControlEnvironment(*args, **kwargs)
-        elif all(isinstance(obj, ShapedArray) for obj in [x.aval for x in args[0]]):
-            return ClControlEnvironment(*args, **kwargs)
-        else:
-            raise Exception(f"Don't know how to control from input type {args[0]}")
-    elif all(isinstance(obj, (Qubit, QuantumBool)) for obj in args[0]):
-        return ControlEnvironment(*args, **kwargs)
-    elif all(isinstance(obj, (bool, np.bool)) for obj in [x for x in args[0]]):
-        return ClControlEnvironment(*args, **kwargs)
-    elif all(isinstance(obj, ArrayImpl) for obj in [x for x in args[0]]):
-        args[0] = [bool(bit) for bit in args[0]]
-        return ClControlEnvironment(*args, **kwargs)
+        if all(isinstance(ctrl, bool) for ctrl in ctrl_list):
+            return ClControlEnvironment, ctrl_list
+        avals = [getattr(ctrl, "aval", None) for ctrl in ctrl_list]
+        if all(isinstance(aval, AbstractQubit) for aval in avals):
+            return ControlEnvironment, ctrl_list
+        if all(isinstance(aval, ShapedArray) for aval in avals):
+            return ClControlEnvironment, ctrl_list
     else:
-        raise Exception(f"Don't know how to control from input type {args[0]}")
+        if all(isinstance(ctrl, (Qubit, QuantumBool)) for ctrl in ctrl_list):
+            return ControlEnvironment, ctrl_list
+        if all(isinstance(ctrl, (bool, np.bool_)) for ctrl in ctrl_list):
+            return ClControlEnvironment, ctrl_list
+        if all(isinstance(ctrl, ArrayImpl) for ctrl in ctrl_list):
+            return ClControlEnvironment, [bool(ctrl) for ctrl in ctrl_list]
+
+    element_types = ", ".join(type(ctrl).__name__ for ctrl in ctrl_list)
+    raise TypeError(
+        f"Don't know how to control from input type {ctrl_list} "
+        f"(element types: {element_types}). Pass qubits (a Qubit, a QuantumBool, "
+        "a QuantumVariable, or a list of qubits) for quantum control, or booleans "
+        "(a bool, a measurement result, or a list of these) for classical control, "
+        "without mixing the two."
+    )
