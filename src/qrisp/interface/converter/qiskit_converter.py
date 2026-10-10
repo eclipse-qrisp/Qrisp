@@ -224,7 +224,7 @@ def create_qiskit_instruction(op, params=[]):
     elif op.name == "p":
         qiskit_ins = qsk_gates.PhaseGate(params[0])
     elif op.name == "u1":
-        qiskit_ins = qsk_gates.PhaseGate(params[0])
+        qiskit_ins = qsk_gates.RZGate(params[0])
     elif op.name == "s":
         qiskit_ins = qsk_gates.SGate()
     elif op.name == "s_dg":
