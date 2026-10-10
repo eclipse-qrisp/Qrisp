@@ -186,10 +186,8 @@ def evaluate_nlft_sequence(
         L[:, 1, 0] = -np.conj(F_k) * norm
         L[:, 1, 1] = norm
 
-        # Apply layer: U = L @ Z @ U
-        # Note: Depending on the array endianness from the generator, you might
-        # need to reverse the sequence of F_k.
-        U = np.matmul(L, np.matmul(Z, U))
+        # Apply layer in sequence order: U = L_0 Z L_1 Z ... L_d Z
+        U = np.matmul(U, np.matmul(L, Z))
 
     return U[:, 0, 1]
 
