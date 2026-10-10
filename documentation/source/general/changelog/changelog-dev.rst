@@ -10,6 +10,25 @@ changelog enforcement.
 New Features
 ------------
 
+* **CUDA-Q interface.** Qrisp programs can now be compiled to and run on
+  `CUDA-Q <https://nvidia.github.io/cuda-quantum/>`_, NVIDIA's platform for
+  hybrid quantum-classical computing. The interface ships as the separate
+  package `qrisp-cudaq <https://github.com/eclipse-qrisp/qrisp-cudaq>`_;
+  install it with ``pip install qrisp[cudaq]``
+  (`PR #943 <https://github.com/eclipse-qrisp/Qrisp/pull/943>`_).
+
+  * :func:`cudaq_kernel <qrisp_cudaq.cudaq_kernel>` turns a Qrisp function into
+    a CUDA-Q kernel, executable with ``cudaq.run`` or, with
+    ``execution_mode="sample"``, with ``cudaq.sample``.
+  * Hybrid control flow lowers natively to Quake, including mid-circuit
+    measurement with feed-forward, ``q_while_loop``, ``q_cond`` and
+    ``q_switch``.
+  * Kernels accept scalar (``int``, ``float``, ``bool``) and array parameters
+    via :class:`FixedShapeNDArray <qrisp_cudaq.FixedShapeNDArray>`, and can
+    return multiple values.
+  * :func:`to_quake_mlir <qrisp_cudaq.to_quake_mlir>` returns the Quake MLIR
+    that a Jaspr compiles to.
+
 - **sample() and expectation_value() now accept arbitrary return values**
   Sampling kernels (the functions passed to :func:`~qrisp.jasp.sample` and
   :func:`~qrisp.jasp.expectation_value`) may now return classical values
@@ -343,6 +362,11 @@ Compatibility
 
 New Tutorials/ Updated Documentation
 -------------------------------------
+
+* :doc:`CUDA-Q tutorial </general/tutorial/CUDAQ>` - Compiling and running
+  Qrisp kernels on NVIDIA's CUDA-Q platform, from a Bell-state example to
+  hybrid quantum-classical workflows
+  (`PR #943 <https://github.com/eclipse-qrisp/Qrisp/pull/943>`_).
 
 * Fixed outdated or inaccurate docstrings and examples across the Jasp
   module (control flow, sampling, simulators, optimization tools,
