@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qrisp"
-version = "0.9.9"
+version = "0.9.10"
 authors = [
     {name = "The Qrisp authors"},
 ]
@@ -51,6 +51,7 @@ iqm = [
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
+cudaq = ["qrisp-cudaq"]
 docs = [
     "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
     "sphinx-toolbox==4.1.2",
@@ -88,6 +89,9 @@ dev = [
 # the release of the Qiskit SDK v2.x series and no longer receives bug fixes,
 # security updates, or other patches
 # (https://www.ibm.com/quantum/blog/qiskit-2-5-release-summary).
+# cudaq is intentionally excluded from `all`: the Qrisp test suites do not
+# exercise the CUDA-Q backend, so installing CUDA-Q in every CI job only costs
+# time. The CUDA-Q tests run in eclipse-qrisp/qrisp-cudaq.
 all = [
     "qrisp[qiskit,iqm,catalyst,xdsl,docs,dev]",
 ]
