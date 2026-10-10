@@ -14,6 +14,20 @@ Eclipse Qrisp Community Day
 
    <div style="height: 1rem;"></div>
 
+   <div style="text-align: center; font-weight: 600; font-size: 1.1rem; margin-bottom: 0.75rem;">
+     Sponsored by
+   </div>
+   <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1rem 2.5rem; background: #ffffff; border: 1px solid #d0d7de; border-radius: 8px; padding: 1.25rem 1.5rem;">
+     <img src="../_static/iqm_logo_black.svg" alt="IQM" style="height: 55px; width: auto;">
+     <img src="../_static/q_verse_logo.png" alt="Q-Verse" style="height: 110px; width: auto;">
+     <img src="../_static/secqdevops_logo.png" alt="SecQDevOps" style="height: 55px; width: auto;">
+   </div>
+   <div style="text-align: center; font-size: 0.9rem; margin-top: 0.5rem;">
+     The Eclipse Qrisp Community Day is sponsored by IQM and the European projects Q-Verse and SecQDevOps.
+   </div>
+
+   <div style="height: 1rem;"></div>
+
 Join the Qrisp Community in Berlin for a full day dedicated to quantum programming with Qrisp. The event will feature technical talks, community discussions, hands-on insights, and opportunities to connect with the people building and using Qrisp.
 
 .. list-table::

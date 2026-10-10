@@ -322,6 +322,7 @@ Bug Fixes
     does. With a random ``meas_behavior``, they reused the same outcome for
     every measurement of a loop, and could follow different branches than
     ``count_ops`` for the same program.
+
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 Compatibility
@@ -498,6 +499,14 @@ Development
   gate now running on both pull requests and pushes to ``main``
   (`PR #836 <https://github.com/eclipse-qrisp/Qrisp/pull/836>`_).
 
+* Added a ``docs build`` workflow that builds the Sphinx documentation on pull
+  requests and treats any warning as an error. Building it fresh surfaced and
+  fixed several issues: numpydoc-unknown docstring sections (``Properties``,
+  ``Decompositions``, ``Example``), a duplicate ``Attributes`` section, a
+  document listed in two toctrees, the ``pygment_light_style`` theme option
+  (renamed to ``pygments_light_style``), and ``stim`` being unavailable in the
+  docs environment (now mocked via ``autodoc_mock_imports``)
+  (`PR #915 <https://github.com/eclipse-qrisp/Qrisp/pull/915>`_).
 * GitHub Actions pinned to commit SHA in CI workflows
   (`PR #829 <https://github.com/eclipse-qrisp/Qrisp/pull/829>`_).
 * Added Python 3.13 support to the CI pipeline according to 
