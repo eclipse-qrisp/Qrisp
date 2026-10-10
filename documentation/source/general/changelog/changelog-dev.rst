@@ -325,6 +325,10 @@ Bug Fixes
 
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* Fixed ``reset`` on a single qubit, such as ``reset(qv[0])``, failing to
+  compile with :ref:`qjit <qjit>`. Resetting a whole QuantumVariable was not
+  affected (`PR #941 <https://github.com/eclipse-qrisp/Qrisp/pull/941>`_).
+
 Compatibility
 -------------
 
