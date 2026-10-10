@@ -16,7 +16,20 @@
 
 """Tests for the reflection primitive with various input types, including under Jasp."""
 
-from qrisp import OutcomeArray, QuantumArray, QuantumFloat, QuantumVariable, cx, h, multi_measurement, reflection, x
+from qrisp import (
+    OutcomeArray,
+    QuantumArray,
+    QuantumBool,
+    QuantumFloat,
+    QuantumVariable,
+    control,
+    cx,
+    h,
+    multi_measurement,
+    reflection,
+    ry,
+    x,
+)
 from qrisp.jasp import jrange, terminal_sampling
 
 
@@ -107,6 +120,28 @@ def test_reflection_list_quantum_varaible_quantum_array():
     reflection([qv, qa], ghz)
     res = multi_measurement([qv, qa])
     assert res == {("00000", OutcomeArray([0, 0, 0])): 1.0}
+
+
+def test_controlled_reflection_reuses_state_function_ancillas():
+    """Tests that a controlled reflection reuses the state function's ancillas instead of keeping them allocated."""
+
+    def state_function(qf, qb):
+        h(qf)
+        for bound in [2, 3]:
+            with qf < bound:
+                ry(0.1 * bound, qb)
+
+    qf = QuantumFloat(4)
+    qb = QuantumBool()
+    state_function(qf, qb)
+    prep_qubits = qf.qs.compile().num_qubits()
+
+    ctrl = QuantumBool()
+    with control(ctrl):
+        reflection([qf, qb], state_function)
+
+    # The inverted and the regular state preparation share their ancillas, so only the control qubit is added
+    assert qf.qs.compile().num_qubits() <= prep_qubits + 1
 
 
 def test_jasp_reflection():
