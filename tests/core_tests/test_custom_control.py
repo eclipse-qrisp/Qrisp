@@ -71,7 +71,7 @@ def test_custom_control():
 
                 from qrisp import t_depth_indicator
 
-                gate_speed = lambda x: t_depth_indicator(x, epsilon=2**-10)
+                gate_speed = t_depth_indicator
                 qc = b.qs.compile(gate_speed=gate_speed, compile_mcm=True)
 
                 env_num_qubits = qc.num_qubits()

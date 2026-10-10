@@ -18,6 +18,7 @@
 
 import os
 import tempfile
+import warnings
 
 import numpy as np
 import pytest
@@ -28,6 +29,7 @@ from sympy import symbols
 from qrisp.circuit import Clbit, Instruction, Qubit
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.standard_operations import CXGate, Measurement, RXGate, XGate
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.permeability import PermeabilityGraph
 
 
@@ -836,21 +838,171 @@ class TestQuantumCircuitMethods:
     # t_depth                                                            #
     # ------------------------------------------------------------------ #
 
-    def test_t_depth_docstring_example_with_epsilon(self):
-        """Docstring example: T + CX + RX(2π·3/2⁴) with ε=2⁻⁵ gives T-depth 16."""
+    def test_t_depth_docstring_example(self):
+        """Docstring example: T, CX, T and S gives T-depth 2."""
         qc = QuantumCircuit(2)
         qc.t(0)
         qc.cx(0, 1)
-        qc.rx(2 * np.pi * 3 / 2**4, 1)
-        assert qc.t_depth(epsilon=2**-5) == 16
+        qc.t(1)
+        qc.s(1)
+        assert qc.t_depth() == 2
 
-    def test_t_depth_docstring_example_auto_epsilon(self):
-        """Docstring example: same circuit without explicit ε gives T-depth 22."""
+    def test_t_depth_docstring_example_custom_indicator(self):
+        """Docstring example: a custom indicator assigns a T-depth to other rotations."""
+        from qrisp import t_depth_indicator
+
+        def my_t_depth_indicator(op):
+            try:
+                return t_depth_indicator(op)
+            except ValueError:
+                return 10
+
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.cx(0, 1)
+        qc.t(1)
+        qc.s(1)
+        qc.rx(0.3, 1)
+        assert qc.t_depth(depth_indicator=my_t_depth_indicator) == 12
+
+    def test_t_depth_epsilon_is_deprecated(self):
+        """Passing epsilon warns, and keeps the old cost of 3*log2(1/epsilon) per rotation."""
         qc = QuantumCircuit(2)
         qc.t(0)
         qc.cx(0, 1)
         qc.rx(2 * np.pi * 3 / 2**4, 1)
-        assert qc.t_depth() == 22
+        with pytest.warns(QrispDeprecationWarning, match="epsilon"):
+            assert qc.t_depth(epsilon=2**-5) == 16
+
+    def test_t_depth_inferred_epsilon_is_deprecated(self):
+        """Without epsilon or indicator, other rotations still infer epsilon, with a warning."""
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.cx(0, 1)
+        qc.rx(2 * np.pi * 3 / 2**4, 1)
+        with pytest.warns(QrispDeprecationWarning, match="epsilon"):
+            assert qc.t_depth() == 22
+
+    def test_t_depth_epsilon_and_indicator_are_exclusive(self):
+        """Passing both epsilon and depth_indicator raises."""
+        qc = QuantumCircuit(1)
+        qc.t(0)
+        with pytest.raises(ValueError, match="epsilon and depth_indicator"):
+            qc.t_depth(epsilon=2**-5, depth_indicator=lambda op: 1)
+
+    @pytest.mark.parametrize(
+        "apply_gate, expected",
+        [
+            (lambda qc: qc.h(0), 0),
+            (lambda qc: qc.s(0), 0),
+            (lambda qc: qc.x(0), 0),
+            (lambda qc: qc.rz(np.pi / 2, 0), 0),
+            (lambda qc: qc.t(0), 1),
+            (lambda qc: qc.t_dg(0), 1),
+            (lambda qc: qc.rz(np.pi / 4, 0), 1),
+            (lambda qc: qc.rx(3 * np.pi / 4, 0), 1),
+        ],
+    )
+    def test_t_depth_indicator_clifford_and_t(self, apply_gate, expected):
+        """The default indicator costs Clifford gates 0 and T-type rotations 1, without warning."""
+        from qrisp import t_depth_indicator
+
+        qc = QuantumCircuit(1)
+        apply_gate(qc)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            assert t_depth_indicator(qc.data[0].op) == expected
+
+    @pytest.mark.parametrize(
+        "angles, expected",
+        [
+            ((np.pi / 4, 0, 0), 1),
+            ((0, np.pi / 4, 0), 1),
+            ((0, 0, np.pi / 4), 1),
+            ((np.pi / 4, np.pi / 2, 3 * np.pi / 4), 2),
+        ],
+    )
+    def test_t_depth_indicator_u3_costs_each_angle(self, angles, expected):
+        """Each of the three angles of a u3 gate is costed separately."""
+        from qrisp import t_depth_indicator
+
+        qc = QuantumCircuit(1)
+        qc.u3(*angles, 0)
+        assert t_depth_indicator(qc.data[0].op) == expected
+
+    @pytest.mark.parametrize("angles", [(0.3, 0, 0), (0, 0.3, 0), (0, 0, 0.3)])
+    def test_t_depth_indicator_u3_raises_for_other_rotations(self, angles):
+        """A u3 gate raises if any of its angles is neither a Clifford nor a T angle."""
+        from qrisp import t_depth_indicator
+
+        qc = QuantumCircuit(1)
+        qc.u3(*angles, 0)
+        with pytest.raises(ValueError, match="custom depth indicator"):
+            t_depth_indicator(qc.data[0].op)
+
+    @pytest.mark.parametrize("gate", ["rx", "ry", "rz", "p"])
+    def test_t_depth_indicator_raises_for_other_rotations(self, gate):
+        """The default indicator raises for rotations that are neither Clifford nor T gates."""
+        from qrisp import t_depth_indicator
+
+        qc = QuantumCircuit(1)
+        getattr(qc, gate)(0.3, 0)
+        with pytest.raises(ValueError, match="custom depth indicator"):
+            t_depth_indicator(qc.data[0].op)
+
+    def test_t_depth_indicator_epsilon_is_deprecated(self):
+        """Passing epsilon to t_depth_indicator warns, and keeps the old cost of 3*log2(1/epsilon)."""
+        from qrisp import t_depth_indicator
+
+        qc = QuantumCircuit(1)
+        qc.rz(0.3, 0)
+        with pytest.warns(QrispDeprecationWarning, match="epsilon"):
+            assert t_depth_indicator(qc.data[0].op, epsilon=2**-5) == 15
+
+    def test_t_depth_custom_indicator_replaces_default(self):
+        """A custom indicator is used for every gate, not only as a fallback for other rotations."""
+
+        def double_t_indicator(op):
+            return 2 if op.name in ["t", "t_dg"] else 0
+
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.cx(0, 1)
+        qc.t(1)
+        qc.s(1)
+        assert qc.t_depth() == 2
+        assert qc.t_depth(depth_indicator=double_t_indicator) == 4
+
+    def test_t_depth_custom_indicator_reproduces_epsilon(self):
+        """A custom indicator with the old 3*log2(1/epsilon) rule matches the deprecated epsilon argument."""
+        from qrisp import t_depth_indicator
+
+        epsilon = 2**-5
+
+        def epsilon_indicator(op):
+            try:
+                return t_depth_indicator(op)
+            except ValueError:
+                return 3 * np.log2(1 / epsilon)
+
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.cx(0, 1)
+        qc.rx(2 * np.pi * 3 / 2**4, 1)
+        with pytest.warns(QrispDeprecationWarning):
+            expected = qc.t_depth(epsilon=epsilon)
+        assert qc.t_depth(depth_indicator=epsilon_indicator) == expected == 16
+
+    def test_t_depth_clifford_t_does_not_warn(self):
+        """A Clifford+T circuit, including T angles of rotations, needs no epsilon and does not warn."""
+        qc = QuantumCircuit(2)
+        qc.t(0)
+        qc.rz(np.pi / 4, 1)
+        qc.rx(np.pi / 2, 1)
+        qc.cx(0, 1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            assert qc.t_depth() == 1
 
     def test_t_depth_empty_circuit(self):
         """An empty circuit has T-depth 0."""
@@ -860,20 +1012,20 @@ class TestQuantumCircuitMethods:
         """A single T gate has T-depth 1."""
         qc = QuantumCircuit(1)
         qc.t(0)
-        assert qc.t_depth(epsilon=1e-10) == 1
+        assert qc.t_depth() == 1
 
     def test_t_depth_only_cx_gate(self):
         """A single CX gate (no T gates) has T-depth 0."""
         qc = QuantumCircuit(2)
         qc.cx(0, 1)
-        assert qc.t_depth(epsilon=1e-10) == 0
+        assert qc.t_depth() == 0
 
     def test_t_depth_parallel_t_gates(self):
         """T gates on independent qubits are parallel — T-depth is 1."""
         qc = QuantumCircuit(2)
         qc.t(0)
         qc.t(1)
-        assert qc.t_depth(epsilon=1e-10) == 1
+        assert qc.t_depth() == 1
 
     def test_t_depth_sequential_t_gates(self):
         """T gates applied sequentially on the same qubit accumulate T-depth."""
@@ -881,7 +1033,7 @@ class TestQuantumCircuitMethods:
         qc.t(0)
         qc.t(0)
         qc.t(0)
-        assert qc.t_depth(epsilon=1e-10) == 3
+        assert qc.t_depth() == 3
 
     # ------------------------------------------------------------------ #
     # cnot_depth                                                         #

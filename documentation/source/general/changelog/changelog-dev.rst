@@ -325,6 +325,12 @@ Bug Fixes
 
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* :func:`~qrisp.t_depth_indicator` now costs each of the three angles of a
+  ``u3`` gate. Previously, it counted the first angle three times and ignored
+  the other two, so :meth:`QuantumCircuit.t_depth
+  <qrisp.QuantumCircuit.t_depth>` misestimated circuits containing ``u3``
+  gates.
+
 Compatibility
 -------------
 
@@ -400,6 +406,16 @@ API Changes
   ``QrispDeprecationWarning``. Programs that exceeded the old limit no longer
   raise ``ValueError``
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+
+* The ``epsilon`` argument of :meth:`QuantumCircuit.t_depth
+  <qrisp.QuantumCircuit.t_depth>` and :func:`~qrisp.t_depth_indicator` is
+  deprecated, since there is no generally sensible choice for it: passing it
+  emits a ``QrispDeprecationWarning``. Without ``epsilon``,
+  :func:`~qrisp.t_depth_indicator` raises a ``ValueError`` for rotations that
+  are neither Clifford nor T gates. ``QuantumCircuit.t_depth`` accepts a new
+  ``depth_indicator`` argument to assign them a T-depth. For backwards
+  compatibility, ``QuantumCircuit.t_depth()`` still infers ``epsilon`` for such
+  circuits, with a ``QrispDeprecationWarning``.
 
 .. Add API changes above this line
 

@@ -80,13 +80,13 @@ Let's provide an example of benchmarking the :meth:`gidney_adder <qrisp.gidney_a
     with control(ctrl_qbl):
         qg *= 953
         
-    gate_speed = lambda op : t_depth_indicator(op, epsilon = 2**-10)
+    gate_speed = t_depth_indicator
      
     qc = qg.qs.compile(gate_speed = gate_speed, compile_mcm = True)
     print(qc.t_depth())
-    # Yields 956
+    # Yields 1178
     print(qc.num_qubits())
-    # Yields 79    
+    # Yields 58    
     
     
 Now the :meth:`qcla <qrisp.qcla>`:
@@ -102,12 +102,12 @@ Now the :meth:`qcla <qrisp.qcla>`:
         
     qc = qg.qs.compile(workspace = 10, gate_speed = gate_speed, compile_mcm = True)
     
-    print(qc.t_depth())s
-    # Yields 784
+    print(qc.t_depth())
+    # Yields 843
     print(qc.num_qubits())
-    # Yields 88   
+    # Yields 57   
 
-We see that the T-depth is reduced by $\approx 20 \%$. Due to the logarithmic scaling of the adder, larger scales will profit even more! Note that we granted the compiler 10 qubits of :ref:`workspace <workspace>`, as this adder can profit a lot from this resource.
+We see that the T-depth is reduced by $\approx 28 \%$. Due to the logarithmic scaling of the adder, larger scales will profit even more! Note that we granted the compiler 10 qubits of :ref:`workspace <workspace>`, as this adder can profit a lot from this resource.
 
 The comparison analysis is intriguing on its own, but here we wanted to emphasize the simplicity of improving the performance of Shor's algorithm by the means of implementing possible new shiny adders with the least amount of headaches. Future 👏🏻 proven 👏🏻
 

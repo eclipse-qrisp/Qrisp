@@ -154,7 +154,7 @@ def test_qq_qcla_adder():
 
     from qrisp import t_depth_indicator
 
-    gate_speed = lambda x: t_depth_indicator(x, epsilon=2**-10)
+    gate_speed = t_depth_indicator
     qc = b.qs.compile(gate_speed=gate_speed, compile_mcm=True)
     assert qc.t_depth() < 20
 
@@ -346,7 +346,7 @@ def test_cq_qcla_adder():
 
     from qrisp import t_depth_indicator
 
-    gate_speed = lambda x: t_depth_indicator(x, epsilon=2**-10)
+    gate_speed = t_depth_indicator
     qc = b.qs.compile(gate_speed=gate_speed, compile_mcm=True)
     assert qc.t_depth() < 10
 

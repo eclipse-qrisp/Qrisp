@@ -1882,33 +1882,74 @@ def lifted(*args, verify=False):
         return gate_wrap(permeability="args", is_qfree=True)(args[0])
 
 
-def t_depth_indicator(op, epsilon):
-    r"""This function returns the T-depth of an :ref:`Operation` object.
+def _t_depth_epsilon_from_params(params) -> float:
+    r"""Infer the precision for a T-depth estimate from gate parameters.
 
-    According to `this paper <https://arxiv.org/abs/1403.2975>`_, the synthesis of an $RZ(\phi)$
-    up to precision $\epsilon$ requires $3\text{log}_2(\frac{1}{\epsilon})$
-    T-gates.
+    Every parameter is assumed to have the form $2\pi m/2^k$. The precision is
+    $2^{-(k_{\max}+3)}$, where the extra $+3$ is a conservative buffer.
 
     Parameters
     ----------
-    op : :ref:`Operation`
-        The operation, whose T-depth should be estimated.
-    epsilon : float
-        The precision of the RZ gate simulation.
-
+    params : Iterable[float]
+        The parameters of all gates.
 
     Returns
     -------
     float
-        The estimated T-depth of the Operation.
+        The inferred precision.
 
     """
+    max_circuit_prec = 15
+    for par in params:
+        # Normalize parameter to range [0, 2π) and convert to fixed-point representation
+        normalized_par = (par % (2 * np.pi)) / (2 * np.pi)
+        fixed_point_par = int(np.round(normalized_par * 2**15))
+
+        # Find the position of the least significant bit
+        for idx in range(max_circuit_prec):
+            if fixed_point_par % (2**idx):
+                max_circuit_prec = idx
+                break
+
+    # Convert precision index to actual precision value
+    max_circuit_prec = 16 - max_circuit_prec
+
+    # Set epsilon based on the maximum precision across all parameters
+    return 2 ** (-max_circuit_prec - 3)
+
+
+class _NonCliffordTRotationError(ValueError):
+    """Raised by :func:`t_depth_indicator` for a rotation that is neither a Clifford nor a T gate."""
+
+
+def _rotation_t_depth(op, angle, epsilon):
+    """Return the T-depth of a rotation by ``angle``: 0 for Clifford angles, 1 for T angles.
+
+    Other angles cost ``3*log2(1/epsilon)`` (deprecated) or raise if ``epsilon`` is None.
+    """
+    par = angle / (np.pi) % 1
+    if par in [0, 1 / 2]:
+        return 0
+    if par in [1 / 4, 3 / 4]:
+        return 1
+    if epsilon is None:
+        raise _NonCliffordTRotationError(
+            f"Gate '{op.name}' with parameters {op.params} is neither a Clifford nor a T gate, "
+            "so its T-depth depends on how it is synthesized. Rotation angles that are only known "
+            "at runtime are never classified as Clifford or T. Please provide a custom depth "
+            "indicator that assigns a T-depth to such gates."
+        )
+    return 3 * np.log2(1 / epsilon)
+
+
+def _t_depth_indicator(op, epsilon=None):
+    """Implement :func:`t_depth_indicator` without the deprecation warning for ``epsilon``."""
     from qrisp import ClControlledOperation
 
     if isinstance(op, ClControlledOperation):
-        return t_depth_indicator(op.base_op, epsilon)
+        return _t_depth_indicator(op.base_op, epsilon)
     elif op.definition is not None:
-        return op.definition.t_depth(epsilon)
+        return op.definition.depth(depth_indicator=lambda x: _t_depth_indicator(x, epsilon))
     elif op.name in [
         "cx",
         "cx",
@@ -1930,28 +1971,75 @@ def t_depth_indicator(op, epsilon):
     ]:
         return 0
     elif op.name in ["rx", "ry", "rz", "p", "u1"]:
-        par = op.params[0] / (np.pi) % 1
-        if par in [0, 1 / 2]:
-            return 0
-        elif par in [1 / 4, 3 / 4]:
-            return 1
-        else:
-            return 3 * np.log2(1 / epsilon)
+        return _rotation_t_depth(op, op.params[0], epsilon)
     elif op.name in ["t", "t_dg"]:
         return 1
     elif op.name == "u3":
         res = 0
         for i in range(3):
-            par = op.params[0] / (np.pi) % 1
-            if par in [0, 1 / 2]:
-                pass
-            elif par in [1 / 4, 3 / 4]:
-                res += 1
-            else:
-                res += 3 * np.log2(1 / epsilon)
+            res += _rotation_t_depth(op, op.params[i], epsilon)
         return res
     else:
         raise Exception(f"Gate {op.name} not implemented")
+
+
+def t_depth_indicator(op, epsilon=None):
+    r"""This function returns the T-depth of an :ref:`Operation` object.
+
+    Clifford gates have T-depth 0 and $T$, $T^\dagger$ and rotations by an odd
+    multiple of $\frac{\pi}{4}$ have T-depth 1. Gates with a definition are
+    evaluated through their definition.
+
+    Other rotations (e.g. $RZ(0.3)$) have no fixed T-depth: it depends on the
+    precision and algorithm used to synthesize them from Clifford+T gates.
+    Instead of guessing, this function raises a ``ValueError`` for such gates.
+    To estimate the T-depth of circuits containing them, write your own
+    indicator, which can fall back to this function for the other gates:
+
+    >>> import numpy as np
+    >>> from qrisp import QuantumCircuit, t_depth_indicator
+    >>> def my_t_depth_indicator(op):
+    ...     try:
+    ...         return t_depth_indicator(op)
+    ...     except ValueError:
+    ...         # Assume a T-depth of 10 per synthesized rotation
+    ...         return 10
+    >>> qc = QuantumCircuit(1)
+    >>> qc.t(0)
+    >>> qc.rz(0.3, 0)
+    >>> qc.depth(depth_indicator=my_t_depth_indicator)
+    11
+
+    Parameters
+    ----------
+    op : :ref:`Operation`
+        The operation, whose T-depth should be estimated.
+    epsilon : float, optional
+        Deprecated. If given, rotations that are neither Clifford nor T gates
+        cost $3\text{log}_2(\frac{1}{\epsilon})$ T-gates, following
+        `this paper <https://arxiv.org/abs/1403.2975>`_, instead of raising.
+
+    Returns
+    -------
+    float
+        The estimated T-depth of the Operation.
+
+    Raises
+    ------
+    ValueError
+        If the operation contains a rotation that is neither a Clifford nor a
+        T gate, and ``epsilon`` is not given.
+
+    """
+    if epsilon is not None:
+        warnings.warn(
+            "The ``epsilon`` argument of ``t_depth_indicator`` is deprecated and will be removed in a "
+            "future release: there is no generally sensible choice for it. Use a custom depth indicator "
+            "to assign a T-depth to rotations that are neither Clifford nor T gates.",
+            QrispDeprecationWarning,
+            stacklevel=2,
+        )
+    return _t_depth_indicator(op, epsilon)
 
 
 def cnot_depth_indicator(op):

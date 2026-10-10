@@ -17,6 +17,9 @@
 """Tests QuantumCircuit cnot_depth and t_depth computation."""
 
 import numpy as np
+import pytest
+
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 def test_depth_computation():
@@ -38,4 +41,5 @@ def test_depth_computation():
     qc.cx(0, 1)
     qc.rx(2 * np.pi * 3 / 2**4, 1)
 
-    assert qc.t_depth(epsilon=2**-5) == 16
+    with pytest.warns(QrispDeprecationWarning):
+        assert qc.t_depth(epsilon=2**-5) == 16
