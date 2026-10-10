@@ -2247,3 +2247,25 @@ def swap_endianness(vec: ArrayLike, n: ArrayLike) -> jax.Array:
     """
     r = _bitrev_indices(n)
     return vec[r]
+
+
+def append_gate(gate, gate_list=None):
+    """Append ``gate`` to ``gate_list`` and return the updated list.
+
+    Parameters
+    ----------
+    gate : Any
+        The gate to append.
+    gate_list : list, optional
+        The list of gates to append to. If None, a new empty list is created.
+
+    Returns
+    -------
+    list
+        The updated list of gates.
+
+    """
+    if gate_list is None:
+        gate_list = []
+    gate_list.append(gate)
+    return gate_list
