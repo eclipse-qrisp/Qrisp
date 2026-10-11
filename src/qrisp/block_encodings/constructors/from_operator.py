@@ -16,9 +16,12 @@
 
 """Builds a BlockEncoding from a QubitOperator or FermionicOperator via its Pauli-string LCU decomposition."""
 
+import numpy as np
+
 from qrisp.block_encodings.block_encoding_base import BlockEncoding
 from qrisp.block_encodings.constructors.from_lcu import build_from_lcu
 from qrisp.operators import FermionicOperator, QubitOperator
+from qrisp.operators.qubit.qubit_operator import threshold
 
 
 def build_from_operator(
@@ -37,24 +40,34 @@ def build_from_operator(
     Returns
     -------
     BlockEncoding
-        A BlockEncoding representing the Hermitian part $(O+O^{\dagger})/2$.
+        A BlockEncoding representing $O$.
 
     Notes
     -----
-    - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real positive coefficients
-      and $P_i$ are Pauli strings (including the respective sign).
+    - Block encoding based on Pauli decomposition $O=\sum_i\alpha_ie^{i\phi_i}P_i$ where $\alpha_i$ are real nonnegative coefficients
+      and $P_i$ are Pauli strings. The phases $e^{i\phi_i}$ are applied together with the respective Pauli strings.
     - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
+    - The block-encoding unitary is Hermitian if $O$ is Hermitian.
 
     Examples
     --------
     >>> from qrisp.block_encodings import BlockEncoding
-    >>> from qrisp.operators import X, Y, Z
+    >>> from qrisp.operators import A, C, X, Y, Z
     >>> H = X(0)*X(1) + 0.2*Y(0)*Y(1)
     >>> B = BlockEncoding.from_operator(H)
+
+    Non-Hermitian operators are block-encoded as well:
+
+    >>> O = A(0)*C(1) + 0.5j*Z(0)
+    >>> B = BlockEncoding.from_operator(O)
 
     """
     if isinstance(O, FermionicOperator):
         O = O.to_qubit_operator()
 
+    O = O.to_pauli()
+    # Pauli strings are Hermitian, hence O is Hermitian iff all coefficients are real
+    is_hermitian = all(abs(np.imag(coeff)) < threshold for coeff in O.terms_dict.values())
+
     unitaries, coeffs = O.unitaries()
-    return build_from_lcu(cls, coeffs, unitaries, is_hermitian=True)
+    return build_from_lcu(cls, coeffs, unitaries, is_hermitian=is_hermitian)

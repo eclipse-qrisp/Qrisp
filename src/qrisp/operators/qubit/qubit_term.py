@@ -586,13 +586,13 @@ class QubitTerm:
     # Unitary
     #
 
-    def unitary(self, sign=False):
-        """Returns the unitary for the term self.
+    def unitary(self, phase=0):
+        r"""Returns the unitary for the term self.
 
         Parameters
         ----------
-            sign : bool
-                A Boolean indicating whether a phase -1 must be applied. The default is False.
+            phase : float
+                The global phase $\phi$ of the unitary, i.e., the term is multiplied by $e^{i\phi}$. The default is 0.
 
         """
 
@@ -605,8 +605,8 @@ class QubitTerm:
                 elif factor == "Z":
                     z(operand[i])
 
-            if sign:
-                gphase(np.pi, operand[0])
+            if phase:
+                gphase(phase, operand[0])
 
         return unitary_
 

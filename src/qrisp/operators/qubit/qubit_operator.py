@@ -2125,19 +2125,14 @@ class QubitOperator(Hamiltonian):
 
     def unitaries(self):
         r"""Returns unitiaries and coefficients for the Pauli representation of the operator.
-        Note that this method will always consider the **hermitized** operator, i.e.
-
-        .. math::
-
-            H = (O + O^\dagger)/2
-
         The Pauli representation reads
 
         .. math::
 
-            H = \sum_{i=0}^{M-1}\alpha_iP_i
+            O = \sum_{i=0}^{M-1}\alpha_ie^{i\phi_i}P_i
 
-        where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corressponding to a phase shift).
+        where $\alpha_i$ are nonnegative coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are Pauli operators, and the phase $e^{i\phi_i}$ is applied by the respective unitary.
+        For a Hermitian operator, all phases are $\pm1$.
 
         Returns
         -------
@@ -2224,15 +2219,15 @@ class QubitOperator(Hamiltonian):
         and the resulting state is $(2\ket{3}-\ket{0})/\sqrt{5}$.
 
         """
-        hamiltonian = self.hermitize()
-        hamiltonian = hamiltonian.to_pauli()
-
         unitaries = []
         coefficients = []
 
-        for term, coeff in hamiltonian.terms_dict.items():
-            coeff_ = np.real(coeff)
-            unitaries.append(term.unitary(sign=(coeff_ < 0)))
-            coefficients.append(np.abs(coeff_))
+        for term, coeff in self.to_pauli().terms_dict.items():
+            coeff = complex(coeff)
+            # Discard rounding noise so that real coefficients only result in a sign
+            if abs(coeff.imag) < threshold:
+                coeff = coeff.real
+            unitaries.append(term.unitary(phase=np.angle(coeff)))
+            coefficients.append(np.abs(coeff))
 
         return unitaries, np.array(coefficients, dtype=float)

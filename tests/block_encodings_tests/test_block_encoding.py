@@ -51,6 +51,29 @@ def test_block_encoding_from_array():
     assert res == {1.0: 0.5, 3.0: 0.5}
 
 
+def test_block_encoding_from_array_non_hermitian():
+    rng = np.random.default_rng(42)
+    A = rng.normal(size=(4, 4)) + 1j * rng.normal(size=(4, 4))
+    b = rng.normal(size=4)
+    B = BlockEncoding.from_array(A)
+    assert not B.is_hermitian
+    assert BlockEncoding.from_array(A + A.conj().T).is_hermitian
+
+    def operand_prep():
+        operand = QuantumFloat(2)
+        prepare(operand, b)
+        return operand
+
+    @terminal_sampling
+    def main():
+        return B.apply_rus(operand_prep)()
+
+    res_dict = main()
+    amps = np.sqrt([res_dict.get(i, 0) for i in range(4)])
+    expected = np.abs(A @ b) / np.linalg.norm(A @ b)
+    assert np.allclose(amps, expected, atol=1e-6)
+
+
 def test_block_encoding_from_lcu():
     def f0(x):
         x -= 1
@@ -71,6 +94,7 @@ def test_block_encoding_from_lcu():
 def test_block_encoding_from_operator():
     H = X(0) * X(1) + 0.2 * Y(0) * Y(1)
     B = BlockEncoding.from_operator(H)
+    assert B.is_hermitian
 
     @terminal_sampling
     def main():
@@ -78,6 +102,20 @@ def test_block_encoding_from_operator():
 
     res = main()
     assert res == {3.0: 1.0}
+
+
+def test_block_encoding_from_operator_non_hermitian():
+    # The Hermitian part of O is the identity, which would leave |0> unchanged
+    O = 1 + 1j * X(0)
+    B = BlockEncoding.from_operator(O)
+    assert not B.is_hermitian
+
+    @terminal_sampling
+    def main():
+        return B.apply_rus(lambda: QuantumFloat(1))()
+
+    res = main()
+    assert res == pytest.approx({0.0: 0.5, 1.0: 0.5})
 
 
 def test_block_encoding_from_eye():

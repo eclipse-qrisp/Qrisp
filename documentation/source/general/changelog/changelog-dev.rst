@@ -400,6 +400,14 @@ API Changes
   raise ``ValueError``
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* :ref:`BlockEncoding.from_array <BlockEncoding.from_array>` and
+  :ref:`BlockEncoding.from_operator <BlockEncoding.from_operator>` now
+  block-encode non-Hermitian matrices and operators as they are, instead of
+  their Hermitian part :math:`(A+A^{\dagger})/2`. Likewise,
+  :meth:`QubitOperator.unitaries <qrisp.operators.qubit.QubitOperator.unitaries>`
+  no longer hermitizes the operator: the phases of complex Pauli coefficients
+  are applied by the respective unitaries. Hermitian inputs are unaffected.
+
 .. Add API changes above this line
 
 Development

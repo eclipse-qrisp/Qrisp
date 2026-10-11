@@ -19,7 +19,7 @@
 import numpy as np
 
 from qrisp import LCU, QuantumVariable, prepare, terminal_sampling
-from qrisp.operators import X, Z
+from qrisp.operators import A, C, X, Z
 
 
 def test_operators_LCU():
@@ -52,3 +52,19 @@ def test_operators_LCU():
 
     assert (np.abs(res_dict[0] - 1)) < 1e-4
     assert (np.abs(res_dict[3] - 2)) < 1e-4
+
+
+def test_operators_unitaries_non_hermitian():
+
+    O = A(0) * C(1) + 0.5j * Z(0) - 0.3 * X(1) + 2
+
+    unitaries, coeffs = O.unitaries()
+    assert np.all(coeffs >= 0)
+
+    M = 0
+    for U, c in zip(unitaries, coeffs):
+        qv = QuantumVariable(2)
+        U(qv)
+        M = M + c * qv.qs.get_unitary()
+
+    assert np.allclose(M, O.to_array(2))

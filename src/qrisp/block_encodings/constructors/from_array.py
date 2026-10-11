@@ -41,7 +41,7 @@ def build_from_array(cls: type[BlockEncoding], A: MatrixType) -> BlockEncoding:
     Returns
     -------
     BlockEncoding
-        A BlockEncoding representing the Hermitian part $(A+A^{\dagger})/2$.
+        A BlockEncoding representing $A$.
 
     Raises
     ------
@@ -52,9 +52,10 @@ def build_from_array(cls: type[BlockEncoding], A: MatrixType) -> BlockEncoding:
 
     Notes
     -----
-    - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real positive coefficients
-      and $P_i$ are Pauli strings (including the respective sign).
+    - Block encoding based on Pauli decomposition $A=\sum_i\alpha_ie^{i\phi_i}P_i$ where $\alpha_i$ are real nonnegative coefficients
+      and $P_i$ are Pauli strings. The phases $e^{i\phi_i}$ are applied together with the respective Pauli strings.
     - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
+    - The block-encoding unitary is Hermitian if $A$ is Hermitian.
 
     Examples
     --------
