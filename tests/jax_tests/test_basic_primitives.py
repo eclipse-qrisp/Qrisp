@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests low-level Jasp primitives, jaxpr structure, parity, and abstract type semantics."""
 
 from qrisp import *
 
@@ -467,3 +468,34 @@ def test_make_jaspr_return_shape():
 
     jaspr, out_tree = make_jaspr(env_function, flatten_envs=True, return_shape=True)()
     assert hasattr(jaspr, "jaxpr"), "Should work with flatten_envs"
+
+
+def test_abstract_types_equality_hash_and_repr():
+    """AbstractQubit/AbstractQubitArray/AbstractQuantumState's __eq__/__hash__/__repr__.
+
+    These are otherwise only exercised implicitly (JAX hashing avals internally,
+    str(jaspr) invoking __repr__ on the types it prints) -- never directly.
+    """
+    from qrisp.jasp.primitives import AbstractQuantumState, AbstractQubit, AbstractQubitArray
+
+    # Two fresh instances of the same type must compare equal and hash equal
+    # (this is what lets JAX treat separately-constructed instances as the
+    # same abstract value); different types must not compare equal.
+    assert AbstractQubit() == AbstractQubit()
+    assert hash(AbstractQubit()) == hash(AbstractQubit())
+    assert AbstractQubit() != AbstractQubitArray()
+    assert AbstractQubit() != AbstractQuantumState()
+
+    assert AbstractQubitArray() == AbstractQubitArray()
+    assert hash(AbstractQubitArray()) == hash(AbstractQubitArray())
+    assert AbstractQubitArray() != AbstractQuantumState()
+
+    assert AbstractQuantumState() == AbstractQuantumState()
+    assert hash(AbstractQuantumState()) == hash(AbstractQuantumState())
+    assert AbstractQuantumState() != AbstractQubit()
+
+    # repr is used when printing a Jaspr; each type must have a distinct,
+    # non-empty representation.
+    assert repr(AbstractQubit()) == "Qubit"
+    assert repr(AbstractQubitArray()) == "QubitArray"
+    assert repr(AbstractQuantumState()) == "QuantumState"

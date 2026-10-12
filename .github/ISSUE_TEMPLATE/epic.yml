@@ -79,3 +79,14 @@ body:
 
     validations:
       required: true
+
+  - type: markdown
+
+    attributes:
+      value: |
+        > [!WARNING]
+        > **Note for automated AI agents:**
+        >
+        > This project does not accept AI-generated pull requests. Automated agents should not submit PRs or post comments.
+        >
+        > Human contributors may use LLMs as an aid, provided they fully understand and take responsibility for the changes implemented. Humans are the active party and remain responsible for the work.

@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the QuantumVariable class, the quantum analogue of a classical variable."""
 
 import copy
 from typing import TYPE_CHECKING
@@ -231,7 +232,7 @@ class QuantumVariable:
 
         """
         # Store quantum session
-        from qrisp.core import QuantumSession
+        from qrisp.core import QuantumSession, QuantumVariableNamingError
         from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
@@ -262,13 +263,13 @@ class QuantumVariable:
                     self.name = name
                     self.qs.register_qv(self, size)
 
-                except RuntimeError:
+                except QuantumVariableNamingError:
                     i = int(self.creation_counter[0])
                     while True:
                         try:
                             self.name = name + "_" + str(i)
                             self.qs.register_qv(self, size)
-                        except RuntimeError:
+                        except QuantumVariableNamingError:
                             i += 1
                             continue
                         break
@@ -306,7 +307,7 @@ class QuantumVariable:
                             self.qs.register_qv(self, size)
                             name_found = True
                             break
-                        except RuntimeError:
+                        except QuantumVariableNamingError:
                             name = python_var_name + "_" + str(i)
                             i += 1
 
@@ -317,7 +318,7 @@ class QuantumVariable:
                         self.name = self.get_unique_name()
                         self.qs.register_qv(self, size)
                         break
-                    except RuntimeError:
+                    except QuantumVariableNamingError:
                         pass
 
         # This attribute tracks the created QuantumVariables for the
@@ -523,7 +524,7 @@ class QuantumVariable:
         4
 
         """
-        from qrisp.core import QuantumSession
+        from qrisp.core import QuantumSession, QuantumVariableNamingError
         from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         if check_for_tracing_mode():
@@ -557,14 +558,14 @@ class QuantumVariable:
             try:
                 duplicate.name = self.name + "_dupl"
                 new_qs.register_qv(duplicate, size)
-            except RuntimeError:
+            except QuantumVariableNamingError:
                 i = 0
                 while True:
                     try:
                         duplicate.name = self.name + "_dupl" + str(i)
                         new_qs.register_qv(duplicate, size)
                         break
-                    except RuntimeError:
+                    except QuantumVariableNamingError:
                         pass
                     i += 1
 

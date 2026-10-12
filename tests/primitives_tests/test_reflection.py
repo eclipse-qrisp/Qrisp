@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests for the reflection primitive with various input types, including under Jasp."""
 
 from qrisp import OutcomeArray, QuantumArray, QuantumFloat, QuantumVariable, cx, h, multi_measurement, reflection, x
 from qrisp.jasp import jrange, terminal_sampling
@@ -44,18 +45,6 @@ def test_reflection_quantum_variable():
     reflection(qv, ghz)
     res = qv.get_measurement()
     assert res == {"00000": 1.0}
-
-
-def test_reflection_quantum_array():
-    """Tests that the reflection primitive correctly applies a reflection around a GHZ state with QuantumArray input."""
-    qa = QuantumArray(QuantumFloat(3), shape=(3,))
-    x(qa)
-    res = qa.get_measurement()
-    assert res == {OutcomeArray([7, 7, 7]): 1.0}
-
-    reflection(qa, ghz)
-    res = qa.get_measurement()
-    assert res == {OutcomeArray([0, 0, 0]): 1.0}
 
 
 def test_reflection_quantum_array():
