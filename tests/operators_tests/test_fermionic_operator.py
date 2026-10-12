@@ -66,26 +66,27 @@ def test_reduce_cancellation_and_complex_coefficient():
     assert F2.reduce().len() == 2
 
 
-def test_equality():
-    """Tests structural equality of equal operators."""
-    F = c(0) * a(1) + 3.0
-    assert F == c(0) * a(1) + 3.0
-
-
 @pytest.mark.parametrize(
-    "left, right",
+    "left, right, expected_equal",
     [
+        # equal operators
+        (c(0) * a(1) + 3.0, c(0) * a(1) + 3.0, True),
         # different number of terms
-        (c(0) * a(1) + 3.0, c(0) * a(1)),
+        (c(0) * a(1) + 3.0, c(0) * a(1), False),
         # same number of terms but different coefficients
-        (FermionicOperator({_t(0): 1.0}), FermionicOperator({_t(0): 2.0})),
+        (FermionicOperator({_t(0): 1.0}), FermionicOperator({_t(0): 2.0}), False),
         # the (daggered) term is not present in the reduced other operator
-        (FermionicOperator({_t(0): 1.0}), FermionicOperator({_t(1): 1.0})),
+        (FermionicOperator({_t(0): 1.0}), FermionicOperator({_t(1): 1.0}), False),
+        # the sorted dagger of the self term is present, but the coefficients differ
+        (FermionicOperator({_t(0): 1.0}), FermionicOperator({FermionicTerm([(0, True)]): 2.0}), False),
+        # matching coefficients are treated as equal (Hermitian conjugate terms)
+        (FermionicOperator({_t(0): 1.0}), FermionicOperator({FermionicTerm([(0, True)]): 1.0}), True),
     ],
 )
-def test_inequality(left, right):
-    """Tests the branches that make two operators compare unequal."""
-    assert left != right
+def test_equality(left, right, expected_equal):
+    """Tests the branches of ``__eq__`` for equal and unequal operators."""
+    assert (left == right) is expected_equal
+    assert (left != right) is not expected_equal
 
 
 @pytest.mark.parametrize(
@@ -133,15 +134,12 @@ def test_add_sub_cancellation_branches(operation, left_terms, right_terms, expec
 
 
 def test_inplace_arithmetic():
-    """Tests the in-place arithmetic operators."""
+    """Tests the in-place arithmetic operators, including cancellation and non-cancelling paths."""
     F = a(0) + c(1)
-
     F += 1
-    assert isinstance(F, FermionicOperator)
-
+    assert F.len() == 3
     F -= 1
     assert isinstance(F, FermionicOperator)
-
     F *= 2
     assert isinstance(F, FermionicOperator)
 
@@ -150,6 +148,11 @@ def test_inplace_arithmetic():
     G += FermionicOperator({_t(0): -1.0})
     assert G.len() == 0
 
+    # non-cancelling in-place addition keeps both terms
+    N = FermionicOperator({_t(0): 1.0})
+    N += FermionicOperator({_t(1): 1.0})
+    assert N.len() == 2
+
     # in-place subtraction (scalar and operator paths)
     H = FermionicOperator({_t(0): 2.0})
     H -= 1
@@ -157,6 +160,11 @@ def test_inplace_arithmetic():
     H = FermionicOperator({_t(0): 1.0})
     H -= FermionicOperator({_t(0): 1.0})
     assert H.len() == 0
+
+    # non-cancelling in-place subtraction keeps both terms
+    S = FermionicOperator({_t(0): 1.0})
+    S -= FermionicOperator({_t(1): 1.0})
+    assert S.len() == 2
 
     # in-place multiplication (scalar and operator paths)
     K = a(0) + c(1)
@@ -253,20 +261,6 @@ def test_reduce_assume_hermitian():
 
 
 @pytest.mark.parametrize(
-    "other, expected_equal",
-    [
-        # the sorted dagger of the self term is present, but the coefficients differ
-        (FermionicOperator({FermionicTerm([(0, True)]): 2.0}), False),
-        # matching coefficients are treated as equal (Hermitian conjugate terms)
-        (FermionicOperator({FermionicTerm([(0, True)]): 1.0}), True),
-    ],
-)
-def test_equality_daggered_coefficient(other, expected_equal):
-    """Tests the daggered-term coefficient comparison in ``__eq__``."""
-    assert (FermionicOperator({_t(0): 1.0}) == other) is expected_equal
-
-
-@pytest.mark.parametrize(
     "other, expected_len",
     [
         # zero coefficient of self is removed in __rsub__
@@ -278,19 +272,6 @@ def test_equality_daggered_coefficient(other, expected_equal):
 def test_rsub_cleanup(other, expected_len):
     """Tests the zero-coefficient cleanup branches of ``__rsub__``."""
     assert (1 - other).len() == expected_len
-
-
-@pytest.mark.parametrize(
-    "method, expected_len",
-    [
-        ("__iadd__", 2),
-        ("__isub__", 2),
-    ],
-)
-def test_inplace_non_cancelling_terms(method, expected_len):
-    """Tests in-place arithmetic when terms do not cancel."""
-    F = FermionicOperator({_t(0): 1.0})
-    assert getattr(F, method)(FermionicOperator({_t(1): 1.0})).len() == expected_len
 
 
 def test_from_pyscf():

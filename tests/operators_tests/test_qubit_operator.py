@@ -35,6 +35,18 @@ GROUPING_OPERATORS = [
     X(0) + Y(1) + Z(2),
 ]
 
+# Operators exercising the Pauli, sparse, and ladder factor branches of the conjugation circuit.
+CONJUGATION_OPERATORS = [
+    X(0),
+    Y(0),
+    X(0) * Z(1),
+    Z(0) * Z(2) + Z(0),
+    A(0),
+    A(0) * C(1),
+    C(0) * A(1),
+    X(0) * Y(1) + X(0) * Z(2),
+]
+
 
 def _commute(a, b):
     """Predicate testing full commutativity of two terms."""
@@ -70,8 +82,9 @@ def _operator_unitary(qv):
 
 
 def test_qubit_operator_mul_by_zero():
-    """Test that multiplying a QubitOperator by zero results in an operator with an empty terms dict,
-    rather than a dict with a single term with zero coefficient.
+    """Test that multiplying a QubitOperator by zero results in an empty terms dict.
+
+    This checks that a zero coefficient does not leave a single zero-valued term behind.
     """
     op = X(1) * 0
     assert op.terms_dict == {}
@@ -194,54 +207,40 @@ def test_identity_factory_invalid_type():
         I(0.5)
 
 
-@pytest.mark.parametrize("scalar", [1, 2.5, 1j, -3])
-def test_add_and_radd(scalar):
-    """Tests ``__add__``/``__radd__`` with a scalar."""
-    plus = X(0) + scalar
-    assert np.allclose(plus.to_array(1), X(0).to_array(1) + scalar * np.eye(2))
-    assert (scalar + X(0)).terms_dict == plus.terms_dict
+@pytest.mark.parametrize("scalar", [1, 2.5, 1j, -3, 2j, -0.5, 3 + 1j])
+def test_scalar_arithmetic(scalar):
+    """Tests scalar ``__add__``/``__radd__``, ``__sub__``/``__rsub__`` and ``__mul__``/``__rmul__``."""
+    identity = np.eye(2)
+    x = X(0).to_array(1)
+
+    assert np.allclose((X(0) + scalar).to_array(1), x + scalar * identity)
+    assert np.allclose((scalar + X(0)).to_array(1), x + scalar * identity)
+    assert np.allclose((X(0) - scalar).to_array(1), x - scalar * identity)
+    assert np.allclose((scalar - X(0)).to_array(1), scalar * identity - x)
+    assert np.allclose((X(0) * scalar).to_array(1), scalar * x)
+    assert np.allclose((scalar * X(0)).to_array(1), scalar * x)
 
 
-def test_add_and_radd_operators():
-    """Tests ``__add__``/``__radd__`` with operators."""
+def test_operator_arithmetic():
+    """Tests operator ``__add__``, ``__sub__`` and ``__mul__``."""
     assert (X(0) + Z(0)).len() == 2
     assert (X(0) - X(0)).len() == 0
     assert (X(0) + (-X(0))).len() == 0
 
-
-@pytest.mark.parametrize("scalar", [1, 2.5, 1j, -3])
-def test_sub_and_rsub(scalar):
-    """Tests ``__sub__``/``__rsub__`` with a scalar."""
-    minus = X(0) - scalar
-    assert np.allclose(minus.to_array(1), X(0).to_array(1) - scalar * np.eye(2))
-
-    reversed_ = scalar - X(0)
-    assert np.allclose(reversed_.to_array(1), scalar * np.eye(2) - X(0).to_array(1))
-
-
-def test_sub_and_rsub_operators():
-    """Tests ``__sub__``/``__rsub__`` with operators."""
     diff = (X(0) + Z(0)) - (X(0) - Z(0))
     assert np.allclose(diff.to_array(1), 2 * Z(0).to_array(1))
 
-
-@pytest.mark.parametrize("scalar", [2, 2j, -0.5, 3 + 1j])
-def test_mul_and_rmul(scalar):
-    """Tests ``__mul__``/``__rmul__`` with a scalar."""
-    left = scalar * X(0)
-    right = X(0) * scalar
-    assert np.allclose(left.to_array(1), scalar * X(0).to_array(1))
-    assert left.terms_dict == right.terms_dict
+    assert np.allclose((X(0) * Z(0)).to_array(1), X(0).to_array(1) @ Z(0).to_array(1))
+    h1, h2 = X(0) + Z(0), X(0) - Z(0)
+    assert np.allclose((h1 * h2).to_array(1), h1.to_array(1) @ h2.to_array(1))
 
 
-def test_mul_and_rmul_operators():
-    """Tests ``__mul__`` with operators."""
-    product = X(0) * Z(0)
-    assert np.allclose(product.to_array(1), X(0).to_array(1) @ Z(0).to_array(1))
-
-    H1 = X(0) + Z(0)
-    H2 = X(0) - Z(0)
-    assert np.allclose((H1 * H2).to_array(1), H1.to_array(1) @ H2.to_array(1))
+def test_rsub_zero_coefficient_cleanup():
+    """Tests the zero-coefficient cleanup branches of ``__rsub__``."""
+    # the zero-coefficient term of self is removed in the self loop
+    assert (1 - QubitOperator({QubitTerm(): 0.0})).terms_dict == {QubitTerm(): 1.0}
+    # the identity term of self cancels with the scalar identity term in the other loop
+    assert (3 - QubitOperator({QubitTerm(): 3.0})).len() == 0
 
 
 @pytest.mark.parametrize(
@@ -365,27 +364,16 @@ def test_from_numpy_array(operator):
     assert np.allclose(QubitOperator.from_numpy_array(arr).to_array(), arr)
 
 
+@pytest.mark.parametrize("matrix_factory", [np.asarray, csr_matrix], ids=["dense", "sparse"])
 @pytest.mark.parametrize(
     "reverse_endianness, expected",
     [(False, X(0) * Z(1)), (True, Z(0) * X(1))],
 )
-def test_from_matrix_endianness(reverse_endianness, expected):
-    """Tests ``from_matrix`` for both endianness conventions."""
-    matrix = (X(0) * Z(1)).to_array()
+def test_from_matrix(matrix_factory, reverse_endianness, expected):
+    """Tests ``from_matrix`` for dense/sparse input and both endianness conventions."""
+    matrix = matrix_factory((X(0) * Z(1)).to_array())
     result = QubitOperator.from_matrix(matrix, reverse_endianness=reverse_endianness)
     assert np.allclose(result.to_array(), expected.to_array())
-
-
-@pytest.mark.parametrize(
-    "matrix",
-    [
-        (X(0) * Z(1)).to_array(),
-        csr_matrix((X(0) * Z(1)).to_array()),
-    ],
-)
-def test_from_matrix_input_types(matrix):
-    """Tests ``from_matrix`` for dense and sparse input."""
-    assert np.allclose(QubitOperator.from_matrix(matrix).to_array(), (X(0) * Z(1)).to_array())
 
 
 def test_from_matrix_invalid_type():
@@ -455,16 +443,13 @@ def test_to_pauli_scalar():
     [
         (X(0) + 0.5 * Y(1), {((0, "X"),): 1, ((1, "Y"),): 0.5}),
         (QubitOperator() + 7, {(): 7}),
+        (X(0) * Z(2), {((0, "X"), (2, "Z")): 1}),
     ],
 )
 def test_to_pauli_dict(operator, expected):
-    """Tests ``_to_pauli_dict`` values."""
-    assert operator._to_pauli_dict() == expected
-
-
-def test_to_pauli_dict_key_format():
-    """Tests ``_to_pauli_dict`` key format."""
-    res = (X(0) * Z(2))._to_pauli_dict()
+    """Tests ``_to_pauli_dict`` values and key format."""
+    res = operator._to_pauli_dict()
+    assert res == expected
     for key in res:
         indices = [index for index, _ in key]
         assert indices == sorted(indices)
@@ -554,18 +539,15 @@ def test_group_up_edge_cases():
 @pytest.mark.parametrize("operator", GROUPING_OPERATORS)
 @pytest.mark.parametrize("use_graph_coloring", [True, False])
 def test_commuting_qw_groups(operator, use_graph_coloring):
-    """Tests ``commuting_qw_groups`` for both grouping strategies."""
+    """Tests ``commuting_qw_groups`` for both grouping strategies and the basis output."""
     groups = operator.commuting_qw_groups(use_graph_coloring=use_graph_coloring)
     _assert_grouping(operator, groups, _commute_qw)
 
-
-@pytest.mark.parametrize("operator", GROUPING_OPERATORS)
-def test_commuting_qw_groups_bases(operator):
-    """Tests ``commuting_qw_groups`` returns a basis per group on request."""
-    groups, bases = operator.commuting_qw_groups(show_bases=True)
+    groups, bases = operator.commuting_qw_groups(show_bases=True, use_graph_coloring=use_graph_coloring)
     assert len(groups) == len(bases)
-    for base in bases:
-        assert all(factor in ("X", "Y", "Z") for factor in base.factor_dict.values())
+    if use_graph_coloring:
+        for base in bases:
+            assert all(factor in ("X", "Y", "Z") for factor in base.factor_dict.values())
 
 
 @pytest.mark.parametrize(
@@ -604,9 +586,9 @@ def test_change_of_basis_insufficient_qubits():
         X(2).change_of_basis(QuantumVariable(2))
 
 
-@pytest.mark.parametrize("operator", [X(0), X(0) * Z(1), A(0) * C(1)])
+@pytest.mark.parametrize("operator", CONJUGATION_OPERATORS)
 def test_get_conjugation_circuit(operator):
-    """Tests ``get_conjugation_circuit`` returns a circuit and the operator."""
+    """Tests ``get_conjugation_circuit`` across Pauli, sparse, and ladder factors."""
     qc, op = operator.get_conjugation_circuit()
     assert qc.num_qubits() == operator.find_minimal_qubit_amount()
     assert op.terms_dict == operator.terms_dict
@@ -686,31 +668,6 @@ def test_isub_loops_over_multiple_terms():
     assert H.terms_dict == (X(0) + Z(0) - X(1) - Z(1)).terms_dict
 
 
-@pytest.mark.parametrize(
-    "operator",
-    [
-        X(0),
-        Y(0),
-        Z(0) * Z(2) + Z(0),
-        A(0),
-        C(0) * A(1),
-        X(0) * Y(1) + X(0) * Z(2),
-    ],
-)
-def test_get_conjugation_circuit_branches(operator):
-    """Tests ``get_conjugation_circuit`` across Pauli, sparse, and ladder factors."""
-    qc, op = operator.get_conjugation_circuit()
-    assert qc.num_qubits() == operator.find_minimal_qubit_amount()
-    assert op.terms_dict == operator.terms_dict
-
-
-@pytest.mark.parametrize("use_graph_coloring", [True, False])
-def test_commuting_qw_groups_with_bases(use_graph_coloring):
-    """Tests ``commuting_qw_groups(show_bases=True)`` for both grouping methods."""
-    groups, bases = (X(0) + Y(1)).commuting_qw_groups(show_bases=True, use_graph_coloring=use_graph_coloring)
-    assert len(groups) == len(bases)
-
-
 def test_change_of_basis_commuting_without_qarg():
     """Tests the ``commuting`` method when no quantum argument is supplied."""
     res = (X(0) * Z(1) + Z(0) * X(1)).change_of_basis(method="commuting")
@@ -740,3 +697,22 @@ def test_trotterization_second_order_jasp():
 
     for key, value in jasp_res.items():
         assert np.isclose(value, qrisp_res[format(int(key), "02b")], atol=1e-3)
+
+
+def test_trotterization_unsupported_order_is_noop():
+    """Tests that an unsupported Trotter order falls through without applying gates."""
+    qv = QuantumVariable(2)
+    (X(0) + Z(1)).trotterization(order=3)(qv, t=0.3, steps=1)
+    assert qv.get_measurement() == {"00": 1.0}
+
+
+def test_trotterization_unsupported_order_jasp():
+    """Tests the unsupported-order fallthrough under Jasp tracing."""
+    from qrisp.jasp import terminal_sampling
+
+    def main():
+        qv = QuantumVariable(2)
+        (Y(0) * X(1) + Z(0) * Z(1)).trotterization(order=3)(qv, 1.0, steps=2)
+        return qv
+
+    assert terminal_sampling(main)() == {0: 1.0}
