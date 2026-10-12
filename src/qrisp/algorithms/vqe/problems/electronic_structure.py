@@ -35,9 +35,6 @@ if TYPE_CHECKING:
     from qrisp.core import QuantumVariable
     from qrisp.typing import FloatLike, QubitLike
 
-# Tolerance used when verifying the symmetries of the two-electron integrals.
-_SYMMETRY_THRESHOLD = 1e-9
-
 #
 # helper functions
 #
@@ -65,7 +62,7 @@ def verify_symmetries(two_int: np.ndarray) -> bool:
                     test1 = abs(two_int[i][j][k][m] - two_int[j][i][m][k])
                     test2 = abs(two_int[i][j][k][m] - two_int[k][m][i][j])
                     test3 = abs(two_int[i][j][k][m] - two_int[m][k][j][i])
-                    if test1 > _SYMMETRY_THRESHOLD or test2 > _SYMMETRY_THRESHOLD or test3 > _SYMMETRY_THRESHOLD:
+                    if test1 > 1e-9 or test2 > 1e-9 or test3 > 1e-9:
                         return False
     return True
 
