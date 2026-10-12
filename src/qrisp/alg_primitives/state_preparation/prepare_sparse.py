@@ -19,7 +19,7 @@ import numpy as np
 import scipy as sc
 import sympy
 
-from qrisp import QuantumVariable, U3Gate, append_operation, check_for_tracing_mode, cx, gphase, invert, u3, x
+from qrisp import QuantumVariable, U3Gate, append_operation, check_for_tracing_mode, cx, gphase, invert, control, u3, x
 
 
 def prepare_sparse(
@@ -27,6 +27,7 @@ def prepare_sparse(
     target_state: sc.sparse.coo_array | dict,
     reverse: bool = False,
     method: str = "gleinig_hoefler",
+    use_ancillas: bool = False,
 ):
     r"""Prepare a sparse quantum state on ``qv``.
 
@@ -98,12 +99,12 @@ def prepare_sparse(
         )
 
     if method == "gleinig_hoefler":
-        _prepare_gleinig_hoefler(qv, coeffs)
+        _prepare_gleinig_hoefler(qv, coeffs, use_ancillas=use_ancillas)
     else:
         raise ValueError(f"Method {method} not known.")
 
 
-def _prepare_gleinig_hoefler(qv: QuantumVariable, coeffs: dict):
+def _prepare_gleinig_hoefler(qv: QuantumVariable, coeffs: dict, use_ancillas: bool = False):
     r"""Prepare a sparse quantum state according to the Gleinig-Hoefler algorithm.
 
     It computes a circuit that iteratively reduces the number of non-zero entries in the target state
@@ -118,7 +119,7 @@ def _prepare_gleinig_hoefler(qv: QuantumVariable, coeffs: dict):
 
     with invert():
         while len(S) > 1:
-            S, coeffs = _gleinig_hoefler_subroutine(qv, S, coeffs, n)
+            S, coeffs = _gleinig_hoefler_subroutine(qv, S, coeffs, n, use_ancillas)
         for i, b in enumerate(S[0]):
             if b:
                 x(qv[i])
@@ -126,7 +127,7 @@ def _prepare_gleinig_hoefler(qv: QuantumVariable, coeffs: dict):
         gphase(-np.angle(list(coeffs.values())[0]), qv[0])
 
 
-def _gleinig_hoefler_subroutine(qv: QuantumVariable, S: list[tuple], coeffs: dict, n: int):
+def _gleinig_hoefler_subroutine(qv: QuantumVariable, S: list[tuple], coeffs: dict, n: int, use_ancillas: bool):
     r"""Subroutine of the Gleinig-Hoefler algorithm, which reduces the number of non-zero entries in the state."""
     diff_qubits = []
     diff_values = []
@@ -165,7 +166,6 @@ def _gleinig_hoefler_subroutine(qv: QuantumVariable, S: list[tuple], coeffs: dic
     U = reduction_loop(U)
     x2 = U[0]
 
-
     alpha, beta = coeffs[x1], coeffs[x2]
 
     x1 = list(x1)
@@ -194,7 +194,7 @@ def _gleinig_hoefler_subroutine(qv: QuantumVariable, S: list[tuple], coeffs: dic
             x1[i] = x1[i] ^ 1
             x2[i] = x2[i] ^ 1
 
-    newvalue = _rotate_state_to_0(qv, diff, diff_qubits, beta, alpha)
+    newvalue = _rotate_state_to_0(qv, diff, diff_qubits, beta, alpha, use_ancillas)
 
     coeffs.pop(tuple(x1))
     coeffs[tuple(x2)] = newvalue
@@ -237,7 +237,14 @@ def _cu3(theta, phi, lam, qubits):
         append_operation(U3Gate(theta, phi, lam).control(len(qubits) - 1), qubits)
 
 
-def _rotate_state_to_0(qv: QuantumVariable, target: int, control: list, alpha: complex | float, beta: complex | float):
+def _cu3_ancilla(theta, phi, lam, qubits):
+    with control(qubits[:-1]):
+        u3(theta, phi, lam, qubits[-1])
+
+
+def _rotate_state_to_0(
+    qv: QuantumVariable, target: int, control: list, alpha: complex | float, beta: complex | float, use_ancillas: bool
+):
     r"""Rotate a state alpha |0> + beta |1> in qubit ``target`` to the state |0>, controlled by the qubits in ``control``."""
     _alpha, _beta, tot_phase, norm = _normal_form(alpha, beta)
 
@@ -245,7 +252,10 @@ def _rotate_state_to_0(qv: QuantumVariable, target: int, control: list, alpha: c
     phi = np.angle(_beta)
 
     if len(control) > 0:
-        _cu3(-theta, 0, -phi, [qv[i] for i in control] + [qv[target]])
+        if use_ancillas:
+            _cu3_ancilla(-theta, 0, -phi, [qv[i] for i in control] + [qv[target]])
+        else:
+            _cu3(-theta, 0, -phi, [qv[i] for i in control] + [qv[target]])
     else:
         u3(-theta, 0, -phi, qv[target])
 
