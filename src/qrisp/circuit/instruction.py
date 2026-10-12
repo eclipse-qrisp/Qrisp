@@ -63,10 +63,12 @@ class Instruction:
 
     """
 
-    def __init__(self, op, qubits=[], clbits=[]):
+    def __init__(self, op, qubits=None, clbits=None):
         self.op = op
-        self.qubits = qubits
-        self.clbits = clbits
+        # Use None as default to avoid sharing one mutable list between all
+        # Instruction instances created without explicit arguments.
+        self.qubits = [] if qubits is None else qubits
+        self.clbits = [] if clbits is None else clbits
 
     def merge(self, other):
         """Merges two instructions into one.
