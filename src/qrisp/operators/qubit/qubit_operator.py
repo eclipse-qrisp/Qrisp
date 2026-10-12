@@ -100,7 +100,7 @@ class QubitOperator(Hamiltonian):
        * - $P_1$
          - :math:`\ket{1}\bra{1}`
          - Projector onto the :math:`\ket{1}` state
-       * - $I$
+       * - $Id$
          - :math:`\ket{1}\bra{1} + \ket{0}\bra{0}`
          - Identity operator
     
@@ -784,7 +784,7 @@ class QubitOperator(Hamiltonian):
 
             O=\sum_i\alpha_i\bigotimes_{j=0}^{n-1}O_{ij}
 
-        where $O_{ij}\in\{X,Y,Z,A,C,P_0,P_1,I\}$.
+        where $O_{ij}\in\{X,Y,Z,A,C,P_0,P_1,Id\}$.
 
         Parameters
         ----------
@@ -869,7 +869,7 @@ class QubitOperator(Hamiltonian):
 
             O=\sum_i\alpha_i\bigotimes_{j=0}^{n-1}O_{ij}
 
-        where $O_{ij}\in\{X,Y,Z,A,C,P_0,P_1,I\}$.
+        where $O_{ij}\in\{X,Y,Z,A,C,P_0,P_1,Id\}$.
 
         Parameters
         ----------
