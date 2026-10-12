@@ -77,7 +77,7 @@ def Z(arg: int) -> QubitOperator:
     raise TypeError("Cannot initialize operator from type " + str(type(arg)))
 
 
-def I(arg: int) -> QubitOperator:  # noqa: E743 -- public API name matching the identity operator
+def Id(arg: int) -> QubitOperator:
     r"""Returns a QubitOperator representing the identity operator acting on qubit ``arg``.
 
     Identity factors are not stored explicitly in a :class:`QubitTerm`, so the
@@ -97,10 +97,10 @@ def I(arg: int) -> QubitOperator:  # noqa: E743 -- public API name matching the 
 
     Examples
     --------
-    >>> from qrisp.operators import I, X
-    >>> print(I(0))
+    >>> from qrisp.operators import Id, X
+    >>> print(Id(0))
     1
-    >>> print(I(0) * X(3))
+    >>> print(Id(0) * X(3))
     X(3)
 
     """

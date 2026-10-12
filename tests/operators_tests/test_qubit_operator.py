@@ -26,7 +26,7 @@ from scipy.linalg import expm
 from scipy.sparse import csr_matrix
 
 from qrisp import QuantumVariable
-from qrisp.operators import P0, P1, A, C, I, QubitOperator, QubitTerm, X, Y, Z
+from qrisp.operators import P0, P1, A, C, Id, QubitOperator, QubitTerm, X, Y, Z
 
 # Operators used to exercise the grouping/basis routines.
 GROUPING_OPERATORS = [
@@ -188,12 +188,12 @@ def test_neg(operator):
 
 @pytest.mark.parametrize("arg", [0, 3, 7])
 def test_identity_factory(arg):
-    """Tests the ``I`` identity factory."""
-    identity = I(arg)
+    """Tests the ``Id`` identity factory."""
+    identity = Id(arg)
 
     # The identity is the scalar 1 and does not depend on the index.
     assert identity.terms_dict == (QubitOperator() + 1).terms_dict
-    assert identity.terms_dict == I(0).terms_dict
+    assert identity.terms_dict == Id(0).terms_dict
     assert identity.find_minimal_qubit_amount() == 0
 
     # Multiplying by the identity leaves an operator unchanged.
@@ -202,9 +202,9 @@ def test_identity_factory(arg):
 
 
 def test_identity_factory_invalid_type():
-    """Tests that the ``I`` factory rejects non-integer indices."""
+    """Tests that the ``Id`` factory rejects non-integer indices."""
     with pytest.raises(TypeError):
-        I(0.5)
+        Id(0.5)
 
 
 @pytest.mark.parametrize("scalar", [1, 2.5, 1j, -3, 2j, -0.5, 3 + 1j])
