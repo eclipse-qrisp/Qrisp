@@ -40,21 +40,29 @@ if TYPE_CHECKING:
     )
 
 # An optional control/carry qubit may be passed as a QuantumBool or a bare Qubit.
-QubitLike: TypeAlias = QuantumBool | Qubit
+OptionalQubit: TypeAlias = QuantumBool | Qubit
 
 # The quantum operands are QuantumVariables (or subclasses), DynamicQubitArrays
 # or plain lists of Qubits (including traced qubits).
 QuantumRegister: TypeAlias = QuantumVariable | DynamicQubitArray | list[Qubit]
 
 
-def _normalize_optional_input_arg(value: QubitLike | None, name: str) -> Qubit | None:
-    """Normalize an optional QuantumBool or Qubit argument to a Qubit.
+def _normalize_optional_input_arg(value: OptionalQubit | None, name: str) -> Qubit | None:
+    """Normalize an optional QuantumBool or Qubit argument to a bare Qubit.
 
-    The ``c_in``, ``c_out`` and ``ctrl`` arguments each accept a QuantumBool, a
-    bare Qubit or None. This helper normalizes such a value to a Qubit (or None)
-    and raises a TypeError for any other type in static mode. It does not touch
-    the circuit or allocate anything, so it can run before any ancilla is
-    created.
+    The purpose of this helper is to centralize the coercion and validation of
+    the optional ``c_in``, ``c_out`` and ``ctrl`` parameters of
+    :func:`cuccaro_adder`, each of which accepts a QuantumBool, a bare Qubit or
+    None, while the gate logic works only with bare Qubits. Defining it once
+    avoids repeating the same unwrapping and validation logic for every
+    parameter.
+
+    A QuantumBool is converted to its underlying Qubit via ``value[0]``, a bare
+    Qubit or None is passed through unchanged, and any other type raises a
+    TypeError in static mode. The helper neither touches the circuit nor
+    allocates qubits, so it can run before any ancilla is created, letting an
+    invalid argument fail cleanly instead of leaving a half-applied circuit
+    behind.
     """
     if value is None:
         return None
@@ -66,6 +74,27 @@ def _normalize_optional_input_arg(value: QubitLike | None, name: str) -> Qubit |
         raise TypeError(f"{name} must be of type QuantumBool or Qubit, not {type(value)}")
 
     return value
+
+
+def _binary_string_to_int(value: str) -> int:
+    """Parse a little-endian binary string into an integer.
+
+    Binary strings are read little-endian, i.e. the leftmost character is the
+    least significant bit, so ``"10"`` means bit 0 is 1 (the value 1). An empty
+    string represents 0.
+
+    Parameters
+    ----------
+    value : str
+        The little-endian binary string to parse.
+
+    Returns
+    -------
+    int
+        The integer encoded by ``value``.
+
+    """
+    return int(value[::-1], 2) if value else 0
 
 
 def _apply_maj_gates(
@@ -173,17 +202,30 @@ def _apply_c_in_cx(c_in: Qubit | None, ancilla: QuantumVariable) -> None:
 def cuccaro_adder(
     a: int | str | BigInteger | QuantumRegister,
     b: QuantumRegister,
-    c_in: QubitLike | None = None,
-    c_out: QubitLike | None = None,
-    ctrl: QubitLike | None = None,
+    c_in: OptionalQubit | None = None,
+    c_out: OptionalQubit | None = None,
+    ctrl: OptionalQubit | None = None,
 ) -> None:
     """In-place adder as introduced in https://arxiv.org/abs/quant-ph/0410184
 
-    This function works in both static and dynamic modes. The allowed inputs are both quantum types or one classical
-    type and one quantum type. All :ref:`QuantumTypes <QuantumTypes>` (e.g. QuantumFloat, QuantumBool, QuantumModulus,
-    ...), as well as lists of Qubits and DynamicQubitArrays, are supported as quantum inputs. Note that when the first
-    input is larger than the second input, the function will perform modulo addition (relative to the size of the second
-    input) after the first input is truncated to be the same size as the second input.
+    This function works in both static and dynamic modes.
+
+    The two inputs may both be quantum, or one may be quantum and the other classical. All supported
+    :ref:`quantum types <QuantumTypes>` (e.g. QuantumFloat, QuantumBool,
+    QuantumModulus, ...) can be used as quantum inputs, along with lists of
+    Qubits and :class:`~qrisp.jasp.DynamicQubitArray` objects.
+
+    - A `DynamicQubitArray` is simply an array of qubits that is created automatically
+      in Jasp mode; you never need to construct one yourself.
+
+    - A quantum input can also be a list of bare Qubits. Bare Qubits are obtained by
+      indexing a quantum variable, e.g. ``qv[0]`` yields a single Qubit and ``qv[0:2]``
+      yields a list of Qubits; a bare Qubit may likewise be passed directly as the carry
+      or control argument.
+
+    Note that when the first input is larger than the second input, the function will perform
+    modulo addition (relative to the size of the second input) after the first
+    input is truncated to be the same size as the second input.
 
     The custom control implementation is based on Theorem 2.12 of https://arxiv.org/abs/2407.20167
 
@@ -235,222 +277,71 @@ def cuccaro_adder(
 
     Examples
     --------
-    The examples below show how to use
-    :func:`~qrisp.alg_primitives.arithmetic.adders.cuccaro_adder`. Because ``a``
-    and ``b`` are generic quantum variables, the adder works with any quantum
-    type that can store a value, e.g. ``QuantumFloat``, ``QuantumVariable`` or
-    ``QuantumModulus``.
+    All :ref:`QuantumTypes <QuantumTypes>` (e.g. ``QuantumFloat``,
+    ``QuantumVariable``, ``QuantumBool``, ``QuantumModulus``), as well as
+    ``list[Qubit]`` and :class:`~qrisp.jasp.DynamicQubitArray` registers, are
+    supported as quantum inputs. The table below lists the accepted input forms
+    and the behaviour in the special cases.
 
-    Static mode with both quantum inputs of equal size:
+    .. list-table::
+        :widths: 30 70
+        :header-rows: 1
+
+        * - Input
+          - Behaviour
+        * - Quantum first input ``a``
+          - Any quantum type, ``list[Qubit]`` or ``DynamicQubitArray``. Its size
+            sets the modulus of the addition.
+        * - Quantum second input ``b``
+          - Must be a quantum register (``QuantumVariable``, ``list[Qubit]`` or
+            ``DynamicQubitArray``); it holds the result in place.
+        * - Classical first input
+          - An ``int``, a little-endian binary ``str``, or a ``BigInteger``
+            (dynamic mode only). It is encoded into a temporary quantum variable
+            of the same size as ``b`` and uncomputed afterwards, so no ancilla
+            is left over. The second input cannot be classical, since the
+            addition is performed in place on it.
+        * - Classical addend larger than ``b``
+          - Truncated modulo ``2**len(b)`` before it is encoded.
+        * - Quantum ``a`` larger than ``b``
+          - ``a`` is truncated by slicing off its high-order qubits, so the
+            addition is performed modulo ``2**len(b)``. No qubits are added or
+            removed and ``a`` keeps its value and size.
+        * - Quantum ``a`` smaller than ``b``
+          - ``a`` is padded with ancilla qubits in the ``|0>`` state so it can
+            be processed at the size of ``b``. The ancillas are deleted once the
+            addition is done, and ``a`` itself is not modified.
+        * - ``QuantumBool``
+          - A single-qubit register, so the addition wraps around modulo 2.
+        * - ``QuantumModulus``
+          - Works as long as the sum stays below the modulus.
+        * - ``c_in`` and ``c_out``
+          - Optional carry-in and carry-out; each accepts a ``QuantumBool`` or a
+            bare ``Qubit``. ``c_in`` adds an extra 1 to the sum, and ``c_out``
+            records the overflow.
+        * - ``ctrl``
+          - Optional control qubit; accepts a ``QuantumBool`` or a bare
+            ``Qubit``. The addition is only applied when the control is in the
+            ``|1>`` state. Equivalently, the call can be wrapped in a
+            :func:`~qrisp.control` environment.
+        * - Dynamic mode
+          - Inside a :func:`~qrisp.jasp.jaspify` function the quantum inputs may
+            be ``DynamicQubitArray`` objects such as ``a.reg`` or a full slice
+            ``a[:]``. The result is read out with ``measure``.
+
+    In static mode, ``print`` already simulates and shows the outcome:
 
     >>> from qrisp import QuantumFloat, cuccaro_adder
     >>> a = QuantumFloat(4)
     >>> b = QuantumFloat(4)
     >>> a[:] = 4
     >>> b[:] = 5
-    >>> cuccaro_adder(a,b)
+    >>> cuccaro_adder(a, b)
     >>> print(b)
     {9: 1.0}
 
-    Static mode with a classical first input:
-
-    >>> from qrisp import QuantumFloat, cuccaro_adder
-    >>> b = QuantumFloat(4)
-    >>> b[:] = 3
-    >>> cuccaro_adder(5, b)
-    >>> print(b)
-    {8: 1.0}
-
-    A ``str`` is interpreted as a little-endian binary string (``"10"`` means
-    bit 0 is 1, i.e. the value 1). Here ``"1010"`` is the value 5:
-
-    >>> b = QuantumFloat(4)
-    >>> b[:] = 3
-    >>> cuccaro_adder("1010", b)
-    >>> print(b)
-    {8: 1.0}
-
-    If the classical input is larger than the second input, it is truncated
-    modulo ``2**len(b)``. Here, the 4-qubit `QuantumFloat` ``b`` can only hold
-    values from 0 to 15, so the sum value 16 cannot be represented. Since 16
-    wraps around to 0 in this `QuantumFloat`, adding 16 is equivalent to adding
-    0:
-
-    >>> b = QuantumFloat(4)
-    >>> b[:] = 5
-    >>> cuccaro_adder(16, b)
-    >>> print(b)
-    {5: 1.0}
-
-    Static mode with a quantum first input larger than the second input. The
-    first input is truncated to the size of the second input (i.e. addition is
-    performed modulo ``2**len(b)``) by slicing off its high-order qubits. No
-    qubits are added or removed, so ``a`` keeps its value and size:
-
-    >>> a = QuantumFloat(4)
-    >>> b = QuantumFloat(2)
-    >>> a[:] = 9
-    >>> b[:] = 2
-    >>> cuccaro_adder(a, b)
-    >>> print(a)
-    {9: 1.0}
-    >>> print(a.size)
-    4
-    >>> print(b)
-    {3: 1.0}
-
-    Static mode with a quantum first input smaller than the second input. The
-    first input is temporarily padded with additional (ancilla) qubits. The
-    helper ancillas are created in the ``|0>`` state and appended to ``a`` so
-    that the adder can process a register as large as ``b``. They are deleted
-    once the addition is done, so no extra qubits are left over. ``a`` itself is
-    not modified:
-
-    >>> a = QuantumFloat(2)
-    >>> b = QuantumFloat(4)
-    >>> a[:] = 3
-    >>> b[:] = 2
-    >>> cuccaro_adder(a, b)
-    >>> print(a.size)
-    2
-    >>> print(b)
-    {5: 1.0}
-
-    Lists of :class:`~qrisp.circuit.Qubit` objects are supported as well. The
-    slices ``a[:]`` and ``b[:]`` return the qubit registers of ``a`` and ``b``
-    as plain lists of Qubits, which are passed to the adder instead of the
-    QuantumFloat objects:
-
-    >>> a = QuantumFloat(5)
-    >>> b = QuantumFloat(4)
-    >>> a[:] = 10
-    >>> b[:] = 5
-    >>> cuccaro_adder(a[:], b[:])
-    >>> print(b)
-    {15: 1.0}
-
-    All :ref:`QuantumTypes <QuantumTypes>` are supported. A base
-    ``QuantumVariable`` (encoded with :func:`~qrisp.misc.int_encoder`), for
-    example, reports its measurement as a little-endian bit string, so the sum
-    8 is shown as ``"0001"``:
-
-    >>> from qrisp import QuantumVariable
-    >>> from qrisp.misc import int_encoder
-    >>> a = QuantumVariable(4)
-    >>> b = QuantumVariable(4)
-    >>> int_encoder(a, 5)
-    >>> int_encoder(b, 3)
-    >>> cuccaro_adder(a, b)
-    >>> print(b)
-    {'0001': 1.0}
-
-    A ``QuantumBool`` is a single-qubit register, so ``1 + 1`` wraps around
-    modulo 2 to ``False``:
-
-    >>> from qrisp import QuantumBool
-    >>> a = QuantumBool()
-    >>> b = QuantumBool()
-    >>> a.flip()
-    >>> b.flip()
-    >>> cuccaro_adder(a, b)
-    >>> print(b)
-    {False: 1.0}
-
-    A ``QuantumModulus`` works as long as the sum stays below the modulus:
-
-    >>> from qrisp import QuantumModulus
-    >>> a = QuantumModulus(13)
-    >>> b = QuantumModulus(13)
-    >>> a[:] = 5
-    >>> b[:] = 3
-    >>> cuccaro_adder(a, b)
-    >>> print(b)
-    {8: 1.0}
-
-    Addition with a carry-in and a carry-out qubit. ``c_in`` is an optional
-    carry-in bit, flipped to ``|1>`` here with ``x``, so it adds an extra 1 to
-    the sum. ``c_out`` records the overflow: it is set to ``True`` whenever the sum
-    does not fit in ``b``. The total sum is 6 + 3 + 1 = 10, which wraps around
-    in the 3-qubit ``b``, so ``b`` ends up with 10 mod 8 = 2 and ``c_out``
-    holds the overflow:
-
-    >>> from qrisp import QuantumBool, x
-    >>> b = QuantumFloat(3)
-    >>> b[:] = 6
-    >>> c_in = QuantumBool()
-    >>> x(c_in[0])
-    >>> c_out = QuantumBool()
-    >>> cuccaro_adder(3, b, c_in=c_in, c_out=c_out)
-    >>> print(b)
-    {2: 1.0}
-    >>> print(c_out)
-    {True: 1.0}
-
-    ``c_in`` and ``c_out`` also accept a bare :class:`~qrisp.circuit.Qubit`
-    (here the single qubit of a ``QuantumVariable``):
-
-    >>> from qrisp import QuantumVariable
-    >>> b = QuantumFloat(3)
-    >>> b[:] = 6
-    >>> c_in_var = QuantumVariable(1)
-    >>> x(c_in_var[0])
-    >>> c_out_var = QuantumVariable(1)
-    >>> cuccaro_adder(3, b, c_in=c_in_var[0], c_out=c_out_var[0])
-    >>> print(b)
-    {2: 1.0}
-    >>> print(c_out_var)
-    {'1': 1.0}
-
-    Controlled addition. ``ctrl`` is an optional control qubit, flipped to ``|1>``
-    here with ``x``. When ``ctrl`` is in the ``|1>`` state the addition is
-    applied; otherwise ``b`` stays unchanged. Here the sum 5 + 3 = 8 fits into
-    the 5-qubit ``b`` without wrap-around, so ``b`` ends up holding the sum 8:
-
-    >>> a = QuantumFloat(5)
-    >>> b = QuantumFloat(5)
-    >>> a[:] = 3
-    >>> b[:] = 5
-    >>> ctrl = QuantumBool()
-    >>> x(ctrl[0])
-    >>> cuccaro_adder(a, b, ctrl=ctrl)
-    >>> print(b)
-    {8: 1.0}
-
-    ``ctrl`` may also be a bare :class:`~qrisp.circuit.Qubit`:
-
-    >>> a = QuantumFloat(5)
-    >>> b = QuantumFloat(5)
-    >>> a[:] = 3
-    >>> b[:] = 5
-    >>> ctrl_var = QuantumVariable(1)
-    >>> x(ctrl_var[0])
-    >>> cuccaro_adder(a, b, ctrl=ctrl_var[0])
-    >>> print(b)
-    {8: 1.0}
-
-    Equivalently, the addition can be wrapped in a :func:`~qrisp.control`
-    environment (the ``custom_control`` mechanism):
-
-    >>> from qrisp import control
-    >>> a = QuantumFloat(5)
-    >>> b = QuantumFloat(5)
-    >>> a[:] = 3
-    >>> b[:] = 5
-    >>> ctrl = QuantumBool()
-    >>> x(ctrl[0])
-    >>> with control(ctrl):
-    ...     cuccaro_adder(a, b)
-    >>> print(b)
-    {8: 1.0}
-
-    Dynamic mode (inside a :func:`~qrisp.jasp.jaspify` decorated function):
-
-    The examples above can also be run inside a :func:`~qrisp.jasp.jaspify`
-    function. As ``b`` holds the result, ``measure`` is used to read it out. In
-    static mode ``print(b)`` already simulates and shows the outcome, so no
-    explicit measurement is needed. Inside a jaspified function, however, the
-    result is a quantum state that has to be collapsed with ``measure`` before
-    it can be returned as a classical value:
+    In dynamic mode, the call is wrapped in a :func:`~qrisp.jasp.jaspify`
+    function and the result is collapsed with ``measure`` before it is returned:
 
     >>> from qrisp import QuantumFloat, cuccaro_adder, measure
     >>> from qrisp.jasp import jaspify
@@ -462,36 +353,8 @@ def cuccaro_adder(
     ...     b[:] = 5
     ...     cuccaro_adder(a, b)
     ...     return measure(b)
-    >>> result = main()
-    >>> result  # result is 9 (4 + 5 = 9)
-    Array(9., dtype=float64)
-
-    In dynamic mode the quantum inputs may be
-    :class:`~qrisp.jasp.DynamicQubitArray` objects, such as those returned by
-    ``a.reg`` or by a full slice ``a[:]`` while tracing:
-
-    >>> @jaspify
-    ... def main():
-    ...     a = QuantumFloat(4)
-    ...     b = QuantumFloat(4)
-    ...     a[:] = 4
-    ...     b[:] = 5
-    ...     cuccaro_adder(a.reg, b.reg)
-    ...     return measure(b)
     >>> main()
     Array(9., dtype=float64)
-
-    A classical ``BigInteger`` addend is supported in dynamic mode too:
-
-    >>> from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-    >>> @jaspify
-    ... def main():
-    ...     b = QuantumFloat(4)
-    ...     b[:] = 3
-    ...     cuccaro_adder(BigInteger.create(5, 1), b)
-    ...     return measure(b)
-    >>> main()
-    Array(8., dtype=float64)
 
     """
     # The second argument is required to be a (non-empty) quantum register
@@ -514,9 +377,8 @@ def cuccaro_adder(
 
     # convert the classical input to a quantum input
     if not _is_quantum_register(a):
-        # Binary strings are little-endian: "10" means bit 0 is 1 (value 1).
         if isinstance(a, str):
-            a = int(a[::-1], 2) if a else 0
+            a = _binary_string_to_int(a)
 
         # int_encoder reads only the target's bits while tracing. In static mode,
         # validate the integer and truncate here because int_encoder rejects
