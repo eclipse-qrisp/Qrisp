@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Provides algorithms for efficient preparation of sparse quantum states."""
 
 import numpy as np
 import scipy as sc
@@ -57,6 +58,15 @@ def prepare_sparse(
         Default is False.
     method: str
         Which method to use. Currently only "gleinig_hoefler" is implemented, which employs the algorithm presented in https://ieeexplore.ieee.org/abstract/document/9586240.
+    use_ancillas: bool
+        By default, the state preparation is carried out without the use of ancillas.
+        If use_ancillas is set to true, however, multi-controlled operations which are needed
+        within the state preparation algorithm are implemented with one ancilla.
+        This can create a large number of additional qubits temporarily,
+        but by calling ``.compile()`` in the end on the resulting quantum circuit,
+        these can be reduced to one single additional qubit.
+        In turn, CNOT gate count and circuit depth are significantly reduced if usage of an acilla is allowed,
+        especially at large S.
 
     """
     if isinstance(target_state, sc.sparse.coo_array):
@@ -72,7 +82,7 @@ def prepare_sparse(
 
         coeffs = {}
         for i, ind in enumerate(indices):
-            coeffs[_int_to_binary_tuple(ind, len(qv), reverse)] = complex(values[i])
+            coeffs[_int_to_binary_tuple(ind, int(np.log2(np.shape(target_state)[0])), reverse)] = complex(values[i])
 
     elif isinstance(target_state, dict):
         if not isinstance(list(target_state.keys())[0], (tuple, str)):
@@ -245,7 +255,7 @@ def _cu3_ancilla(theta, phi, lam, qubits):
 def _rotate_state_to_0(
     qv: QuantumVariable, target: int, control: list, alpha: complex | float, beta: complex | float, use_ancillas: bool
 ):
-    r"""Rotate a state alpha |0> + beta |1> in qubit ``target`` to the state |0>, controlled by the qubits in ``control``."""
+    r"""Rotate a state alpha |0> + beta |1> in qubit target to the state |0>, controlled by the qubits in control."""
     _alpha, _beta, tot_phase, norm = _normal_form(alpha, beta)
 
     theta = 2 * np.acos(np.abs(_alpha))
