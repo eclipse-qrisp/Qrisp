@@ -115,15 +115,16 @@ def _shift_aware_iadd(qm, other):
 
     Equal shifts use a single modular addition. Differing shifts convert other
     into qm's representation bitwise (see montgomery_addition). QuantumFloat
-    operands are treated as having shift 0. If both shifts are static, the
-    branch is chosen in Python; otherwise a traced q_cond selects it.
+    operands (value = raw * 2^exponent) are treated as having shift -exponent.
+    If both shifts are static, the branch is chosen in Python; otherwise a
+    traced q_cond selects it.
     """
     from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
         mod_adder,
         montgomery_addition,
     )
 
-    other_m = other.m if isinstance(other, QuantumModulus) else 0
+    other_m = other.m if isinstance(other, QuantumModulus) else -other.exponent
 
     def same_shift(other, qm):
         mod_adder(other, qm, qm.inpl_adder, qm.modulus)
@@ -395,9 +396,6 @@ class QuantumModulus(QuantumFloat):
 
     def encoder(self, i):
         if check_for_tracing_mode():
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-                BigInteger,
-            )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 montgomery_encoder,
                 pow2mod_signed,
@@ -405,8 +403,6 @@ class QuantumModulus(QuantumFloat):
 
             # pow2mod_signed instead of 1 << m: m can be negative (e.g. after
             # multiplication) and large shifts would overflow int64.
-            if isinstance(i, BigInteger) and not isinstance(self.modulus, BigInteger):
-                return montgomery_encoder(i, BigInteger.create(1, i.digits.shape[0]) << self.m, self.modulus)
             return montgomery_encoder(i, pow2mod_signed(self.m, self.modulus), self.modulus)
 
         else:

@@ -882,3 +882,20 @@ def test_shift_aware_addition_quantum_float_operand():
         return measure(a)
 
     assert int(main()) == 3
+
+
+@pytest.mark.parametrize("qm_m", [0, -1, 3])
+def test_shift_aware_addition_quantum_float_exponent(qm_m):
+    """A QuantumFloat operand with exponent e (value = raw * 2^e) acts as shift -e."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = qm_m
+        a[:] = 9
+        b = QuantumFloat(3, exponent=1)
+        b[:] = 6
+        a += b
+        return measure(a)
+
+    assert int(main()) == (9 + 6) % SHIFT_N

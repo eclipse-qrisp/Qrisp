@@ -174,7 +174,8 @@ Bug Fixes
   with differing shifts in both Jasp and static mode, and no longer raise
   ``ValueError``. The other operand is converted into the target's
   representation, and the result keeps the left operand's shift. A
-  :class:`~qrisp.QuantumFloat` operand is treated as having shift 0. In Jasp
+  :class:`~qrisp.QuantumFloat` operand with exponent ``e`` is treated as having
+  shift ``-e``, so its bit weights are taken into account. In Jasp
   mode, encoding a classical value into a ``QuantumModulus`` with a negative
   shift (e.g. after ``c = a * b; c += 1``) no longer raises
   ``ValueError: negative shift count``.

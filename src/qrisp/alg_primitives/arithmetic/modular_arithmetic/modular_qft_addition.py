@@ -42,7 +42,8 @@ def qft_basis_adder(addend, target):
 # The raw value of a is converted into b's representation bitwise:
 # raw_b += raw_a * 2^(b.m - a.m) mod N. This bypasses b's encoder,
 # so b.m is accounted for in the factor (and must not be applied twice).
-# QuantumFloat operands are treated as having shift 0.
+# QuantumFloat operands (value = raw * 2^exponent) are treated as having
+# shift -exponent.
 def montgomery_addition(a, b):
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
         pow2mod,
@@ -50,7 +51,7 @@ def montgomery_addition(a, b):
     )
 
     N = b.modulus
-    a_m = getattr(a, "m", 0)
+    a_m = a.m if hasattr(a, "m") else -a.exponent
     factor = pow2mod_signed(b.m - a_m, N)
 
     for i in jrange(a.size):
