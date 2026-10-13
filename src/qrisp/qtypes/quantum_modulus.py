@@ -144,14 +144,18 @@ def _shift_aware_iadd(qm, other):
 
 
 def _modular_iadd(qm, other):
-    """Perform qm += other, where other is either a quantum operand or a classical
-    value already encoded into qm's representation."""
+    """Perform qm += other for a quantum or an already encoded classical operand.
+
+    Quantum operands go through the shift-aware addition, classical values are
+    expected to be encoded into qm's representation already.
+    """
     if isinstance(other, QuantumFloat):
         _shift_aware_iadd(qm, other)
     else:
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
         mod_adder(other, qm, qm.inpl_adder, qm.modulus)
+
 
 def comparison_wrapper(func):
 
