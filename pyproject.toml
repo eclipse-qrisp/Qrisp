@@ -55,6 +55,8 @@ docs = [
     "sphinx>=7,<9",
     "nbsphinx==0.9.8",
     "ipykernel==7.3.0",
+    # texext's math_dollar converts $...$ in docstrings/RST to :math:`...`
+    "texext==0.6.8",
     "numpydoc==1.10.0",
     "sphinx-sitemap==2.9.0",
     "sphinx-copybutton==0.5.2",

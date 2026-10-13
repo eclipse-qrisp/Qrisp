@@ -70,6 +70,9 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
+    # texext's math_dollar rewrites $...$ in docstrings/RST to :math:`...`; Sphinx core
+    # (incl. sphinx.ext.mathjax) does not parse dollar-delimited math itself.
+    "texext",
     "numpydoc",
     "sphinx_sitemap",
     "sphinx_copybutton",
