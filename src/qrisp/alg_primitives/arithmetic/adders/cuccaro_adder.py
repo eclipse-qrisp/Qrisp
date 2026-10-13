@@ -215,17 +215,61 @@ def cuccaro_adder(
     QuantumModulus, ...) can be used as quantum inputs, along with lists of
     Qubits and :class:`~qrisp.jasp.DynamicQubitArray` objects.
 
-    - A `DynamicQubitArray` is simply an array of qubits that is created automatically
+    - A ``DynamicQubitArray`` is simply an array of qubits that is created automatically
       in Jasp mode; you never need to construct one yourself.
-
     - A quantum input can also be a list of bare Qubits. Bare Qubits are obtained by
       indexing a quantum variable, e.g. ``qv[0]`` yields a single Qubit and ``qv[0:2]``
       yields a list of Qubits; a bare Qubit may likewise be passed directly as the carry
       or control argument.
 
-    Note that when the first input is larger than the second input, the function will perform
-    modulo addition (relative to the size of the second input) after the first
-    input is truncated to be the same size as the second input.
+    The table below lists the accepted input forms and the behaviour in the special
+    cases.
+
+    .. list-table::
+        :widths: 30 70
+        :header-rows: 1
+
+        * - Input
+          - Behaviour
+        * - Quantum first input ``a``
+          - Any quantum type, ``list[Qubit]`` or ``DynamicQubitArray``. Its size
+            sets the modulus of the addition.
+        * - Quantum second input ``b``
+          - Must be a quantum register (``QuantumVariable``, ``list[Qubit]`` or
+            ``DynamicQubitArray``); it holds the result in place.
+        * - Classical first input
+          - An ``int``, a little-endian binary ``str``, or a ``BigInteger``
+            (dynamic mode only). It is encoded into a temporary quantum variable
+            of the same size as ``b`` and uncomputed afterwards, so no ancilla
+            is left over. The second input cannot be classical, since the
+            addition is performed in place on it.
+        * - Classical addend larger than ``b``
+          - Truncated modulo ``2**len(b)`` before it is encoded.
+        * - Quantum ``a`` larger than ``b``
+          - ``a`` is truncated by slicing off its high-order qubits, so the
+            addition is performed modulo ``2**len(b)``. No qubits are added or
+            removed and ``a`` keeps its value and size.
+        * - Quantum ``a`` smaller than ``b``
+          - ``a`` is padded with ancilla qubits in the ``|0>`` state so it can
+            be processed at the size of ``b``. The ancillas are deleted once the
+            addition is done, and ``a`` itself is not modified.
+        * - ``QuantumBool``
+          - A single-qubit register, so the addition wraps around modulo 2.
+        * - ``QuantumModulus``
+          - Works as long as the sum stays below the modulus.
+        * - ``c_in`` and ``c_out``
+          - Optional carry-in and carry-out; each accepts a ``QuantumBool`` or a
+            bare ``Qubit``. ``c_in`` adds an extra 1 to the sum, and ``c_out``
+            records the overflow.
+        * - ``ctrl``
+          - Optional control qubit; accepts a ``QuantumBool`` or a bare
+            ``Qubit``. The addition is only applied when the control is in the
+            ``|1>`` state. Equivalently, the call can be wrapped in a
+            :func:`~qrisp.control` environment.
+        * - Dynamic mode
+          - Inside a :func:`~qrisp.jasp.jaspify` function the quantum inputs may
+            be ``DynamicQubitArray`` objects such as ``a.reg`` or a full slice
+            ``a[:]``. The result is read out with ``measure``.
 
     The custom control implementation is based on Theorem 2.12 of https://arxiv.org/abs/2407.20167
 
@@ -277,59 +321,9 @@ def cuccaro_adder(
 
     Examples
     --------
-    All :ref:`QuantumTypes <QuantumTypes>` (e.g. ``QuantumFloat``,
-    ``QuantumVariable``, ``QuantumBool``, ``QuantumModulus``), as well as
-    ``list[Qubit]`` and :class:`~qrisp.jasp.DynamicQubitArray` registers, are
-    supported as quantum inputs. The table below lists the accepted input forms
-    and the behaviour in the special cases.
-
-    .. list-table::
-        :widths: 30 70
-        :header-rows: 1
-
-        * - Input
-          - Behaviour
-        * - Quantum first input ``a``
-          - Any quantum type, ``list[Qubit]`` or ``DynamicQubitArray``. Its size
-            sets the modulus of the addition.
-        * - Quantum second input ``b``
-          - Must be a quantum register (``QuantumVariable``, ``list[Qubit]`` or
-            ``DynamicQubitArray``); it holds the result in place.
-        * - Classical first input
-          - An ``int``, a little-endian binary ``str``, or a ``BigInteger``
-            (dynamic mode only). It is encoded into a temporary quantum variable
-            of the same size as ``b`` and uncomputed afterwards, so no ancilla
-            is left over. The second input cannot be classical, since the
-            addition is performed in place on it.
-        * - Classical addend larger than ``b``
-          - Truncated modulo ``2**len(b)`` before it is encoded.
-        * - Quantum ``a`` larger than ``b``
-          - ``a`` is truncated by slicing off its high-order qubits, so the
-            addition is performed modulo ``2**len(b)``. No qubits are added or
-            removed and ``a`` keeps its value and size.
-        * - Quantum ``a`` smaller than ``b``
-          - ``a`` is padded with ancilla qubits in the ``|0>`` state so it can
-            be processed at the size of ``b``. The ancillas are deleted once the
-            addition is done, and ``a`` itself is not modified.
-        * - ``QuantumBool``
-          - A single-qubit register, so the addition wraps around modulo 2.
-        * - ``QuantumModulus``
-          - Works as long as the sum stays below the modulus.
-        * - ``c_in`` and ``c_out``
-          - Optional carry-in and carry-out; each accepts a ``QuantumBool`` or a
-            bare ``Qubit``. ``c_in`` adds an extra 1 to the sum, and ``c_out``
-            records the overflow.
-        * - ``ctrl``
-          - Optional control qubit; accepts a ``QuantumBool`` or a bare
-            ``Qubit``. The addition is only applied when the control is in the
-            ``|1>`` state. Equivalently, the call can be wrapped in a
-            :func:`~qrisp.control` environment.
-        * - Dynamic mode
-          - Inside a :func:`~qrisp.jasp.jaspify` function the quantum inputs may
-            be ``DynamicQubitArray`` objects such as ``a.reg`` or a full slice
-            ``a[:]``. The result is read out with ``measure``.
-
-    In static mode, ``print`` already simulates and shows the outcome:
+    The examples below use ``QuantumFloat`` inputs; any other supported quantum
+    type works the same way. In static mode, ``print`` already simulates and shows
+    the outcome:
 
     >>> from qrisp import QuantumFloat, cuccaro_adder
     >>> a = QuantumFloat(4)
