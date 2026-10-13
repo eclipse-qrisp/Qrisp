@@ -1928,10 +1928,18 @@ def _rotation_t_depth(op, angle, epsilon):
     Other angles cost ``3*log2(1/epsilon)`` (deprecated) or raise if ``epsilon`` is None.
     """
     par = angle / (np.pi) % 1
-    if par in [0, 1 / 2]:
-        return 0
-    if par in [1 / 4, 3 / 4]:
-        return 1
+    try:
+        par = float(par)
+    except TypeError:
+        # Symbolic or traced angles are never classified as Clifford or T.
+        par = None
+    if par is not None:
+        # Absolute tolerance only, so floating-point noise from computed angles is absorbed
+        # without the relative tolerance treating nearby non-Clifford angles as Clifford/T.
+        if np.any(np.isclose(par, [0, 1 / 2, 1], rtol=0, atol=1e-10)):
+            return 0
+        if np.any(np.isclose(par, [1 / 4, 3 / 4], rtol=0, atol=1e-10)):
+            return 1
     if epsilon is None:
         raise _NonCliffordTRotationError(
             f"Gate '{op.name}' with parameters {op.params} is neither a Clifford nor a T gate, "

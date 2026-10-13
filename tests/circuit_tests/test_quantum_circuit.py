@@ -950,6 +950,31 @@ class TestQuantumCircuitMethods:
         with pytest.raises(ValueError, match="custom depth indicator"):
             t_depth_indicator(qc.data[0].op)
 
+    @pytest.mark.parametrize(
+        "angle, expected",
+        [
+            (np.pi * (0.1 + 0.2 - 0.05), 1),
+            (2 * np.pi - 1e-13, 0),
+            (-1e-15, 0),
+        ],
+    )
+    def test_t_depth_computed_angles_tolerate_float_error(self, angle, expected):
+        """Computed Clifford and T angles with floating-point error are classified without warning."""
+        qc = QuantumCircuit(1)
+        qc.rz(angle, 0)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            assert qc.t_depth() == expected
+
+    def test_t_depth_indicator_nearby_angle_is_not_t(self):
+        """An angle close to, but not within float error of, pi/4 is not a T gate."""
+        from qrisp import t_depth_indicator
+
+        qc = QuantumCircuit(1)
+        qc.rz(np.pi / 4 + 1e-6, 0)
+        with pytest.raises(ValueError, match="custom depth indicator"):
+            t_depth_indicator(qc.data[0].op)
+
     def test_t_depth_indicator_epsilon_is_deprecated(self):
         """Passing epsilon to t_depth_indicator warns, and keeps the old cost of 3*log2(1/epsilon)."""
         from qrisp import t_depth_indicator
