@@ -1,8 +1,10 @@
 import random
-from scipy.sparse import coo_array
+
 import numpy as np
-from qrisp import QuantumVariable, prepare_sparse, measure, jaspify
 import pytest
+from scipy.sparse import coo_array
+
+from qrisp import QuantumVariable, jaspify, measure, prepare_sparse
 
 
 def _int_to_binary(i, width):
@@ -35,7 +37,7 @@ def _reverse_sparse_array(x, width):
 
 
 def _create_sparse_state(n, S):
-    """create a random sparse vector of length 2**n and with S non-zero entries"""
+    """Create a random sparse vector of length 2**n and with S non-zero entries"""
     random.seed(42)
     np.random.seed(42)
 

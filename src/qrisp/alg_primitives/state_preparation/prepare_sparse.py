@@ -20,7 +20,7 @@ import numpy as np
 import scipy as sc
 import sympy
 
-from qrisp import QuantumVariable, U3Gate, append_operation, check_for_tracing_mode, cx, gphase, invert, control, u3, x
+from qrisp import QuantumVariable, U3Gate, append_operation, check_for_tracing_mode, control, cx, gphase, invert, u3, x
 
 
 def prepare_sparse(
@@ -67,6 +67,25 @@ def prepare_sparse(
         these can be reduced to one single additional qubit.
         In turn, CNOT gate count and circuit depth are significantly reduced if usage of an acilla is allowed,
         especially at large S.
+
+    Examples
+    --------
+    Prepare a sparse state using either a dictionary or a sparse array:
+
+    ::
+
+        from qrisp import QuantumVariable, prepare_sparse
+        from scipy.sparse import coo_array
+
+        target_state_dict = {'011': 0.5**0.5, '010': 0.25**0.5, '111': 0.25**0.5}
+        qv1 = QuantumVariable(3)
+        prepare_sparse(qv1, target_state_dict)
+        print(qv1)    # yields {'011': 0.5, '010': 0.25, '111': 0.25}
+
+        target_state_array = coo_array(([(1/3)**0.5, (2/3)**0.5], ([1, 6],)), shape=(8,))
+        qv2 = QuantumVariable(3)
+        prepare_sparse(qv2, target_state_array)
+        print(qv2)    # yields {'110': 0.66667, '001': 0.33333}
 
     """
     if isinstance(target_state, sc.sparse.coo_array):
