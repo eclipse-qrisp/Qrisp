@@ -401,3 +401,27 @@ def test_jasp_quantum_invert_several_controls(ctrl_state):
         fired, controls = main(value)
         assert bool(fired) == (value != activating_value)
         assert int(controls) == value
+
+
+@pytest.mark.parametrize("ctrl_state", ["10", 3, 0])
+def test_jasp_quantum_invert_several_controls_in_superposition(ctrl_state):
+    """Inverted control on several qubits keeps a superposition of the controls coherent."""
+
+    @terminal_sampling
+    def main():
+        a = QuantumFloat(2)
+        target = QuantumBool()
+        h(a)
+        with control([a[0], a[1]], ctrl_state=ctrl_state, invert=True):
+            x(target)
+        # Flip the target where the inverted block did not, then everywhere: on every
+        # branch the target is flipped twice.
+        with control([a[0], a[1]], ctrl_state=ctrl_state):
+            x(target)
+        x(target)
+        h(a)
+        return a, target
+
+    # A helper qubit left entangled with the controls, or a relative phase between
+    # the branches, would spread the result over several outcomes.
+    assert main() == pytest.approx({(0, False): 1.0})

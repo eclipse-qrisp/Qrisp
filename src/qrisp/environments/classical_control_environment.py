@@ -16,8 +16,6 @@
 
 """Defines ClControlEnvironment, executing quantum code conditioned on classical boolean values."""
 
-from typing import Any
-
 import jax
 import jax.numpy as jnp
 from jax.lax import cond
@@ -231,23 +229,24 @@ class ClControlEnvironment(QuantumEnvironment):
 
         # ~ and & are bitwise on Python booleans and integers (~True == -2), so the
         # controls are converted to JAX booleans before they are negated or combined.
-        all_ones = 2 ** len(ctrl_vars) - 1
-        if len(ctrl_vars) > 1 or self.invert or self.ctrl_state not in (-1, all_ones):
-            ctrl_vars = [_as_boolean(ctrl_var) for ctrl_var in ctrl_vars]
+        # Booleans pass through unchanged, so the conversion only adds operations for
+        # other values.
+        if len(ctrl_vars) > 1 or self.invert or self.ctrl_state != 2 ** len(ctrl_vars) - 1:
+            ctrl_vars = [jnp.asarray(ctrl_var, dtype=bool) for ctrl_var in ctrl_vars]
 
         # Compute the control bool
         tmp = ctrl_vars[0]
         cond_bl = tmp
 
         # Process the control state requirement
-        if self.ctrl_state != -1 and ((self.ctrl_state & 1) == 0):
+        if (self.ctrl_state & 1) == 0:
             cond_bl = ~tmp
 
         # If there is more than one control variable, loop through
         if len(ctrl_vars) > 1:
             for i in range(1, len(ctrl_vars)):
                 tmp = ctrl_vars[i]
-                if self.ctrl_state != -1 and ((self.ctrl_state & 1 << i) == 0):
+                if (self.ctrl_state & 1 << i) == 0:
                     tmp = ~tmp
 
                 cond_bl = cond_bl & tmp
@@ -273,25 +272,3 @@ class ClControlEnvironment(QuantumEnvironment):
         branch_0.jaxpr.outvars[-1] = branch_0.jaxpr.invars[-1]
 
         traced_eqn.params["branches"] = (Jaspr.from_cache(branch_0), body_jaspr)
-
-
-def _as_boolean(value: Any) -> Any:
-    """Return a classical control as a JAX boolean.
-
-    An integer or a float holds if it is not 0. A value that already is a JAX or NumPy
-    boolean is returned as it is.
-
-    Parameters
-    ----------
-    value : bool or int or float or jax.Array
-        The control.
-
-    Returns
-    -------
-    jax.Array or numpy.bool_
-        The control as a boolean.
-
-    """
-    if getattr(value, "dtype", None) == jnp.bool_:
-        return value
-    return jnp.asarray(value).astype(bool)

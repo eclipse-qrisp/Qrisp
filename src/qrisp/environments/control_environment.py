@@ -85,6 +85,8 @@ class ControlEnvironment(QuantumEnvironment):
 
     """
 
+    # TODO: Refactor the control environments. invert and ctrl_method are not documented
+    # here, and ClControlEnvironment has no Parameters section at all.
     def __init__(self, ctrl_qubits, ctrl_state: int | str = -1, ctrl_method=None, invert=False):
         """Initialize the environment on the control qubits."""
         if isinstance(ctrl_state, int):
@@ -170,6 +172,8 @@ class ControlEnvironment(QuantumEnvironment):
             condition = getattr(self, "_condition", None)
             if negated_ctrl_qubits is not None and condition is not None:
                 # Uncompute and release the helper qubit.
+                # TODO: This checks the controls again, which is wrong if the body changes
+                # them. Static mode has the same limitation.
                 self._flip_if_matching(negated_ctrl_qubits, self._negated_ctrl_state, condition)
                 condition.delete()
             return
@@ -619,6 +623,9 @@ def _select_environment(
         If the controls are neither all qubits nor all booleans.
 
     """
+    # TODO: In Jasp mode, also accept lists of QuantumBools and lists mixing Python and
+    # traced booleans, as static mode does, and raise TypeError instead of Exception
+    # for a QuantumVariable with several qubits (raised by list(ctrl) in _as_control_list).
     if check_for_tracing_mode():
         if all(isinstance(ctrl, bool) for ctrl in ctrl_list):
             return ClControlEnvironment, ctrl_list

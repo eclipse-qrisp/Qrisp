@@ -23,6 +23,7 @@ import jax.core
 import sympy
 
 import qrisp.circuit.standard_operations as std_ops
+from qrisp.circuit import convert_to_qb_list
 from qrisp.core.quantum_array import QuantumArray
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp import (
@@ -763,8 +764,6 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
     def balauca_mcp(phi, qubits, ctrl_state):
-        from qrisp.circuit.quantum_circuit import convert_to_qb_list
-
         qubits = convert_to_qb_list(qubits)
 
         temp = QuantumBool()
@@ -1231,10 +1230,10 @@ def measure(qubits: Any) -> Any:
     qs = find_qs(qubits)
 
     if not isinstance(qs, TracingQuantumSession):
-        # One new Clbit per qubit, or a single Clbit for a single qubit. Like
-        # append_operation, count all qubits of all elements of a QuantumArray.
+        # One new Clbit per qubit, or a single Clbit for a single qubit. The qubits of
+        # a QuantumArray are counted with convert_to_qb_list, like append_operation does.
         if isinstance(qubits, QuantumArray):
-            clbits = [qs.add_clbit() for qv in qubits.flatten() for _ in qv.reg]
+            clbits = [qs.add_clbit() for _ in convert_to_qb_list(qubits)]
         elif hasattr(qubits, "__len__"):
             clbits = [qs.add_clbit() for _ in qubits]
         else:
