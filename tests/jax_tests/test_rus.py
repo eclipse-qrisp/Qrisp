@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests for the RUS (repeat-until-success) decorator, including LCU block encoding with static arguments."""
 
 from qrisp import *
 from qrisp.jasp import *
@@ -177,3 +178,29 @@ def test_rus():
 
     for k, v in res_dict.items():
         assert abs(expected_res[k] - v) < 1e-3
+
+
+def test_rus_keyword_arguments():
+
+    def trial_function(size, value, offset=0):
+        qf = QuantumFloat(size)
+        qf[:] = value + offset
+        qbl = QuantumBool()
+        h(qbl)
+        return measure(qbl), qf
+
+    static_argnums_rus = RUS(static_argnums=0)(trial_function)
+    static_argnames_rus = RUS(static_argnames=["size"])(trial_function)
+
+    def main():
+        # The value is only known at runtime
+        value_qf = QuantumFloat(3)
+        value_qf[:] = 3
+        value = measure(value_qf)
+        a = rus_function(4, value=value)
+        b = rus_function(size=4, value=value, offset=2)
+        c = rus_function(4, offset=1, value=value)
+        return measure(a), measure(b), measure(c)
+
+    for rus_function in [static_argnums_rus, static_argnames_rus]:
+        assert make_jaspr(main)()() == (3, 5, 4)

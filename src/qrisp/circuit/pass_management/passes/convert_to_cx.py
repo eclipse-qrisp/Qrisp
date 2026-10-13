@@ -56,8 +56,8 @@ def convert_to_cx(
     Callable[[QuantumCircuit], QuantumCircuit]
         A pass function suitable for :meth:`PassManager.add_pass`.
 
-    Decompositions
-    --------------
+    Notes
+    -----
     - CZ(control, target)  -> H(target), CX(control, target), H(target)
     - CY(control, target)  -> S†(target), CX(control, target), S(target)
     - SWAP(a, b)           -> three CX gates

@@ -11,7 +11,8 @@ verifying that everything works before you make any changes.
 Environment setup
 -----------------
 
-Qrisp currently requires **Python 3.11 or later**. We recommend working inside a virtual
+Qrisp currently requires **Python 3.11 or later, up to and including Python 3.13**
+(``>=3.11, <3.14``). We recommend working inside a virtual
 environment (e.g. ``venv``, ``conda``, or any other tool you prefer).
 
 We recommend installing Qrisp in *editable* mode so that every change you make to the source is
@@ -75,7 +76,7 @@ Confirm that Qrisp can be imported and reports the expected version:
 
 .. code-block:: bash
 
-    python -c "import qrisp; print(qrisp.__version__)"
+    python -c "import qrisp; from importlib.metadata import version; print(version('qrisp'))"
 
 Running the test suite
 ----------------------

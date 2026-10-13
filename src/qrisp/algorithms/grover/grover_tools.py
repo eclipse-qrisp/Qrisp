@@ -462,17 +462,6 @@ def grovers_alg(
         #    )
 
 
-# Workaround to keep the docstring but still gatewrap
-
-temp = diffuser.__doc__
-
 diffuser = gate_wrap(permeability=[], is_qfree=False)(diffuser)
 
-diffuser.__doc__ = temp
-
-
-temp = tag_state.__doc__
-
 tag_state = gate_wrap(permeability="args", is_qfree=True)(tag_state)
-
-tag_state.__doc__ = temp

@@ -1,19 +1,19 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -29,9 +29,26 @@
 #
 import os
 import sys
+import warnings
 
 sys.path.insert(0, os.path.abspath("../../src/qrisp"))
 sys.path.insert(0, os.path.abspath("_ext"))
+
+# Treat Python warnings raised while building the docs as errors so that
+# documentation regressions fail CI (Sphinx's ``-W`` only covers its own
+# logger, not ``warnings.warn`` calls made by extensions such as numpydoc).
+warnings.filterwarnings("error", message=r".*", category=UserWarning)
+# numpydoc parses the raw docstring text and mistakes the dashed underline in
+# printed circuit output (e.g. a "QuantumCircuit:" line inside a code block)
+# for a section header, emitting a spurious "wrong underline length" warning.
+# This is a false positive, so ignore it specifically.
+warnings.filterwarnings(
+    "ignore",
+    message=r"potentially wrong underline length.*",
+    category=UserWarning,
+)
+# os.fork() is flagged because JAX runs multiple threads; harmless here.
+warnings.filterwarnings("ignore", message=r".*os\.fork.*", category=RuntimeWarning)
 
 # -- Project information -----------------------------------------------------
 
@@ -133,6 +150,12 @@ html_context = {
 
 html_theme = "pydata_sphinx_theme"
 html_theme_options = {
+    "announcement": (
+        "🌟 Join us for the "
+        '<a href="https://qrisp.eu/general/community_day.html">Eclipse Qrisp Community Day</a>'
+        " on October 29th, 2026 in Berlin &mdash; "
+        '<a href="https://luma.com/56k6pve5">register now</a>! 🌟'
+    ),
     "collapse_navigation": True,
     "navigation_depth": 4,
     "show_prev_next": False,
@@ -149,7 +172,7 @@ html_theme_options = {
     "enable_search_shortcuts": True,
     "search_bar_text": "Search the docs... ",
     # "navbar_align": "content",
-    "pygment_light_style": "lovelace",
+    "pygments_light_style": "lovelace",
     "secondary_sidebar_items": [
         "page-toc.html",
         "discord_link.html",
@@ -161,6 +184,7 @@ html_sidebars = {
     "**": ["sidebar-nav-bs"],
     "index": [],
     "install": [],
+    "community_day": [],
     # "tutorial": [],
     "tutorial/*": ["sidebar-nav-bs"],
     "auto_examples/index": [],
@@ -175,6 +199,11 @@ autodoc_default_options = {
 }
 autosummary_generate = True
 numpydoc_show_class_members = False
+
+# Optional runtime dependencies that are documented but not part of the
+# ``docs`` extra. Mock them so autodoc can import the wrapped modules without
+# the real package installed (and without emitting import warnings).
+autodoc_mock_imports = ["stim"]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
