@@ -264,7 +264,11 @@ class QuantumModulus(QuantumFloat):
         # A traced modulus must be threaded through the pytree as a proper leaf,
         # otherwise it gets smuggled into static aux_data (via QuantumVariableTemplate's
         # copy.copy(qv)) and leaks stale tracers across independent traces.
-        self.traced_attributes = self.traced_attributes + ["modulus"]
+        # The same applies to the Montgomery shift m, which is derived from the modulus
+        # (e.g. in qq_montgomery_multiply_modulus). Since QuantumVariableTemplate equality
+        # ignores it, keeping m static would also let qache reuse traces built for a
+        # different shift.
+        self.traced_attributes = self.traced_attributes + ["modulus", "m"]
         # Dynamic modular arithmetic uses gidney_adder while static uses fourier_adder.
         # Consider reconciling it.
         if check_for_tracing_mode():
