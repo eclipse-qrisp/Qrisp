@@ -25,7 +25,7 @@ from qrisp.environments import QuantumEnvironment, conjugate
 
 
 def fourier_adder(a, b, perform_QFT=True):
-    """In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0410184>`__.
+    """In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0008033>`__.
     Performs the addition:
 
     ::
