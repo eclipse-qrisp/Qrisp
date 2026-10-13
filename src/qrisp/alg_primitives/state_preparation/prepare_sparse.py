@@ -35,37 +35,38 @@ def prepare_sparse(
     A quantum state is sparse if only a small fraction of all coefficients of that state, in the standard qubit basis,
     are non-zero. In this case, the circuit depth needed for the preparation of the state does not depend exponentially
     on the number of qubits any more, as for a generic state preparation algorithm, but only polynomially, while it also
-    scales polynomially with the number S of non-zero coefficients.
+    scales polynomially with the number $S$ of non-zero coefficients.
 
     There are a number of sparse state preparation algorithms, optimizing different target quantities.
     For now, the function implements only the algorithm due to Gleinig and Hoefler
     (https://ieeexplore.ieee.org/abstract/document/9586240).
-    It produces a circuit with O(S*n) CNOT gates and O(S*log(S)+n) single-qubit gates.
-    The classical algorithm needed to find the circuit has a runtime of O(S^2*log(S)*n).
+    For $n$-qubit states with $S$ non-zero entries, it produces a circuit with $O(S\,n)$ CNOT gates
+    and $O(S\,\log(S)+n)$ single-qubit gates.
+    The classical algorithm needed to find the circuit has a runtime of $O(S^2\,\log(S)\,n)$.
 
     Parameters
     ----------
     qv : QuantumVariable
-        Quantum variable to prepare.
-    target_state: scipy.sparse.coo_array or dict
+        Quantum variable on which to prepare the state.
+    target_state : scipy.sparse.coo_array or dict
         The sparse quantum state to prepare. It can either be provided as a sparse array of type scipy.sparse.coo_array
         or as a dictionary that contains the coefficient for every binary string.
         The binary strings (i.e. the dictionary keys) can be
-        provided as str (e.g. ``'0111'``) or tuples (e.g. ``(0, 1, 1, 1)'``.
-    reverse: bool
+        provided as str (e.g. ``'0111'``) or tuples (e.g. ``(0, 1, 1, 1)``).
+    reverse : bool
         Whether the standard little-endian convention should be reversed to a big-endian convention.
         This has only effect if ``target_state`` is provided as a sparse array instead of a dictionary.
         Default is False.
-    method: str
+    method : str
         Which method to use. Currently only "gleinig_hoefler" is implemented, which employs the algorithm presented in https://ieeexplore.ieee.org/abstract/document/9586240.
-    use_ancillas: bool
+    use_ancillas : bool
         By default, the state preparation is carried out without the use of ancillas.
-        If use_ancillas is set to true, however, multi-controlled operations which are needed
+        If ``use_ancillas`` is set to true, however, multi-controlled operations which are needed
         within the state preparation algorithm are implemented with one ancilla.
         This can create a large number of additional qubits temporarily,
         but by calling ``.compile()`` in the end on the resulting quantum circuit,
         these can be reduced to one single additional qubit.
-        In turn, CNOT gate count and circuit depth are significantly reduced if usage of an acilla is allowed,
+        In turn, CNOT gate count and circuit depth are significantly reduced if usage of an ancilla is allowed,
         especially at large S.
 
     Examples
