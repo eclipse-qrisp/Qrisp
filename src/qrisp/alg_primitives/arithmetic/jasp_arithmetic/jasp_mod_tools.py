@@ -167,6 +167,43 @@ def pow2mod(exp: int | Array, modulus: int | BigInteger | Array) -> int | Array 
     return pow(2, int(exp), int(modulus))
 
 
+def pow2mod_signed(exp: int | Array, modulus: int | BigInteger | Array) -> int | Array | BigInteger:
+    """Compute ``2 ** exp % modulus`` for any integer exponent, including negative ones.
+
+    Negative exponents are resolved through the modular inverse of ``2 ** |exp|``,
+    so ``modulus`` must be odd. Unlike ``pow2mod``, this is correct for negative
+    traced exponents.
+
+    Parameters
+    ----------
+    exp : int or jnp scalar
+        Exponent (any sign).
+    modulus : int or BigInteger
+        Odd modulus.
+
+    Returns
+    -------
+    int, jnp scalar, or BigInteger
+        ``2 ** exp % modulus`` in the representation matching ``modulus``.
+
+    Examples
+    --------
+    >>> pow2mod_signed(-2, 13)
+    10
+    >>> pow2mod_signed(3, 13)
+    8
+
+    """
+    if check_for_tracing_mode():
+        exp = jnp.int64(exp)
+        power = pow2mod(jnp.abs(exp), modulus)
+        return lax.cond(exp < 0, lambda p: modinv(p, modulus), lambda p: p, power)
+
+    exp = int(exp)
+    power = pow2mod(abs(exp), modulus)
+    return modinv(power, modulus) if exp < 0 else power
+
+
 def _bigint_width(*values: int | BigInteger | Array) -> int:
     """Return the limb width shared by every BigInteger among values.
 
@@ -252,18 +289,7 @@ def new_montgomery_decoder(
     """
     if check_for_tracing_mode():
         m = jnp.int64(m)
-        abs_m = jnp.abs(m)
-        power = pow2mod(abs_m, N)
-        factor = lax.cond(
-            m > 0,
-            lambda p: modinv(p, N),
-            lambda p: p,
-            power,
-        )
-    else:
-        abs_m = abs(m)
-        power = pow2mod(abs_m, N)
-        factor = modinv(power, N) if m > 0 else power
+    factor = pow2mod_signed(-m, N)
 
     return montgomery_encoder(y, factor, N)
 

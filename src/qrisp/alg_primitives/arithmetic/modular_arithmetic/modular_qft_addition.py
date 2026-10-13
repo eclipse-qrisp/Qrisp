@@ -38,12 +38,23 @@ def qft_basis_adder(addend, target):
 
 
 # Performs the modular inplace addition b += a
-# where a and b don't need to have the same montgomery shift
+# where a and b don't need to have the same montgomery shift.
+# The raw value of a is converted into b's representation bitwise:
+# raw_b += raw_a * 2^(b.m - a.m) mod N. This bypasses b's encoder,
+# so b.m is accounted for in the factor (and must not be applied twice).
+# QuantumFloat operands are treated as having shift 0.
 def montgomery_addition(a, b):
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+        pow2mod,
+        pow2mod_signed,
+    )
 
-    for i in jrange(len(a)):
-        with control(a[i]):
-            b += pow(2, i - a.m, a.modulus)
+    N = b.modulus
+    a_m = getattr(a, "m", 0)
+    factor = pow2mod_signed(b.m - a_m, N)
+
+    for i in jrange(a.size):
+        mod_adder((factor * pow2mod(i, N)) % N, b, b.inpl_adder, N, ctrl=a[i])
 
 
 def beauregard_adder(a, b, modulus):

@@ -110,6 +110,49 @@ def _normalize_modular_arithmetic_operand(qm, other):
     return qm.encoder(other % qm.modulus)
 
 
+def _shift_aware_iadd(qm, other):
+    """Perform qm += other for a quantum operand, accounting for Montgomery shifts.
+
+    Equal shifts use a single modular addition. Differing shifts convert other
+    into qm's representation bitwise (see montgomery_addition). QuantumFloat
+    operands are treated as having shift 0. If both shifts are static, the
+    branch is chosen in Python; otherwise a traced q_cond selects it.
+    """
+    from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
+        mod_adder,
+        montgomery_addition,
+    )
+
+    other_m = other.m if isinstance(other, QuantumModulus) else 0
+
+    def same_shift(other, qm):
+        mod_adder(other, qm, qm.inpl_adder, qm.modulus)
+
+    def differing_shift(other, qm):
+        montgomery_addition(other, qm)
+
+    if isinstance(qm.m, int) and isinstance(other_m, int):
+        if qm.m == other_m:
+            same_shift(other, qm)
+        else:
+            differing_shift(other, qm)
+    else:
+        from qrisp.jasp import q_cond
+
+        # Quantum operands must be passed explicitly, q_cond rejects implicit captures
+        q_cond(qm.m == other_m, same_shift, differing_shift, other, qm)
+
+
+def _modular_iadd(qm, other):
+    """Perform qm += other, where other is either a quantum operand or a classical
+    value already encoded into qm's representation."""
+    if isinstance(other, QuantumFloat):
+        _shift_aware_iadd(qm, other)
+    else:
+        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
+
+        mod_adder(other, qm, qm.inpl_adder, qm.modulus)
+
 def comparison_wrapper(func):
 
     def res_func(self, other):
@@ -353,12 +396,14 @@ class QuantumModulus(QuantumFloat):
             )
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 montgomery_encoder,
+                pow2mod_signed,
             )
 
-            if isinstance(i, BigInteger):
+            # pow2mod_signed instead of 1 << m: m can be negative (e.g. after
+            # multiplication) and large shifts would overflow int64.
+            if isinstance(i, BigInteger) and not isinstance(self.modulus, BigInteger):
                 return montgomery_encoder(i, BigInteger.create(1, i.digits.shape[0]) << self.m, self.modulus)
-            else:
-                return montgomery_encoder(i, 1 << self.m, self.modulus)
+            return montgomery_encoder(i, pow2mod_signed(self.m, self.modulus), self.modulus)
 
         else:
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
@@ -470,19 +515,11 @@ class QuantumModulus(QuantumFloat):
     @gate_wrap(permeability="args", is_qfree=True)
     def __add__(self, other):
         other = _normalize_modular_arithmetic_operand(self, other)
-        if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                raise ValueError("Tried to add two QuantumModulus with differing Montgomery shift")
-        elif isinstance(other, QuantumFloat):
-            if self.m != 0:
-                raise ValueError("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
-
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
         res = self.duplicate()
         cx(self, res)
 
-        mod_adder(other, res, self.inpl_adder, self.modulus)
+        _modular_iadd(res, other)
 
         return res
 
@@ -491,79 +528,43 @@ class QuantumModulus(QuantumFloat):
     @gate_wrap(permeability=[1], is_qfree=True)
     def __iadd__(self, other):
         other = _normalize_modular_arithmetic_operand(self, other)
-        if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
-                    montgomery_addition,
-                )
-
-                montgomery_addition(other, self)
-                return self
-        elif isinstance(other, QuantumFloat):
-            if self.m != 0:
-                raise ValueError("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
-
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
-
-        mod_adder(other, self, self.inpl_adder, self.modulus)
+        _modular_iadd(self, other)
         return self
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other):
         other = _normalize_modular_arithmetic_operand(self, other)
-        if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                raise ValueError("Tried to add subtract QuantumModulus with differing Montgomery shift")
-        elif isinstance(other, QuantumFloat):
-            if self.m != 0:
-                raise ValueError("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
 
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
         from qrisp.environments import invert
 
         res = self.duplicate()
         cx(self, res)
 
         with invert():
-            mod_adder(other, res, self.inpl_adder, self.modulus)
+            _modular_iadd(res, other)
 
         return res
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __rsub__(self, other):
         other = _normalize_modular_arithmetic_operand(self, other)
-        if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                raise ValueError("Tried to subtract QuantumModulus with differing Montgomery shift")
-        elif isinstance(other, QuantumFloat):
-            if self.m != 0:
-                raise ValueError("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
-
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
         res = self.duplicate()
 
         res -= self
 
-        mod_adder(other, res, self.inpl_adder, self.modulus)
+        _modular_iadd(res, other)
 
         return res
 
     @gate_wrap(permeability=[1], is_qfree=True)
     def __isub__(self, other):
         other = _normalize_modular_arithmetic_operand(self, other)
-        if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                raise ValueError("Tried to subtract QuantumModulus with differing Montgomery shift")
-        elif isinstance(other, QuantumFloat):
-            if self.m != 0:
-                raise ValueError("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
 
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
         from qrisp.environments import invert
 
         with invert():
-            mod_adder(other, self, self.inpl_adder, self.modulus)
+            _modular_iadd(self, other)
 
         return self
 
