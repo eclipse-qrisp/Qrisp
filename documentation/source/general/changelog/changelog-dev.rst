@@ -646,7 +646,8 @@ Dependency Upgrades
 * Removed unused documentation dependencies: ``sphinx-toolbox``,
   ``myst-parser``, ``texext`` and ``sphinx-new-tab-link``, along with the
   ``sphinx.ext.coverage``, ``sphinx.ext.todo`` and
-  ``sphinx_toolbox.sidebar_links`` Sphinx extensions.
+  ``sphinx_toolbox.sidebar_links`` Sphinx extensions
+  (`PR #961 <https://github.com/eclipse-qrisp/Qrisp/pull/961>`_).
 
 .. Add dependency upgrades above this line
 
