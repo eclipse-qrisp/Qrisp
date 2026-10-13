@@ -117,7 +117,7 @@ def prepare_sparse(
                 )
 
         if isinstance(list(target_state.keys())[0], tuple):
-            coeffs = target_state
+            coeffs = dict(target_state)
         else:
             coeffs = {
                 tuple(map(int, k)): v for k, v in target_state.items()
