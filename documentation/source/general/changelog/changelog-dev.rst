@@ -340,6 +340,14 @@ Bug Fixes
   into a helper qubit, which is uncomputed afterwards
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
+* In Jasp mode, :func:`control <qrisp.control>` negated Python booleans and
+  integers bitwise, so ``invert=True`` and a ``0`` in ``ctrl_state`` had no effect
+  on them (``~True`` is ``-2``), and several integer controls were combined with a
+  bitwise AND, so ``control([1, 2])`` did not hold. These controls are now
+  converted to booleans before they are negated or combined: an integer holds if
+  it is not ``0``
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
 * Under :func:`~qrisp.jasp.boolean_simulation`, measuring a single qubit
   returned a ``uint64`` instead of a boolean, so ``~measure(qb)``, and
   ``invert=True`` or ``ctrl_state=0`` on measured booleans, gave wrong

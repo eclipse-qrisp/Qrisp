@@ -28,6 +28,7 @@ from qrisp import (
     QuantumVariable,
     conjugate,
     control,
+    gidney_adder,
     h,
     invert,
     mcp,
@@ -290,17 +291,78 @@ def test_jasp_inverted_classical_control():
     assert results == [[0b001, 0b001], [0b100, 0b010]]
 
 
-def test_jasp_python_bool_control():
-    """A Python bool also controls a block in Jasp mode."""
+def test_jasp_inverted_classical_quantum_adder():
+    """Inverting an adder with a classical summand, which uses classical control, subtracts."""
+
+    @boolean_simulation
+    def main():
+        qf = QuantumFloat(5)
+        with invert():
+            gidney_adder(3, qf)
+        return measure(qf)
+
+    # 0 - 3 modulo 2**5
+    assert int(main()) == 2**5 - 3
+
+
+@pytest.mark.parametrize(
+    "flag, kwargs, applies",
+    [
+        (True, {}, True),
+        (False, {}, False),
+        (True, {"invert": True}, False),
+        (False, {"invert": True}, True),
+        (True, {"ctrl_state": 0}, False),
+        (False, {"ctrl_state": 0}, True),
+    ],
+)
+def test_jasp_python_bool_control(flag, kwargs, applies):
+    """A Python bool also controls a block in Jasp mode, also with invert or ctrl_state."""
 
     @boolean_simulation
     def main():
         target = QuantumBool()
-        with control(True):
+        with control(flag, **kwargs):
             x(target)
         return measure(target)
 
-    assert bool(main())
+    assert bool(main()) == applies
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected",
+    [
+        ({}, [False, True, True]),
+        ({"invert": True}, [True, False, False]),
+        ({"ctrl_state": 0}, [True, False, False]),
+    ],
+    ids=["plain", "invert", "ctrl_state-0"],
+)
+def test_jasp_integer_control(kwargs, expected):
+    """A traced integer holds if it is not 0, also when invert or ctrl_state negate it."""
+
+    @boolean_simulation
+    def main(value):
+        target = QuantumBool()
+        with control(value, **kwargs):
+            x(target)
+        return measure(target)
+
+    assert [bool(main(value)) for value in (0, 1, 2)] == expected
+
+
+def test_jasp_several_integer_controls():
+    """Several integer controls hold if none of them is 0, even if they share no bit."""
+
+    @boolean_simulation
+    def main(a, b):
+        target = QuantumBool()
+        with control([a, b]):
+            x(target)
+        return measure(target)
+
+    cases = [(0, 0), (1, 0), (0, 2), (1, 2)]
+    assert [bool(main(a, b)) for a, b in cases] == [False, False, False, True]
 
 
 @pytest.mark.parametrize("ctrl_state", [1, 0])

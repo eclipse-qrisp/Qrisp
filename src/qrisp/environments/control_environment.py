@@ -42,7 +42,7 @@ from qrisp.jasp import (
     insert_outvalues,
 )
 from qrisp.misc import bin_rep, perm_lock, perm_unlock, retarget_instructions
-from qrisp.qtypes import QuantumBool
+from qrisp.qtypes.quantum_bool import QuantumBool
 
 
 class ControlEnvironment(QuantumEnvironment):
