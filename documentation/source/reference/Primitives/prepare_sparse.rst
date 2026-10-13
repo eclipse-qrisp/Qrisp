@@ -1,7 +1,7 @@
 .. _prepare_sparse:
 
 Sparse Quantum State Preparation
-=========================
+================================
 
 .. currentmodule:: qrisp
 
