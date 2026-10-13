@@ -158,6 +158,27 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed the handling of the Montgomery shift ``m`` of
+  :class:`~qrisp.QuantumModulus` in Jasp mode
+  (`Issue #925 <https://github.com/eclipse-qrisp/Qrisp/issues/925>`_).
+  ``m`` is now a traced attribute. Previously it was stored as static data that
+  :func:`qache <qrisp.jasp.qache>` ignored, which caused three failures:
+
+  * A ``qache``\ d function multiplying two ``QuantumModulus`` raised
+    ``UnexpectedTracerError``.
+  * A ``qache``\ d function called with differing shifts silently reused
+    the trace of the first call and returned wrong results.
+  * ``+=`` with differing shifts raised ``TracerIntegerConversionError``.
+
+  Addition and subtraction (``+``, ``-``, ``+=``, ``-=``) now support operands
+  with differing shifts in both Jasp and static mode, and no longer raise
+  ``ValueError``. The other operand is converted into the target's
+  representation, and the result keeps the left operand's shift. A
+  :class:`~qrisp.QuantumFloat` operand is treated as having shift 0. In Jasp
+  mode, encoding a classical value into a ``QuantumModulus`` with a negative
+  shift (e.g. after ``c = a * b; c += 1``) no longer raises
+  ``ValueError: negative shift count``.
+
 * Fixed a failure when a function decorated with
   :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
   raised ``Automatic loop inversion is only supported for jrange-based loops``.
