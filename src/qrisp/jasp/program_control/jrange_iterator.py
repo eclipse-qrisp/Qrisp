@@ -255,6 +255,42 @@ def jrange(*args: Any) -> "JRangeIterator | range":
     >>> [int(result) for result in forward_and_backward(4)]
     [15, 3]
 
+    Breaking either rule of the Warnings section raises an exception when the Jaspr
+    is created. A value computed in the loop cannot be used after it:
+
+    >>> from qrisp.jasp import make_jaspr
+    >>> def use_after_loop(n):
+    ...     qf = QuantumFloat(n)
+    ...     for i in jrange(qf.size):
+    ...         x(qf[i])
+    ...         last = i + 1
+    ...     return measure(qf), last
+    >>> try:
+    ...     make_jaspr(use_after_loop)(3)
+    ... except Exception as error:
+    ...     print(error)
+    Found jrange with external carry value
+
+    Python control flow runs while the loop is traced, so it can make the traced
+    iterations differ. Here, the first iteration flips qubit ``i`` and the others
+    flip qubit 0:
+
+    >>> def changing_iterations(n):
+    ...     qf = QuantumFloat(n)
+    ...     first = True
+    ...     for i in jrange(qf.size):
+    ...         if first:
+    ...             x(qf[i])
+    ...         else:
+    ...             x(qf[0])
+    ...         first = False
+    ...     return measure(qf)
+    >>> try:
+    ...     make_jaspr(changing_iterations)(3)
+    ... except Exception as error:
+    ...     print(error)
+    Jax semantics changed during jrange iteration
+
     """
     if len(args) not in (1, 2):
         raise TypeError(
