@@ -49,6 +49,10 @@ New Features
 Improvements
 ------------
 
+- Fixed :meth:`QuantumFloat.__pow__ <qrisp.QuantumFloat.__pow__>` to preserve
+  the base exponent and signedness on the result and intermediate powers
+  (`Issue #851 <https://github.com/eclipse-qrisp/Qrisp/issues/851>`_).
+
 - **Cheaper tracing for** :func:`q_switch <qrisp.q_switch>`
   The ``"tree"`` method resolves conditionals whose predicate is already known at
   trace time instead of tracing both arms and discarding one. The emitted circuit
