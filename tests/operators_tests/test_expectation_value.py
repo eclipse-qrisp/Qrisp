@@ -148,3 +148,56 @@ def test_expectation_value_batched_backend():
     bb = QrispSimulatorBackend().batched()
 
     ev = H.expectation_value(state_prep, backend=bb)()
+
+
+def test_commuting_measurement_bias():
+    """Test that measurement on >10 qubits does not truncate low-probability outcomes
+    and that expectation_value under 'commuting' matches 'commuting_qw' without bias."""
+    import networkx as nx
+    import numpy as np
+
+    from qrisp.simulator.bi_arrays import DenseBiArray
+    from qrisp.vqe import create_heisenberg_hamiltonian, heisenberg_problem
+
+    # 1. Direct unit test on DenseBiArray.multi_measure for >10 qubits:
+    # Verifies that dense_measurement_brute does not truncate non-zero probability states
+    # relative to the maximum amplitude.
+    n_qubits = 11
+    arr = np.zeros(2**n_qubits, dtype=np.complex64)
+    arr[0] = np.sqrt(0.8)  # dominant state, max_p = 0.8
+    small_prob = 0.2 / (2**n_qubits - 1)  # ~9.77e-5 (< 0.8 * 2e-4 = 1.6e-4)
+    arr[1:] = np.sqrt(small_prob)
+
+    bi_arr = DenseBiArray(arr)
+    new_arrays, p_list, outcome_index_list = bi_arr.multi_measure(
+        list(range(n_qubits)), return_new_arrays=False
+    )
+    assert len(outcome_index_list) == 2**n_qubits
+    assert np.isclose(np.sum(p_list), 1.0, atol=1e-5)
+
+    # 2. End-to-end expectation value test on a 12-qubit Heisenberg Hamiltonian:
+    rng_state = np.random.get_state()
+    try:
+        np.random.seed(42)
+
+        L = 12
+        G = nx.Graph([(k, (k + 1) % L) for k in range(L - 1)])
+        H = create_heisenberg_hamiltonian(G, 1, 0)
+        vqe = heisenberg_problem(G, 1, 0, ansatz_type="per hamiltonian")
+
+        def state_prep():
+            qv = QuantumVariable(L)
+            vqe.init_function(qv)
+            params = [0.2] * (len(G.edges) * 2)
+            vqe.ansatz_function(qv, params)
+            return qv
+
+        ev_c = H.expectation_value(state_prep, diagonalisation_method="commuting", precision=0.01)
+        ev_qw = H.expectation_value(state_prep, diagonalisation_method="commuting_qw", precision=0.01)
+
+        val_c = ev_c()
+        val_qw = ev_qw()
+
+        assert abs(val_c - val_qw) < 0.05
+    finally:
+        np.random.set_state(rng_state)
