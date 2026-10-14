@@ -43,7 +43,7 @@ from qrisp.block_encodings.ancilla_layout import (
     _template_of_size,
 )
 from qrisp.block_encodings.block_encoding_base import BlockEncoding, _LCUTerm, _LCUTerms
-from qrisp.block_encodings.predicates import _is_non_negative_real, _is_real, _is_statically_zero
+from qrisp.block_encodings.predicates import _as_static_size, _is_non_negative_real, _is_real
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import gphase
 from qrisp.environments import conjugate
@@ -273,7 +273,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         layouts = self._lcu_layouts
         selector_size = self._lcu_selector_size
         workspace_size = _maximum_layout_size(layouts)
-        if _is_statically_zero(workspace_size):
+        if _as_static_size(workspace_size) == 0:
             templates = (_template_of_size(QuantumFloat(selector_size), selector_size),)
         else:
             templates = (
@@ -311,7 +311,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
             applies_phase = not _is_non_negative_real(effective_coefficient)
 
         workspace_size = _maximum_layout_size(self._lcu_layouts)
-        if _is_statically_zero(workspace_size):
+        if _as_static_size(workspace_size) == 0:
 
             def branch(*operands):
                 child_unitary(*operands)

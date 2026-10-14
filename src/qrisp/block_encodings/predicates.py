@@ -33,17 +33,6 @@ import jax.numpy as jnp
 import numpy as np
 
 
-def _is_statically_zero(value: Any) -> bool:
-    """Return whether ``value`` is a concrete scalar zero."""
-    if isinstance(value, jax.core.Tracer):
-        return False
-    try:
-        value = np.asarray(value)
-    except Exception:
-        return False
-    return value.ndim == 0 and bool(value == 0)
-
-
 def _is_real(value: Any) -> bool:
     """Return whether a value is real, as far as is knowable at build time.
 
