@@ -52,7 +52,7 @@ iqm = [
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
 docs = [
-    "sphinx>=7,<9",
+    "sphinx>=7,<10",
     "nbsphinx==0.9.8",
     "ipykernel==7.3.0",
     # texext's math_dollar converts $...$ in docstrings/RST to :math:`...`
