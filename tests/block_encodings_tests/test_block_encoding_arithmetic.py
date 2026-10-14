@@ -235,34 +235,46 @@ def test_block_encoding_lcu_takes_the_terms_as_written():
     assert cancelling.alpha == 2
 
 
-def test_an_all_zero_combination_is_refused_when_it_is_built():
-    """The one combination with no circuit behind it must say so, but not too early.
+@pytest.mark.parametrize(
+    "name, build",
+    [
+        ("product factor", lambda c, A, B, C: (((c * A) @ B) + C, C)),
+        ("linear_combination item", lambda c, A, B, C: (BlockEncoding.linear_combination([c * A, B]), B)),
+        ("dagger", lambda c, A, B, C: ((c * A).dagger() + B, B)),
+    ],
+)
+def test_a_zero_scaled_encoding_nested_in_a_combination_contributes_nothing(name, build):
+    """A zero-scaled encoding that is not flattened into the outer terms is applied as written.
 
-    Its normalization is zero, so PREP would be asked for a state whose amplitudes
-    are sqrt(0/0), and the single-term path would otherwise apply the child as
-    though its coefficient were one. Refusing it at construction instead would
-    reject ``0 * A + B``, which is perfectly ordinary: Python associates to the
-    left, so the zero-weighted term is built on its own before B is added.
-
-    A combination that merely cancels is not this case. ``A - A`` has terms with
-    normalizations of their own and an ordinary preparation; it encodes zero,
-    which shows up as a postselection that never succeeds.
+    Its branch has zero amplitude, so the result matches the combination without it,
+    whether the zero is known when the encoding is built or only once it is traced.
     """
-    block_encoding = BlockEncoding(1, [], lambda operand: x(operand[0]))
-    other = BlockEncoding(1, [], lambda operand: z(operand[0]))
+    A = BlockEncoding.from_operator(X(0) + 0.5 * Z(1))
+    B = BlockEncoding.from_operator(Z(0) * Z(1))
+    C = BlockEncoding.from_operator(X(1))
 
-    for coefficients in ([0, 0], [0]):
-        combination = BlockEncoding.linear_combination(
-            [block_encoding, other][: len(coefficients)], coefficients=coefficients
-        )
-        assert combination.alpha == 0
-        with pytest.raises(ValueError, match="all-zero"):
-            combination.unitary
+    def operand_prep():
+        qf = QuantumFloat(2)
+        h(qf[0])
+        return qf
 
-    # A zero-weighted term alongside a surviving one is built and applied normally.
-    partial = BlockEncoding.linear_combination([block_encoding, other], coefficients=[0, 1])
-    assert partial.alpha == 1
-    assert np.allclose(partial._lcu_amplitudes, [0, 1])
+    block_encoding, reference = build(0, A, B, C)
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(operand_prep)()
+
+    @terminal_sampling
+    def main_static():
+        return block_encoding.apply_rus(operand_prep)()
+
+    @terminal_sampling
+    def main_traced(c):
+        return build(c, A, B, C)[0].apply_rus(operand_prep)()
+
+    res_reference = main(reference)
+    _compare_results(res_reference, main_static(), 2)
+    _compare_results(res_reference, main_traced(0.0), 2)
 
 
 def test_block_encoding_lcu_preserves_dynamic_coefficients():

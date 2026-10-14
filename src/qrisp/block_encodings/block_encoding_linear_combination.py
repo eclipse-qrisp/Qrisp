@@ -350,16 +350,6 @@ class LinearCombinationBlockEncoding(BlockEncoding):
         if cached is not None:
             return cached
 
-        if _is_statically_zero(self.alpha):
-            # Every term contributes zero, so there is nothing for the unitary to
-            # be: PREP would be asked for a state whose amplitudes are sqrt(0/0),
-            # and the single-term path would otherwise apply the child as though
-            # its coefficient were one. This is the only combination that is
-            # refused. One that merely cancels, such as ``A - A``, has an ordinary
-            # unitary built from terms with normalizations of their own; that it
-            # encodes zero shows up as a postselection which never succeeds.
-            raise ValueError("Cannot build the unitary for an all-zero linear combination.")
-
         if len(self.terms) == 1:
             coefficient, block_encoding = self.terms[0]
             child_unitary = block_encoding.unitary
