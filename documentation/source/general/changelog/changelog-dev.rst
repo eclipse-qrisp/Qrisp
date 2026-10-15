@@ -513,6 +513,12 @@ API Changes
   raise ``ValueError``
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* Removed ``jasp_mod_adder``. It was not used anywhere in Qrisp and duplicated
+  ``mod_adder``, which also works in Jasp, needs no spare qubit in the target
+  register and is cheaper when controlled. Replace
+  ``jasp_mod_adder(a, b, N, inpl_adder=adder)`` with ``mod_adder(a, b, adder, N)``
+  (`PR #965 <https://github.com/eclipse-qrisp/Qrisp/pull/965>`_).
+
 .. Add API changes above this line
 
 Development
