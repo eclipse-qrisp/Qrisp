@@ -610,6 +610,14 @@ Development
   version badge linked to the PyPI project page
   (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
 
+* Refactored the Fourier adder to be compatible in both static and Jasp
+  (dynamic) mode from a single implementation, alongside newer changes for
+  input compatibility. The former Jasp-only ``jasp_fourier_adder`` and its
+  private QFT helper moved into
+  ``qrisp.alg_primitives.arithmetic.adders.fourier_adder``; public imports
+  (``qrisp.fourier_adder`` and ``qrisp.jasp_fourier_adder``) are unchanged
+  (`PR #960 <https://github.com/eclipse-qrisp/Qrisp/pull/960>`_).
+
 Dependency Upgrades
 -------------------
 
