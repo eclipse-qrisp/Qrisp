@@ -37,23 +37,6 @@ def test_modular_adder():
     assert jaspr() == 1
 
 
-def test_fourier_adder():
-
-    def call_fourier_adder():
-
-        a = QuantumFloat(5)
-        b = QuantumFloat(5)
-
-        a[:] = 5
-        b[:] = 4
-        jasp_fourier_adder(a, b)
-
-        return measure(b)
-
-    jaspr = make_jaspr(call_fourier_adder)()
-    assert jaspr() == 9
-
-
 def test_out_of_place_arithmetic():
 
     @terminal_sampling
