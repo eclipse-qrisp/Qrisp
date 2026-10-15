@@ -42,6 +42,31 @@ from .jasp_bigintiger import (
 )
 
 
+def _jax_mod(value: int | Array, modulus: int | Array) -> Array:
+    """Compute ``value % modulus`` for a JAX integer of any signedness, for 0 < modulus < 2**63.
+
+    An unsigned value is reduced in unsigned arithmetic, a signed one in int64.
+
+    Parameters
+    ----------
+    value : int or jnp scalar
+        The integer to reduce.
+    modulus : int or jnp scalar
+        Modulus.
+
+    Returns
+    -------
+    jnp scalar
+        ``value % modulus``, of dtype ``uint64``.
+
+    """
+    value = jnp.asarray(value)
+    # Casting an unsigned value of 2**63 or more to int64 would make it negative
+    if jnp.issubdtype(value.dtype, jnp.unsignedinteger):
+        return value.astype(jnp.uint64) % jnp.asarray(modulus).astype(jnp.uint64)
+    return (value.astype(jnp.int64) % jnp.asarray(modulus, dtype=jnp.int64)).astype(jnp.uint64)
+
+
 @jit
 def _jax_mulmod(a: int | Array, b: int | Array, modulus: int | Array) -> Array:
     """Compute ``a * b % modulus`` for JAX integers without overflow, for 0 < modulus < 2**63.
@@ -67,31 +92,9 @@ def _jax_mulmod(a: int | Array, b: int | Array, modulus: int | Array) -> Array:
 
     """
     dtype = jnp.asarray(modulus).dtype
-    modulus = jnp.asarray(modulus, dtype=jnp.int64)
-    n = modulus.astype(jnp.uint64)
-
-    def reduce_factor(factor: int | Array) -> Array:
-        """Reduce a factor modulo ``modulus``, in unsigned arithmetic for an unsigned factor.
-
-        Parameters
-        ----------
-        factor : int or jnp scalar
-            The factor.
-
-        Returns
-        -------
-        jnp scalar
-            ``factor % modulus``, of dtype ``uint64``.
-
-        """
-        factor = jnp.asarray(factor)
-        # Casting an unsigned factor of 2**63 or more to int64 would make it negative
-        if jnp.issubdtype(factor.dtype, jnp.unsignedinteger):
-            return factor.astype(jnp.uint64) % n
-        return (factor.astype(jnp.int64) % modulus).astype(jnp.uint64)
-
-    a = reduce_factor(a)
-    b = reduce_factor(b)
+    n = jnp.asarray(modulus, dtype=jnp.int64).astype(jnp.uint64)
+    a = _jax_mod(a, modulus)
+    b = _jax_mod(b, modulus)
 
     def body_fun(i: Array, acc: Array) -> Array:
         # Bits of b from the most significant one (b < modulus < 2**63 has 63 bits)

@@ -404,10 +404,11 @@ class QuantumModulus(QuantumFloat):
     def _classical_operand(self, value: _ClassicalInteger) -> int | BigInteger | Array:
         """Return a classical factor in the form that the Montgomery multiplication expects.
 
-        For a BigInteger modulus, the factor is returned with twice the limbs of the
-        modulus, so that the intermediate products cannot overflow. A factor with
-        more limbs than the modulus is first reduced modulo it, so that no bit of
-        it is lost. For an integer modulus, the factor is reduced modulo it.
+        For an integer modulus, the factor is reduced modulo it: the traced Montgomery
+        helpers only keep its low 64 bits, and ``modinv`` casts it to the signed dtype
+        of the modulus. For a BigInteger modulus, the factor is returned with twice the
+        limbs of the modulus, so that the intermediate products cannot overflow, and
+        reduced modulo it first if it has more limbs.
 
         Parameters
         ----------
@@ -422,74 +423,35 @@ class QuantumModulus(QuantumFloat):
         """
         # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import _jax_mod
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import _LIMB_BITS, _low_64_bits
 
         # Convert np.integer to a Python int for the Montgomery helpers
         if isinstance(value, np.integer):
             value = int(value)
 
         if not isinstance(self.modulus, BigInteger):
-            return self._reduced_integer_operand(value)
+            modulus = int(self.modulus) if isinstance(self.modulus, np.integer) else self.modulus
+            if isinstance(value, int):
+                return value % modulus if isinstance(modulus, int) else value
+            if isinstance(value, BigInteger):
+                # The modulus is smaller than 2**63, so the remainder fits into the low 64 bits
+                size = max(value.digits.shape[0], 2)
+                value = _low_64_bits(BigInteger.coerce(value, size) % BigInteger.coerce(modulus, size))
+            reduced = _jax_mod(value, modulus).astype(jnp.int64)
+            # Outside of tracing, the Montgomery helpers compute exactly with Python ints
+            return reduced if check_for_tracing_mode() else int(reduced)
 
-        # The number of limbs of the modulus (width) and of the factor (size)
         width = self.modulus.digits.shape[0]
-        limb_bits = jnp.iinfo(self.modulus.digits.dtype).bits
-        if isinstance(value, BigInteger):
-            size = value.digits.shape[0]
-        elif isinstance(value, int):
-            size = -(-value.bit_length() // limb_bits)
-        else:
-            size = -(-jnp.iinfo(value.dtype).bits // limb_bits)
-
+        if not isinstance(value, BigInteger):
+            # With enough limbs for every bit of the factor
+            bits = value.bit_length() if isinstance(value, int) else jnp.iinfo(value.dtype).bits
+            value = BigInteger.coerce(value, max(width, -(-bits // _LIMB_BITS)))
+        size = value.digits.shape[0]
         if size > width:
             # Reduce at the width of the factor, then drop its high limbs, which are zero
-            reduced = BigInteger.coerce(value, size) % BigInteger.coerce(self.modulus, size)
-            value = BigInteger(reduced.digits[:width])
-
+            value = BigInteger((value % BigInteger.coerce(self.modulus, size)).digits[:width])
         return _coerce_bigint_operand(value, self.modulus).get_larger()
-
-    def _reduced_integer_operand(self, value: int | BigInteger | Array) -> int | Array:
-        """Return a classical factor reduced modulo the integer modulus.
-
-        The traced Montgomery helpers only keep the low 64 bits of the factor, and
-        the inverse computation casts it to the signed dtype of the modulus, so an
-        unreduced BigInteger, unsigned or negative factor would give wrong results.
-
-        Parameters
-        ----------
-        value : int, Array or BigInteger
-            The classical factor.
-
-        Returns
-        -------
-        int or Array
-            The factor modulo N, as an int64 JAX integer under tracing for a JAX or
-            BigInteger factor.
-
-        """
-        # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-
-        modulus = int(self.modulus) if isinstance(self.modulus, np.integer) else self.modulus
-        if isinstance(value, int):
-            # Exact for any size, while the traced partial products only keep 64 bits
-            return value % modulus if isinstance(modulus, int) else value
-
-        if isinstance(value, BigInteger):
-            # The modulus is smaller than 2**63, so the remainder fits into two limbs
-            size = max(value.digits.shape[0], 2)
-            remainder = BigInteger.coerce(value, size) % BigInteger.coerce(modulus, size)
-            digits = remainder.digits.astype(jnp.uint64)
-            limb_bits = jnp.uint64(jnp.iinfo(remainder.digits.dtype).bits)
-            reduced = (digits[0] | (digits[1] << limb_bits)).astype(jnp.int64)
-        elif jnp.issubdtype(value.dtype, jnp.unsignedinteger):
-            # Casting an unsigned factor of 2**63 or more to int64 would make it negative
-            modulus_64 = jnp.asarray(modulus).astype(jnp.uint64)
-            reduced = (value.astype(jnp.uint64) % modulus_64).astype(jnp.int64)
-        else:
-            reduced = value.astype(jnp.int64) % jnp.asarray(modulus, dtype=jnp.int64)
-
-        # Outside of tracing, the Montgomery helpers compute exactly with Python ints
-        return reduced if check_for_tracing_mode() else int(reduced)
 
     def _classical_factor_operands(
         self, other: _ClassicalInteger
