@@ -89,88 +89,132 @@ def q_montgomery_reduction(
     cx(qf[m + 1], qf[m])
 
 
-# The aux register of the Montgomery multiplication has m + 1 qubits. Up to this
-# width, the constants added to it are computed with 64-bit integers.
-_MAX_MACHINE_AUX_BITS = 32
+# Number of bits of a BigInteger limb
+_LIMB_BITS = 32
+# The aux register of the Montgomery multiplication has m + 1 qubits, and only the
+# low m + 1 bits of the constants added to it matter. Up to this register size, they
+# are computed with 64-bit integers, and from the exact inverse of N beyond it.
+_MAX_MACHINE_AUX_BITS = 64
+_ALL_ONES_64 = 2**64 - 1
 
 
-def _low_bits(value: int | BigInteger | Array, num_bits: int | Array) -> int | Array:
-    """Return ``value`` modulo ``2**num_bits``, for ``num_bits`` up to 32.
+def _low_64_bits(value: int | BigInteger | Array) -> Array:
+    """Return ``value`` modulo ``2**64`` as an unsigned 64-bit integer.
 
     Parameters
     ----------
     value : int, BigInteger or Array
         A non-negative integer.
-    num_bits : int or Array
-        The number of low bits to keep, at most 32.
 
     Returns
     -------
-    int or Array
-        The low bits, as a Python integer for Python inputs and an int64 array otherwise.
+    Array
+        The low 64 bits, of dtype ``uint64``.
 
     """
-    low = value.digits[0] if isinstance(value, BigInteger) else value
-    if isinstance(low, (int, np.integer)) and isinstance(num_bits, (int, np.integer)):
-        return int(low) & ((1 << int(num_bits)) - 1)
-    mask = (jnp.uint64(1) << jnp.asarray(num_bits).astype(jnp.uint64)) - jnp.uint64(1)
-    return (jnp.asarray(low).astype(jnp.uint64) & mask).astype(jnp.int64)
+    if isinstance(value, BigInteger):
+        digits = value.digits.astype(jnp.uint64)
+        low = digits[0]
+        if digits.shape[0] > 1:
+            low = low | (digits[1] << jnp.uint64(_LIMB_BITS))
+        return low
+    if isinstance(value, (int, np.integer)):
+        return jnp.asarray(int(value) & _ALL_ONES_64, dtype=jnp.uint64)
+    return jnp.asarray(value).astype(jnp.uint64)
 
 
-def _inverse_mod_power_of_two(N: int | BigInteger | Array, num_bits: int | Array) -> int | Array:
-    """Return ``N**-1`` modulo ``2**num_bits`` for an odd ``N``, from its lowest bits.
+def _inverse_mod_2_64(N: int | BigInteger | Array) -> Array:
+    """Return ``N**-1`` modulo ``2**64`` for an odd ``N``, by Newton's iteration on its lowest bits.
 
     Parameters
     ----------
     N : int, BigInteger or Array
         An odd integer.
-    num_bits : int or Array
-        The number of bits of the modulus, at most 32.
 
     Returns
     -------
-    int or Array
-        The inverse, as a Python integer for Python inputs and an int64 array otherwise.
+    Array
+        The inverse, of dtype ``uint64``.
 
     """
-    low = _low_bits(N, num_bits)
-    if isinstance(low, int):
-        return pow(low, -1, 1 << int(num_bits))
-    low = low.astype(jnp.uint64)
+    low = _low_64_bits(N)
     # An odd number is its own inverse modulo 8, and every Newton step doubles the
-    # number of correct bits (3, 6, 12, 24, 48), which covers the 32 bits needed
+    # number of correct bits: 3, 6, 12, 24, 48, 96
     inverse = low
-    for _ in range(4):
+    for _ in range(5):
         inverse = inverse * (jnp.uint64(2) - low * inverse)
-    return _low_bits(inverse, num_bits)
+    return inverse
 
 
-def _times_mod_power_of_two(
-    a: int | BigInteger | Array, b: int | BigInteger | Array, num_bits: int | Array
-) -> int | Array:
-    """Return ``a * b`` modulo ``2**num_bits``, for ``num_bits`` up to 32, from the low bits of the factors.
+@jax.jit
+def _aux_inverses(N: BigInteger | Array, R: BigInteger | Array, m: Array) -> tuple[Array, BigInteger | Array]:
+    """Return the inverses of ``N`` that the constants of the aux register need.
 
     Parameters
     ----------
-    a : int, BigInteger or Array
-        A non-negative factor.
-    b : int, BigInteger or Array
-        A non-negative factor.
-    num_bits : int or Array
-        The number of bits of the modulus, at most 32.
+    N : BigInteger or Array
+        The odd modulus.
+    R : BigInteger or Array
+        The Montgomery radix ``2**m``, with the width of the factor.
+    m : Array
+        The Montgomery shift. The aux register has ``m + 1`` qubits.
 
     Returns
     -------
-    int or Array
-        The product modulo ``2**num_bits``.
+    tuple
+        ``N**-1`` modulo ``2**64``, and for a BigInteger modulus ``N**-1`` modulo
+        ``2**(m + 1)`` if the aux register has more than 64 qubits (0 otherwise). The
+        second inverse is computed with ``modinv`` only in that case.
 
     """
-    a, b = _low_bits(a, num_bits), _low_bits(b, num_bits)
-    if isinstance(a, int) and isinstance(b, int):
-        return (a * b) & ((1 << int(num_bits)) - 1)
-    # The product of two numbers below 2**32 fits into 64 unsigned bits
-    product = jnp.asarray(a).astype(jnp.uint64) * jnp.asarray(b).astype(jnp.uint64)
-    return _low_bits(product, num_bits)
+    inverse_64 = _inverse_mod_2_64(N)
+    if not isinstance(N, BigInteger):
+        # An integer modulus has at most 63 bits, and its shift at most 63
+        return inverse_64, jnp.int64(0)
+    zero = BigInteger(jnp.zeros_like(N.digits))
+    inverse = lax.cond(m + 1 > _MAX_MACHINE_AUX_BITS, lambda: modinv(N, R << 1), lambda: zero)
+    return inverse_64, inverse
+
+
+@jax.jit
+def _aux_constant(
+    partial_product: BigInteger | Array, inverse_64: Array, inverse: BigInteger | Array, num_bits: Array
+) -> BigInteger | Array:
+    """Return ``partial_product * N**-1`` modulo ``2**num_bits``, the constant added to the aux register.
+
+    The aux register has ``num_bits = m + 1`` qubits, and the adder only reads these
+    bits of the constant. Up to 64 of them are computed with 64-bit integers, more
+    from the exact inverse.
+
+    Parameters
+    ----------
+    partial_product : BigInteger or Array
+        The reduced partial product ``X * 2**j mod N``.
+    inverse_64 : Array
+        ``N**-1`` modulo ``2**64``.
+    inverse : BigInteger or Array
+        ``N**-1`` modulo ``2**num_bits``, used if ``num_bits > 64``.
+    num_bits : Array
+        The number of qubits of the aux register.
+
+    Returns
+    -------
+    BigInteger or Array
+        The constant, of the type of the partial product.
+
+    """
+    bits = jnp.minimum(jnp.asarray(num_bits), _MAX_MACHINE_AUX_BITS).astype(jnp.uint64)
+    mask = jnp.uint64(_ALL_ONES_64) >> (jnp.uint64(64) - bits)
+    value = (_low_64_bits(partial_product) * inverse_64) & mask
+    if not isinstance(partial_product, BigInteger):
+        # The bits of the int64 are those of the unsigned value, which the adder reads
+        return lax.bitcast_convert_type(value, jnp.int64)
+
+    digits = jnp.zeros_like(partial_product.digits)
+    digits = digits.at[0].set((value & jnp.uint64(2**_LIMB_BITS - 1)).astype(digits.dtype))
+    if digits.shape[0] > 1:
+        digits = digits.at[1].set((value >> jnp.uint64(_LIMB_BITS)).astype(digits.dtype))
+    return lax.cond(num_bits <= _MAX_MACHINE_AUX_BITS, lambda: BigInteger(digits), lambda: partial_product * inverse)
 
 
 @jax.jit
@@ -184,10 +228,10 @@ def _partial_product_table(X: BigInteger | Array, N: BigInteger | Array, n: Arra
     Parameters
     ----------
     X : BigInteger or Array
-        The classical factor, smaller than ``N``.
+        The classical factor.
     N : BigInteger or Array
-        The modulus. A JAX integer modulus must be smaller than ``2**62``, so that
-        twice a partial product fits into 64 bits.
+        The modulus. A JAX integer modulus must be smaller than ``2**63``, so that
+        twice a partial product fits into 64 unsigned bits.
     n : Array
         The number of partial products.
 
@@ -198,36 +242,16 @@ def _partial_product_table(X: BigInteger | Array, N: BigInteger | Array, n: Arra
 
     """
     if isinstance(X, BigInteger):
+        modulus = N
         width = X.digits.shape[0]
         table = jnp.zeros((_LIMB_BITS * width, width), dtype=X.digits.dtype)
+        first = X % N
+    else:
+        modulus = _low_64_bits(N)
+        table = jnp.zeros(64, dtype=jnp.int64)
+        first = _low_64_bits(X) % modulus
 
-        def store_and_double(j: Array, carry: tuple[Array, BigInteger]) -> tuple[Array, BigInteger]:
-            """Store the partial product of ``j`` and double it modulo ``N``.
-
-            Parameters
-            ----------
-            j : Array
-                The index of the partial product.
-            carry : tuple
-                The table and the partial product of ``j``.
-
-            Returns
-            -------
-            tuple
-                The table and the partial product of ``j + 1``.
-
-            """
-            table, product = carry
-            table = table.at[j].set(product.digits)
-            doubled = product << 1
-            return table, BigInteger(jnp.where(doubled >= N, (doubled - N).digits, doubled.digits))
-
-        table, _ = lax.fori_loop(0, n, store_and_double, (table, X % N))
-        return table
-
-    table = jnp.zeros(64, dtype=jnp.int64)
-
-    def store_and_double_int(j: Array, carry: tuple[Array, Array]) -> tuple[Array, Array]:
+    def store_and_double(j: Array, carry: tuple) -> tuple:
         """Store the partial product of ``j`` and double it modulo ``N``.
 
         Parameters
@@ -244,16 +268,16 @@ def _partial_product_table(X: BigInteger | Array, N: BigInteger | Array, n: Arra
 
         """
         table, product = carry
-        table = table.at[j].set(product)
-        doubled = product * 2
-        return table, jnp.where(doubled >= N, doubled - N, doubled)
+        if isinstance(product, BigInteger):
+            doubled = product << 1
+            return table.at[j].set(product.digits), BigInteger(
+                jnp.where(doubled >= modulus, (doubled - modulus).digits, doubled.digits)
+            )
+        doubled = product * jnp.uint64(2)
+        return table.at[j].set(product.astype(jnp.int64)), jnp.where(doubled >= modulus, doubled - modulus, doubled)
 
-    modulus = jnp.asarray(N, dtype=jnp.int64)
-    table, _ = lax.fori_loop(0, n, store_and_double_int, (table, jnp.asarray(X, dtype=jnp.int64) % modulus))
+    table, _ = lax.fori_loop(0, n, store_and_double, (table, first))
     return table
-
-
-_LIMB_BITS = 32
 
 
 def _montgomery_radix(X: int | BigInteger, m: int) -> int | BigInteger:
@@ -322,7 +346,7 @@ def cq_montgomery_multiply(
     ... def cq(X, y, n, N):
     ...     qy = QuantumFloat(n)
     ...     qy[:] = y
-    ...     m = best_montgomery_shift(X, N)
+    ...     m = best_montgomery_shift(n, N)  # one partial product per qubit of qy
     ...     res = cq_montgomery_multiply(X, qy, N, m, gidney_adder)
     ...     return measure(res)
     >>> cq(5, 11, (11).bit_length(), 97)  # doctest: +SKIP
@@ -339,14 +363,11 @@ def cq_montgomery_multiply(
     if not x_is_montgomery:
         X = montgomery_encoder(X, R, N)
 
-    # N^{-1} modulo 2^{m+1}. The aux register has m + 1 qubits, so only the low
-    # m + 1 bits of the constants added to it matter, which machine integers hold
-    # for the shifts used in practice (m <= 31).
-    small_aux = not isinstance(m, (int, np.integer)) or m + 1 <= _MAX_MACHINE_AUX_BITS
-    if small_aux:
-        N1 = _inverse_mod_power_of_two(N, m + 1)
-    else:
-        N1 = modinv(N, R << 1)
+    # N^{-1} modulo 2^{m+1}, for the constants that uncompute the (m + 1)-qubit aux
+    # register. Under tracing, the shift m is traced (custom_control traces it), so
+    # the size of the aux register is only known at run time, see _aux_constant.
+    tracing = check_for_tracing_mode()
+    aux_inverses = _aux_inverses(N, R, m) if tracing else (None, modinv(N, R << 1))
 
     if check_for_tracing_mode():
         xrange = jrange
@@ -381,6 +402,26 @@ def cq_montgomery_multiply(
             return (X << j) % N
         return BigInteger(table[j]) if isinstance(X, BigInteger) else table[j]
 
+    def aux_constant(j: int | Array) -> int | BigInteger | Array:
+        """Return the constant ``(X * 2**j mod N) * N**-1 mod 2**(m + 1)`` added to the aux register.
+
+        Parameters
+        ----------
+        j : int or Array
+            The index of the partial product.
+
+        Returns
+        -------
+        int, BigInteger or Array
+            The constant. Outside of tracing, its bits from ``m + 1`` on are not
+            reduced, since the adder does not read them.
+
+        """
+        inverse_64, inverse = aux_inverses
+        if inverse_64 is None:
+            return partial_product(j) * inverse
+        return _aux_constant(partial_product(j), inverse_64, inverse, m + 1)
+
     # Multiplication: sum_j y_j * (X*2^j mod N) into wqf
     for i in xrange(n):
         j = n - i - 1
@@ -395,10 +436,7 @@ def cq_montgomery_multiply(
         j = n - i - 1
         with control(y[j]):
             with invert():
-                if small_aux:
-                    inpl_adder(_times_mod_power_of_two(partial_product(j), N1, m + 1), aux[:])
-                else:
-                    inpl_adder(partial_product(j) * N1, aux[:])
+                inpl_adder(aux_constant(j), aux[:])
 
     aux.delete()
     return res
@@ -652,7 +690,8 @@ def cq_montgomery_mat_multiply(A: QuantumArray, B: np.ndarray | Array, out: Quan
             for i in xrange(n1):
 
                 def true_fun():
-                    shift = best_montgomery_shift(B[k, j], A[i, k].modulus)
+                    # One partial product per qubit of A[i, k], whatever the value of B[k, j]
+                    shift = best_montgomery_shift(A[i, k].size, A[i, k].modulus)
                     aux = cq_montgomery_multiply(B[k, j], A[i, k], A[i, k].modulus, shift)
                     out[i, j] += aux
                     with invert():

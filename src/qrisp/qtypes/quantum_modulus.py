@@ -127,7 +127,10 @@ def _is_classical_factor(value: object) -> TypeGuard[_ClassicalInteger]:
     # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
-    return isinstance(value, (int, np.integer, jnp.integer, Array, Tracer, BigInteger))
+    # JAX values must have an integer dtype: a float factor is not truncated
+    if isinstance(value, (Array, Tracer)):
+        return jnp.issubdtype(value.dtype, jnp.integer)
+    return isinstance(value, (int, np.integer, jnp.integer, BigInteger))
 
 
 def _normalize_modular_arithmetic_operand(qm: QuantumModulus, other: _Operand) -> _Operand:
@@ -508,7 +511,11 @@ class QuantumModulus(QuantumFloat):
         raise TypeError(f"Quantum modular in-place multiplication with type {type(other)} not implemented")
 
     @gate_wrap(permeability=[1], is_qfree=True)
-    def inpl_mult(self, factor: _ClassicalInteger, inverse: _ClassicalInteger | None = None) -> QuantumModulus:
+    def inpl_mult(
+        self,
+        factor: int | np.integer | Array | BigInteger,
+        inverse: int | np.integer | Array | BigInteger | None = None,
+    ) -> QuantumModulus:
         r"""Multiply the register in place by a classical factor, optionally with its precomputed inverse.
 
         ``qm.inpl_mult(X)`` is the same as ``qm *= X``. To uncompute a temporary
@@ -544,7 +551,7 @@ class QuantumModulus(QuantumFloat):
         >>> from qrisp import QuantumModulus
         >>> qm = QuantumModulus(15)
         >>> qm[:] = 2
-        >>> qm.inpl_mult(7, inverse=13)  # doctest: +SKIP
+        >>> qm = qm.inpl_mult(7, inverse=13)
         >>> print(qm)
         {14: 1.0}
 

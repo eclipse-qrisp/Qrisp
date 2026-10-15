@@ -332,9 +332,9 @@ Bug Fixes
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
-  (``qm *= X`` and ``qm * X``) now chooses the Montgomery shift from the number
-  of qubits of the register, as the Montgomery reduction requires, instead of
-  from the value of the factor. For large factors the shift was about as large
+  (``qm *= X`` and ``qm * X``, and ``QuantumArray @ matrix``) now chooses the
+  Montgomery shift from the number of qubits of the register, as the Montgomery
+  reduction requires, instead of from the value of the factor. For large factors the shift was about as large
   as the register, so a controlled multiplication of an n-qubit register used
   3 to 4 times more T gates (for n between 32 and 512) and about 5n instead of
   3n qubits. For integer moduli of 32 bits or more, computing the shift also
@@ -356,7 +356,7 @@ Bug Fixes
   integer modulus by a classical factor computed its partial products as
   ``(X << j) % N`` in int64, which overflowed for moduli above about 33 bits and
   gave wrong results. The partial products are now computed by doubling modulo
-  ``N``, which is exact for moduli below 2**62
+  ``N``, which is exact for moduli below 2**63
   (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
 
 Compatibility

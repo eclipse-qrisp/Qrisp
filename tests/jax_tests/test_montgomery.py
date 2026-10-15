@@ -56,7 +56,9 @@ from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
 )
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv as jasp_modinv
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-    _inverse_mod_power_of_two,
+    _aux_constant,
+    _aux_inverses,
+    _inverse_mod_2_64,
     _partial_product_table,
     cq_montgomery_multiply,
     cq_montgomery_multiply_inplace,
@@ -380,27 +382,74 @@ def test_cq_montgomery_mat_multiply():
     assert outcome[0].tolist() == [[0, 3], [1, 1]]
 
 
-def test_inverse_mod_power_of_two():
-    """``_inverse_mod_power_of_two`` matches Python for Python integers, JAX integers and BigIntegers."""
+def test_cq_montgomery_mat_multiply_shift_depends_on_register_size():
+    """The circuit of ``QuantumArray @ matrix`` does not depend on the value of the matrix entries.
+
+    Regression test: the Montgomery shift was computed from the value of each entry
+    instead of the number of qubits of the register, as for ``qm *= X`` before.
+    """
+
+    def num_compiled_qubits(entry):
+        a_array = QuantumArray(qtype=QuantumModulus(97, inpl_adder=gidney_adder), shape=(1, 1))
+        a_array[:] = np.array([[3]])
+        r_array = a_array @ np.array([[entry]])
+        return r_array.qs.compile().num_qubits()
+
+    assert num_compiled_qubits(2) == num_compiled_qubits(95)
+
+
+def test_inverse_mod_2_64():
+    """``_inverse_mod_2_64`` is the inverse modulo 2**64, for Python integers, JAX integers and BigIntegers."""
     rng = random.Random(0)
-    for num_bits in (1, 2, 5, 13, 32):
-        for _ in range(8):
-            N = rng.randrange(1, 2**62, 2)
-            expected = pow(N, -1, 2**num_bits)
-            assert _inverse_mod_power_of_two(N, num_bits) == expected
-            assert int(jax.jit(_inverse_mod_power_of_two, static_argnums=1)(jnp.int64(N), num_bits)) == expected
-            assert int(_inverse_mod_power_of_two(BigInteger.create_static(N, 2), num_bits)) == expected
+    for _ in range(16):
+        N = rng.randrange(1, 2**63, 2)
+        for value in (N, jnp.int64(N), BigInteger.create_static(N, 2), BigInteger.create_static(N, 3)):
+            assert int(_inverse_mod_2_64(value)) * N % 2**64 == 1
 
 
-@pytest.mark.parametrize("limbs", [None, 2, 4], ids=["int", "2 limbs", "4 limbs"])
+# Largest aux register of a multiplication with an integer modulus
+INTEGER_AUX_BITS = 64
+
+
+@pytest.mark.parametrize("num_bits", [1, 5, 32, 33, 40, 63, 64, 65, 80])
+def test_aux_constant(num_bits):
+    """The constant added to the (m + 1)-qubit aux register is X * 2**j * N**-1 mod 2**(m + 1), for every size.
+
+    Regression test: the inverse of N was computed from its lowest 32 bits only, so the
+    aux register was not uncomputed for shifts m >= 32, for example in QuantumArray @ matrix.
+    """
+    rng = random.Random(num_bits)
+    width = 4
+    N = rng.randrange(2**100 + 1, 2**101, 2)
+    m = num_bits - 1
+    inverse_64, inverse = _aux_inverses(
+        BigInteger.create_static(N, width), BigInteger.create_static(2**m, width), jnp.int64(m)
+    )
+    for _ in range(4):
+        partial_product = rng.randrange(N)
+        constant = _aux_constant(
+            BigInteger.create_static(partial_product, width), inverse_64, inverse, jnp.int64(num_bits)
+        )
+        assert constant() % 2**num_bits == partial_product * pow(N, -1, 2**num_bits) % 2**num_bits
+
+    # An integer modulus has at most 63 bits, so its aux register at most 64 qubits
+    if num_bits <= INTEGER_AUX_BITS:
+        N_int = rng.randrange(2**61 + 1, 2**62, 2)
+        inverse_64, _ = _aux_inverses(jnp.int64(N_int), jnp.int64(0), jnp.int64(m))
+        partial_product = rng.randrange(N_int)
+        constant = int(_aux_constant(jnp.int64(partial_product), inverse_64, jnp.int64(0), jnp.int64(num_bits)))
+        assert constant % 2**num_bits == partial_product * pow(N_int, -1, 2**num_bits) % 2**num_bits
+
+
+@pytest.mark.parametrize("limbs", [None, 63, 2, 4], ids=["int", "63-bit int", "2 limbs", "4 limbs"])
 def test_partial_product_table(limbs):
     """Every row j < n of the table is X * 2**j mod N, as computed with Python integers."""
     rng = random.Random(limbs or 1)
-    bits = 61 if limbs is None else 32 * limbs // 2
+    bits = {None: 61, 63: 63}.get(limbs, 32 * (limbs or 0) // 2)
     N = rng.randrange(2 ** (bits - 1) + 1, 2**bits, 2)
     X = rng.randrange(N)
     n = bits
-    if limbs is None:
+    if limbs in (None, 63):
         table = _partial_product_table(jnp.int64(X), jnp.int64(N), n)
         rows = [int(table[j]) for j in range(n)]
     else:

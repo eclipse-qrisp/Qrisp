@@ -914,7 +914,7 @@ def test_inpl_mult_rejects_quantum_operands():
             main(operand_is_factor)
 
 
-@pytest.mark.parametrize("bits", [36, 40, 61])
+@pytest.mark.parametrize("bits", [36, 40, 61, 63])
 def test_inplace_multiplication_with_large_integer_modulus(bits):
     """``qm *= X`` computes X * y mod N for an integer modulus of up to 61 bits.
 
@@ -933,3 +933,22 @@ def test_inplace_multiplication_with_large_integer_modulus(bits):
         return measure(qm)
 
     assert int(multiply(factor, y)) == factor * y % N
+
+
+@pytest.mark.parametrize("operation", ["imul", "mul", "inpl_mult"])
+def test_multiplication_rejects_float_factors(operation):
+    """Multiplying by a float raises a TypeError instead of truncating the factor."""
+
+    def main():
+        qm = QuantumModulus(13)
+        qm[:] = 5
+        factor = jnp.float32(2.7)
+        if operation == "imul":
+            qm *= factor
+        elif operation == "mul":
+            qm * factor
+        else:
+            qm.inpl_mult(factor)
+
+    with pytest.raises(TypeError):
+        count_ops(meas_behavior="1")(main)()
