@@ -63,24 +63,21 @@ copyright = "2026, Qrisp developers"
 # ones.
 
 extensions = [
-    "sphinx_toolbox.sidebar_links",
     "nbsphinx",
-    "myst_parser",
     "sphinx.ext.autosummary",
     "sphinx.ext.autodoc",
-    "sphinx.ext.coverage",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
-    "sphinx.ext.todo",
     "sphinx.ext.viewcode",
+    # texext's math_dollar rewrites $...$ in docstrings/RST to :math:`...`; Sphinx core
+    # (incl. sphinx.ext.mathjax) does not parse dollar-delimited math itself.
     "texext",
     "numpydoc",
     "sphinx_sitemap",
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx_thebe",
-    "sphinx_new_tab_link",
     "tutorial_authors",
 ]
 
@@ -225,7 +222,7 @@ html_css_files = [
     "css/custom09.css",
 ]
 
-source_suffix = [".rst", ".md"]
+source_suffix = [".rst"]
 # Adds 'Edit on gitlab' in the upper right corner
 # html_context = {
 #     "display_gitlab": True, # Integrate Gitlab

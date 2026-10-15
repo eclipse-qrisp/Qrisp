@@ -29,7 +29,7 @@ def test_modular_adder():
 
         a[:] = 5
         b[:] = 4
-        jasp_mod_adder(a, b, 8, inpl_adder=fourier_adder)
+        mod_adder(a, b, fourier_adder, 8)
 
         return measure(b)
 

@@ -126,6 +126,16 @@ Improvements
   unchanged
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+- Fewer qubits for :func:`reflection <qrisp.reflection>`:
+  :func:`reflection <qrisp.reflection>` no longer bundles its operations into a
+  single gate. The bundling kept every ancilla of the ``state_function`` allocated
+  for the whole reflection, so compiled circuits could not reuse these qubits.
+  Circuits built with :func:`amplitude_amplification <qrisp.amplitude_amplification>`,
+  :func:`QAE <qrisp.QAE>` or :ref:`IQAE <IQAE>` now need fewer qubits whenever the
+  state function uses ancillas. Printed circuits show the individual
+  operations instead of a single ``reflection`` gate. Jasp mode is unaffected
+  (`PR #947 <https://github.com/eclipse-qrisp/Qrisp/pull/947>`_).
+
 Other New Features
 ------------------
 
@@ -157,6 +167,19 @@ Other New Features
 
 Bug Fixes
 ---------
+
+* Fixed the :func:`GQSP angle computation <qrisp.gqsp.gqsp_angles>` for
+  polynomials with complex coefficients. Unless
+  :math:`|p(e^{i\theta})| = |p(e^{-i\theta})|` for all :math:`\theta`, the angles implemented
+  a different polynomial, so :func:`GQSP <qrisp.gqsp.GQSP>`,
+  :func:`GQET <qrisp.gqsp.GQET>`, :func:`GQSVT <qrisp.gqsp.GQSVT>` and other
+  functions taking user-supplied coefficients applied the wrong transformation,
+  and :func:`fourier_series_loader <qrisp.gqsp.fourier_series_loader>` prepared
+  inaccurate states for signals such as an off-centre Gaussian. For example,
+  $p(z) = (1+iz)/2$ applied to $U = \mathrm{diag}(1, i)$ now correctly suppresses
+  the eigenvalue $i$. Real coefficients and
+  :func:`hamiltonian_simulation <qrisp.gqsp.hamiltonian_simulation>` were not
+  affected (`PR #953 <https://github.com/eclipse-qrisp/Qrisp/pull/953>`_).
 
 * Fixed a failure when a function decorated with
   :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
@@ -490,6 +513,12 @@ API Changes
   raise ``ValueError``
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* Removed ``jasp_mod_adder``. It was not used anywhere in Qrisp and duplicated
+  ``mod_adder``, which also works in Jasp, needs no spare qubit in the target
+  register and is cheaper when controlled. Replace
+  ``jasp_mod_adder(a, b, N, inpl_adder=adder)`` with ``mod_adder(a, b, adder, N)``
+  (`PR #965 <https://github.com/eclipse-qrisp/Qrisp/pull/965>`_).
+
 .. Add API changes above this line
 
 Development
@@ -650,6 +679,12 @@ Dependency Upgrades
   structured output formats for the formatter, fixing this without changing
   which formatting rules apply
   (`PR #820 <https://github.com/eclipse-qrisp/Qrisp/pull/820>`_).
+
+* Removed unused documentation dependencies: ``sphinx-toolbox``,
+  ``myst-parser`` and ``sphinx-new-tab-link``, along with the
+  ``sphinx.ext.coverage``, ``sphinx.ext.todo`` and
+  ``sphinx_toolbox.sidebar_links`` Sphinx extensions
+  (`PR #961 <https://github.com/eclipse-qrisp/Qrisp/pull/961>`_).
 
 .. Add dependency upgrades above this line
 
