@@ -14,10 +14,9 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Implements the QFT-based (Draper) additive operations and their QuasiRZZ helper gate.
+"""Implements the QFT-based (Draper) in-place adder and its QuasiRZZ helper gate.
 
-This module provides the standard :func:`fourier_adder` as well as its
-Jasp-traceable counterpart :func:`jasp_fourier_adder`.
+The :func:`fourier_adder` function works in both static and dynamic (Jasp) mode.
 """
 
 import jax
@@ -27,10 +26,11 @@ from qrisp.alg_primitives import QFT
 from qrisp.circuit import Operation, PGate, QuantumCircuit
 from qrisp.core.gate_application_functions import cp, cz, h, p, swap
 from qrisp.environments import QuantumEnvironment, conjugate, control
-from qrisp.jasp import DynamicQubitArray, jrange, qache
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jrange, qache
 from qrisp.qtypes import QuantumFloat
 
 
+@qache
 def fourier_adder(a, b, perform_QFT=True):
     """In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0008033>`__.
     Performs the addition:
@@ -39,15 +39,19 @@ def fourier_adder(a, b, perform_QFT=True):
 
         b += a
 
+    This function works in both static and dynamic (Jasp) mode. In dynamic
+    mode it is Jasp-traceable and additionally accepts ``BigInteger`` and
+    list-of-qubit inputs.
 
     Parameters
     ----------
-    a : int or QuantumVariable or list[Qubit]
+    a : int or BigInteger or QuantumVariable or list[Qubit]
         The value that should be added.
     b : QuantumVariable or list[Qubit]
         The value that should be modified in the in-place addition.
     perform_QFT : bool, optional
         If set to ``False``, no QFT is executed. The default is ``True``.
+        This parameter is only used in static mode.
 
     Examples
     --------
@@ -63,6 +67,49 @@ def fourier_adder(a, b, perform_QFT=True):
     {9: 1.0}
 
     """
+    if check_for_tracing_mode():
+        # Dynamic (Jasp) mode.
+        #
+        # BigInteger is imported lazily because importing it at module level
+        # triggers a circular import:
+        #
+        #   fourier_adder -> BigInteger (from jasp_bigintiger)
+        #     -> jasp_arithmetic/__init__ -> adders.fourier_adder (circular!)
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+            BigInteger,
+        )
+
+        if isinstance(a, list):
+            n_a = len(a)
+        elif isinstance(a, BigInteger):
+
+            @jax.jit
+            def get_size(a):
+                return a.bit_size()
+
+            n_a = get_size(a)
+            a = a()
+        else:
+            n_a = a.size
+
+        if isinstance(b, list):
+            n_b = len(b)
+        else:
+            n_b = b.size
+
+        with conjugate(_qft)(b):
+            if isinstance(a, (QuantumFloat, DynamicQubitArray, list)):
+                for i in jrange(n_a):
+                    with control(a[i]):
+                        for j in jrange(n_b):
+                            p(np.pi * 2.0 ** (j - n_b + 1 + i), b[j])
+
+            else:
+                for i in jrange(n_b):
+                    p(a * np.pi * 2.0 ** (i - n_b + 1), b[i])
+
+        return
+
     if perform_QFT:
         env = conjugate(QFT)(b, exec_swap=False)
     else:
@@ -152,45 +199,3 @@ def _qft(qv):
 
     for i in jrange(n // 2):
         swap(qv[i], qv[n - i - 1])
-
-
-@qache
-def jasp_fourier_adder(a, b):
-
-    # BigInteger is imported lazily because importing it at module level
-    # triggers a circular import:
-    #
-    #   fourier_adder -> BigInteger (from jasp_bigintiger)
-    #     -> jasp_arithmetic/__init__ -> adders.fourier_adder (circular!)
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
-        BigInteger,
-    )
-
-    if isinstance(a, list):
-        n_a = len(a)
-    elif isinstance(a, BigInteger):
-
-        @jax.jit
-        def get_size(a):
-            return a.bit_size()
-
-        n_a = get_size(a)
-        a = a()
-    else:
-        n_a = a.size
-
-    if isinstance(b, list):
-        n_b = len(b)
-    else:
-        n_b = b.size
-
-    with conjugate(_qft)(b):
-        if isinstance(a, (QuantumFloat, DynamicQubitArray, list)):
-            for i in jrange(n_a):
-                with control(a[i]):
-                    for j in jrange(n_b):
-                        p(np.pi * 2.0 ** (j - n_b + 1 + i), b[j])
-
-        else:
-            for i in jrange(n_b):
-                p(a * np.pi * 2.0 ** (i - n_b + 1), b[i])

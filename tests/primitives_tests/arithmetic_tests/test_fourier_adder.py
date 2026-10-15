@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests the static and Jasp-traceable Fourier adder implementations."""
+"""Tests the static and dynamic (Jasp) modes of the Fourier adder."""
 
 import pytest
 
@@ -24,7 +24,6 @@ from qrisp import (
     conjugate,
     fourier_adder,
     inpl_adder_test,
-    jasp_fourier_adder,
     measure,
 )
 from qrisp.alg_primitives.arithmetic.adders.fourier_adder import QuasiRZZ
@@ -70,7 +69,7 @@ def test_quasi_rzz_inverse():
     assert inverse.params[0] == -0.5
 
 
-def test_jasp_fourier_adder():
+def test_fourier_adder_dynamic():
 
     def call_fourier_adder():
 
@@ -79,7 +78,7 @@ def test_jasp_fourier_adder():
 
         a[:] = 5
         b[:] = 4
-        jasp_fourier_adder(a, b)
+        fourier_adder(a, b)
 
         return measure(b)
 
@@ -87,33 +86,33 @@ def test_jasp_fourier_adder():
     assert jaspr() == 9
 
 
-def test_jasp_fourier_adder_classical():
+def test_fourier_adder_dynamic_classical():
     """Classical addend (plain integer)."""
 
     def call_fourier_adder():
 
         b = QuantumFloat(5)
         b[:] = 4
-        jasp_fourier_adder(5, b)
+        fourier_adder(5, b)
         return measure(b)
 
     assert make_jaspr(call_fourier_adder)()() == 9
 
 
-def test_jasp_fourier_adder_bigint():
+def test_fourier_adder_dynamic_bigint():
     """Classical addend of type ``BigInteger``."""
 
     def call_fourier_adder():
 
         b = QuantumFloat(5)
         b[:] = 4
-        jasp_fourier_adder(BigInteger.create(5, 1), b)
+        fourier_adder(BigInteger.create(5, 1), b)
         return measure(b)
 
     assert make_jaspr(call_fourier_adder)()() == 9
 
 
-def test_jasp_fourier_adder_lists():
+def test_fourier_adder_dynamic_lists():
     """List-of-qubit inputs in eager (non-traced) mode."""
 
     a = QuantumFloat(4)
@@ -121,6 +120,6 @@ def test_jasp_fourier_adder_lists():
     a[:] = 3
     b[:] = 2
 
-    jasp_fourier_adder(list(a), list(b))
+    fourier_adder(list(a), list(b))
 
     assert b.get_measurement() == {5: 1.0}

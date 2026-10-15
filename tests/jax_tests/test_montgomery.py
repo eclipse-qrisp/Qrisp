@@ -207,7 +207,6 @@ def test_montgomery_find_order():
         fourier_adder,
         gidney_adder,
         h,
-        jasp_fourier_adder,
         jrange,
         terminal_sampling,
         x,
@@ -241,10 +240,10 @@ def test_montgomery_find_order():
         QFT(qpe_res, inv=True)
         return qpe_res
 
-    dict_jasp_fourier = find_order(4, 13, jasp_fourier_adder)
+    dict_jasp_fourier = find_order(4, 13, fourier_adder)
     dict_jasp_gidney = find_order(4, 13, gidney_adder)
 
-    dict_bim_fourier = find_order(BigInteger.create(4, 1), BigInteger.create(13, 1), jasp_fourier_adder)
+    dict_bim_fourier = find_order(BigInteger.create(4, 1), BigInteger.create(13, 1), fourier_adder)
     dict_bim_gidney = find_order(BigInteger.create(4, 1), BigInteger.create(13, 1), gidney_adder)
 
     def check_dict_equality(a, b):

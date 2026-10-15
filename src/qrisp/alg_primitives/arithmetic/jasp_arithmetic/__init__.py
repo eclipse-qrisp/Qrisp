@@ -15,11 +15,6 @@
 # ********************************************************************************
 
 
-from qrisp.alg_primitives.arithmetic.adders.fourier_adder import (
-    jasp_fourier_adder,
-)
-
-
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_adder import (
     jasp_mod_adder,
 )
