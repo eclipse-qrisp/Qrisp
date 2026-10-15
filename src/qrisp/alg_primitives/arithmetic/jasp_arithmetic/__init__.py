@@ -15,7 +15,7 @@
 # ********************************************************************************
 
 
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_fourier_adder import (
+from qrisp.alg_primitives.arithmetic.adders.fourier_adder import (
     jasp_fourier_adder,
 )
 

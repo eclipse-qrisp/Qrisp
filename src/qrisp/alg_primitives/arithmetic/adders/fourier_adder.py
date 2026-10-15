@@ -14,14 +14,21 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Implements the QFT-based (Draper) in-place adder and its QuasiRZZ helper gate."""
+"""Implements the QFT-based (Draper) additive operations and their QuasiRZZ helper gate.
 
+This module provides the standard :func:`fourier_adder` as well as its
+Jasp-traceable counterpart :func:`jasp_fourier_adder`.
+"""
+
+import jax
 import numpy as np
 
 from qrisp.alg_primitives import QFT
 from qrisp.circuit import Operation, PGate, QuantumCircuit
-from qrisp.core.gate_application_functions import cz, p
-from qrisp.environments import QuantumEnvironment, conjugate
+from qrisp.core.gate_application_functions import cp, cz, h, p, swap
+from qrisp.environments import QuantumEnvironment, conjugate, control
+from qrisp.jasp import DynamicQubitArray, jrange, qache
+from qrisp.qtypes import QuantumFloat
 
 
 def fourier_adder(a, b, perform_QFT=True):
@@ -127,3 +134,63 @@ class QuasiRZZ(Operation):
 
         res.definition = qc
         return res
+
+
+@qache
+def _qft(qv):
+    """Performs qft on the first n qubits in circuit (without swaps)"""
+    if isinstance(qv, list):
+        n = len(qv)
+    else:
+        n = qv.size
+
+    for i in jrange(n):
+        # pass
+        h(qv[n - 1 - i])
+        for k in jrange(n - i - 1):
+            cp(2.0 * np.pi / pow(2.0, (k + 2)), qv[n - 1 - (k + i + 1)], qv[n - 1 - i])
+
+    for i in jrange(n // 2):
+        swap(qv[i], qv[n - i - 1])
+
+
+@qache
+def jasp_fourier_adder(a, b):
+
+    # BigInteger is imported lazily because importing it at module level
+    # triggers a circular import:
+    #
+    #   fourier_adder -> BigInteger (from jasp_bigintiger)
+    #     -> jasp_arithmetic/__init__ -> adders.fourier_adder (circular!)
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
+        BigInteger,
+    )
+
+    if isinstance(a, list):
+        n_a = len(a)
+    elif isinstance(a, BigInteger):
+
+        @jax.jit
+        def get_size(a):
+            return a.bit_size()
+
+        n_a = get_size(a)
+        a = a()
+    else:
+        n_a = a.size
+
+    if isinstance(b, list):
+        n_b = len(b)
+    else:
+        n_b = b.size
+
+    with conjugate(_qft)(b):
+        if isinstance(a, (QuantumFloat, DynamicQubitArray, list)):
+            for i in jrange(n_a):
+                with control(a[i]):
+                    for j in jrange(n_b):
+                        p(np.pi * 2.0 ** (j - n_b + 1 + i), b[j])
+
+        else:
+            for i in jrange(n_b):
+                p(a * np.pi * 2.0 ** (i - n_b + 1), b[i])
