@@ -19,10 +19,15 @@
 import jax.numpy as jnp
 import networkx as nx
 import numpy as np
-from qrisp.vqe.problems.heisenberg import *
+import pytest
 
 from qrisp import QuantumFloat, QuantumVariable
 from qrisp.jasp import jaspify
+from qrisp.vqe.problems.heisenberg import (
+    create_heisenberg_ansatz,
+    greedy_edge_coloring,
+    heisenberg_problem,
+)
 
 
 def test_vqe_heisenberg():
@@ -61,3 +66,32 @@ def test_jasp_vqe_heisenberg():
     results = main()
 
     assert np.abs(min(results) - (-8.0)) < 2
+
+
+def _cycle_graph():
+    G = nx.Graph()
+    G.add_edges_from([(0, 1), (1, 2), (2, 3), (0, 3)])
+    return G
+
+
+@pytest.mark.parametrize("E", [None, [(0, 1)]])
+def test_greedy_edge_coloring(E):
+    """Tests ``greedy_edge_coloring`` with and without excluded edges."""
+    G = _cycle_graph()
+    coloring = greedy_edge_coloring(G, E)
+    assert len(coloring) >= 1
+
+
+@pytest.mark.parametrize("ansatz_type", ["per edge color", "per edge"])
+def test_heisenberg_ansatz_types(ansatz_type):
+    """Tests the ``per edge color`` and ``per edge`` Heisenberg ansatz variants."""
+    G = _cycle_graph()
+    M = nx.maximal_matching(G)
+    C = greedy_edge_coloring(G, M)
+
+    ansatz = create_heisenberg_ansatz(G, 1.0, 1.0, M, C, ansatz_type=ansatz_type)
+    qv = QuantumVariable(G.number_of_nodes())
+    ansatz(qv, [0.1] * 20)
+
+    vqe = heisenberg_problem(G, 1.0, 1.0, ansatz_type=ansatz_type)
+    assert vqe is not None
