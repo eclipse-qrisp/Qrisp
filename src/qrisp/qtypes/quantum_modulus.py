@@ -127,9 +127,9 @@ def _is_classical_factor(value: object) -> TypeGuard[_ClassicalInteger]:
     # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
-    # JAX values must have an integer dtype: a float factor is not truncated
+    # JAX values must be integer scalars: a float factor is not truncated
     if isinstance(value, (Array, Tracer)):
-        return jnp.issubdtype(value.dtype, jnp.integer)
+        return value.ndim == 0 and jnp.issubdtype(value.dtype, jnp.integer)
     return isinstance(value, (int, np.integer, jnp.integer, BigInteger))
 
 
@@ -405,7 +405,9 @@ class QuantumModulus(QuantumFloat):
         """Return a classical factor in the form that the Montgomery multiplication expects.
 
         For a BigInteger modulus, the factor is returned with twice the limbs of the
-        modulus, so that the intermediate products cannot overflow.
+        modulus, so that the intermediate products cannot overflow. A factor with
+        more limbs than the modulus is first reduced modulo it, so that no bit of
+        it is lost.
 
         Parameters
         ----------
@@ -425,11 +427,28 @@ class QuantumModulus(QuantumFloat):
         if isinstance(value, np.integer):
             value = int(value)
 
-        if isinstance(self.modulus, BigInteger):
-            if not isinstance(value, BigInteger):
-                value = _coerce_bigint_operand(value, self.modulus)
-            return value.get_larger()
-        return value
+        if not isinstance(self.modulus, BigInteger):
+            if isinstance(value, int) and isinstance(self.modulus, (int, np.integer)):
+                # Exact for any size, while the traced partial products only keep 64 bits
+                return value % int(self.modulus)
+            return value
+
+        # The number of limbs of the modulus (width) and of the factor (size)
+        width = self.modulus.digits.shape[0]
+        limb_bits = jnp.iinfo(self.modulus.digits.dtype).bits
+        if isinstance(value, BigInteger):
+            size = value.digits.shape[0]
+        elif isinstance(value, int):
+            size = -(-value.bit_length() // limb_bits)
+        else:
+            size = -(-jnp.iinfo(value.dtype).bits // limb_bits)
+
+        if size > width:
+            # Reduce at the width of the factor, then drop its high limbs, which are zero
+            reduced = BigInteger.coerce(value, size) % BigInteger.coerce(self.modulus, size)
+            value = BigInteger(reduced.digits[:width])
+
+        return _coerce_bigint_operand(value, self.modulus).get_larger()
 
     def _classical_factor_operands(
         self, other: _ClassicalInteger

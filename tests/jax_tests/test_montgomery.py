@@ -46,6 +46,7 @@ from qrisp import (
     x,
 )
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+    _jax_mulmod,
     bi_pow2mod,
     egcd,
     montgomery_decoder,
@@ -456,3 +457,29 @@ def test_partial_product_table(limbs):
         table = _partial_product_table(BigInteger.create_static(X, limbs), BigInteger.create_static(N, limbs), n)
         rows = [BigInteger(table[j])() for j in range(n)]
     assert rows == [(X << j) % N for j in range(n)]
+
+
+@pytest.mark.parametrize("limbs", [1, 2])
+def test_partial_product_table_full_width_modulus(limbs):
+    """The table is exact for a modulus that uses every bit of its limbs.
+
+    Regression test (review of #918): doubling a partial product of 2**(32 * limbs - 1)
+    or more dropped its top bit, for example for X = 2**W - 2 and N = 2**W - 1.
+    """
+    bits = 32 * limbs
+    N, X = 2**bits - 1, 2**bits - 2
+    X_bi, N_bi = BigInteger.create_static(X, limbs), BigInteger.create_static(N, limbs)
+    table = _partial_product_table(X_bi, N_bi, bits)
+    assert [BigInteger(table[j])() for j in range(bits)] == [(X << j) % N for j in range(bits)]
+
+
+@pytest.mark.parametrize("N", [13, 2**62 + 135])
+def test_jax_mulmod_unsigned_factors(N):
+    """``_jax_mulmod`` reduces unsigned factors of 2**63 or more in unsigned arithmetic.
+
+    Regression test (review of #918): the factors were cast to int64, which made
+    them negative, and ``_jax_mulmod(jnp.uint64(2**63), 1, 13)`` returned 5 instead of 8.
+    """
+    for a, b in [(2**63, 1), (2**63 + 5, 3), (2**64 - 1, 2**64 - 1)]:
+        assert int(_jax_mulmod(jnp.uint64(a), jnp.uint64(b), N)) == a * b % N
+        assert int(_jax_mulmod(jnp.uint64(a), b % 2**62, jnp.int64(N))) == a * (b % 2**62) % N

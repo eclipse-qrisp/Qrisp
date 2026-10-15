@@ -68,9 +68,30 @@ def _jax_mulmod(a: int | Array, b: int | Array, modulus: int | Array) -> Array:
     """
     dtype = jnp.asarray(modulus).dtype
     modulus = jnp.asarray(modulus, dtype=jnp.int64)
-    a = (jnp.asarray(a, dtype=jnp.int64) % modulus).astype(jnp.uint64)
-    b = (jnp.asarray(b, dtype=jnp.int64) % modulus).astype(jnp.uint64)
     n = modulus.astype(jnp.uint64)
+
+    def reduce_factor(factor: int | Array) -> Array:
+        """Reduce a factor modulo ``modulus``, in unsigned arithmetic for an unsigned factor.
+
+        Parameters
+        ----------
+        factor : int or jnp scalar
+            The factor.
+
+        Returns
+        -------
+        jnp scalar
+            ``factor % modulus``, of dtype ``uint64``.
+
+        """
+        factor = jnp.asarray(factor)
+        # Casting an unsigned factor of 2**63 or more to int64 would make it negative
+        if jnp.issubdtype(factor.dtype, jnp.unsignedinteger):
+            return factor.astype(jnp.uint64) % n
+        return (factor.astype(jnp.int64) % modulus).astype(jnp.uint64)
+
+    a = reduce_factor(a)
+    b = reduce_factor(b)
 
     def body_fun(i: Array, acc: Array) -> Array:
         # Bits of b from the most significant one (b < modulus < 2**63 has 63 bits)

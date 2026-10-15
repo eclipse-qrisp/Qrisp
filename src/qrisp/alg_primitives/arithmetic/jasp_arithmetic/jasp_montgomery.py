@@ -269,9 +269,13 @@ def _partial_product_table(X: BigInteger | Array, N: BigInteger | Array, n: Arra
         """
         table, product = carry
         if isinstance(product, BigInteger):
+            # The shift drops the top bit of the product. If it is set, the doubled
+            # product exceeds the modulus, and the wrapping subtraction is still exact.
+            overflow = (product.digits[-1] >> (_LIMB_BITS - 1)) != 0
             doubled = product << 1
+            subtract = overflow | (doubled >= modulus)
             return table.at[j].set(product.digits), BigInteger(
-                jnp.where(doubled >= modulus, (doubled - modulus).digits, doubled.digits)
+                jnp.where(subtract, (doubled - modulus).digits, doubled.digits)
             )
         doubled = product * jnp.uint64(2)
         return table.at[j].set(product.astype(jnp.int64)), jnp.where(doubled >= modulus, doubled - modulus, doubled)

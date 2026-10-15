@@ -456,6 +456,14 @@ Bug Fixes
   ``N``, which is exact for moduli below 2**63
   (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
 
+* The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
+  reduces a factor with more bits than the modulus modulo it, instead of
+  truncating it to the limbs of a BigInteger modulus (or to 64 bits under
+  tracing). A BigInteger factor with a different number of limbs than the
+  modulus is accepted, and a JAX array that is not an integer scalar raises a
+  ``TypeError``
+  (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
+
 Compatibility
 -------------
 
