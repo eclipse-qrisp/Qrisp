@@ -56,12 +56,12 @@ def test_rus():
             h(qbl[0])
 
             with control(qbl[0]):
-                mod_adder(a, b, jasp_fourier_adder, 7)
+                mod_adder(a, b, fourier_adder, 7)
 
             return measure(qbl[0]), b
 
         res = trial_function()
-        jasp_fourier_adder(5, res)
+        fourier_adder(5, res)
 
         return measure(res)
 
