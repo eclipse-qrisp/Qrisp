@@ -90,7 +90,7 @@ def multi_hamiltonian_measurement(
                 compilation_kwargs=compilation_kwargs,
                 subs_dic=subs_dic,
                 precompiled_qc=precompiled_qc,
-                _measurement=None if _measurements == None else _measurements[i],
+                _measurement=None if _measurements is None else _measurements[i],
             )
         )
 

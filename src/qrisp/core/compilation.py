@@ -305,7 +305,7 @@ def qompiler(
                         instr.op.ctrl_state,
                         clean_ancillae,
                         dirty_ancillae,
-                        use_mcm=(compile_mcm != None),
+                        use_mcm=(compile_mcm is not None),
                     )
 
                     data_list = compiled_mcx_data + data_list

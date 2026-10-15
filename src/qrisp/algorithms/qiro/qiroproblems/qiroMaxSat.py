@@ -63,7 +63,7 @@ def create_maxsat_replacement_routine(res, problem_updated):
     combinations_list = list(combinations(orig_nodes, 2))
 
     max_item, sign = find_max(orig_nodes, combinations_list, res, solutions)
-    if max_item == None:
+    if max_item is None:
         return problem, solutions, 0, exclusions
 
     # we just directly remove clauses from the problem, or literals from the clause.
