@@ -534,10 +534,14 @@ def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
         return (n - 1).bit_length() if n > 1 else 0
 
     if check_for_tracing_mode():
-        nj = jnp.asarray(n, dtype=jnp.int64)
+        nj = jnp.asarray(n)
+        # An unsigned value stays unsigned: in int64, the values from 2**63 on are negative
+        dtype = jnp.uint64 if jnp.issubdtype(nj.dtype, jnp.unsignedinteger) else jnp.int64
+        nj = nj.astype(dtype)
         # ceil(log2(n)) is the bit length of n - 1, counted exactly: a float log2
         # cannot tell 2**k + 1 from 2**k for large k.
-        bit_length = jnp.sum(jnp.right_shift((nj - 1)[..., None], jnp.arange(63, dtype=jnp.int64)) > 0, axis=-1)
+        shifts = jnp.arange(jnp.iinfo(dtype).bits, dtype=dtype)
+        bit_length = jnp.sum(jnp.right_shift((nj - 1)[..., None], shifts) > 0, axis=-1)
         bit_length = bit_length.astype(jnp.int64)
         return lax.select(nj <= 1, jnp.zeros_like(bit_length), bit_length)
 

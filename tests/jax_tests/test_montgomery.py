@@ -328,6 +328,17 @@ def test_traced_smallest_power_of_two_exact():
     assert int(traced(1)) == 0
 
 
+def test_traced_smallest_power_of_two_unsigned():
+    """Under tracing, `smallest_power_of_two` counts all 64 bits of an unsigned integer.
+
+    Regression test (review of #918): uint64 values were cast to int64, so the
+    values from 2**63 on were negative and gave 0.
+    """
+    traced = boolean_simulation(smallest_power_of_two)
+    for n in (0, 1, 5, 2**63 - 1, 2**63, 2**63 + 1, 3 * 2**62, 2**64 - 1):
+        assert int(traced(jnp.uint64(n))) == smallest_power_of_two(n), n
+
+
 def test_smallest_power_of_two_bigint_matches_int_at_powers_of_two():
     """`smallest_power_of_two` must agree between the int and BigInteger paths, including at exact powers of two."""  # {1, 2, 4, 8, 16, 1024} in addition to non-power-of-two values and n=0.
     for n in [0, 1, 2, 3, 4, 7, 8, 15, 16, 100, 1023, 1024]:

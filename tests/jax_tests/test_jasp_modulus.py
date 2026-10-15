@@ -1055,3 +1055,45 @@ def test_multiplication_by_python_int_wider_than_64_bits():
 
     for y in range(1, N):
         assert int(multiply(y)) == factor * y % N, y
+
+
+def test_inpl_mult_biginteger_inverse_with_integer_modulus():
+    """``qm.inpl_mult`` with an integer modulus accepts a BigInteger inverse.
+
+    Regression test (review of #918): the inverse stayed a one-limb BigInteger,
+    so the uncomputation truncated the modulus 2**40 + 39 to that limb.
+    """
+    N = 2**40 + 39
+
+    @boolean_simulation
+    def multiply(y):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        qm.inpl_mult(pow(3, -1, N), inverse=BigInteger.create_static(3, 1))
+        return measure(qm)
+
+    for y in (1, 12345, N - 1):
+        assert int(multiply(y)) == pow(3, -1, N) * y % N, y
+
+
+@pytest.mark.parametrize("operation", ["imul", "inpl_mult"])
+def test_inplace_multiplication_by_unsigned_factor(operation):
+    """An unsigned JAX factor of 2**63 or more is reduced modulo N in unsigned arithmetic.
+
+    Regression test (review of #918): the inverse computation cast the factor
+    2**64 - 1 (2 modulo 13) to int64, saw -1 and returned 1 instead of 7.
+    """
+    N, factor = 13, 2**64 - 1
+
+    @boolean_simulation
+    def multiply(y):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        if operation == "imul":
+            qm *= jnp.uint64(factor)
+        else:
+            qm.inpl_mult(jnp.uint64(factor))
+        return measure(qm)
+
+    for y in range(1, N):
+        assert int(multiply(y)) == factor * y % N, y
