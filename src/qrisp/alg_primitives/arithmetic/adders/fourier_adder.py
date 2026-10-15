@@ -31,8 +31,9 @@ from qrisp.qtypes import QuantumFloat
 
 
 @qache
-def fourier_adder(a, b, perform_QFT=True):
+def fourier_adder(a, b, perform_QFT=True):  # noqa: PLR0912
     """In-place adder function based on `this paper <https://arxiv.org/abs/quant-ph/0008033>`__.
+
     Performs the addition:
 
     ::
@@ -40,8 +41,7 @@ def fourier_adder(a, b, perform_QFT=True):
         b += a
 
     This function works in both static and dynamic (Jasp) mode. In dynamic
-    mode it is Jasp-traceable and additionally accepts ``BigInteger`` and
-    list-of-qubit inputs.
+    mode it is Jasp-traceable and additionally accepts ``BigInteger`` inputs.
 
     Parameters
     ----------
@@ -79,9 +79,7 @@ def fourier_adder(a, b, perform_QFT=True):
             BigInteger,
         )
 
-        if isinstance(a, list):
-            n_a = len(a)
-        elif isinstance(a, BigInteger):
+        if isinstance(a, BigInteger):
 
             @jax.jit
             def get_size(a):
@@ -92,13 +90,10 @@ def fourier_adder(a, b, perform_QFT=True):
         else:
             n_a = a.size
 
-        if isinstance(b, list):
-            n_b = len(b)
-        else:
-            n_b = b.size
+        n_b = b.size
 
         with conjugate(_qft)(b):
-            if isinstance(a, (QuantumFloat, DynamicQubitArray, list)):
+            if isinstance(a, (QuantumFloat, DynamicQubitArray)):
                 for i in jrange(n_a):
                     with control(a[i]):
                         for j in jrange(n_b):
@@ -153,7 +148,10 @@ def fourier_adder(a, b, perform_QFT=True):
 
 
 class QuasiRZZ(Operation):
+    """A phase gate conjugated by two CX gates, used by the QFT-based adder."""
+
     def __init__(self, angle):
+        """Create a ``QuasiRZZ`` gate rotating by ``angle`` radians."""
         qc = QuantumCircuit(2)
         qc.cx(qc.qubits[1], qc.qubits[0])
         qc.p(angle, qc.qubits[0])
@@ -165,10 +163,11 @@ class QuasiRZZ(Operation):
         self.is_qfree = True
 
     def inverse(self):
+        """Return the inverse gate, which negates the rotation angle."""
         return QuasiRZZ(-self.params[0])
 
     def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
-
+        """Return the controlled version of this gate."""
         qc = QuantumCircuit(2 + num_ctrl_qubits)
         qc.cx(qc.qubits[-1], qc.qubits[-2])
         qc.append(
@@ -186,10 +185,7 @@ class QuasiRZZ(Operation):
 @qache
 def _qft(qv):
     """Performs qft on the first n qubits in circuit (without swaps)"""
-    if isinstance(qv, list):
-        n = len(qv)
-    else:
-        n = qv.size
+    n = qv.size
 
     for i in jrange(n):
         # pass

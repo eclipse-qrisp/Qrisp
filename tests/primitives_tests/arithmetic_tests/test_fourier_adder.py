@@ -30,15 +30,17 @@ from qrisp.alg_primitives.arithmetic.adders.fourier_adder import QuasiRZZ
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.jasp import make_jaspr
 
+EXPECTED_SUM = 9
+RZZ_ANGLE = 0.5
+
 
 def test_fourier_adder():
-
+    """Run the generic in-place adder test harness on the static adder."""
     inpl_adder_test(fourier_adder)
 
 
 def test_fourier_adder_without_qft():
     """``perform_QFT=False`` assumes ``b`` is already in the Fourier basis."""
-
     a = QuantumFloat(3)
     b = QuantumFloat(3)
     a[:] = 5
@@ -52,7 +54,6 @@ def test_fourier_adder_without_qft():
 
 def test_fourier_adder_precision_error():
     """Adding a wider register onto a narrower one is rejected."""
-
     a = QuantumFloat(5)
     b = QuantumFloat(3)
 
@@ -62,17 +63,16 @@ def test_fourier_adder_precision_error():
 
 def test_quasi_rzz_inverse():
     """``QuasiRZZ.inverse`` negates the rotation angle."""
-
-    inverse = QuasiRZZ(0.5).inverse()
+    inverse = QuasiRZZ(RZZ_ANGLE).inverse()
 
     assert isinstance(inverse, QuasiRZZ)
-    assert inverse.params[0] == -0.5
+    assert inverse.params[0] == -RZZ_ANGLE
 
 
 def test_fourier_adder_dynamic():
+    """Quantum-quantum addition in dynamic (Jasp) mode."""
 
     def call_fourier_adder():
-
         a = QuantumFloat(5)
         b = QuantumFloat(5)
 
@@ -83,38 +83,35 @@ def test_fourier_adder_dynamic():
         return measure(b)
 
     jaspr = make_jaspr(call_fourier_adder)()
-    assert jaspr() == 9
+    assert jaspr() == EXPECTED_SUM
 
 
 def test_fourier_adder_dynamic_classical():
-    """Classical addend (plain integer)."""
+    """Classical addend (plain integer) in dynamic (Jasp) mode."""
 
     def call_fourier_adder():
-
         b = QuantumFloat(5)
         b[:] = 4
         fourier_adder(5, b)
         return measure(b)
 
-    assert make_jaspr(call_fourier_adder)()() == 9
+    assert make_jaspr(call_fourier_adder)()() == EXPECTED_SUM
 
 
 def test_fourier_adder_dynamic_bigint():
-    """Classical addend of type ``BigInteger``."""
+    """Classical addend of type ``BigInteger`` in dynamic (Jasp) mode."""
 
     def call_fourier_adder():
-
         b = QuantumFloat(5)
         b[:] = 4
         fourier_adder(BigInteger.create(5, 1), b)
         return measure(b)
 
-    assert make_jaspr(call_fourier_adder)()() == 9
+    assert make_jaspr(call_fourier_adder)()() == EXPECTED_SUM
 
 
-def test_fourier_adder_dynamic_lists():
-    """List-of-qubit inputs in eager (non-traced) mode."""
-
+def test_fourier_adder_lists():
+    """List-of-qubit inputs (static mode)."""
     a = QuantumFloat(4)
     b = QuantumFloat(4)
     a[:] = 3
