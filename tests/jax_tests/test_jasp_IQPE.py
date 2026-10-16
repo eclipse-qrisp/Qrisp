@@ -69,3 +69,9 @@ def test_IQPE_exact_phases(iter_spec):
 
     for y in range(2**precision):
         assert estimate(y / 2**precision) == y / 2**precision, y
+
+
+def test_IQPE_rejects_precision_above_63():
+    """IQPE applies U up to 2**(precision - 1) times, which overflows a 64-bit integer from a precision of 64 on."""
+    with pytest.raises(ValueError):
+        IQPE(None, lambda qv: None, precision=64)

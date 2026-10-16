@@ -72,9 +72,17 @@ def make_phase_estimation(precision):
         def apply_power(qv, k):
             p(2 * np.pi * phase * 2.0**k, qv[0])
 
-        return _semiclassical_phase_estimation(qv, apply_power, precision, num_limbs=-(-precision // 32))[1]
+        return BigInteger(_semiclassical_phase_estimation(qv, apply_power, precision, num_limbs=-(-precision // 32))[1])
 
     return estimate
+
+
+@pytest.fixture
+def seed_numpy():
+    """Return np.random.seed, with which the simulator samples the measurements, and restore the state afterwards."""
+    state = np.random.get_state()
+    yield np.random.seed
+    np.random.set_state(state)
 
 
 @pytest.mark.parametrize("precision", [1, 3, 5])
@@ -116,11 +124,11 @@ def test_phase_estimation_exact_phases_beyond_one_limb():
         assert estimate(y)() == y, y
 
 
-def test_phase_estimation_distribution_of_an_inexact_phase():
+def test_phase_estimation_distribution_of_an_inexact_phase(seed_numpy):
     """For a phase that t bits cannot represent, the outcomes follow the distribution of the phase estimation."""
     precision, phase, shots = 4, 1 / 3, 400
     estimate = make_phase_estimation(precision)
-    np.random.seed(2026)  # the simulator samples the measurements with NumPy
+    seed_numpy(2026)
     counts = Counter(estimate(phase)() for _ in range(shots))
 
     expected = qpe_outcome_distribution([phase], precision)
@@ -134,7 +142,7 @@ def test_phase_estimation_distribution_of_an_inexact_phase():
     [(2, 5, 4), (7, 15, 4), (4, 15, 2)],
     ids=["a=2, N=5", "a=7, N=15", "a=4, N=15"],
 )
-def test_order_finding_outcomes(a, N, order):
+def test_order_finding_outcomes(a, N, order, seed_numpy):
     """If the order r divides 2**t, every outcome is a multiple of 2**t / r.
 
     Every other outcome has probability 0, so a wrong multiplier, a wrong
@@ -147,7 +155,7 @@ def test_order_finding_outcomes(a, N, order):
         return semiclassical_order_finding(a, N)
 
     run = jaspify(main)
-    np.random.seed(a * N)
+    seed_numpy(a * N)
     for _ in range(3):
         assert run()() % (2**precision // order) == 0
 
@@ -240,8 +248,15 @@ def test_resources_match_the_phase_register_circuit(bits):
     assert semiclassical_qubits["peak_allocations"] == qpe_qubits["peak_allocations"] - (precision - 1)
     # The control qubits are allocated one after the other instead of all at once
     assert semiclassical_qubits["total_allocated"] == qpe_qubits["total_allocated"]
-    assert semiclassical_qubits["finally_allocated"] == n
+    # The semiclassical order finding also releases its register
+    assert semiclassical_qubits["finally_allocated"] == 0
     assert qpe_qubits["finally_allocated"] == n + precision
+
+
+def test_phase_estimation_rejects_too_few_limbs():
+    """An outcome of 40 bits does not fit into one limb, whose missing bits JAX would drop silently."""
+    with pytest.raises(ValueError):
+        _semiclassical_phase_estimation(None, lambda args, k: None, 40, num_limbs=1)
 
 
 def test_custom_precision():

@@ -184,7 +184,8 @@ Other New Features
   circuit needs ``2n - 1`` fewer qubits (``3n + 2 ceil(log2 n) + 2`` with the
   default adder) and ``2n`` single-qubit rotations instead of the controlled
   phase gates of the inverse QFT. The resource estimators count the circuit
-  without simulating it.
+  without simulating it
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
 .. Add other new features above this line
 
@@ -480,7 +481,8 @@ Bug Fixes
   precision. It therefore returned twice the phase modulo 1 and lost its most
   significant bit: a phase of 0.75 was estimated as 0.5. It now returns the
   phase, as documented, so code that relied on the previous values (twice the
-  phase) needs to be updated.
+  phase) needs to be updated
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
 Compatibility
 -------------
@@ -495,6 +497,11 @@ Compatibility
   (``TypeError``, ``ValueError``, ``NotImplementedError``) instead of a
   generic ``Exception``. Code using ``except Exception:`` is unaffected
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
+
+* :ref:`IQPE <IQPE>` returns the phase instead of twice the phase modulo 1
+  (see Bug Fixes), and raises a ``ValueError`` for a precision above 63, for
+  which the number of calls of the unitary overflowed a 64-bit integer
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
 .. Add compatibility notes above this line
 

@@ -33,11 +33,11 @@ import numpy as np
 from jax import Array
 
 from qrisp import QuantumBool, control, h, measure, rz
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import _LIMB_BITS
 from qrisp.jasp import jrange, q_fori_loop
 
-# Number of bits of a BigInteger limb
-_LIMB_BITS = 32
+# IQPE applies U up to 2**(precision - 1) times, counted with 64-bit integers
+_MAX_IQPE_PRECISION = 63
 
 
 def _semiclassical_phase_estimation(
@@ -46,7 +46,7 @@ def _semiclassical_phase_estimation(
     precision: int,
     ctrl_method: str | None = None,
     num_limbs: int = 0,
-) -> tuple[Array, BigInteger | None]:
+) -> tuple[Array, Array]:
     """Estimate the phase of a unitary ``U`` with one control qubit at a time, measured after every step.
 
     Parameters
@@ -62,16 +62,24 @@ def _semiclassical_phase_estimation(
         The method of the controlled ``U``, see :meth:`.control <qrisp.Operation.control>`.
         The default is None.
     num_limbs : int, optional
-        If positive, the outcome ``y`` is also returned as a BigInteger with this number
-        of limbs, at least ``ceil(t / 32)``. The default is 0.
+        The number of 32-bit limbs of the outcome ``y``, at least ``ceil(t / 32)``,
+        or 0 to compute only the estimated phase. The default is 0.
 
     Returns
     -------
     tuple
         The estimated phase ``y / 2**t`` as a float, exact for up to 53 bits, and the
-        outcome ``y`` as a BigInteger, or None if ``num_limbs`` is 0.
+        limbs of the outcome ``y`` (the digits of a BigInteger), of dtype ``uint32``.
+
+    Raises
+    ------
+    ValueError
+        If ``num_limbs`` is positive and too small for the outcome.
 
     """
+    # Otherwise JAX would drop the bits of the missing limbs silently
+    if num_limbs and isinstance(precision, int) and num_limbs * _LIMB_BITS < precision:
+        raise ValueError(f"{num_limbs} limbs cannot hold an outcome of {precision} bits")
 
     def step(j: Array, carry: tuple) -> tuple:
         """Measure bit ``j`` of the outcome.
@@ -82,7 +90,7 @@ def _semiclassical_phase_estimation(
             The step, from 0 to ``precision - 1``.
         carry : tuple
             The phase of the bits measured before (as a fraction of a turn), the
-            arguments of ``U`` and, if ``num_limbs`` is positive, the limbs of the outcome.
+            arguments of ``U`` and the limbs of the outcome.
 
         Returns
         -------
@@ -90,30 +98,29 @@ def _semiclassical_phase_estimation(
             The carry after the step.
 
         """
-        phase, args, *limbs = carry
+        phase, args, digits = carry
         control_qubit = QuantumBool()
         h(control_qubit)
         with control(control_qubit[0], ctrl_method=ctrl_method):
             apply_power(args, precision - 1 - j)
         # For a phase y / 2**t, the power 2**(t - 1 - j) gives the phase 0.y_j y_(j-1) ... y_0
         # in binary, and ``phase`` holds 0.y_(j-1) ... y_0. The rotation removes half of it,
-        # which leaves the phase y_j / 2: the Hadamard gate maps it to |y_j>.
+        # which leaves the phase y_j / 2: the Hadamard gate maps it to |y_j>. At step 0
+        # the angle is 0: the rotation is kept, so that every step has the same circuit.
         rz(-np.pi * phase, control_qubit)
         h(control_qubit)
         bit = measure(control_qubit)
         control_qubit.delete()
 
-        if limbs:
-            (digits,) = limbs
+        if num_limbs:
             limb = j // _LIMB_BITS
             shift = jnp.asarray(j % _LIMB_BITS, dtype=jnp.uint32)
-            limbs = [digits.at[limb].set(digits[limb] | (jnp.asarray(bit, dtype=jnp.uint32) << shift))]
-        return ((phase + bit) / 2, args, *limbs)
+            digits = digits.at[limb].set(digits[limb] | (jnp.asarray(bit, dtype=jnp.uint32) << shift))
+        return ((phase + bit) / 2, args, digits)
 
-    # The limbs of the outcome are only carried when they are asked for
-    initial = (jnp.asarray(0.0), args) + ((jnp.zeros(num_limbs, dtype=jnp.uint32),) if num_limbs else ())
-    phase, _, *limbs = q_fori_loop(0, precision, step, initial)
-    return phase, (BigInteger(limbs[0]) if limbs else None)
+    initial = (jnp.asarray(0.0), args, jnp.zeros(num_limbs, dtype=jnp.uint32))
+    phase, _, digits = q_fori_loop(0, precision, step, initial)
+    return phase, digits
 
 
 def IQPE(
@@ -162,10 +169,16 @@ def IQPE(
     float
         The estimated phase as a fraction of $2 \pi$.
 
+    Raises
+    ------
+    ValueError
+        If ``precision`` is larger than 63.
+
     Notes
     -----
-    Without ``iter_spec``, the last step calls ``U`` $2^{t-1}$ times, and with
-    ``iter_spec`` the number of iterations $2^{t-1}$ is a 64-bit integer. The
+    Without ``iter_spec``, the first step calls ``U`` $2^{t-1}$ times and the last
+    one once, $2^t - 1$ calls in total. The number of iterations $2^{t-1}$ is a
+    64-bit integer, also with ``iter_spec``, so the precision is at most 63. The
     estimate is a float, exact for a precision of up to 53 bits. For the order
     finding of Shor's algorithm with thousands of bits, see
     :func:`~qrisp.shor.semiclassical_order_finding`.
@@ -202,6 +215,8 @@ def IQPE(
     Array(0.1875, dtype=float64)
 
     """
+    if isinstance(precision, int) and precision > _MAX_IQPE_PRECISION:
+        raise ValueError(f"The precision of IQPE is at most {_MAX_IQPE_PRECISION}, got {precision}")
     kwargs = {} if kwargs is None else kwargs
 
     def apply_power(args: Any, k: Array) -> None:

@@ -16,39 +16,35 @@
 
 """Implements the quantum part of order finding with a semiclassical phase estimation, in Jasp mode."""
 
-# The phase estimation of order finding can reuse a single control qubit
-# (Griffiths and Niu, Phys. Rev. Lett. 76, 3228, 1996). Step j applies the
-# multiplication by a^(2^(t-1-j)) mod N controlled on a fresh qubit, removes the
-# phase of the bits measured before with a rotation, and measures bit j of the
-# outcome. The outcome has the same distribution as the measurement of a t-qubit
-# phase register after the inverse QFT, while the circuit needs t - 1 fewer qubits.
+# The semiclassical phase estimation itself is in qrisp.alg_primitives.iterative_qpe.
 
 from __future__ import annotations
 
 import math
 import operator
 from collections.abc import Callable
-from typing import cast
 
 import jax.numpy as jnp
 import numpy as np
 from jax import Array
 
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import _LIMB_BITS
 from qrisp.alg_primitives.iterative_qpe import _semiclassical_phase_estimation
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumModulus
 
 __all__ = ["semiclassical_order_finding"]
 
-# Number of bits of a BigInteger limb
-_LIMB_BITS = 32
 # The Montgomery multiplication needs an odd modulus, and order finding a modulus of at least 3
 _MIN_MODULUS = 3
 
 
 def _to_limbs(value: int, num_limbs: int) -> np.ndarray:
     """Return the little-endian 32-bit limbs of a non-negative Python integer, as in a BigInteger.
+
+    The limbs of ``BigInteger.create_static`` are traced in Jasp mode, where this
+    function is called, so they could not fill the NumPy tables of the multipliers.
 
     Parameters
     ----------
@@ -119,10 +115,13 @@ def semiclassical_order_finding(
     Returns
     -------
     BigInteger
-        The outcome $y$, with $\lceil t / 32 \rceil$ limbs.
+        The outcome $y$, with $\lceil t / 32 \rceil$ limbs. The register is deleted
+        before returning, so that repeated calls do not keep it allocated.
 
     Raises
     ------
+    TypeError
+        If ``a``, ``N`` or ``precision`` is not an integer.
     ValueError
         If ``N`` is even or smaller than 3, if ``a`` is not coprime to ``N``, or if
         ``precision`` is smaller than 1.
@@ -178,8 +177,9 @@ def semiclassical_order_finding(
     if precision < 1:
         raise ValueError(f"The precision must be at least 1, got {precision}")
 
-    # The classical numbers share one width, large enough for the modulus and the outcome
-    num_limbs = -(-max(precision, 2 * num_register_qubits) // _LIMB_BITS)
+    # The modulus and the multipliers need the limbs of the register only: the
+    # multiplication widens them itself to hold its intermediate products
+    num_limbs = -(-num_register_qubits // _LIMB_BITS)
     # Step j multiplies by a**(2**(t - 1 - j)) mod N. The multipliers and their
     # inverses modulo N are computed here exactly with Python integers.
     multipliers = np.empty((precision, num_limbs), dtype=np.uint32)
@@ -209,6 +209,6 @@ def semiclassical_order_finding(
         register.inpl_mult(BigInteger(multipliers[k]), inverse=BigInteger(inverses[k]))
 
     num_outcome_limbs = -(-precision // _LIMB_BITS)
-    _, outcome = _semiclassical_phase_estimation(register, multiply_by_power, precision, num_limbs=num_outcome_limbs)
-    # The outcome is returned, since num_limbs is positive
-    return cast("BigInteger", outcome)
+    _, digits = _semiclassical_phase_estimation(register, multiply_by_power, precision, num_limbs=num_outcome_limbs)
+    register.delete()
+    return BigInteger(digits)
