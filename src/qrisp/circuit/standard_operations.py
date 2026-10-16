@@ -271,7 +271,7 @@ def RGate(theta: FloatLike = 0, phi: FloatLike = 0):
         The R gate operation.
 
     """
-    res = U3Gate(-theta, phi, -phi, name="r", global_phase=0)
+    res = U3Gate(theta, phi - (np.pi / 2), (np.pi / 2) - phi, name="r", global_phase=0)
     res.params = [theta, phi]
     return res
 
@@ -587,6 +587,7 @@ def SXGate():
 
     """
     res = RXGate(np.pi / 2)
+    res.global_phase = np.pi / 4
     res.name = "sx"
     res.params = []
 
@@ -606,6 +607,7 @@ def SXDGGate():
 
     """
     res = RXGate(-np.pi / 2)
+    res.global_phase = -np.pi / 4
     res.name = "sx_dg"
     res.params = []
 
