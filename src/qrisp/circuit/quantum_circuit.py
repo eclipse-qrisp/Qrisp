@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -37,6 +38,12 @@ from qrisp.misc import (
     cnot_depth_indicator,
     get_depth_dic,
     t_depth_indicator,
+)
+from qrisp.misc.exceptions import QrispDeprecationWarning
+from qrisp.misc.utility import (
+    _NonCliffordTRotationError,
+    _t_depth_epsilon_from_params,
+    _t_depth_indicator,
 )
 
 if TYPE_CHECKING:
@@ -74,6 +81,16 @@ def _check_qubit_locks(qubits: list, operation) -> None:
             raise RuntimeError(
                 f"Tried to perform non-permeable operation {operation.name} on perm_locked qubit {critical_qubits[0]}"
             )
+
+
+def _warn_t_depth_epsilon_deprecated(reason: str) -> None:
+    """Warn that estimating the synthesis precision ``epsilon`` for T-depth is deprecated."""
+    warnings.warn(
+        f"{reason}: there is no generally sensible choice for the precision. Pass a "
+        "``depth_indicator`` that assigns a T-depth to rotations that are neither Clifford nor T gates.",
+        QrispDeprecationWarning,
+        stacklevel=3,
+    )
 
 
 class QuantumCircuit:
@@ -1320,113 +1337,103 @@ class QuantumCircuit:
 
         return int(max(depth_dic.values()))
 
-    def t_depth(self, epsilon: float | None = None) -> int:
+    def t_depth(
+        self,
+        epsilon: float | None = None,
+        depth_indicator: Callable[[Operation], float] | None = None,
+    ) -> int:
         r"""Estimates the T-depth of this QuantumCircuit.
 
         T-depth is an important metric for fault-tolerant quantum computing,
         because T gates are expected to be the bottleneck in fault-tolerant
         architectures.
 
-        According to `this paper <https://arxiv.org/abs/1403.2975>`_, the
-        synthesis of an $RZ(\phi)$ up to precision $\epsilon$ requires
-        $3\log_2(\frac{1}{\epsilon})$ T-gates.
-
-        Based on this formula, this method performs a conservative estimate of
-        the T-depth of this circuit.
+        By default, the T-depth of each gate is determined by
+        :func:`~qrisp.t_depth_indicator`: Clifford gates are free, and $T$,
+        $T^\dagger$ and rotations by odd multiples of $\frac{\pi}{4}$ cost 1.
+        Other rotations have no fixed T-depth, since it depends on how they are
+        synthesized. For circuits containing them, pass a ``depth_indicator``
+        that assigns them a T-depth.
 
         Parameters
         ----------
         epsilon : float, optional
-            The precision up to which parametrized gates should be
-            approximated. If not given, Qrisp will determine the precision
-            from the parameter with the highest required precision. See the
-            examples below for details.
+            Deprecated. The precision up to which rotations that are neither
+            Clifford nor T gates are synthesized, at a cost of
+            $3\log_2(\frac{1}{\epsilon})$ T-gates
+            (see `this paper <https://arxiv.org/abs/1403.2975>`_).
+        depth_indicator : Callable[[Operation], float], optional
+            A function returning the T-depth of an :ref:`Operation`. The default
+            is :func:`~qrisp.t_depth_indicator`.
 
         Returns
         -------
         int
             The estimated T-depth.
 
+        Raises
+        ------
+        ValueError
+            If both ``epsilon`` and ``depth_indicator`` are given.
+
         Examples
         --------
         We create a QuantumCircuit and evaluate the T-depth:
 
-        >>> import numpy as np
         >>> from qrisp import QuantumCircuit
         >>> qc = QuantumCircuit(2)
         >>> qc.t(0)
         >>> qc.cx(0, 1)
-        >>> qc.rx(2*np.pi*3/2**4, 1)
-        >>> qc.t_depth(epsilon=2**-5)
-        16
-
-        In this example we execute a T-gate on qubit 0 (T-depth: 1), followed
-        by a CNOT (T-depth: 0), and finally an RX gate on qubit 1.
-
-        The RX gate can be decomposed as
-
-        .. math::
-
-            RX(\phi) = H \cdot RZ(\phi) \cdot H
-
-        so its T-depth equals that of the parametrized RZ. To determine the
-        T-depth of $RZ(\phi)$ with precision $\epsilon = 2^{-5}$ we use the
-        formula above:
-
-        .. math::
-
-            \text{T-depth}(RZ(\phi),\; \epsilon = 2^{-5})
-            = 3 \log_2(2^5) = 15
-
-        Adding the 1 T-depth contribution from the T-gate gives a total of
-        16.
-
-        **Automatic precision determination**
-
-        When ``epsilon`` is not provided, Qrisp assumes every parameter has
-        the form
-
-        .. math::
-
-            \phi = 2\pi \frac{m}{2^k}
-
-        where $m$ is an integer. It determines the maximum $k$ across all
-        parameters and sets $\epsilon = 2^{-(k_{\max}+3)}$, where the extra
-        $+3$ is a conservative buffer that slightly overestimates the required
-        precision.
-
+        >>> qc.t(1)
+        >>> qc.s(1)
         >>> qc.t_depth()
-        22
+        2
 
-        In this circuit $k_{\max} = 4$, so $\epsilon = 2^{-7}$, giving a
-        T-depth of 22.
+        The CNOT makes the second T-gate wait for the first one, and the S-gate
+        is a Clifford gate, so the T-depth is 2.
+
+        To include other rotations, we define a T-depth indicator that falls
+        back to :func:`~qrisp.t_depth_indicator`, and assigns a fixed T-depth of
+        10 to the gates it cannot classify:
+
+        >>> from qrisp import t_depth_indicator
+        >>> def my_t_depth_indicator(op):
+        ...     try:
+        ...         return t_depth_indicator(op)
+        ...     except ValueError:
+        ...         return 10
+        >>> qc.rx(0.3, 1)
+        >>> qc.t_depth(depth_indicator=my_t_depth_indicator)
+        12
+
+        .. note::
+
+            For backwards compatibility, if ``depth_indicator`` and ``epsilon``
+            are not given and the circuit contains rotations that are neither
+            Clifford nor T gates, ``epsilon`` is still inferred from the gate
+            parameters, with a deprecation warning. In a future release, this
+            will raise a ``ValueError`` instead.
 
         """
-        if epsilon is None:
-            transpiled_qc = self.transpile()
+        if epsilon is not None:
+            if depth_indicator is not None:
+                raise ValueError("epsilon and depth_indicator cannot be given at the same time")
+            _warn_t_depth_epsilon_deprecated("The ``epsilon`` argument of ``QuantumCircuit.t_depth`` is deprecated")
+            return self.depth(depth_indicator=lambda x: _t_depth_indicator(x, epsilon))
 
-            max_circuit_prec = 15
-            for instr in transpiled_qc.data:
-                op = instr.op
+        if depth_indicator is not None:
+            return self.depth(depth_indicator=depth_indicator)
 
-                for par in op.params:
-                    # Normalize parameter to range [0, 2π) and convert to fixed-point representation
-                    normalized_par = (par % (2 * np.pi)) / (2 * np.pi)
-                    fixed_point_par = int(np.round(normalized_par * 2**15))
-
-                    # Find the position of the least significant bit
-                    for idx in range(max_circuit_prec):
-                        if fixed_point_par % (2**idx):
-                            max_circuit_prec = idx
-                            break
-
-            # Convert precision index to actual precision value
-            max_circuit_prec = 16 - max_circuit_prec
-
-            # Set epsilon based on the maximum precision across all parameters
-            epsilon = 2 ** (-max_circuit_prec - 3)
-
-        return self.depth(depth_indicator=lambda x: t_depth_indicator(x, epsilon))
+        try:
+            return self.depth(depth_indicator=t_depth_indicator)
+        except _NonCliffordTRotationError:
+            _warn_t_depth_epsilon_deprecated(
+                "This circuit contains rotations that are neither Clifford nor T gates. Inferring the "
+                "synthesis precision ``epsilon`` for them is deprecated, and will raise a ``ValueError`` "
+                "in a future release"
+            )
+            epsilon = _t_depth_epsilon_from_params(par for instr in self.transpile().data for par in instr.op.params)
+            return self.depth(depth_indicator=lambda x: _t_depth_indicator(x, epsilon))
 
     def cnot_depth(self) -> int:
         """Returns the CNOT depth of this QuantumCircuit.
