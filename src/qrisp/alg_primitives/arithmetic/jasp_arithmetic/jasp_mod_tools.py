@@ -35,11 +35,41 @@ from jax import Array, jit, lax
 from qrisp import check_for_tracing_mode
 
 from .jasp_bigintiger import (
+    DTYPE,
     BigInteger,
     bi_modinv,
     bi_montgomery_decode,
     bi_montgomery_encode,
 )
+
+# Number of bits of a BigInteger limb
+_LIMB_BITS = jnp.iinfo(DTYPE).bits
+_ALL_ONES_64 = 2**64 - 1
+
+
+def _low_64_bits(value: int | BigInteger | Array) -> Array:
+    """Return ``value`` modulo ``2**64`` as an unsigned 64-bit integer.
+
+    Parameters
+    ----------
+    value : int, BigInteger or Array
+        A non-negative integer.
+
+    Returns
+    -------
+    Array
+        The low 64 bits, of dtype ``uint64``.
+
+    """
+    if isinstance(value, BigInteger):
+        digits = value.digits.astype(jnp.uint64)
+        low = digits[0]
+        if digits.shape[0] > 1:
+            low = low | (digits[1] << jnp.uint64(_LIMB_BITS))
+        return low
+    if isinstance(value, (int, np.integer)):
+        return jnp.asarray(int(value) & _ALL_ONES_64, dtype=jnp.uint64)
+    return jnp.asarray(value).astype(jnp.uint64)
 
 
 def _jax_mod(value: int | Array, modulus: int | Array) -> Array:
@@ -543,9 +573,7 @@ def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
         nj = nj.astype(dtype)
         # ceil(log2(n)) is the bit length of n - 1, counted exactly: a float log2
         # cannot tell 2**k + 1 from 2**k for large k.
-        shifts = jnp.arange(jnp.iinfo(dtype).bits, dtype=dtype)
-        bit_length = jnp.sum(jnp.right_shift((nj - 1)[..., None], shifts) > 0, axis=-1)
-        bit_length = bit_length.astype(jnp.int64)
+        bit_length = (jnp.iinfo(dtype).bits - lax.clz(nj - 1)).astype(jnp.int64)
         return lax.select(nj <= 1, jnp.zeros_like(bit_length), bit_length)
 
     if isinstance(n, Array):

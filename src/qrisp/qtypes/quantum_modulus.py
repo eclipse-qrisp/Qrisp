@@ -127,10 +127,10 @@ def _is_classical_factor(value: object) -> TypeGuard[_ClassicalInteger]:
     # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
-    # JAX values must be integer scalars: a float factor is not truncated
-    if isinstance(value, (Array, Tracer)):
+    # JAX values, tracers included, must be integer scalars: a float factor is not truncated
+    if isinstance(value, Array):
         return value.ndim == 0 and jnp.issubdtype(value.dtype, jnp.integer)
-    return isinstance(value, (int, np.integer, jnp.integer, BigInteger))
+    return isinstance(value, (int, np.integer, BigInteger))
 
 
 def _normalize_modular_arithmetic_operand(qm: QuantumModulus, other: _Operand) -> _Operand:
@@ -423,8 +423,7 @@ class QuantumModulus(QuantumFloat):
         """
         # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import _jax_mod
-        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import _LIMB_BITS, _low_64_bits
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import _LIMB_BITS, _jax_mod, _low_64_bits
 
         # Convert np.integer to a Python int for the Montgomery helpers
         if isinstance(value, np.integer):
@@ -432,8 +431,8 @@ class QuantumModulus(QuantumFloat):
 
         if not isinstance(self.modulus, BigInteger):
             modulus = int(self.modulus) if isinstance(self.modulus, np.integer) else self.modulus
-            if isinstance(value, int):
-                return value % modulus if isinstance(modulus, int) else value
+            if isinstance(value, int) and isinstance(modulus, int):
+                return value % modulus
             if isinstance(value, BigInteger):
                 # The modulus is smaller than 2**63, so the remainder fits into the low 64 bits
                 size = max(value.digits.shape[0], 2)

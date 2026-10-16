@@ -30,7 +30,17 @@ from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange, 
 from qrisp.qtypes import QuantumBool, QuantumFloat, QuantumModulus
 
 from .jasp_bigintiger import BigInteger
-from .jasp_mod_tools import best_montgomery_shift, modinv, montgomery_decoder, montgomery_encoder, smallest_power_of_two
+from .jasp_mod_tools import (
+    _ALL_ONES_64,
+    _LIMB_BITS,
+    _jax_mod,
+    _low_64_bits,
+    best_montgomery_shift,
+    modinv,
+    montgomery_decoder,
+    montgomery_encoder,
+    smallest_power_of_two,
+)
 
 
 def q_montgomery_reduction(
@@ -89,38 +99,10 @@ def q_montgomery_reduction(
     cx(qf[m + 1], qf[m])
 
 
-# Number of bits of a BigInteger limb
-_LIMB_BITS = 32
 # The aux register of the Montgomery multiplication has m + 1 qubits, and only the
 # low m + 1 bits of the constants added to it matter. Up to this register size, they
 # are computed with 64-bit integers, and from the exact inverse of N beyond it.
 _MAX_MACHINE_AUX_BITS = 64
-_ALL_ONES_64 = 2**64 - 1
-
-
-def _low_64_bits(value: int | BigInteger | Array) -> Array:
-    """Return ``value`` modulo ``2**64`` as an unsigned 64-bit integer.
-
-    Parameters
-    ----------
-    value : int, BigInteger or Array
-        A non-negative integer.
-
-    Returns
-    -------
-    Array
-        The low 64 bits, of dtype ``uint64``.
-
-    """
-    if isinstance(value, BigInteger):
-        digits = value.digits.astype(jnp.uint64)
-        low = digits[0]
-        if digits.shape[0] > 1:
-            low = low | (digits[1] << jnp.uint64(_LIMB_BITS))
-        return low
-    if isinstance(value, (int, np.integer)):
-        return jnp.asarray(int(value) & _ALL_ONES_64, dtype=jnp.uint64)
-    return jnp.asarray(value).astype(jnp.uint64)
 
 
 def _inverse_mod_2_64(N: int | BigInteger | Array) -> Array:
@@ -249,7 +231,7 @@ def _partial_product_table(X: BigInteger | Array, N: BigInteger | Array, n: Arra
     else:
         modulus = _low_64_bits(N)
         table = jnp.zeros(64, dtype=jnp.int64)
-        first = _low_64_bits(X) % modulus
+        first = _jax_mod(X, modulus)
 
     def store_and_double(j: Array, carry: tuple) -> tuple:
         """Store the partial product of ``j`` and double it modulo ``N``.
@@ -373,10 +355,7 @@ def cq_montgomery_multiply(
     tracing = check_for_tracing_mode()
     aux_inverses = _aux_inverses(N, R, m) if tracing else (None, modinv(N, R << 1))
 
-    if check_for_tracing_mode():
-        xrange = jrange
-    else:
-        xrange = range
+    xrange = jrange if tracing else range
     n = jlen(y)
     if res is None:
         res = QuantumModulus(N)
@@ -386,7 +365,7 @@ def cq_montgomery_multiply(
     # The reduced partial products X*2^j mod N. Under tracing they are computed
     # once, by doubling, into a table indexed by j: the loops below run backwards
     # under invert(), so they cannot carry a running value.
-    table = _partial_product_table(X, N, n) if check_for_tracing_mode() else None
+    table = _partial_product_table(X, N, n) if tracing else None
 
     def partial_product(j: int | Array) -> int | BigInteger | Array:
         """Return the reduced partial product ``X * 2**j mod N``.
@@ -422,7 +401,7 @@ def cq_montgomery_multiply(
 
         """
         inverse_64, inverse = aux_inverses
-        if inverse_64 is None:
+        if not tracing:
             return partial_product(j) * inverse
         return _aux_constant(partial_product(j), inverse_64, inverse, m + 1)
 

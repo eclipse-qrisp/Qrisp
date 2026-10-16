@@ -484,6 +484,16 @@ def test_partial_product_table_full_width_modulus(limbs):
     assert [BigInteger(table[j])() for j in range(bits)] == [(X << j) % N for j in range(bits)]
 
 
+def test_partial_product_table_negative_factor():
+    """The table reduces a negative factor modulo N, as ``(X << j) % N`` did.
+
+    Regression test (review of #918): the factor was cast to uint64, so the
+    table held (2**64 - 3) * 2**j mod N for X = -3.
+    """
+    table = _partial_product_table(jnp.int64(-3), jnp.int64(13), 6)
+    assert [int(table[j]) for j in range(6)] == [(-3 << j) % 13 for j in range(6)]
+
+
 @pytest.mark.parametrize("N", [13, 2**62 + 135])
 def test_jax_mulmod_unsigned_factors(N):
     """``_jax_mulmod`` reduces unsigned factors of 2**63 or more in unsigned arithmetic.
