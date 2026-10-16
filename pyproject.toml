@@ -52,19 +52,17 @@ iqm = [
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
 docs = [
-    "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
-    "sphinx-toolbox==4.1.2",
+    "sphinx>=7,<10",
     "nbsphinx==0.9.8",
-    "ipykernel==7.3.0",
-    "myst-parser==5.1.0",
+    "ipykernel==7.4.0",
+    # texext's math_dollar converts $...$ in docstrings/RST to :math:`...`
     "texext==0.6.8",
-    "numpydoc==1.10.0",
+    "numpydoc==1.11.0",
     "sphinx-sitemap==2.9.0",
     "sphinx-copybutton==0.5.2",
     "sphinx-design==0.7.0",
     "sphinx-thebe==0.3.1",
-    "sphinx-new-tab-link==0.8.1",
-    "pydata-sphinx-theme==0.17.1",
+    "pydata-sphinx-theme==0.23.0",
 ]
 dev-code-style = [
     "ruff==0.16.5",
