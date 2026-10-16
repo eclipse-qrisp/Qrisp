@@ -1,4 +1,5 @@
 {% block sidebar %}
+{% if page_source_suffix is defined and page_source_suffix == '.ipynb' or sourcename is defined and '.ipynb' in sourcename %}
 <div class="related">
   <div class="admonition note custom-box" style="margin-bottom: 150px !important; text-align: center;">
     <p>
@@ -10,4 +11,5 @@
     <p>
   </div>
 </div>
+{% endif %}
 {% endblock %}
