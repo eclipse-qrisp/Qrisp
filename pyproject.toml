@@ -50,7 +50,7 @@ iqm = [
     "iqm-client[qrisp]"
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
-xdsl = ["xdsl==0.59.0"]
+xdsl = ["xdsl==0.73.0"]
 docs = [
     "sphinx>=7,<10",
     "nbsphinx==0.9.8",
