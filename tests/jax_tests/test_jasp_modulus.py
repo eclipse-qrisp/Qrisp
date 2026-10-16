@@ -914,7 +914,7 @@ def test_inpl_mult_rejects_quantum_operands():
             main(operand_is_factor)
 
 
-@pytest.mark.parametrize("bits", [36, 40, 61])
+@pytest.mark.parametrize("bits", [36, 40, 61, 63])
 def test_inplace_multiplication_with_large_integer_modulus(bits):
     """``qm *= X`` computes X * y mod N for an integer modulus of up to 61 bits.
 
@@ -933,3 +933,167 @@ def test_inplace_multiplication_with_large_integer_modulus(bits):
         return measure(qm)
 
     assert int(multiply(factor, y)) == factor * y % N
+
+
+@pytest.mark.parametrize("operation", ["imul", "mul", "inpl_mult"])
+def test_multiplication_rejects_float_factors(operation):
+    """Multiplying by a float raises a TypeError instead of truncating the factor."""
+
+    def main():
+        qm = QuantumModulus(13)
+        qm[:] = 5
+        factor = jnp.float32(2.7)
+        if operation == "imul":
+            qm *= factor
+        elif operation == "mul":
+            qm * factor
+        else:
+            qm.inpl_mult(factor)
+
+    with pytest.raises(TypeError):
+        count_ops(meas_behavior="1")(main)()
+
+
+@pytest.mark.parametrize("operation", ["imul", "mul", "inpl_mult"])
+def test_multiplication_rejects_non_scalar_factors(operation):
+    """Multiplying by a JAX array that is not a scalar raises a TypeError."""
+
+    def main():
+        qm = QuantumModulus(13)
+        qm[:] = 5
+        factor = jnp.array([3])
+        if operation == "imul":
+            qm *= factor
+        elif operation == "mul":
+            qm * factor
+        else:
+            qm.inpl_mult(factor)
+
+    with pytest.raises(TypeError):
+        count_ops(meas_behavior="1")(main)()
+
+
+def test_inpl_mult_with_smaller_width_inverse():
+    """``qm.inpl_mult`` accepts a BigInteger inverse with fewer limbs than the modulus.
+
+    Regression test: the inverse was widened from its own width,
+    and the uncomputation raised a ValueError for the mixed widths.
+    """
+
+    @boolean_simulation
+    def multiply(y):
+        qm = QuantumModulus(BigInteger.create_static(13, 2))
+        qm[:] = y
+        qm.inpl_mult(3, inverse=BigInteger.create_static(9, 1))
+        return measure(qm)
+
+    for y in (1, 5, 12):
+        assert multiply(y)() == 3 * y % 13, y
+
+
+@pytest.mark.parametrize(
+    "make_factor",
+    [
+        lambda f: f,
+        lambda f: BigInteger.create_static(f, 2),
+        lambda f: BigInteger.create_static(f, 4),
+    ],
+    ids=["int", "2-limb BigInteger", "4-limb BigInteger"],
+)
+def test_multiplication_by_factor_wider_than_biginteger_modulus(make_factor):
+    """A factor with more limbs than the BigInteger modulus is reduced modulo it, not truncated.
+
+    Regression test: the factor was cut to the limbs of the
+    modulus (a Python int) or rejected (a wider BigInteger).
+    """
+    N, factor = 4294967291, 2**40 + 3
+
+    @boolean_simulation
+    def multiply(y):
+        qm = QuantumModulus(BigInteger.create_static(N, 1))
+        qm[:] = y
+        qm *= make_factor(factor)
+        return measure(qm), measure(qm * make_factor(factor))
+
+    for y in (1, 12345, N - 1):
+        inplace, product = multiply(y)
+        assert inplace() == factor * y % N, y
+        assert product() == factor**2 * y % N, y
+
+
+def test_multiplication_by_traced_factor_wider_than_biginteger_modulus():
+    """A traced int64 factor with more bits than a one-limb BigInteger modulus is reduced modulo it.
+
+    Regression test (review of #918): the factor was cut to the 32 bits of the modulus.
+    """
+    N, factor = 4294967291, 2**40 + 3
+
+    @boolean_simulation
+    def multiply(factor, y):
+        qm = QuantumModulus(BigInteger.create_static(N, 1))
+        qm[:] = y
+        qm *= factor
+        return measure(qm)
+
+    for y in (1, 12345, N - 1):
+        assert multiply(factor, y)() == factor * y % N, y
+
+
+def test_multiplication_by_python_int_wider_than_64_bits():
+    """A Python int factor of more than 64 bits is reduced modulo an integer modulus.
+
+    Regression test: under tracing, only its low 64 bits were kept.
+    """
+    N, factor = 13, 2**70 + 3
+
+    @boolean_simulation
+    def multiply(y):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        qm *= factor
+        return measure(qm)
+
+    for y in range(1, N):
+        assert int(multiply(y)) == factor * y % N, y
+
+
+def test_inpl_mult_biginteger_inverse_with_integer_modulus():
+    """``qm.inpl_mult`` with an integer modulus accepts a BigInteger inverse.
+
+    Regression test (review of #918): the inverse stayed a one-limb BigInteger,
+    so the uncomputation truncated the modulus 2**40 + 39 to that limb.
+    """
+    N = 2**40 + 39
+
+    @boolean_simulation
+    def multiply(y):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        qm.inpl_mult(pow(3, -1, N), inverse=BigInteger.create_static(3, 1))
+        return measure(qm)
+
+    for y in (1, 12345, N - 1):
+        assert int(multiply(y)) == pow(3, -1, N) * y % N, y
+
+
+@pytest.mark.parametrize("operation", ["imul", "inpl_mult"])
+def test_inplace_multiplication_by_unsigned_factor(operation):
+    """An unsigned JAX factor of 2**63 or more is reduced modulo N in unsigned arithmetic.
+
+    Regression test (review of #918): the inverse computation cast the factor
+    2**64 - 1 (2 modulo 13) to int64, saw -1 and returned 1 instead of 7.
+    """
+    N, factor = 13, 2**64 - 1
+
+    @boolean_simulation
+    def multiply(y):
+        qm = QuantumModulus(N)
+        qm[:] = y
+        if operation == "imul":
+            qm *= jnp.uint64(factor)
+        else:
+            qm.inpl_mult(jnp.uint64(factor))
+        return measure(qm)
+
+    for y in range(1, N):
+        assert int(multiply(y)) == factor * y % N, y

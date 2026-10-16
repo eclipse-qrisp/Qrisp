@@ -127,7 +127,10 @@ def _is_classical_factor(value: object) -> TypeGuard[_ClassicalInteger]:
     # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 
-    return isinstance(value, (int, np.integer, jnp.integer, Array, Tracer, BigInteger))
+    # JAX values, tracers included, must be integer scalars: a float factor is not truncated
+    if isinstance(value, Array):
+        return value.ndim == 0 and jnp.issubdtype(value.dtype, jnp.integer)
+    return isinstance(value, (int, np.integer, BigInteger))
 
 
 def _normalize_modular_arithmetic_operand(qm: QuantumModulus, other: _Operand) -> _Operand:
@@ -401,8 +404,11 @@ class QuantumModulus(QuantumFloat):
     def _classical_operand(self, value: _ClassicalInteger) -> int | BigInteger | Array:
         """Return a classical factor in the form that the Montgomery multiplication expects.
 
-        For a BigInteger modulus, the factor is returned with twice the limbs of the
-        modulus, so that the intermediate products cannot overflow.
+        For an integer modulus, the factor is reduced modulo it: the traced Montgomery
+        helpers only keep its low 64 bits, and ``modinv`` casts it to the signed dtype
+        of the modulus. For a BigInteger modulus, the factor is returned with twice the
+        limbs of the modulus, so that the intermediate products cannot overflow, and
+        reduced modulo it first if it has more limbs.
 
         Parameters
         ----------
@@ -417,16 +423,34 @@ class QuantumModulus(QuantumFloat):
         """
         # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
         from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+        from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import _LIMB_BITS, _jax_mod, _low_64_bits
 
         # Convert np.integer to a Python int for the Montgomery helpers
         if isinstance(value, np.integer):
             value = int(value)
 
-        if isinstance(self.modulus, BigInteger):
-            if not isinstance(value, BigInteger):
-                value = _coerce_bigint_operand(value, self.modulus)
-            return value.get_larger()
-        return value
+        if not isinstance(self.modulus, BigInteger):
+            modulus = int(self.modulus) if isinstance(self.modulus, np.integer) else self.modulus
+            if isinstance(value, int) and isinstance(modulus, int):
+                return value % modulus
+            if isinstance(value, BigInteger):
+                # The modulus is smaller than 2**63, so the remainder fits into the low 64 bits
+                size = max(value.digits.shape[0], 2)
+                value = _low_64_bits(BigInteger.coerce(value, size) % BigInteger.coerce(modulus, size))
+            reduced = _jax_mod(value, modulus).astype(jnp.int64)
+            # Outside of tracing, the Montgomery helpers compute exactly with Python ints
+            return reduced if check_for_tracing_mode() else int(reduced)
+
+        width = self.modulus.digits.shape[0]
+        if not isinstance(value, BigInteger):
+            # With enough limbs for every bit of the factor
+            bits = value.bit_length() if isinstance(value, int) else jnp.iinfo(value.dtype).bits
+            value = BigInteger.coerce(value, max(width, -(-bits // _LIMB_BITS)))
+        size = value.digits.shape[0]
+        if size > width:
+            # Reduce at the width of the factor, then drop its high limbs, which are zero
+            value = BigInteger((value % BigInteger.coerce(self.modulus, size)).digits[:width])
+        return _coerce_bigint_operand(value, self.modulus).get_larger()
 
     def _classical_factor_operands(
         self, other: _ClassicalInteger
@@ -508,7 +532,11 @@ class QuantumModulus(QuantumFloat):
         raise TypeError(f"Quantum modular in-place multiplication with type {type(other)} not implemented")
 
     @gate_wrap(permeability=[1], is_qfree=True)
-    def inpl_mult(self, factor: _ClassicalInteger, inverse: _ClassicalInteger | None = None) -> QuantumModulus:
+    def inpl_mult(
+        self,
+        factor: int | np.integer | Array | BigInteger,
+        inverse: int | np.integer | Array | BigInteger | None = None,
+    ) -> QuantumModulus:
         r"""Multiply the register in place by a classical factor, optionally with its precomputed inverse.
 
         ``qm.inpl_mult(X)`` is the same as ``qm *= X``. To uncompute a temporary
@@ -544,7 +572,7 @@ class QuantumModulus(QuantumFloat):
         >>> from qrisp import QuantumModulus
         >>> qm = QuantumModulus(15)
         >>> qm[:] = 2
-        >>> qm.inpl_mult(7, inverse=13)  # doctest: +SKIP
+        >>> qm = qm.inpl_mult(7, inverse=13)
         >>> print(qm)
         {14: 1.0}
 

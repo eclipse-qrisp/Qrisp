@@ -35,11 +35,66 @@ from jax import Array, jit, lax
 from qrisp import check_for_tracing_mode
 
 from .jasp_bigintiger import (
+    DTYPE,
     BigInteger,
     bi_modinv,
     bi_montgomery_decode,
     bi_montgomery_encode,
 )
+
+# Number of bits of a BigInteger limb
+_LIMB_BITS = jnp.iinfo(DTYPE).bits
+_ALL_ONES_64 = 2**64 - 1
+
+
+def _low_64_bits(value: int | BigInteger | Array) -> Array:
+    """Return ``value`` modulo ``2**64`` as an unsigned 64-bit integer.
+
+    Parameters
+    ----------
+    value : int, BigInteger or Array
+        A non-negative integer.
+
+    Returns
+    -------
+    Array
+        The low 64 bits, of dtype ``uint64``.
+
+    """
+    if isinstance(value, BigInteger):
+        digits = value.digits.astype(jnp.uint64)
+        low = digits[0]
+        if digits.shape[0] > 1:
+            low = low | (digits[1] << jnp.uint64(_LIMB_BITS))
+        return low
+    if isinstance(value, (int, np.integer)):
+        return jnp.asarray(int(value) & _ALL_ONES_64, dtype=jnp.uint64)
+    return jnp.asarray(value).astype(jnp.uint64)
+
+
+def _jax_mod(value: int | Array, modulus: int | Array) -> Array:
+    """Compute ``value % modulus`` for a JAX integer of any signedness, for 0 < modulus < 2**63.
+
+    An unsigned value is reduced in unsigned arithmetic, a signed one in int64.
+
+    Parameters
+    ----------
+    value : int or jnp scalar
+        The integer to reduce.
+    modulus : int or jnp scalar
+        Modulus.
+
+    Returns
+    -------
+    jnp scalar
+        ``value % modulus``, of dtype ``uint64``.
+
+    """
+    value = jnp.asarray(value)
+    # Casting an unsigned value of 2**63 or more to int64 would make it negative
+    if jnp.issubdtype(value.dtype, jnp.unsignedinteger):
+        return value.astype(jnp.uint64) % jnp.asarray(modulus).astype(jnp.uint64)
+    return (value.astype(jnp.int64) % jnp.asarray(modulus, dtype=jnp.int64)).astype(jnp.uint64)
 
 
 @jit
@@ -67,10 +122,9 @@ def _jax_mulmod(a: int | Array, b: int | Array, modulus: int | Array) -> Array:
 
     """
     dtype = jnp.asarray(modulus).dtype
-    modulus = jnp.asarray(modulus, dtype=jnp.int64)
-    a = (jnp.asarray(a, dtype=jnp.int64) % modulus).astype(jnp.uint64)
-    b = (jnp.asarray(b, dtype=jnp.int64) % modulus).astype(jnp.uint64)
-    n = modulus.astype(jnp.uint64)
+    n = jnp.asarray(modulus, dtype=jnp.int64).astype(jnp.uint64)
+    a = _jax_mod(a, modulus)
+    b = _jax_mod(b, modulus)
 
     def body_fun(i: Array, acc: Array) -> Array:
         # Bits of b from the most significant one (b < modulus < 2**63 has 63 bits)
@@ -513,11 +567,13 @@ def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
         return (n - 1).bit_length() if n > 1 else 0
 
     if check_for_tracing_mode():
-        nj = jnp.asarray(n, dtype=jnp.int64)
+        nj = jnp.asarray(n)
+        # An unsigned value stays unsigned: in int64, the values from 2**63 on are negative
+        dtype = jnp.uint64 if jnp.issubdtype(nj.dtype, jnp.unsignedinteger) else jnp.int64
+        nj = nj.astype(dtype)
         # ceil(log2(n)) is the bit length of n - 1, counted exactly: a float log2
         # cannot tell 2**k + 1 from 2**k for large k.
-        bit_length = jnp.sum(jnp.right_shift((nj - 1)[..., None], jnp.arange(63, dtype=jnp.int64)) > 0, axis=-1)
-        bit_length = bit_length.astype(jnp.int64)
+        bit_length = (jnp.iinfo(dtype).bits - lax.clz(nj - 1)).astype(jnp.int64)
         return lax.select(nj <= 1, jnp.zeros_like(bit_length), bit_length)
 
     if isinstance(n, Array):
