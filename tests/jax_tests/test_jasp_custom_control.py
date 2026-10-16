@@ -57,3 +57,43 @@ def test_custom_control():
     jaspr = make_jaspr(test_f)()
 
     assert jaspr() == 2
+
+
+def test_custom_control_in_nested_and_inverted_controls():
+    """The custom controlled version is also used in nested and inverted control environments."""
+
+    @custom_control
+    def swap(qv, qb, ctrl=None):
+
+        cx(qv[0], qv[1])
+
+        if ctrl is not None:
+            with control(ctrl):
+                cx(qv[1], qv[0])
+        else:
+            cx(qv[1], qv[0])
+
+        h(qb)
+        cx(qv[0], qv[1])
+
+    def test_f():
+
+        ctrl_qv = QuantumVariable(4)
+        qv = QuantumFloat(3)
+
+        qb = qv[2]
+
+        x(ctrl_qv[0])
+        x(ctrl_qv[1])
+
+        x(qv[0])
+
+        with invert():
+            with control([ctrl_qv[2], ctrl_qv[3]]):
+                x(ctrl_qv[0])
+                with control([ctrl_qv[0], ctrl_qv[1]], ctrl_state="01"):
+                    swap(qv, qb)
+
+    jaspr = make_jaspr(test_f)()
+    qc = jaspr.to_qc()
+    assert qc.cnot_count() < 50
