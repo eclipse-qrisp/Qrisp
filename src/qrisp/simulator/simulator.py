@@ -242,7 +242,7 @@ def statevector_sim(qc):
     with fast_append():
         # We convert the circuit which is given with portable objects to a qrisp circuit
 
-        qc = qc.copy()
+        qc = qc.transpile()
 
         # TO-DO fix qubit ordering
         # qc.qubits = qc.qubits[::-1]
