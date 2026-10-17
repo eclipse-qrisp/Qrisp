@@ -680,7 +680,8 @@ Dependency Upgrades
 
 * Pinned ``qiskit`` to ``<2.6``. With qiskit 2.6.0 on Linux, importing
   ``qiskit_aer``, ``pyscf`` or PennyLane Lightning after ``qrisp`` fails with
-  ``cannot allocate memory in static TLS block``.
+  ``cannot allocate memory in static TLS block``
+  (`PR #976 <https://github.com/eclipse-qrisp/Qrisp/pull/976>`_).
 
 .. Add dependency upgrades above this line
 
