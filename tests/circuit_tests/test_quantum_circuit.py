@@ -1909,6 +1909,45 @@ class TestQuantumCircuitRunAndStatevector:
         sv = qc.statevector_array()
         assert sv.dtype == np.complex64
 
+    def test_statevector_array_composite_gate_does_not_request_wide_unitary(self):
+        """statevector_array dissolves composite gates without requesting wide unitaries."""
+        from qrisp.circuit import Operation
+
+        sub = QuantumCircuit(16)
+        for qubit in sub.qubits:
+            sub.x(qubit)
+
+        qc = QuantumCircuit(16)
+        qc.append(sub.to_gate(), qc.qubits)
+
+        original = Operation.get_unitary
+
+        def guard(op_self, *args, **kwargs):
+            if op_self.num_qubits > 8:
+                raise RuntimeError(f"unitary requested for {op_self.num_qubits} qubits")
+            return original(op_self, *args, **kwargs)
+
+        Operation.get_unitary = guard
+        try:
+            state = qc.statevector_array()
+            assert np.isclose(abs(state[-1]), 1.0)
+            assert np.isclose(np.linalg.norm(state), 1.0)
+        finally:
+            Operation.get_unitary = original
+
+    def test_statevector_array_explicit_unitary_preserved(self):
+        """Custom operations without definitions still have get_unitary() called."""
+        from qrisp.circuit import Operation
+
+        u = np.array([[0, 1], [1, 0]], dtype=complex)
+        custom_op = Operation(name="custom_x", num_qubits=1)
+        custom_op.get_unitary = lambda: u
+
+        qc = QuantumCircuit(1)
+        qc.append(custom_op, [0])
+        sv = qc.statevector_array()
+        assert np.isclose(abs(sv[1]), 1.0)
+
 
 class TestQuantumCircuitSymbolicSimulation:
     """Tests for simulating circuits that carry unbound SymPy parameters.
