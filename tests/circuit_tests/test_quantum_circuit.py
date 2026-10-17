@@ -1923,6 +1923,7 @@ class TestQuantumCircuitRunAndStatevector:
         original = Operation.get_unitary
 
         def guard(op_self, *args, **kwargs):
+            """Prevent wide unitary matrices from being allocated during simulation."""
             if op_self.num_qubits > 8:
                 raise RuntimeError(f"unitary requested for {op_self.num_qubits} qubits")
             return original(op_self, *args, **kwargs)
@@ -1947,6 +1948,13 @@ class TestQuantumCircuitRunAndStatevector:
         qc.append(custom_op, [0])
         sv = qc.statevector_array()
         assert np.isclose(abs(sv[1]), 1.0)
+
+    def test_statevector_array_zero_qubits_with_clbits(self):
+        """statevector_array handles circuits with classical bits but zero qubits."""
+        qc = QuantumCircuit(0, 1)
+        sv = qc.statevector_array()
+        assert sv.shape == (1,)
+        assert np.isclose(sv[0], 1.0)
 
 
 class TestQuantumCircuitSymbolicSimulation:

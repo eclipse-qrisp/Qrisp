@@ -43,7 +43,7 @@ def transpile(qc, transpilation_level=np.inf, transpile_predicate=None, **kwargs
                 transpiled_qc.add_qubit(Qubit(qb.identifier))
 
         for cb in qc.clbits:
-            if isinstance(qb, Qubit):
+            if isinstance(cb, Clbit):
                 transpiled_qc.add_clbit(cb)
             else:
                 transpiled_qc.add_clbit(Clbit(cb.identifier))
