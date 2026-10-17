@@ -8,5 +8,4 @@ Install it with ``pip install qrisp[cudaq]``.
 
 .. currentmodule:: qrisp_cudaq
 .. autofunction:: cudaq_kernel
-.. autofunction:: to_quake_mlir
 .. autoclass:: FixedShapeNDArray

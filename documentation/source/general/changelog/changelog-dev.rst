@@ -26,8 +26,6 @@ New Features
   * Kernels accept scalar (``int``, ``float``, ``bool``) and array parameters
     via :class:`FixedShapeNDArray <qrisp_cudaq.FixedShapeNDArray>`, and can
     return multiple values.
-  * :func:`to_quake_mlir <qrisp_cudaq.to_quake_mlir>` returns the Quake MLIR
-    that a Jaspr compiles to.
 
 - **sample() and expectation_value() now accept arbitrary return values**
   Sampling kernels (the functions passed to :func:`~qrisp.jasp.sample` and
