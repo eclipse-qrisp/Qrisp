@@ -217,17 +217,17 @@ Explore the Jasp pipeline to build highly performant algorithms, and ensure your
 
         .. raw:: html
 
-            <a href="./JaspQAOAtutorial.html">
+            <a href="./CUDAQ.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Build an efficient custom QAOA implementation in Jasp using a JAX-traceable objective function for the MaxCut problem.</p>
+            <p class="sd-card-text">Compile Qrisp kernels to NVIDIA's CUDA-Q platform and run them, from a Bell state to hybrid quantum-classical workflows.</p>
             </div>
             </a>
 
-        .. image:: ../../_static/maxcut_jasp.png
-            :alt: MaxCut QAOA Tutorial
+        .. image:: ../../_static/cudaq_thumbnail_blue.png
+            :alt: CUDA-Q Tutorial
 
         +++
-        **Building a QAOA implementation in Jasp**
+        **Running Qrisp on CUDA-Q**
 
 .. grid:: 1 1 2 2
 
@@ -266,6 +266,26 @@ Explore the Jasp pipeline to build highly performant algorithms, and ensure your
 
         +++
         **Using BigInteger to compile Shor's at 2048 bit**
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: sm
+        :text-align: center
+
+        .. raw:: html
+
+            <a href="./JaspQAOAtutorial.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Build an efficient custom QAOA implementation in Jasp using a JAX-traceable objective function for the MaxCut problem.</p>
+            </div>
+            </a>
+
+        .. image:: ../../_static/maxcut_jasp.png
+            :alt: MaxCut QAOA Tutorial
+
+        +++
+        **Building a QAOA implementation in Jasp**
 
 
 Scientific Computing and Quantum Numerical Linear Algebra
@@ -372,11 +392,11 @@ So, take these concepts, experiment, and start building the future of quantum co
    Sudoku.ipynb
    QMCItutorial.ipynb
    Jasp.ipynb
-   JaspQAOAtutorial.ipynb
+   CUDAQ.ipynb
    FT_compilation.ipynb
    BigInteger.ipynb
+   JaspQAOAtutorial.ipynb
    H2.ipynb
    BE_tutorial/index
    GQSP_filtering.ipynb
    HHL.ipynb
-   CUDAQ.ipynb
