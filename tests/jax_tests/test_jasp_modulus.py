@@ -713,3 +713,189 @@ def test_static_modulus_hardcoded_literal_repeated_calls():
 
     for _ in range(3):
         assert int(solve()) == 8
+
+
+# ----- Montgomery shift handling under Jasp (issue #925) -----
+
+SHIFT_N = 13
+
+SHIFT_PAIRS = [(0, 0), (2, 0), (0, -3), (-5, 1)]
+
+SHIFT_OPS = {
+    "add": lambda x, y: (x + y) % SHIFT_N,
+    "sub": lambda x, y: (x - y) % SHIFT_N,
+    "iadd": lambda x, y: (x + y) % SHIFT_N,
+    "isub": lambda x, y: (x - y) % SHIFT_N,
+}
+
+
+def _apply_shift_op(op, a, b):
+    if op == "add":
+        return a + b
+    if op == "sub":
+        return a - b
+    if op == "iadd":
+        a += b
+    else:
+        a -= b
+    return a
+
+
+def test_shift_qache_multiplication_no_tracer_leak():
+    """The shift of a product computed inside qache must not leak a tracer."""
+
+    @qache
+    def mul(a, b):
+        return a * b
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        b = QuantumModulus(SHIFT_N)
+        a[:] = 3
+        b[:] = 5
+        return measure(mul(a, b))
+
+    assert int(main()) == 2
+
+
+def test_shift_part_of_qache_key():
+    """A qached function called with differing shifts must not reuse a stale trace."""
+
+    @qache
+    def measure_inside(a):
+        return measure(a)
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a[:] = 3
+        b = QuantumModulus(SHIFT_N)
+        b[:] = 3
+        b.m = 2
+        return measure(a), measure(b), measure_inside(a), measure_inside(b)
+
+    assert tuple(int(x) for x in main()) == (3, 4, 3, 4)
+
+
+def test_shift_inplace_addition_after_multiplication():
+    """In-place addition of operands with differing shifts (product has a negative shift)."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        b = QuantumModulus(SHIFT_N)
+        a[:] = 3
+        b[:] = 5
+        c = a * b
+        c += a
+        return measure(c)
+
+    assert int(main()) == 5
+
+
+def test_shift_negative_classical_addition():
+    """Encoding a classical operand into a QuantumModulus with negative shift."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        b = QuantumModulus(SHIFT_N)
+        a[:] = 3
+        b[:] = 5
+        c = a * b
+        c += 1
+        return measure(c)
+
+    assert int(main()) == 3
+
+
+@pytest.mark.parametrize("am, bm", SHIFT_PAIRS)
+@pytest.mark.parametrize("op", list(SHIFT_OPS))
+def test_shift_aware_arithmetic_static_shift(op, am, bm):
+    """Addition/subtraction with mixed shifts known at trace time."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = am
+        a[:] = 9
+        b = QuantumModulus(SHIFT_N)
+        b.m = bm
+        b[:] = 7
+        return measure(_apply_shift_op(op, a, b))
+
+    assert int(main()) == SHIFT_OPS[op](9, 7)
+
+
+@pytest.mark.parametrize("am, bm", SHIFT_PAIRS)
+@pytest.mark.parametrize("op", list(SHIFT_OPS))
+def test_shift_aware_arithmetic_traced_shift(op, am, bm):
+    """Addition/subtraction with mixed shifts that are traced (crossing a qache boundary)."""
+
+    @qache
+    def kernel(a, b):
+        if op in ("iadd", "isub"):
+            _apply_shift_op(op, a, b)
+            return
+        return _apply_shift_op(op, a, b)
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = am
+        a[:] = 9
+        b = QuantumModulus(SHIFT_N)
+        b.m = bm
+        b[:] = 7
+        res = kernel(a, b)
+        return measure(a if res is None else res)
+
+    assert int(main()) == SHIFT_OPS[op](9, 7)
+
+
+@pytest.mark.parametrize("am, bm", SHIFT_PAIRS)
+@pytest.mark.parametrize("op", list(SHIFT_OPS))
+def test_shift_aware_arithmetic_non_jasp(op, am, bm):
+    """Addition/subtraction with mixed shifts outside of Jasp."""
+    a = QuantumModulus(SHIFT_N)
+    a.m = am
+    a[:] = 9
+    b = QuantumModulus(SHIFT_N)
+    b.m = bm
+    b[:] = 7
+    res = _apply_shift_op(op, a, b)
+    assert list(res.get_measurement().keys()) == [SHIFT_OPS[op](9, 7)]
+
+
+def test_shift_aware_addition_quantum_float_operand():
+    """A QuantumFloat operand is treated as having shift 0."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = 2
+        a[:] = 9
+        b = QuantumFloat(4)
+        b[:] = 7
+        a += b
+        return measure(a)
+
+    assert int(main()) == 3
+
+
+@pytest.mark.parametrize("qm_m", [0, -1, 3])
+def test_shift_aware_addition_quantum_float_exponent(qm_m):
+    """A QuantumFloat operand with exponent e (value = raw * 2^e) acts as shift -e."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = qm_m
+        a[:] = 9
+        b = QuantumFloat(3, exponent=1)
+        b[:] = 6
+        a += b
+        return measure(a)
+
+    assert int(main()) == (9 + 6) % SHIFT_N
