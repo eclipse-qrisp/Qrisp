@@ -66,7 +66,7 @@ docs = [
     "pydata-sphinx-theme==0.23.0",
 ]
 dev-code-style = [
-    "ruff==0.16.5",
+    "ruff==0.17.0",
 ]
 dev-testing = [
     "pytest==9.1.1",
