@@ -134,12 +134,6 @@ def propagate_carry(P, G):
 
 def brent_kung_tree(P, G, r, k_out=np.inf):
 
-    from qrisp import t_depth_indicator
-
-    gate_speed = lambda x: t_depth_indicator(x, 2**-6)
-
-    # if len(G):
-    # print(G[0].qs().compile(40, compile_mcm = True, gate_speed = gate_speed).t_depth())
     if r <= 1 or not isinstance(r, int):
         raise Exception("Provided invalid radix base (needs to be integer > 1)")
 

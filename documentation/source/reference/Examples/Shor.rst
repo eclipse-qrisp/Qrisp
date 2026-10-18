@@ -55,17 +55,23 @@ Stories like the one above are fun and exciting way to showcase the elegant appr
 
 As elaborated on in the `Fault-Tolerant compilation tutorial <https://www.qrisp.eu/general/tutorial/FT_compilation.html>`_, the Qrisp implementation of Shor's algorithm allows you to provide an arbitrary adder for the execution of the required arithmetic. With our Qrispy structure one can write ones own adder, or implement a shiny new one future research publications might bring, and test its performance claims.
 
-As of right now, the following list of adders have been pre-implemented:
+As of right now, the following list of adders have been pre-implemented. Note that not every adder is compatible with both compilation modes: some can only be used in static mode (i.e. with a :ref:`QuantumSession <QuantumSession>`), while others also support dynamic mode (:ref:`Jasp <jasp>`).
 
-* The :meth:`fourier_adder <qrisp.fourier_adder>` (`paper <https://arxiv.org/abs/quant-ph/0008033>`__) requires minimal qubit overhead and has a very efficient :meth:`custom_control <qrisp.custom_control>` but uses a lot of parametized phase gates, which increases the T-depth. The low qubit count makes it suitable for simulation, which is why it is the default adder.
+* The :meth:`fourier_adder <qrisp.fourier_adder>` (`paper <https://arxiv.org/abs/quant-ph/0008033>`__) requires minimal qubit overhead and has a very efficient :meth:`custom_control <qrisp.custom_control>` but uses a lot of parametized phase gates, which increases the T-depth. The low qubit count makes it suitable for simulation, which is why it is the default adder in static mode. It is only available in static mode.
 
-* The :meth:`cucarro_adder <qrisp.cuccaro_adder>` (`paper <https://arxiv.org/abs/quant-ph/0410184>`__) also requires minimal qubits but no parametrized phase gates. It doesn't have a custom controlled version.
+* The :meth:`cuccaro_adder <qrisp.cuccaro_adder>` (`paper <https://arxiv.org/abs/quant-ph/0410184>`__) also requires minimal qubits but no parametrized phase gates. It doesn't have a custom controlled version.
 
-* The :meth:`gidney_adder <qrisp.gidney_adder>` (`paper <https://arxiv.org/abs/1709.06648>`__) requires $n$ ancillae but uses the ``gidney`` Toffoli method described above, making it very fast in terms of T-depth but also economical in terms of T-count.
+* The :meth:`gidney_adder <qrisp.gidney_adder>` (`paper <https://arxiv.org/abs/1709.06648>`__) requires $n$ ancillae but uses the ``gidney`` Toffoli method, making it very fast in terms of T-depth but also economical in terms of T-count. It supports both static and Jasp mode, and is the default adder in Jasp mode.
 
-* The :meth:`qcla <qrisp.qcla>` (`paper <https://arxiv.org/abs/2304.02921>`__) requires quite a lot of ancillae but has only logarithmic scaling when it comes to T-depth. It is faster than the Gidney adder for any input size larger than 7.
+* The :meth:`qcla <qrisp.qcla>` (`paper <https://arxiv.org/abs/2304.02921>`__) requires quite a lot of ancillae but has only logarithmic scaling when it comes to T-depth. It is only available in static mode.
 
-Using a diffent adder is as easy as adding an ``inpl_adder`` keyword to the :ref:`QuantumModulus <QuantumModulus>` variable. Literally!
+* The :meth:`remaud_adder <qrisp.remaud_adder>` (`paper <https://arxiv.org/abs/2501.16802>`__) has polylogarithmic depth and uses no auxiliary qubits. It requires an additional carry qubit as third argument. It supports both static and Jasp mode.
+
+* The :meth:`gidney_cq_venting_adder <qrisp.gidney_cq_venting_adder>` (`paper <https://arxiv.org/abs/2507.23079>`__) is a classical-quantum adder that uses Gidney's carry-venting technique and only 3 ancillae. It relies on mid-circuit measurements, so it is only available in Jasp mode.
+
+Additionally, :meth:`inpl_add <qrisp.inpl_add>` (based on the `Thapliyal adder <https://arxiv.org/abs/1712.02630>`__) and ``increment`` provide in-place addition and incrementation of :ref:`QuantumFloats <QuantumFloat>`. Both are only available in static mode.
+
+Using a different adder is as easy as adding an ``inpl_adder`` keyword to the :ref:`QuantumModulus <QuantumModulus>` variable. Literally! Note that this requires the adder to follow the signature ``inpl_adder(a, b)``, which performs ``b += a``.
 
 Let's provide an example of benchmarking the :meth:`gidney_adder <qrisp.gidney_adder>` and compare it to the :meth:`qcla <qrisp.qcla>` on the operation most relevant for Shor's algorithm: Controlled modular in-place multiplication.
 
@@ -80,13 +86,13 @@ Let's provide an example of benchmarking the :meth:`gidney_adder <qrisp.gidney_a
     with control(ctrl_qbl):
         qg *= 953
         
-    gate_speed = lambda op : t_depth_indicator(op, epsilon = 2**-10)
+    gate_speed = t_depth_indicator
      
     qc = qg.qs.compile(gate_speed = gate_speed, compile_mcm = True)
     print(qc.t_depth())
-    # Yields 956
+    # Yields 1178
     print(qc.num_qubits())
-    # Yields 79    
+    # Yields 58    
     
     
 Now the :meth:`qcla <qrisp.qcla>`:
@@ -102,12 +108,12 @@ Now the :meth:`qcla <qrisp.qcla>`:
         
     qc = qg.qs.compile(workspace = 10, gate_speed = gate_speed, compile_mcm = True)
     
-    print(qc.t_depth())s
-    # Yields 784
+    print(qc.t_depth())
+    # Yields 843
     print(qc.num_qubits())
-    # Yields 88   
+    # Yields 57   
 
-We see that the T-depth is reduced by $\approx 20 \%$. Due to the logarithmic scaling of the adder, larger scales will profit even more! Note that we granted the compiler 10 qubits of :ref:`workspace <workspace>`, as this adder can profit a lot from this resource.
+We see that the T-depth is reduced by $\approx 28 \%$. Due to the logarithmic scaling of the adder, larger scales will profit even more! Note that we granted the compiler 10 qubits of :ref:`workspace <workspace>`, as this adder can profit a lot from this resource.
 
 The comparison analysis is intriguing on its own, but here we wanted to emphasize the simplicity of improving the performance of Shor's algorithm by the means of implementing possible new shiny adders with the least amount of headaches. Future 👏🏻 proven 👏🏻
 
