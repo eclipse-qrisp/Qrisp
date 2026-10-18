@@ -32,13 +32,16 @@ from qrisp.circuit.operation import PauliGate
 from qrisp.circuit.standard_operations import (
     GPhaseGate,
     HGate,
+    IDGate,
     PGate,
+    RGate,
     RXGate,
     RYGate,
     RZGate,
     SGate,
     SXGate,
     TGate,
+    U1Gate,
 )
 
 # ---------------------------------------------------------------------------
@@ -503,10 +506,16 @@ class TestU3GateNamedVariants:
         assert np.allclose(gate.get_unitary(), expected, atol=1e-10)
 
     def test_inverse_named_gate_name_convention(self):
-        """Inverse of s_dg is s, inverse of t_dg is t, inverse of h is h."""
+        """Inverse of s_dg is s, inverse of t_dg is t, inverse of h is h, and r/u1/id preserve name."""
         assert SGate().inverse().inverse().name == "s"
         assert TGate().inverse().inverse().name == "t"
         assert HGate().inverse().name == "h"
+        assert RGate(1.0, 0.5).inverse().name == "r"
+        assert RGate(1.0, 0.5).inverse().inverse().name == "r"
+        assert U1Gate(0.5).inverse().name == "u1"
+        assert U1Gate(0.5).inverse().inverse().name == "u1"
+        assert IDGate().inverse().name == "id"
+        assert IDGate().inverse().inverse().name == "id"
 
 
 # =============================================================================

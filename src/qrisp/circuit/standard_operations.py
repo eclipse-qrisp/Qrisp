@@ -272,7 +272,6 @@ def RGate(theta: FloatLike = 0, phi: FloatLike = 0):
 
     """
     res = U3Gate(-theta, phi, -phi, name="r", global_phase=0)
-    res.params = [theta, phi]
     return res
 
 
@@ -553,13 +552,7 @@ def U1Gate(phi: FloatLike = 0):
         The U1 gate operation.
 
     """
-    res = RZGate(phi)
-    res.name = "u1"
-    res.params = [phi]
-
-    res.permeability = {0: True}
-    res.is_qfree = True
-
+    res = U3Gate(0, phi, 0, name="u1", global_phase=-phi / 2)  # type: ignore[operator]
     return res
 
 

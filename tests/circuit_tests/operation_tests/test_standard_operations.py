@@ -108,9 +108,35 @@ class TestIDGate:
         """IDGate has name 'id'."""
         assert IDGate().name == "id"
 
+    def test_id_params(self):
+        """IDGate has no parameters."""
+        assert IDGate().params == []
+
+    def test_id_permeability_and_qfree(self):
+        """IDGate is permeable and qfree."""
+        gate = IDGate()
+        assert gate.permeability[0] is True
+        assert gate.is_qfree is True
+
     def test_id_unitary_is_identity(self):
         """IDGate unitary is the 2x2 identity matrix."""
         assert np.allclose(IDGate().get_unitary(), np.eye(2), atol=1e-6)
+
+    def test_id_inverse(self):
+        """IDGate.inverse() preserves name 'id', params [], and identity unitary."""
+        inv = IDGate().inverse()
+        assert inv.name == "id"
+        assert inv.params == []
+        assert inv.permeability[0] is True
+        assert inv.is_qfree is True
+        assert np.allclose(inv.get_unitary(), np.eye(2), atol=1e-6)
+
+    def test_id_double_inverse(self):
+        """IDGate.inverse().inverse() returns an IDGate with name 'id' and params []."""
+        inv_inv = IDGate().inverse().inverse()
+        assert inv_inv.name == "id"
+        assert inv_inv.params == []
+        assert np.allclose(inv_inv.get_unitary(), np.eye(2), atol=1e-6)
 
 
 class TestU1Gate:
@@ -135,6 +161,28 @@ class TestU1Gate:
         gate = U1Gate(phi)
         expected = np.diag([np.exp(-1j * phi / 2), np.exp(1j * phi / 2)])
         assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
+
+    @pytest.mark.parametrize("phi", [0.3, -1.2, np.pi / 3])
+    def test_u1_inverse(self, phi):
+        """U1Gate(phi).inverse() has name 'u1', params [-phi], and conjugate-transpose unitary."""
+        gate = U1Gate(phi)
+        inv = gate.inverse()
+        assert inv.name == "u1"
+        assert len(inv.params) == 1
+        assert np.isclose(inv.params[0], -phi)
+        assert inv.permeability[0] is True
+        assert inv.is_qfree is True
+        assert np.allclose(inv.get_unitary(), gate.get_unitary().conj().T, atol=1e-6)
+
+    @pytest.mark.parametrize("phi", [0.3, -1.2, np.pi / 3])
+    def test_u1_double_inverse(self, phi):
+        """U1Gate(phi).inverse().inverse() recovers name 'u1', params [phi], and original unitary."""
+        gate = U1Gate(phi)
+        inv_inv = gate.inverse().inverse()
+        assert inv_inv.name == "u1"
+        assert len(inv_inv.params) == 1
+        assert np.isclose(inv_inv.params[0], phi)
+        assert np.allclose(inv_inv.get_unitary(), gate.get_unitary(), atol=1e-6)
 
 
 class TestRGate:
@@ -174,6 +222,44 @@ class TestRGate:
         for phi in [0.0, 1.0, np.pi]:
             gate = RGate(0.0, phi)
             assert np.allclose(gate.get_unitary(), np.eye(2), atol=1e-6)
+
+    @pytest.mark.parametrize(
+        "theta, phi",
+        [
+            (0.3, 0.5),
+            (-1.1, 0.8),
+            (np.pi / 3, np.pi / 4),
+        ],
+    )
+    def test_r_inverse(self, theta, phi):
+        """RGate(theta, phi).inverse() has name 'r', params [-theta, phi], and dagger unitary."""
+        gate = RGate(theta, phi)
+        inv = gate.inverse()
+        assert inv.name == "r"
+        assert len(inv.params) == 2
+        assert np.isclose(inv.params[0], -theta)
+        assert np.isclose(inv.params[1], phi)
+        assert inv.permeability[0] is False
+        assert inv.is_qfree is False
+        assert np.allclose(inv.get_unitary(), gate.get_unitary().conj().T, atol=1e-6)
+
+    @pytest.mark.parametrize(
+        "theta, phi",
+        [
+            (0.3, 0.5),
+            (-1.1, 0.8),
+            (np.pi / 3, np.pi / 4),
+        ],
+    )
+    def test_r_double_inverse(self, theta, phi):
+        """RGate(theta, phi).inverse().inverse() returns name 'r', params [theta, phi], and original unitary."""
+        gate = RGate(theta, phi)
+        inv_inv = gate.inverse().inverse()
+        assert inv_inv.name == "r"
+        assert len(inv_inv.params) == 2
+        assert np.isclose(inv_inv.params[0], theta)
+        assert np.isclose(inv_inv.params[1], phi)
+        assert np.allclose(inv_inv.get_unitary(), gate.get_unitary(), atol=1e-6)
 
 
 class TestCPGate:
