@@ -21,3 +21,4 @@ tmp/*
 /python311venv/
 /multiverseenv/
 /notebooks/
+.ipynb_checkpoints
