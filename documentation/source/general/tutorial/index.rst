@@ -51,6 +51,26 @@ shifting away from low-level circuit manipulation and toward intuitive, high-lev
 
         .. raw:: html
 
+            <a href="./QC_from_scratch.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Learn qubits, superposition, entanglement and interference by running code, and build your first quantum algorithms. No physics background needed.</p>
+            </div>
+            </a>
+
+        .. image:: ../../_static/bell_state_histogram.svg
+            :alt: Quantum Computing from Scratch Tutorial
+
+        +++
+        **Quantum computing from scratch**
+
+.. grid:: 1 1 2 2
+
+    .. grid-item-card::
+        :shadow: sm
+        :text-align: center
+
+        .. raw:: html
+
             <a href="./Shor.html">
             <div class="example-img-plot-overlay">
             <p class="sd-card-text">Factor numbers and experiment with encrypting and decrypting hidden messages using our state-of-the-art implementation.</p>
@@ -364,6 +384,7 @@ So, take these concepts, experiment, and start building the future of quantum co
    :hidden:
    
    tutorial.ipynb
+   QC_from_scratch.ipynb
    Shor.ipynb
    TSP.ipynb
    QAOAtutorial/index
