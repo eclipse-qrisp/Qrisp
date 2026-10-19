@@ -40,19 +40,59 @@ from .jasp_bigintiger import (
 )
 
 
+def _mulmod_u64(x: Array, y: Array, mod: Array) -> Array:
+    """Compute ``x * y % mod`` without overflow for ``uint64`` scalars.
+
+    Uses shift-and-add, so every intermediate value stays below ``2 * mod``.
+    Requires ``x, y < mod < 2 ** 63``.
+
+    Parameters
+    ----------
+    x : jnp uint64 scalar
+        First factor, reduced modulo ``mod``.
+    y : jnp uint64 scalar
+        Second factor, reduced modulo ``mod``.
+    mod : jnp uint64 scalar
+        Modulus.
+
+    Returns
+    -------
+    jnp uint64 scalar
+        ``x * y % mod``.
+
+    """
+
+    def addmod(u, v):
+        w = u + v
+        return lax.select(w >= mod, w - mod, w)
+
+    def cond_fun(state):
+        _, _, y = state
+        return y > 0
+
+    def body_fun(state):
+        res, x, y = state
+        res = lax.select((y & 1) == 1, addmod(res, x), res)
+        return res, addmod(x, x), y >> 1
+
+    res, _, _ = lax.while_loop(cond_fun, body_fun, (jnp.zeros_like(x), x, y))
+    return res
+
+
 @jit
 def pow2_mod_N(m: int | Array, N: int | Array) -> Array:
     """Compute ``2 ** m % N`` for traced scalar inputs.
 
     Uses square-and-multiply inside ``lax.while_loop`` so the computation
-    remains valid under JAX tracing.
+    remains valid under JAX tracing. The modular products are computed with
+    ``_mulmod_u64``, so moduli up to ``2 ** 63`` do not overflow.
 
     Parameters
     ----------
     m : int or jnp scalar
         Non-negative exponent, typically traced under JAX.
     N : int or jnp scalar
-        Modulus.
+        Positive modulus below ``2 ** 63``.
 
     Returns
     -------
@@ -62,10 +102,12 @@ def pow2_mod_N(m: int | Array, N: int | Array) -> Array:
     """
     m = jnp.asarray(m, dtype=jnp.int64)
     N = jnp.asarray(N)
-    base = jnp.asarray(2, dtype=N.dtype)
+    dtype = N.dtype
+    N = N.astype(jnp.uint64)
+    one = jnp.asarray(1, dtype=jnp.uint64)
 
     # State tuple: (result, base, exponent, modulus)
-    init_state = (jnp.asarray(1, dtype=N.dtype), base % N, m, N)
+    init_state = (one % N, (one + one) % N, m, N)
 
     def cond_fun(state):
         _, _, exp, _ = state
@@ -77,16 +119,16 @@ def pow2_mod_N(m: int | Array, N: int | Array) -> Array:
         # If exp is odd, update result: res = (res * b) % mod
         # jax.lax.select acts like an if-else statement without breaking traceability
         is_odd = exp % 2 == 1
-        res = lax.select(is_odd, (res * b) % mod, res)
+        res = lax.select(is_odd, _mulmod_u64(res, b, mod), res)
 
         # Square the base and halve the exponent
-        b = (b * b) % mod
+        b = _mulmod_u64(b, b, mod)
         exp = exp // 2
 
         return (res, b, exp, mod)
 
     result, _, _, _ = lax.while_loop(cond_fun, body_fun, init_state)
-    return result
+    return result.astype(dtype)
 
 
 def bi_pow2mod(exp: int | Array, mod_bi: BigInteger) -> BigInteger:

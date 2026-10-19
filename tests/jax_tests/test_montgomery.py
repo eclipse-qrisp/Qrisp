@@ -16,6 +16,9 @@
 
 """Tests for Jasp Montgomery modular multiplication and order-finding via QPE."""
 
+import jax.numpy as jnp
+import pytest
+
 from qrisp import BigInteger
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
 
@@ -294,6 +297,17 @@ def test_pow2_mod_n_traced_matches_python_pow():
     traced = jax.jit(pow2_mod_N)
     for exp, mod in [(10, 97), (0, 97), (37, 1009)]:
         assert int(traced(exp, mod)) == pow(2, exp, mod)
+
+
+@pytest.mark.parametrize("mod", [1, 2, 3037000493, 2**61 - 1, 2**63 - 25])
+@pytest.mark.parametrize("exp", [0, 1, 63, 64, 100, 1000])
+def test_pow2_mod_n_traced_large_modulus_no_overflow(exp, mod):
+    """`pow2_mod_N` must not overflow int64 for moduli whose residue products exceed 2**63."""
+    import jax
+
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import pow2_mod_N
+
+    assert int(jax.jit(pow2_mod_N)(exp, jnp.int64(mod))) == pow(2, exp, mod)
 
 
 def test_smallest_power_of_two_bigint_matches_int_at_powers_of_two():
