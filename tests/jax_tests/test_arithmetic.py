@@ -29,29 +29,12 @@ def test_modular_adder():
 
         a[:] = 5
         b[:] = 4
-        mod_adder(a, b, jasp_fourier_adder, 8)
+        mod_adder(a, b, fourier_adder, 8)
 
         return measure(b)
 
     jaspr = make_jaspr(call_mod_adder)()
     assert jaspr() == 1
-
-
-def test_fourier_adder():
-
-    def call_fourier_adder():
-
-        a = QuantumFloat(5)
-        b = QuantumFloat(5)
-
-        a[:] = 5
-        b[:] = 4
-        jasp_fourier_adder(a, b)
-
-        return measure(b)
-
-    jaspr = make_jaspr(call_fourier_adder)()
-    assert jaspr() == 9
 
 
 def test_out_of_place_arithmetic():
