@@ -19,6 +19,7 @@
 from qrisp import check_for_tracing_mode
 from qrisp.alg_primitives import QFT
 from qrisp.alg_primitives.arithmetic import U_g, multi_controlled_U_g
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import pow2mod, pow2mod_signed
 from qrisp.core.gate_application_functions import cx
 from qrisp.environments import conjugate, control, custom_control, invert
 from qrisp.jasp import jrange
@@ -45,10 +46,6 @@ def qft_basis_adder(addend, target):
 # QuantumFloat operands (value = raw * 2^exponent) are treated as having
 # shift -exponent.
 def montgomery_addition(a, b):
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-        pow2mod,
-        pow2mod_signed,
-    )
 
     N = b.modulus
     a_m = a.m if hasattr(a, "m") else -a.exponent

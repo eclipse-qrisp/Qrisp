@@ -23,6 +23,7 @@ from jax.core import Tracer
 
 from qrisp import check_for_tracing_mode
 from qrisp.core import cx
+from qrisp.jasp import q_cond
 from qrisp.misc import gate_wrap
 from qrisp.qtypes.quantum_float import QuantumFloat
 
@@ -104,21 +105,57 @@ def _coerce_bigint_operand(value, modulus):
 
 
 def _normalize_modular_arithmetic_operand(qm, other):
+    """Prepare the second operand of a QuantumModulus addition or subtraction.
+
+    Quantum operands are returned unchanged, classical values are reduced
+    modulo ``qm.modulus`` and encoded into ``qm``'s Montgomery representation.
+
+    Parameters
+    ----------
+    qm : QuantumModulus
+        The QuantumModulus whose representation the operand is prepared for.
+    other : QuantumFloat, int, or BigInteger
+        The second operand.
+
+    Returns
+    -------
+    QuantumFloat, int, or BigInteger
+        The quantum operand or the encoded classical value.
+
+    Raises
+    ------
+    TypeError
+        If ``other`` is a signed QuantumFloat. The bitwise conversion treats
+        every bit as a positive power of two, so the sign bit would get the
+        wrong weight.
+
+    """
     if isinstance(other, QuantumFloat):
+        if other.signed:
+            raise TypeError("QuantumModulus addition and subtraction do not support signed QuantumFloat operands")
         return other
 
     return qm.encoder(other % qm.modulus)
 
 
 def _shift_aware_iadd(qm, other):
-    """Perform qm += other for a quantum operand, accounting for Montgomery shifts.
+    """Perform ``qm += other`` for a quantum operand, accounting for Montgomery shifts.
 
-    Equal shifts use a single modular addition. Differing shifts convert other
-    into qm's representation bitwise (see montgomery_addition). QuantumFloat
+    Equal shifts use a single modular addition. Differing shifts convert ``other``
+    into ``qm``'s representation bitwise (see ``montgomery_addition``). QuantumFloat
     operands (value = raw * 2^exponent) are treated as having shift -exponent.
     If both shifts are static, the branch is chosen in Python; otherwise a
-    traced q_cond selects it.
+    traced ``q_cond`` selects it.
+
+    Parameters
+    ----------
+    qm : QuantumModulus
+        The target, modified in place. Keeps its Montgomery shift.
+    other : QuantumFloat
+        The unsigned quantum operand (QuantumModulus or QuantumFloat).
+
     """
+    # Local import to avoid a circular import (qrisp.alg_primitives imports qrisp.qtypes)
     from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
         mod_adder,
         montgomery_addition,
@@ -138,21 +175,29 @@ def _shift_aware_iadd(qm, other):
         else:
             differing_shift(other, qm)
     else:
-        from qrisp.jasp import q_cond
-
         # Quantum operands must be passed explicitly, q_cond rejects implicit captures
         q_cond(qm.m == other_m, same_shift, differing_shift, other, qm)
 
 
 def _modular_iadd(qm, other):
-    """Perform qm += other for a quantum or an already encoded classical operand.
+    """Perform ``qm += other`` for a quantum or an already encoded classical operand.
 
     Quantum operands go through the shift-aware addition, classical values are
-    expected to be encoded into qm's representation already.
+    expected to be encoded into ``qm``'s representation already.
+
+    Parameters
+    ----------
+    qm : QuantumModulus
+        The target, modified in place.
+    other : QuantumFloat, int, or BigInteger
+        The quantum operand, or a classical value encoded by
+        ``_normalize_modular_arithmetic_operand``.
+
     """
     if isinstance(other, QuantumFloat):
         _shift_aware_iadd(qm, other)
     else:
+        # Local import to avoid a circular import (qrisp.alg_primitives imports qrisp.qtypes)
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
         mod_adder(other, qm, qm.inpl_adder, qm.modulus)
@@ -396,6 +441,7 @@ class QuantumModulus(QuantumFloat):
 
     def encoder(self, i):
         if check_for_tracing_mode():
+            # Local import to avoid a circular import (qrisp.alg_primitives imports qrisp.qtypes)
             from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
                 montgomery_encoder,
                 pow2mod_signed,
