@@ -29,7 +29,7 @@ from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import conjugate, custom_control
 from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.misc import int_encoder
-from qrisp.qtypes import QuantumBool
+from qrisp.qtypes import QuantumBool, QuantumChar, QuantumString
 
 # ``BigInteger`` only appears in type hints (lazy-evaluated thanks to
 # ``from __future__ import annotations``) and is never needed at runtime.
@@ -45,6 +45,22 @@ OptionalQubit: TypeAlias = QuantumBool | Qubit
 # The quantum operands are QuantumVariables (or subclasses), DynamicQubitArrays
 # or plain lists of Qubits (including traced qubits).
 QuantumRegister: TypeAlias = QuantumVariable | DynamicQubitArray | list[Qubit]
+
+
+def _reject_unsupported_quantum_types(a: object, b: object) -> None:
+    """Reject quantum types that cannot be interpreted as additive registers.
+
+    ``QuantumChar`` and ``QuantumString`` are quantum types but do not represent
+    numeric registers, so silently applying the adder to their qubits would
+    produce meaningless results. Both operands are checked and rejected if
+    either one has an unsupported type.
+    """
+    for value in (a, b):
+        if isinstance(value, (QuantumChar, QuantumString)):
+            raise ValueError(
+                f"{type(value).__name__} is not supported by cuccaro_adder. Supported quantum types are "
+                "QuantumVariable, QuantumBool, QuantumFloat and QuantumModulus."
+            )
 
 
 def _normalize_optional_input_arg(value: OptionalQubit | None, name: str) -> Qubit | None:
@@ -313,6 +329,9 @@ def cuccaro_adder(
         QuantumVariable, DynamicQubitArray or a non-empty ``list[Qubit]``.
     ValueError
         If the first argument is a ``list`` that does not contain only Qubits.
+    ValueError
+        If ``a`` or ``b`` is a ``QuantumChar`` or ``QuantumString``, which are
+        not supported numeric register types.
 
     Returns
     -------
@@ -351,6 +370,10 @@ def cuccaro_adder(
     Array(9., dtype=float64)
 
     """
+    # QuantumChar and QuantumString are not numeric registers and therefore not
+    # valid operands, even though QuantumChar is a QuantumVariable subclass.
+    _reject_unsupported_quantum_types(a, b)
+
     # The second argument is required to be a (non-empty) quantum register
     if not _is_quantum_register(b) or (isinstance(b, list) and len(b) == 0):
         raise ValueError(

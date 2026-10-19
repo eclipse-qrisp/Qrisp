@@ -22,8 +22,10 @@ import pytest
 
 from qrisp import (
     QuantumBool,
+    QuantumChar,
     QuantumFloat,
     QuantumModulus,
+    QuantumString,
     QuantumVariable,
     boolean_simulation,
     control,
@@ -466,6 +468,41 @@ def test_cuccaro_adder_static_invalid_inputs_raise_value_error():
         cuccaro_adder([1, 0], b)
 
 
+@pytest.mark.parametrize(
+    "qtype, type_name",
+    [(QuantumChar, "QuantumChar"), (QuantumString, "QuantumString")],
+)
+def test_cuccaro_adder_static_rejects_non_numeric_quantum_types(qtype, type_name):
+    """QuantumChar and QuantumString are rejected instead of added bitwise."""
+
+    def make_bad():
+        return QuantumString(2) if qtype is QuantumString else qtype()
+
+    b = QuantumFloat(3)
+    b[:] = 1
+    with pytest.raises(ValueError, match=f"{type_name} is not supported"):
+        cuccaro_adder(make_bad(), b)
+
+    a = QuantumFloat(3)
+    a[:] = 1
+    with pytest.raises(ValueError, match=f"{type_name} is not supported"):
+        cuccaro_adder(a, make_bad())
+
+
+def test_cuccaro_adder_dynamic_rejects_quantum_char():
+    """QuantumChar is rejected in dynamic mode as well."""
+
+    @boolean_simulation
+    def add(j, k):
+        b = QuantumFloat(3)
+        b[:] = k
+        cuccaro_adder(QuantumChar(), b)
+        return measure(b)
+
+    with pytest.raises(ValueError, match="QuantumChar is not supported"):
+        add(1, 2)
+
+
 def test_cuccaro_adder_quantum_modulus_multiply():
     """QuantumModulus with cuccaro_adder as inpl_adder.
 
@@ -500,7 +537,7 @@ def test_cuccaro_adder_quantum_modulus_multiply():
 # ---------------------------------------------------------------------------
 
 
-def _mk_add(  # noqa: PLR0913 -- test factory, keyword-callable API shape
+def _mk_add(  # noqa: PLR0913, PLR0917 -- test factory, keyword-callable API shape
     inputs, c_in_kind=None, c_out=False, ctrl_kind=None, c_in_val=0, ctrl_val=1
 ):
     """Factory for a ``@boolean_simulation`` ``cuccaro_adder`` wrapper.
