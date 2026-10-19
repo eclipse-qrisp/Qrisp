@@ -25,7 +25,8 @@ import sympy
 from qiskit import QuantumCircuit as QiskitQuantumCircuit
 from sympy import symbols
 
-from qrisp.circuit import Clbit, Instruction, Qubit
+import qrisp.simulator.unitary_management as um
+from qrisp.circuit import Clbit, Instruction, Operation, Qubit
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.standard_operations import CXGate, Measurement, RXGate, XGate
 from qrisp.permeability import PermeabilityGraph
@@ -1911,8 +1912,6 @@ class TestQuantumCircuitRunAndStatevector:
 
     def test_statevector_array_composite_gate_does_not_request_wide_unitary(self):
         """statevector_array dissolves composite gates without requesting wide unitaries."""
-        from qrisp.circuit import Operation
-
         sub = QuantumCircuit(16)
         for qubit in sub.qubits:
             sub.x(qubit)
@@ -1938,8 +1937,6 @@ class TestQuantumCircuitRunAndStatevector:
 
     def test_statevector_array_explicit_unitary_preserved(self):
         """Custom operations without definitions still have get_unitary() called."""
-        from qrisp.circuit import Operation
-
         u = np.array([[0, 1], [1, 0]], dtype=complex)
         custom_op = Operation(name="custom_x", num_qubits=1)
         custom_op.get_unitary = lambda: u
@@ -1958,8 +1955,6 @@ class TestQuantumCircuitRunAndStatevector:
 
     def test_statevector_array_wide_mcx_does_not_request_wide_unitary(self):
         """statevector_array dissolves wide controlled operations instead of building their unitary."""
-        import qrisp.simulator.unitary_management as um
-
         qc = QuantumCircuit(14)
         for i in range(13):
             qc.h(i)
@@ -1983,8 +1978,6 @@ class TestQuantumCircuitRunAndStatevector:
 
     def test_statevector_array_keeps_narrow_controlled_operations(self):
         """Toffolis are simulated via the closed-form controlled unitary, not their synthesized definition."""
-        import qrisp.simulator.unitary_management as um
-
         qc = QuantumCircuit(3)
         qc.h(0)
         qc.h(1)
@@ -2006,8 +1999,6 @@ class TestQuantumCircuitRunAndStatevector:
 
     def test_run_keeps_narrow_controlled_operations(self):
         """run() simulates Toffolis via the closed-form controlled unitary, not their synthesized definition."""
-        import qrisp.simulator.unitary_management as um
-
         qc = QuantumCircuit(3)
         qc.h(0)
         qc.h(1)

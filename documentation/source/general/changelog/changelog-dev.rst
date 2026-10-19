@@ -407,7 +407,7 @@ Bug Fixes
   simulation to avoid computing wide unitary matrices, while preserving narrow controlled
   operations (such as Toffoli and MCX gates within the maximum gate group size) so they
   retain their closed-form unitaries for fast simulation. Also fixed a bug in
-  :func:`~qrisp.circuit.transpile` when transpiling circuits containing classical bits
+  :meth:`~qrisp.QuantumCircuit.transpile` when transpiling circuits containing classical bits
   without qubits
   (`PR #975 <https://github.com/eclipse-qrisp/Qrisp/pull/975>`_).
 
