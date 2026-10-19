@@ -22,6 +22,7 @@ import pennylane as qml
 from catalyst.jax_extras.patches import patched_make_eqn
 from catalyst.jax_primitives import AbstractQreg, device_init_p, qalloc_p
 from catalyst.utils.patching import Patcher
+from catalyst.pipelines import default_pipeline
 from jax import make_jaxpr
 from jax.extend.core import Literal
 from jax.interpreters.partial_eval import DynamicJaxprTrace
@@ -151,7 +152,12 @@ def jaspr_to_catalyst_qjit(jaspr, function_name="jaspr_function", device=None):
     # Perform the code specified by the Catalyst developers
     catalyst_function = jaspr_to_catalyst_function(jaspr, device=device)
     catalyst_function.__name__ = function_name
-    jit_object = catalyst.QJIT(catalyst_function, catalyst.CompileOptions())
+    options = catalyst.CompileOptions()
+    options.pipelines = [
+        (stage, [p for p in passes if p != "annotate-invalid-gradient-functions"])
+        for stage, passes in default_pipeline()
+    ]
+    jit_object = catalyst.QJIT(catalyst_function, options)
     jit_object.jaxpr = make_jaxpr(catalyst_function)(*[invar.aval for invar in jaspr.invars[:-1]])
     jit_object.workspace = jit_object._get_workspace()
     temp = jit_object.generate_ir()
