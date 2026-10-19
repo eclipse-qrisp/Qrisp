@@ -255,11 +255,12 @@ def cuccaro_adder(
         * - Input
           - Behaviour
         * - Quantum first input ``a``
-          - Any quantum type, ``list[Qubit]`` or ``DynamicQubitArray``. Its size
-            sets the modulus of the addition.
+          - Any quantum type, ``list[Qubit]`` or ``DynamicQubitArray``. It is
+            adjusted to the size of ``b`` before the addition.
         * - Quantum second input ``b``
           - Must be a quantum register (``QuantumVariable``, ``list[Qubit]`` or
-            ``DynamicQubitArray``); it holds the result in place.
+            ``DynamicQubitArray``); it holds the result in place and its size
+            sets the modulus of the addition.
         * - Classical first input
           - An ``int``, a little-endian binary ``str``, or a ``BigInteger``
             (dynamic mode only). It is encoded into a temporary quantum variable
