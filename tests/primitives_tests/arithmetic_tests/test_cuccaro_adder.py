@@ -155,6 +155,68 @@ def test_cuccaro_adder_static_ctrl(ctrl_on, expected):
     assert b.get_measurement() == expected
 
 
+@pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
+@pytest.mark.parametrize("ctrl_on", [True, False])
+def test_cuccaro_adder_static_ctrl_classical_a(ctrl_kind, ctrl_on):
+    """Controlled addition with a classical addend.
+
+    The classical ``a`` is encoded into a temporary register inside the control
+    context, so this exercises the recursive controlled path together with
+    carry-out handling. ``6 + 3`` overflows the 3-qubit target, meaning an
+    ungated carry-out copy would be visible.
+    """
+    b = QuantumFloat(3)
+    b[:] = 6
+    c_out = QuantumBool()
+    ctrl = QuantumBool()
+    if ctrl_on:
+        x(ctrl[0])
+    if ctrl_kind == "kwarg":
+        cuccaro_adder(3, b, c_out=c_out, ctrl=ctrl)
+    else:
+        with control(ctrl):
+            cuccaro_adder(3, b, c_out=c_out)
+    expected_b = {1: 1.0} if ctrl_on else {6: 1.0}
+    expected_cout = {True: 1.0} if ctrl_on else {False: 1.0}
+    assert b.get_measurement() == expected_b
+    assert c_out.get_measurement() == expected_cout
+
+
+@pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
+@pytest.mark.parametrize("ctrl_on", [True, False])
+@pytest.mark.parametrize(
+    "a_size, b_size, a_val, b_val",
+    [
+        (5, 3, 20, 5),  # a is wider: truncated modulo 2**b_size
+        (2, 4, 3, 5),  # a is narrower: padded with extension ancillas
+    ],
+)
+def test_cuccaro_adder_static_ctrl_unequal_sizes(  # noqa: PLR0913, PLR0917
+    ctrl_kind, ctrl_on, a_size, b_size, a_val, b_val
+):
+    """Controlled addition when only the first input is resized."""
+    a = QuantumFloat(a_size)
+    b = QuantumFloat(b_size)
+    a[:] = a_val
+    b[:] = b_val
+    c_out = QuantumBool()
+    ctrl = QuantumBool()
+    if ctrl_on:
+        x(ctrl[0])
+    if ctrl_kind == "kwarg":
+        cuccaro_adder(a, b, c_out=c_out, ctrl=ctrl)
+    else:
+        with control(ctrl):
+            cuccaro_adder(a, b, c_out=c_out)
+
+    total = b_val + (a_val % (1 << b_size))
+    expected_b = (total % (1 << b_size)) if ctrl_on else b_val
+    expected_cout = (total >= (1 << b_size)) if ctrl_on else False
+    assert b.get_measurement() == {expected_b: 1.0}
+    assert c_out.get_measurement() == {expected_cout: 1.0}
+    assert a.size == a_size
+
+
 @pytest.mark.parametrize("c_in_kind", ["qbool", "qubit"])
 def test_cuccaro_adder_static_cin_cout(c_in_kind):
     """c_in + c_out together, for both c_in types."""
