@@ -16,9 +16,13 @@
 
 """Implements Beauregard's QFT-based modular adder for QuantumFloats and QuantumModulus."""
 
+import numpy as np
+from jax.core import Tracer
+
 from qrisp import check_for_tracing_mode
 from qrisp.alg_primitives import QFT
 from qrisp.alg_primitives.arithmetic import U_g, multi_controlled_U_g
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import pow2mod_signed
 from qrisp.core.gate_application_functions import cx
 from qrisp.environments import conjugate, control, custom_control, invert
@@ -38,6 +42,19 @@ def qft_basis_adder(addend, target):
             multi_controlled_U_g(target, [addend.significant(i)], 2**i)
 
 
+def _is_known_even(N):
+    """Return True if N is known to be even without evaluating traced values.
+
+    Covers Python and NumPy integers as well as BigIntegers with concrete digits.
+    Traced moduli cannot be inspected at trace time and return False.
+    """
+    if isinstance(N, (int, np.integer)):
+        return int(N) % 2 == 0
+    if isinstance(N, BigInteger) and not isinstance(N.digits, Tracer):
+        return int(np.asarray(N.digits)[0]) % 2 == 0
+    return False
+
+
 # Performs the modular inplace addition b += a
 # where a and b don't need to have the same montgomery shift.
 # The raw value of a is converted into b's representation bitwise:
@@ -50,6 +67,11 @@ def qft_basis_adder(addend, target):
 def montgomery_addition(a, b):
 
     N = b.modulus
+    # Negative exponents require 2 to be invertible mod N
+    # (traced moduli cannot be checked and must be odd)
+    if _is_known_even(N):
+        raise ValueError("Addition with differing Montgomery shifts requires an odd modulus")
+
     a_m = a.m if hasattr(a, "m") else -a.exponent
     shift = b.m - a_m
 

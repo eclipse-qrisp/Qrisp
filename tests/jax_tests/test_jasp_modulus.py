@@ -981,6 +981,53 @@ def test_shift_aware_rsub(am):
     assert list(res.get_measurement().keys()) == [(5 - 9) % SHIFT_N]
 
 
+@pytest.mark.parametrize("N", [12, np.int64(12)])
+def test_shift_aware_addition_even_modulus_raises(N):
+    """Differing shifts need 2 to be invertible modulo N."""
+    a = QuantumModulus(N)
+    a[:] = 1
+    b = QuantumModulus(N)
+    b[:] = 1
+    b.m = 1
+    with pytest.raises(ValueError, match="odd modulus"):
+        a += b
+
+
+def test_shift_aware_addition_even_biginteger_modulus_raises():
+    """A BigInteger modulus with concrete digits is checked for parity as well."""
+    N = BigInteger.create_static(12, 1)
+
+    @jaspify
+    def main():
+        a = QuantumModulus(N)
+        a[:] = BigInteger.create(1, 1)
+        b = QuantumModulus(N)
+        b[:] = BigInteger.create(1, 1)
+        b.m = 1
+        a += b
+        return measure(a)
+
+    with pytest.raises(ValueError, match="odd modulus"):
+        main()
+
+
+def test_shift_aware_addition_odd_biginteger_modulus_closure():
+    """A concrete odd BigInteger modulus passes the parity check."""
+    N = BigInteger.create_static(SHIFT_N, 1)
+
+    @jaspify
+    def main():
+        a = QuantumModulus(N)
+        a.m = 2
+        a[:] = BigInteger.create(9, 1)
+        b = QuantumModulus(N)
+        b[:] = BigInteger.create(7, 1)
+        a += b
+        return measure(a)
+
+    assert to_int(main()) == (9 + 7) % SHIFT_N
+
+
 # 2^31 - 1 fits in one 32-bit limb, but products of two residues do not.
 LARGE_BI_PRIME = 2**31 - 1
 
