@@ -27,7 +27,7 @@ from qrisp.alg_primitives.arithmetic.adders.adder_utilities import _is_quantum_r
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import conjugate, custom_control
-from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, fuse_qb_array, jlen, jrange
 from qrisp.misc import int_encoder
 from qrisp.qtypes import QuantumBool, QuantumChar, QuantumString
 
@@ -118,6 +118,29 @@ def _binary_string_to_int(value: str) -> int:
     if not set(value) <= {"0", "1"}:
         raise ValueError(f"a must be a binary string of 0s and 1s, got {value!r}")
     return int(value[::-1], 2) if value else 0
+
+
+def _normalize_list_operand(value):
+    """Convert a ``list[Qubit]`` operand to a ``DynamicQubitArray`` while tracing.
+
+    Python lists require concrete indices, so they cannot be sliced or indexed
+    with the traced values used by :func:`jrange`. Lists are left unchanged in
+    static mode, and other operand types (including existing
+    ``DynamicQubitArray`` inputs) are returned as they are.
+    """
+    if not isinstance(value, list) or not check_for_tracing_mode() or not value:
+        return value
+
+    if len(value) == 1:
+        # Fuse the qubit with itself to obtain an array, then slice back to a
+        # single element. Wrapping a bare qubit directly would not produce a
+        # qubit-array value at runtime.
+        return DynamicQubitArray(fuse_qb_array(value[0], value[0]))[:1]
+
+    result = value[0]
+    for qb in value[1:]:
+        result = result + qb
+    return result
 
 
 def _apply_maj_gates(
@@ -392,6 +415,11 @@ def cuccaro_adder(
     # nor a valid classical input.
     if isinstance(a, list) and not _is_quantum_register(a):
         raise ValueError("If the first argument is a list, it must contain only Qubits.")
+
+    # Convert plain lists to DynamicQubitArray so traced slicing and indexing
+    # work in the size adjustment and in the maj/uma loops.
+    a = _normalize_list_operand(a)
+    b = _normalize_list_operand(b)
 
     # Normalize and validate the optional arguments before allocating any
     # ancillas or applying gates, so that an invalid argument raises cleanly

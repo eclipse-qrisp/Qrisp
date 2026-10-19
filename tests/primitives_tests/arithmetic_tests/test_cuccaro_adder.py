@@ -833,6 +833,47 @@ def test_cuccaro_adder_dynamic_list_target():
     _sweep(add_qq, range(2, 5), range(2, 5), _check_qq())
 
 
+def test_cuccaro_adder_dynamic_raw_python_list_operands():
+    """Plain Python lists are normalized to DynamicQubitArray while tracing.
+
+    In dynamic mode ``qv[:]`` already returns a DynamicQubitArray, so the
+    existing "list" tests do not exercise a raw Python list. Build the operands
+    explicitly as lists to cover traced slicing and loop indexing.
+    """
+
+    def make_add(n_a, n_b, classical_a=False):
+        @boolean_simulation
+        def add(j, k):
+            a = QuantumFloat(n_a)
+            b = QuantumFloat(n_b)
+            a[:] = j
+            b[:] = k
+            b_list = [b[i] for i in range(n_b)]
+
+            if classical_a:
+                cuccaro_adder(j, b_list)
+                return measure(b)
+
+            a_list = [a[i] for i in range(n_a)]
+            cuccaro_adder(a_list, b_list)
+            return measure(a), measure(b)
+
+        return add
+
+    for n_a, n_b in [(1, 1), (3, 3), (4, 2), (2, 4)]:
+        add = make_add(n_a, n_b)
+        for j in range(1 << n_a):
+            for k in range(1 << n_b):
+                a_val, b_val = add(j, k)
+                assert a_val == j
+                assert b_val == (j + k) % (1 << n_b)
+
+    add_cq = make_add(3, 4, classical_a=True)
+    for j in range(1 << 3):
+        for k in range(1 << 4):
+            assert add_cq(j, k) == (j + k) % (1 << 4)
+
+
 def test_cuccaro_adder_dynamic_classical_a_wider_than_b():
     """Classical a wider than the target wraps modulo 2**len(b) in dynamic mode."""
     add = _mk_add(("classical", "variable"))
