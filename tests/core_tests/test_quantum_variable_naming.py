@@ -139,6 +139,23 @@ class TestIntrospectedName:
         assert qv.name == "qv"
         assert qv.is_fixed_name is False
 
+    def test_name_generation_introspection_augmented_assignment(self):
+        class _Holder:
+            def __iadd__(self, other):
+                return other
+
+        qs = QuantumSession()
+        qv = _Holder()
+        qv += QuantumVariable(2, qs=qs)
+        assert qv.name == "qv"
+        assert qv.is_fixed_name is False
+
+    def test_name_generation_introspection_walrus(self):
+        qs = QuantumSession()
+        if (qv := QuantumVariable(2, qs=qs)) is not None:
+            assert qv.name == "qv"
+            assert qv.is_fixed_name is False
+
     def test_name_generation_introspection_in_tracing_mode(self):
         @jaspify
         def main():

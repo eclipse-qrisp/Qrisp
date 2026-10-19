@@ -275,7 +275,12 @@ class QuantumVariable:
         # Specify the static attributes (empty for base type QuantumVariable)
         self.static_attributes = []
 
+        # Imported locally to avoid a circular import: qrisp.core.quantum_session
+        # imports QuantumVariable from this module at load time.
         from qrisp.core.quantum_session import QuantumSession
+
+        # Imported locally to avoid a circular import: qrisp.jasp
+        # imports QuantumVariable from this module at load time.
         from qrisp.jasp import TracingQuantumSession, check_for_tracing_mode
 
         # Store quantum session
@@ -462,9 +467,12 @@ class QuantumVariable:
         init : bool, optional
             If set to True, the :meth:`init_from <qrisp.QuantumVariable.init_from>`
             method of the result will be called on self. The default is False.
-        qubits: list[Qubit] | DynamicQubitArray, optional
+        qubits : list[Qubit] | DynamicQubitArray, optional
             Qubits to initialize the duplicated quantum variable from.
             If not provided ``self.size`` is used for qubits extraction.
+            The object is used as the duplicate's register as is (not copied), so passing
+            another QuantumVariable's ``reg`` makes both share it: deleting, extending
+            or reducing the duplicate also affects that QuantumVariable.
 
         Raises
         ------

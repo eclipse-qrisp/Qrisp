@@ -286,7 +286,7 @@ class QuantumSession(QuantumCircuit):
             ``QuantumVariable.is_fixed_name``).
 
         """
-        if name == "":
+        if name in ["", "*"]:
             raise ValueError("QuantumVariable name must not be empty")
         if name is not None:
             effective_name = name + "_dupl*" if is_duplicated_name else name

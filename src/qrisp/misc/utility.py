@@ -1367,6 +1367,10 @@ def find_calling_line(level=0):
     return (stack[0].line or "").strip()  # prints "a = fct1()"
 
 
+# Matches a walrus assignment anywhere in the line, e.g. "if (a := Quantum...):".
+_WALRUS_PATTERN = re.compile(r"(?<![\w.])([A-Za-z_]\w*)\s*:=\s*Quantum")
+
+
 def infer_python_var_name(level: int = 0):
     """Infer the name of the Python variable a ``Quantum...`` object is assigned to.
 
@@ -1379,17 +1383,22 @@ def infer_python_var_name(level: int = 0):
     Returns
     -------
     str or None
-        The (first) assignment target of that line, or None if the line is not of
-        the form ``var = Quantum...``.
+        The (first) assignment target of that line, or None if the line neither
+        has the form ``var = Quantum...`` (or ``var += Quantum...`` etc.) nor
+        contains ``var := Quantum...``.
 
     """
     line = find_calling_line(level + 1)
+    # Checked first, as splitting "(a := Quantum...)" at "=" would give "(a".
+    walrus_match = _WALRUS_PATTERN.search(line)
+    if walrus_match:
+        return walrus_match.group(1)
     split_line = line.split("=")
     minimum_equality_splits = 2
     if len(split_line) < minimum_equality_splits or split_line[1].replace(" ", "")[:7] != "Quantum":
         return None
-    # Keep only the first target name, e.g. "a" for "a: QuantumFloat" or "a, b".
-    return re.sub(r"[,:].*", "", split_line[0]).strip()
+    # Keep only the first target name, e.g. "a" for "a: QuantumFloat", "a, b" or "a +".
+    return re.sub(r"[,:].*", "", split_line[0]).split()[0]
 
 
 def retarget_instructions(data, source_qubits, target_qubits):
