@@ -2004,6 +2004,45 @@ class TestQuantumCircuitRunAndStatevector:
             um.controlled_unitary = original
         assert "2cx" in calls
 
+    def test_run_keeps_narrow_controlled_operations(self):
+        """run() simulates Toffolis via the closed-form controlled unitary, not their synthesized definition."""
+        import qrisp.simulator.unitary_management as um
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.h(1)
+        qc.ccx(0, 1, 2)
+        qc.measure(qc.qubits)
+
+        calls = []
+        original = um.controlled_unitary
+
+        def spy(gate):
+            calls.append(gate.name)
+            return original(gate)
+
+        um.controlled_unitary = spy
+        try:
+            result = qc.run()
+        finally:
+            um.controlled_unitary = original
+        assert "2cx" in calls
+        assert set(result.keys()) == {"000", "001", "010", "111"}
+
+    def test_run_dissolves_measurements_inside_composite_operations(self):
+        """run() still performs measurements contained in the definition of a (narrow) composite operation."""
+        sub = QuantumCircuit(2)
+        sub.h(0)
+        sub.cx(0, 1)
+        sub.measure([0, 1])
+
+        qc = QuantumCircuit(2, 2)
+        qc.append(sub.to_op(), qc.qubits, qc.clbits)
+        result = qc.run()
+        assert set(result.keys()) == {"00", "11"}
+        assert np.isclose(result["00"], 0.5, atol=1e-5)
+        assert np.isclose(result["11"], 0.5, atol=1e-5)
+
 
 class TestQuantumCircuitSymbolicSimulation:
     """Tests for simulating circuits that carry unbound SymPy parameters.

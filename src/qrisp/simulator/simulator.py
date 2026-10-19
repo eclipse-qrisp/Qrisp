@@ -25,7 +25,7 @@ import numpy as np
 from numba import njit
 from tqdm import tqdm
 
-from qrisp.circuit import QuantumCircuit, fast_append
+from qrisp.circuit import ControlledOperation, QuantumCircuit, fast_append
 from qrisp.simulator.preprocessing.circuit_preprocessing import _circuit_preprocessor
 from qrisp.simulator.preprocessing.circuit_reordering import _reorder_circuit
 from qrisp.simulator.preprocessing.gate_grouping import _MAX_GROUP_QUBITS, _group_qc
@@ -39,6 +39,16 @@ from qrisp.simulator.quantum_state import QuantumState
 def _clear_progress_line():
     width = min(85, shutil.get_terminal_size().columns)
     print("\r" + (" " * width), end="\r")
+
+
+# Decides which operations are dissolved into their definition before simulation.
+# Everything is dissolved (gate grouping recombines the parts, and measurements, resets
+# and allocations hidden inside composite gates must surface) except controlled
+# operations small enough to be grouped: their closed-form unitary
+# (ControlledOperation.get_unitary) is cheaper than their synthesis. Wider ones are
+# dissolved too, since the closed form is a dense 2^n x 2^n matrix.
+def _simulation_transpile_predicate(op):
+    return not isinstance(op, ControlledOperation) or op.num_qubits > _MAX_GROUP_QUBITS
 
 
 # TODO: This function will be refactored
@@ -68,7 +78,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
     with fast_append(2):
-        qc = qc.transpile()
+        qc = qc.transpile(transpile_predicate=_simulation_transpile_predicate)
 
         # Count the amount of measurements (we can stop the simulation after all
         # measurements are performed)
@@ -242,10 +252,7 @@ def statevector_sim(qc):
     with fast_append():
         # We convert the circuit which is given with portable objects to a qrisp circuit
 
-        # Only dissolve operations too wide to fit into a gate group (their unitary
-        # would be a 2^n x 2^n matrix). Narrower operations keep their own unitary,
-        # e.g. Toffolis use the closed form of ControlledOperation.get_unitary.
-        qc = qc.transpile(transpile_predicate=lambda op: op.num_qubits > _MAX_GROUP_QUBITS)
+        qc = qc.transpile(transpile_predicate=_simulation_transpile_predicate)
 
         # TO-DO fix qubit ordering
         # qc.qubits = qc.qubits[::-1]
