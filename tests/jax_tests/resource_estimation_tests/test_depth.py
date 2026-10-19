@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests the depth profiling decorator that computes circuit depth for Jasp programs."""
 
 import pytest
 
@@ -28,11 +29,12 @@ from qrisp import (
     depth,
     h,
     measure,
+    parity,
     rx,
     rz,
     u3,
 )
-from qrisp.jasp import jrange, q_cond, qache
+from qrisp.jasp import expectation_value, jrange, q_cond, qache
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
@@ -500,6 +502,24 @@ class TestDepthMeasurementBehavior:
         ):
             main()
 
+    def test_kernelization_raises(self):
+        """Test that depth on a kernelized function raises NotImplementedError."""
+
+        def state_prep():
+            qf = QuantumFloat(3)
+            h(qf)
+            return qf
+
+        @depth(meas_behavior="0")
+        def main():
+            return expectation_value(state_prep, 10)()
+
+        with pytest.raises(
+            NotImplementedError,
+            match="Quantum kernel creation not yet supported in profiling interpreter",
+        ):
+            main()
+
     def test_error_on_non_boolean_measurement(self):
         """Test that a non-boolean measurement result raises ValueError."""
 
@@ -587,6 +607,30 @@ class TestDepthMeasurementBehavior:
         first = main(selector)
         second = main(selector)
         assert first == second
+
+
+class TestDepthParity:
+    """Test that the parity of measurement results is evaluated when it controls gates."""
+
+    def test_parity_controls_gate(self):
+        """Only the gate controlled by an odd parity is applied (measurements add no depth)."""
+
+        @depth(meas_behavior="1")
+        def main():
+            qv = QuantumVariable(2)
+            target = QuantumVariable(1)
+            m1 = measure(qv[0])
+            m2 = measure(qv[1])
+
+            # Both measurements return 1: the parity of (m1, m2) is 0, the parity of m1 alone is 1
+            with control(parity(m1, m2)):
+                h(target[0])
+                h(target[0])
+
+            with control(parity(m1)):
+                h(target[0])
+
+        assert main() == 1
 
 
 class TestDepthSlice:
@@ -769,6 +813,98 @@ class TestDepthSlice:
             h(qf[-3:-1])  # qubits 1 and 2 of a 4-qubit register
 
         assert main() == 1
+
+
+class TestDepthNegativeIndex:
+    """Regression tests for negative qubit indices.
+
+    For a register whose size is only known at run time, the depth metric keeps
+    a lookup table with ``max_qubits`` entries. A negative index must count from
+    the end of the register, not from the end of that table.
+    """
+
+    # The depth of two gates on the same qubit, which must run one after the other
+    SEQUENTIAL_DEPTH = 2
+
+    def test_last_qubit_static_size(self):
+        """``qv[-1]`` is the last qubit of a register with a static size."""
+
+        @depth(meas_behavior="0")
+        def main():
+            qv = QuantumFloat(3)
+            h(qv[-1])
+            h(qv[2])
+
+        assert main() == self.SEQUENTIAL_DEPTH
+
+    @pytest.mark.parametrize("size, index", [(1, -1), (3, -1), (3, -2), (3, -3), (5, -1)])
+    def test_negative_index_matches_positive_index(self, size, index):
+        """In a register with a dynamic size, each negative index addresses the same qubit as ``n + index``.
+
+        Regression test: a negative index addressed an unallocated entry at the end
+        of the lookup table, so the two gates below looked parallel and the depth was 1.
+        """
+
+        @depth(meas_behavior="0")
+        def main(n):
+            qv = QuantumFloat(n)
+            h(qv[index])
+            h(qv[n + index])  # the same qubit, so the two gates are sequential
+
+        assert main(size) == self.SEQUENTIAL_DEPTH
+
+    def test_negative_index_other_qubit_is_parallel(self):
+        """A gate on ``qv[-1]`` and a gate on ``qv[0]`` act on different qubits and run in parallel."""
+
+        @depth(meas_behavior="0")
+        def main(n):
+            qv = QuantumFloat(n)
+            h(qv[-1])
+            h(qv[0])
+
+        assert main(3) == 1
+
+    def test_negative_index_on_dynamic_slice(self):
+        """``s[-1]`` on a slice of a register with a dynamic size is the last qubit of the register."""
+
+        @depth(meas_behavior="0")
+        def main(n):
+            qv = QuantumFloat(n)
+            s = qv[1:]
+            h(s[-1])
+            h(qv[n - 1])
+
+        assert main(4) == self.SEQUENTIAL_DEPTH
+
+    def test_negative_index_on_fused_array(self):
+        """``f[-2]`` on a dynamic register fused with a 2-qubit register is the first qubit of the latter.
+
+        ``f[-1]`` alone would not catch the bug: the lookup table of a fused array
+        repeats its last qubit up to ``max_qubits`` entries.
+        """
+
+        @depth(meas_behavior="0")
+        def main(n):
+            qv = QuantumFloat(n)
+            qb = QuantumVariable(2)
+            f = qv[:] + qb[:]
+            h(f[-2])
+            h(qb[0])
+
+        assert main(3) == self.SEQUENTIAL_DEPTH
+
+    def test_negative_index_on_fused_single_qubit(self):
+        """``f[-1]`` on a dynamic register fused with a single qubit is that single qubit."""
+
+        @depth(meas_behavior="0")
+        def main(n):
+            qv = QuantumFloat(n)
+            qb = QuantumVariable(1)
+            f = qv[:] + [qb[0]]
+            h(f[-1])
+            h(qb[0])
+
+        assert main(3) == self.SEQUENTIAL_DEPTH
 
 
 class TestDepthFuse:

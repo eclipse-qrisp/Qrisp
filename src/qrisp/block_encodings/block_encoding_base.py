@@ -654,7 +654,7 @@ class BlockEncoding:
         *operands: QuantumVariable,
         meas_behavior: str | Callable = "0",
         max_qubits: int = 1024,
-        max_allocations: int = 1000,
+        max_allocations: int | None = None,
     ) -> dict[str, Any]:
         r"""Estimate the quantum resources required for the BlockEncoding.
 
@@ -676,7 +676,7 @@ class BlockEncoding:
         max_qubits : int, optional
             The maximum number of qubits supported for depth computation. Default is 1024.
         max_allocations : int, optional
-            The maximum number of allocation/deallocation events supported for tracking. Default is 1000.
+            Deprecated and ignored, see :ref:`num_qubits <num_qubits>`.
 
         Returns
         -------

@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests angle-finding routines for GQSP, QSP, and QSVT phase sequences."""
 
 import numpy as np
 import pytest
@@ -45,6 +46,9 @@ from qrisp.algorithms.gqsp.gqsp_angles_verification import (
         np.array([1.3, 0.3, 0.2, 0.1, 0.9, -0.4, 0.6, 0.3]),
         np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]),
         np.array([0.1, 0.3, 0.0, -0.2, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]),
+        # Complex coefficients
+        np.array([0.5, 0.5j]),
+        np.array([0.1, 0.3j, 0.0, -0.2, 0.1 + 0.5j, 0.7j]),
     ],
 )
 def test_gqsp_polynomial(target_coeffs):
@@ -69,6 +73,9 @@ def test_gqsp_polynomial(target_coeffs):
         np.array([1.3, 0.3, 0.2, 0.1, 0.9, -0.4, 0.6, 0.3]),
         np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]),
         np.array([0.1, 0.3, 0.0, -0.2, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]),
+        # Complex coefficients
+        np.array([0.5, 0.5j]),
+        np.array([0.1, 0.3j, 0.0, -0.2, 0.1 + 0.5j, 0.7j]),
     ],
 )
 def test_nlft_sequence(target_coeffs):
