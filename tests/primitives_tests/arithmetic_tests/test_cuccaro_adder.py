@@ -16,6 +16,7 @@
 
 """Tests for the Cuccaro ripple-carry in-place adder."""
 
+import math
 import re
 
 import pytest
@@ -36,8 +37,9 @@ from qrisp import (
 )
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.circuit import Qubit
+from qrisp.default_backend import def_backend
 from qrisp.jasp import jaspify
-from qrisp.misc import int_encoder
+from qrisp.misc import get_measurement_from_qc, int_encoder
 
 # ---------------------------------------------------------------------------
 # Static smoke tests — a few representative cases with small registers to catch
@@ -247,6 +249,17 @@ def test_cuccaro_adder_static_cout_ctrl(a_kind, ctrl_kind, ctrl_on):
     assert c_out.get_measurement() == expected_cout
 
 
+def _joint_measurement(qubits):
+    """Return the joint measurement distribution of ``qubits``.
+
+    The dictionary keys are integers whose bit ``i`` corresponds to
+    ``qubits[i]``, so the correlation between the measured qubits is preserved.
+    """
+    qs = qubits[0].qs()
+    backend = qs.backend if qs.backend is not None else def_backend
+    return dict(get_measurement_from_qc(qs.compile(), qubits, backend))
+
+
 @pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
 def test_cuccaro_adder_static_cout_ctrl_superposition(ctrl_kind):
     """A control in superposition must not flip c_out on the ``|0>`` branch.
@@ -255,7 +268,9 @@ def test_cuccaro_adder_static_cout_ctrl_superposition(ctrl_kind):
     so the carry-out has to be perfectly correlated with the control. While the
     carry-out copy was unconditional the true carry leaked into ``c_out``
     regardless of the control, entangling ``c_out`` with the addends on the
-    branch where no addition happened.
+    branch where no addition happened. The joint measurement ensures that only
+    the correlated outcomes ``(ctrl=0, c_out=0)`` and ``(ctrl=1, c_out=1)``
+    occur.
     """
     a = QuantumFloat(3)
     b = QuantumFloat(3)
@@ -269,8 +284,7 @@ def test_cuccaro_adder_static_cout_ctrl_superposition(ctrl_kind):
     else:
         with control(ctrl):
             cuccaro_adder(a, b, c_out=c_out)
-    assert ctrl.get_measurement() == {False: 0.5, True: 0.5}
-    assert c_out.get_measurement() == {False: 0.5, True: 0.5}
+    assert _joint_measurement([ctrl[0], c_out[0]]) == {0: 0.5, 3: 0.5}
 
 
 def test_cuccaro_adder_static_inputs_unmodified():
@@ -902,13 +916,6 @@ QTYPE_SPECS = {
         "values": lambda n: range(2),
         "expected": lambda j, k, n: (k + j) % 2,
     },
-    "qmodulus": {
-        "make": QuantumModulus,
-        "encode": lambda qv, v: qv.__setitem__(slice(None), v),
-        "sizes": [13],
-        "values": range,
-        "expected": lambda j, k, n: ((k + j) % (1 << n.bit_length())) % n,
-    },
 }
 
 
@@ -933,9 +940,9 @@ def _mk_type_add(make, encode, a_kind):
     return add
 
 
-@pytest.mark.parametrize("qtype", ["qvariable", "qbool", "qmodulus"])
+@pytest.mark.parametrize("qtype", ["qvariable", "qbool"])
 def test_cuccaro_adder_dynamic_quantum_types(qtype):
-    """Exhaustive addition on QuantumVariable, QuantumBool and QuantumModulus."""
+    """Exhaustive addition on QuantumVariable and QuantumBool."""
     spec = QTYPE_SPECS[qtype]
     add_qq = _mk_type_add(spec["make"], spec["encode"], "quantum")
     add_cq = _mk_type_add(spec["make"], spec["encode"], "classical")
@@ -952,3 +959,71 @@ def test_cuccaro_adder_dynamic_quantum_types(qtype):
         for j in spec["values"](n):
             for k in spec["values"](n):
                 assert add_cq(n, n, j, k) == spec["expected"](j, k, n)
+
+
+def test_cuccaro_adder_dynamic_quantum_modulus_below_modulus():
+    """Exhaustive QuantumModulus addition restricted to valid sums.
+
+    ``cuccaro_adder`` only supports ``QuantumModulus`` when the sum stays below
+    the modulus; values at or above it are not valid ``QuantumModulus`` states.
+    """
+    modulus = 13
+
+    @boolean_simulation
+    def add_qq(j, k):
+        a = QuantumModulus(modulus)
+        b = QuantumModulus(modulus)
+        a[:] = j
+        b[:] = k
+        cuccaro_adder(a, b)
+        return measure(a), measure(b)
+
+    @boolean_simulation
+    def add_cq(j, k):
+        b = QuantumModulus(modulus)
+        b[:] = k
+        cuccaro_adder(j, b)
+        return measure(b)
+
+    for j in range(modulus):
+        for k in range(modulus - j):
+            a_val, b_val = add_qq(j, k)
+            assert a_val == j
+            assert b_val == j + k
+            assert add_cq(j, k) == j + k
+
+
+def _assert_invalid_modulus_state(qv):
+    """Assert that *qv* is in a single, decoded-as-``nan`` state."""
+    result = qv.get_measurement()
+    assert len(result) == 1
+    value, probability = next(iter(result.items()))
+    assert math.isnan(value)
+    assert probability == 1.0
+
+
+def test_cuccaro_adder_static_quantum_modulus_overflow_unsupported():
+    """Overflow at or above the modulus is unsupported and decodes to ``nan``.
+
+    ``QuantumModulus`` only represents values below its modulus. Adding two
+    valid values can leave the register in an invalid state; the static decoder
+    reports this as ``nan`` instead of silently reducing modulo the modulus.
+    This test documents the current limitation for both quantum and classical
+    addends.
+    """
+    modulus = 13
+
+    # Quantum + quantum overflow: 12 + 1 = 13.
+    a = QuantumModulus(modulus)
+    b = QuantumModulus(modulus)
+    a[:] = 12
+    b[:] = 1
+    cuccaro_adder(a, b)
+    assert a.get_measurement() == {12: 1.0}
+    _assert_invalid_modulus_state(b)
+
+    # Classical + quantum overflow.
+    b = QuantumModulus(modulus)
+    b[:] = 12
+    cuccaro_adder(1, b)
+    _assert_invalid_modulus_state(b)
