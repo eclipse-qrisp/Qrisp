@@ -413,7 +413,6 @@ def cuccaro_adder(
 
     # redefine the dimensions of a and b after the size adjustments
     dim_a = jlen(a)
-    dim_b = jlen(b)
 
     # a single carry ancilla is sufficient for the Cuccaro adder
     ancilla = QuantumVariable(1)
