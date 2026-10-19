@@ -418,6 +418,15 @@ Bug Fixes
 
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* Fixed simulation of composite operations in :meth:`~qrisp.QuantumCircuit.statevector_array`
+  and :meth:`~qrisp.QuantumCircuit.run`: circuits now transpile composite operations before
+  simulation to avoid computing wide unitary matrices, while preserving narrow controlled
+  operations (such as Toffoli and MCX gates within the maximum gate group size) so they
+  retain their closed-form unitaries for fast simulation. Also fixed a bug in
+  :meth:`~qrisp.QuantumCircuit.transpile` when transpiling circuits containing classical bits
+  without qubits
+  (`PR #975 <https://github.com/eclipse-qrisp/Qrisp/pull/975>`_).
+
 * Fixed a bug in ``resolve_naming_collisions`` where in the "qv_0 is newer" conditional branch,
   ``qv_1.is_fixed_name`` (called ``user_given_name`` earlier) was checked 
   when it should have been ``qv_0``'s.
@@ -451,15 +460,6 @@ Bug Fixes
   creation time instead. Since the ``auto_uncompute`` decorator uses ``live_qvs`` to find the
   variables a function created, it could previously miss such a variable.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
-
-* Fixed simulation of composite operations in :meth:`~qrisp.QuantumCircuit.statevector_array`
-  and :meth:`~qrisp.QuantumCircuit.run`: circuits now transpile composite operations before
-  simulation to avoid computing wide unitary matrices, while preserving narrow controlled
-  operations (such as Toffoli and MCX gates within the maximum gate group size) so they
-  retain their closed-form unitaries for fast simulation. Also fixed a bug in
-  :meth:`~qrisp.QuantumCircuit.transpile` when transpiling circuits containing classical bits
-  without qubits
-  (`PR #975 <https://github.com/eclipse-qrisp/Qrisp/pull/975>`_).
 
 Compatibility
 -------------
