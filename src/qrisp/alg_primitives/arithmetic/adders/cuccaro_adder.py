@@ -97,7 +97,7 @@ def _binary_string_to_int(value: str) -> int:
 
     Binary strings are read little-endian, i.e. the leftmost character is the
     least significant bit, so ``"10"`` means bit 0 is 1 (the value 1). An empty
-    string represents 0.
+    string represents 0. Only the characters ``0`` and ``1`` are allowed.
 
     Parameters
     ----------
@@ -109,7 +109,14 @@ def _binary_string_to_int(value: str) -> int:
     int
         The integer encoded by ``value``.
 
+    Raises
+    ------
+    ValueError
+        If ``value`` contains characters other than ``0`` and ``1``.
+
     """
+    if not set(value) <= {"0", "1"}:
+        raise ValueError(f"a must be a binary string of 0s and 1s, got {value!r}")
     return int(value[::-1], 2) if value else 0
 
 
@@ -395,6 +402,8 @@ def cuccaro_adder(
     # convert the classical input to a quantum input
     if not _is_quantum_register(a):
         if isinstance(a, str):
+            # This runs in both static and tracing mode, so malformed binary
+            # strings are rejected during tracing before any circuit is built.
             a = _binary_string_to_int(a)
 
         # int_encoder reads only the target's bits while tracing. In static mode,

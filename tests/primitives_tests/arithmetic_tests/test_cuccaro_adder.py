@@ -36,6 +36,7 @@ from qrisp import (
 )
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.circuit import Qubit
+from qrisp.jasp import jaspify
 from qrisp.misc import int_encoder
 
 # ---------------------------------------------------------------------------
@@ -157,33 +158,6 @@ def test_cuccaro_adder_static_ctrl(ctrl_on, expected):
 
 @pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
 @pytest.mark.parametrize("ctrl_on", [True, False])
-def test_cuccaro_adder_static_ctrl_classical_a(ctrl_kind, ctrl_on):
-    """Controlled addition with a classical addend.
-
-    The classical ``a`` is encoded into a temporary register inside the control
-    context, so this exercises the recursive controlled path together with
-    carry-out handling. ``6 + 3`` overflows the 3-qubit target, meaning an
-    ungated carry-out copy would be visible.
-    """
-    b = QuantumFloat(3)
-    b[:] = 6
-    c_out = QuantumBool()
-    ctrl = QuantumBool()
-    if ctrl_on:
-        x(ctrl[0])
-    if ctrl_kind == "kwarg":
-        cuccaro_adder(3, b, c_out=c_out, ctrl=ctrl)
-    else:
-        with control(ctrl):
-            cuccaro_adder(3, b, c_out=c_out)
-    expected_b = {1: 1.0} if ctrl_on else {6: 1.0}
-    expected_cout = {True: 1.0} if ctrl_on else {False: 1.0}
-    assert b.get_measurement() == expected_b
-    assert c_out.get_measurement() == expected_cout
-
-
-@pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
-@pytest.mark.parametrize("ctrl_on", [True, False])
 @pytest.mark.parametrize(
     "a_size, b_size, a_val, b_val",
     [
@@ -235,30 +209,39 @@ def test_cuccaro_adder_static_cin_cout(c_in_kind):
     assert c_out.get_measurement() == {True: 1.0}
 
 
+@pytest.mark.parametrize("a_kind", ["quantum", "classical"])
 @pytest.mark.parametrize("ctrl_kind", ["kwarg", "env"])
 @pytest.mark.parametrize("ctrl_on", [True, False])
-def test_cuccaro_adder_static_cout_ctrl(ctrl_kind, ctrl_on):
+def test_cuccaro_adder_static_cout_ctrl(a_kind, ctrl_kind, ctrl_on):
     """c_out tracks the true carry only when the control is |1>.
 
-    ``6 + 6`` overflows the 3-qubit register, so the true carry is ``1``. With
-    the control left in ``|0>`` the addition is suppressed and the carry-out
-    copy must be suppressed as well. The ``ctrl=`` keyword and the
-    ``with control(...)`` environment (``custom_control``) are both checked.
+    ``6 + 6`` (quantum ``a``) and ``6 + 3`` (classical ``a``) both overflow the
+    3-qubit register, so the true carry is ``1``. With the control left in
+    ``|0>`` the addition is suppressed and the carry-out copy must be suppressed
+    as well. The quantum path exercises the custom control directly while the
+    classical path encodes ``a`` inside the control context. The ``ctrl=``
+    keyword and the ``with control(...)`` environment are both checked.
     """
-    a = QuantumFloat(3)
+    a_val = 6 if a_kind == "quantum" else 3
     b = QuantumFloat(3)
-    a[:] = 6
     b[:] = 6
+    if a_kind == "quantum":
+        a = QuantumFloat(3)
+        a[:] = a_val
+        a_arg = a
+    else:
+        a_arg = a_val
     c_out = QuantumBool()
     ctrl = QuantumBool()
     if ctrl_on:
         x(ctrl[0])
     if ctrl_kind == "kwarg":
-        cuccaro_adder(a, b, c_out=c_out, ctrl=ctrl)
+        cuccaro_adder(a_arg, b, c_out=c_out, ctrl=ctrl)
     else:
         with control(ctrl):
-            cuccaro_adder(a, b, c_out=c_out)
-    expected_b = {4: 1.0} if ctrl_on else {6: 1.0}
+            cuccaro_adder(a_arg, b, c_out=c_out)
+    total = a_val + 6
+    expected_b = {total % 8: 1.0} if ctrl_on else {6: 1.0}
     expected_cout = {True: 1.0} if ctrl_on else {False: 1.0}
     assert b.get_measurement() == expected_b
     assert c_out.get_measurement() == expected_cout
@@ -381,15 +364,6 @@ def test_cuccaro_adder_static_binary_string_cout():
     assert c_out.get_measurement() == {True: 1.0}
 
 
-@pytest.mark.parametrize("bad_a", ["10201", "abc"])
-def test_cuccaro_adder_static_invalid_binary_string(bad_a):
-    """A non-binary string raises ValueError in the string-to-int conversion."""
-    b = QuantumFloat(4)
-    b[:] = 0
-    with pytest.raises(ValueError, match="base 2"):
-        cuccaro_adder(bad_a, b)
-
-
 def test_cuccaro_adder_dynamic_binary_string():
     """Binary-string addend in dynamic mode (string captured as a closure)."""
     a_str = "1010"  # little-endian -> 5
@@ -402,6 +376,44 @@ def test_cuccaro_adder_dynamic_binary_string():
         return measure(b)
 
     assert add(4, 3) == 5 + 3
+
+
+@pytest.mark.parametrize("mode", ["static", "boolean_simulation", "jaspify"])
+@pytest.mark.parametrize("bad_a", ["10201", "abc", "2"])
+def test_cuccaro_adder_invalid_binary_string(mode, bad_a):
+    """A non-binary string raises a clear ValueError in static and dynamic modes."""
+    if mode == "static":
+
+        def run():
+            b = QuantumFloat(4)
+            b[:] = 0
+            cuccaro_adder(bad_a, b)
+
+    elif mode == "boolean_simulation":
+
+        @boolean_simulation
+        def add(bits, b_val):
+            b = QuantumFloat(bits)
+            b[:] = b_val
+            cuccaro_adder(bad_a, b)
+            return measure(b)
+
+        def run():
+            add(4, 0)
+
+    else:
+
+        @jaspify
+        def main():
+            b = QuantumFloat(4)
+            b[:] = 0
+            cuccaro_adder(bad_a, b)
+            return measure(b)
+
+        run = main
+
+    with pytest.raises(ValueError, match="a must be a binary string of 0s and 1s"):
+        run()
 
 
 # -- BigInteger classical addends ---------------------------------------------
