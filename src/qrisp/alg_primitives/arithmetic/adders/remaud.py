@@ -19,9 +19,10 @@
 from qrisp.core.gate_application_functions import cx, mcx, x
 from qrisp.environments import control, invert
 from qrisp.jasp import jlen, jnp, jrange, while_loop
+__all__ = ["remaud_adder"]
 
 
-def compute_ladder_iterations(N):
+def _compute_ladder_iterations(N):
     """Computes the number of iterations required to reduce a given size `N`
     to a value less than or equal to 2 by repeatedly halving it.
     This function uses a loop to simulate the halving process and counts
@@ -51,7 +52,7 @@ def compute_ladder_iterations(N):
     return i
 
 
-def X_prime_func(i, k, n):
+def _X_prime_func(i, k, n):
     """Simulate the lists produced by the recursive calls
     of the algorithm by returning the corresponding index.
     This function is derived from observing that the original algorithm generates
@@ -70,7 +71,7 @@ def X_prime_func(i, k, n):
     return jnp.int64((2 ** (k + 1) - 1) + 2 ** (k + 1) * i - 2**k * ((i + 1) == n // 2) * ((n + 1) & 1))
 
 
-def ladder1_synth_jax(qf):
+def _ladder1_synth_jax(qf):
     """Iteratively synthesizes a logarithmic-depth CNOT circuit equivalent to a CNOT ladder of length n-1.
     This construction is based on the recursive algorithm described in: https://arxiv.org/abs/2501.16802, Algorithm 1.
 
@@ -98,39 +99,39 @@ def ladder1_synth_jax(qf):
     cx(qf[-2], qf[-1])
 
     # Compute the number of recursive call in the original algorithm
-    max_iterations = compute_ladder_iterations(N)
+    max_iterations = _compute_ladder_iterations(N)
 
     # Fill in the left part of the circuit
     for k in jrange(max_iterations - 2):
         # CL
         cx(
-            qf[X_prime_func((N >> (k + 1)) - 2, k, N >> k)],
-            qf[X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
+            qf[_X_prime_func((N >> (k + 1)) - 2, k, N >> k)],
+            qf[_X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
         )
 
         for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
             cx(
-                qf[X_prime_func(2 * i - 1, k, N >> k)],
-                qf[X_prime_func(2 * i, k, N >> k)],
+                qf[_X_prime_func(2 * i - 1, k, N >> k)],
+                qf[_X_prime_func(2 * i, k, N >> k)],
             )
 
     # Conditionally append the deepest layer
     with control(N >> (max_iterations - 1) == 2):
         cx(
-            qf[X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2))],
-            qf[X_prime_func(1, max_iterations - 2, N >> (max_iterations - 2))],
+            qf[_X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2))],
+            qf[_X_prime_func(1, max_iterations - 2, N >> (max_iterations - 2))],
         )
 
     # Fill in the right part of the circuit
     with invert():
         for k in jrange(max_iterations - 2):
             # CR
-            cx(qf[X_prime_func(0, k, N >> k)], qf[X_prime_func(1, k, N >> k)])
+            cx(qf[_X_prime_func(0, k, N >> k)], qf[_X_prime_func(1, k, N >> k)])
 
             for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
                 cx(
-                    qf[X_prime_func(2 * i, k, N >> k)],
-                    qf[X_prime_func(2 * i + 1, k, N >> k)],
+                    qf[_X_prime_func(2 * i, k, N >> k)],
+                    qf[_X_prime_func(2 * i + 1, k, N >> k)],
                 )
 
     # Add the last layer of gates
@@ -139,7 +140,7 @@ def ladder1_synth_jax(qf):
         cx(qf[2 * i], qf[2 * i + 1])
 
 
-def ladder2_synth_jax(x, y, method="khattar"):
+def _ladder2_synth_jax(x, y, method="khattar"):
     """Iteratively synthesizes a polylogarithmic-depth MCX circuit equivalent to a Toffoli ladder of length n-1.
     This construction is based on the recursive algorithm described in `Algorithm 2 <https://arxiv.org/abs/2501.16802>`__.
     It generalizes the ladder1_synth_jax by alternating x and y qubits. If the circutit generated
@@ -165,33 +166,33 @@ def ladder2_synth_jax(x, y, method="khattar"):
         )
     mcx(x[-2] + y[-1], x[-1], method=method)  # CHANGED
 
-    max_iterations = compute_ladder_iterations(N)
+    max_iterations = _compute_ladder_iterations(N)
     for k in jrange(max_iterations - 2):
         # CL
         mcx(
-            x[X_prime_func((N >> (k + 1)) - 2, k, N >> k)]
-            + y[X_prime_func((N >> (k + 1)) - 2, k, N >> k) : X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
-            x[X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
+            x[_X_prime_func((N >> (k + 1)) - 2, k, N >> k)]
+            + y[_X_prime_func((N >> (k + 1)) - 2, k, N >> k) : _X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
+            x[_X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
             method=method,
         )
 
         for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
             mcx(
-                x[X_prime_func(2 * i - 1, k, N >> k)]
-                + y.reg[X_prime_func(2 * i - 1, k, N >> k) : X_prime_func(2 * i, k, N >> k)],
-                x[X_prime_func(2 * i, k, N >> k)],
+                x[_X_prime_func(2 * i - 1, k, N >> k)]
+                + y.reg[_X_prime_func(2 * i - 1, k, N >> k) : _X_prime_func(2 * i, k, N >> k)],
+                x[_X_prime_func(2 * i, k, N >> k)],
                 method=method,
             )
 
     with control(N >> (max_iterations - 1) == 2):
         mcx(
-            x[X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2))]
+            x[_X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2))]
             + y[
-                X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2)) : X_prime_func(
+                _X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2)) : _X_prime_func(
                     1, max_iterations - 2, N >> (max_iterations - 2)
                 )
             ],
-            x[X_prime_func(1, max_iterations - 2, N >> (max_iterations - 2))],
+            x[_X_prime_func(1, max_iterations - 2, N >> (max_iterations - 2))],
             method=method,
         )
 
@@ -199,16 +200,16 @@ def ladder2_synth_jax(x, y, method="khattar"):
         for k in jrange(max_iterations - 2):
             # CR
             mcx(
-                x[X_prime_func(0, k, N >> k)] + y[X_prime_func(0, k, N >> k) : X_prime_func(1, k, N >> k)],
-                x[X_prime_func(1, k, N >> k)],
+                x[_X_prime_func(0, k, N >> k)] + y[_X_prime_func(0, k, N >> k) : _X_prime_func(1, k, N >> k)],
+                x[_X_prime_func(1, k, N >> k)],
                 method=method,
             )
 
             for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
                 mcx(
-                    x[X_prime_func(2 * i, k, N >> k)]
-                    + y.reg[X_prime_func(2 * i, k, N >> k) : X_prime_func(2 * i + 1, k, N >> k)],
-                    x[X_prime_func(2 * i + 1, k, N >> k)],
+                    x[_X_prime_func(2 * i, k, N >> k)]
+                    + y.reg[_X_prime_func(2 * i, k, N >> k) : _X_prime_func(2 * i + 1, k, N >> k)],
+                    x[_X_prime_func(2 * i + 1, k, N >> k)],
                     method=method,
                 )
 
@@ -257,22 +258,22 @@ def remaud_adder(a, b, z):
     for i in jrange(1, n):
         cx(a[i], b[i])
 
-    ladder1_synth_jax(a[1:] + z[:])
+    _ladder1_synth_jax(a[1:] + z[:])
 
     with invert():
-        ladder2_synth_jax(a[:] + z[:], b[:])
+        _ladder2_synth_jax(a[:] + z[:], b[:])
 
     for i in jrange(1, n):
         cx(a[i], b[i])
 
     x(b[1:-1])
 
-    ladder2_synth_jax(a[:], b[:-1])
+    _ladder2_synth_jax(a[:], b[:-1])
 
     x(b[1:-1])
 
     with invert():
-        ladder1_synth_jax(a[1:])
+        _ladder1_synth_jax(a[1:])
 
     for i in jrange(n):
         cx(a[i], b[i])
