@@ -19,7 +19,7 @@
 from qrisp import check_for_tracing_mode
 from qrisp.alg_primitives import QFT
 from qrisp.alg_primitives.arithmetic import U_g, multi_controlled_U_g
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import pow2mod, pow2mod_signed
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import pow2mod_signed
 from qrisp.core.gate_application_functions import cx
 from qrisp.environments import conjugate, control, custom_control, invert
 from qrisp.jasp import jrange
@@ -42,17 +42,19 @@ def qft_basis_adder(addend, target):
 # where a and b don't need to have the same montgomery shift.
 # The raw value of a is converted into b's representation bitwise:
 # raw_b += raw_a * 2^(b.m - a.m) mod N. This bypasses b's encoder,
-# so b.m is accounted for in the factor (and must not be applied twice).
+# so b.m is accounted for in the per-bit constants (and must not be applied twice).
 # QuantumFloat operands (value = raw * 2^exponent) are treated as having
 # shift -exponent.
+# Each bit's constant 2^(b.m - a.m + i) mod N is computed directly, since
+# multiplying two residues first would overflow int64/BigInteger for large N.
 def montgomery_addition(a, b):
 
     N = b.modulus
     a_m = a.m if hasattr(a, "m") else -a.exponent
-    factor = pow2mod_signed(b.m - a_m, N)
+    shift = b.m - a_m
 
     for i in jrange(a.size):
-        mod_adder((factor * pow2mod(i, N)) % N, b, b.inpl_adder, N, ctrl=a[i])
+        mod_adder(pow2mod_signed(shift + i, N), b, b.inpl_adder, N, ctrl=a[i])
 
 
 def beauregard_adder(a, b, modulus):

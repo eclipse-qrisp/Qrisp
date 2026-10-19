@@ -719,7 +719,7 @@ def test_static_modulus_hardcoded_literal_repeated_calls():
 
 SHIFT_N = 13
 
-SHIFT_PAIRS = [(0, 0), (2, 0), (0, -3), (-5, 1)]
+SHIFT_PAIRS = [(0, 0), (2, 2), (2, 0), (0, -3), (-5, 1)]
 
 SHIFT_OPS = {
     "add": lambda x, y: (x + y) % SHIFT_N,
@@ -899,3 +899,107 @@ def test_shift_aware_addition_quantum_float_exponent(qm_m):
         return measure(a)
 
     assert int(main()) == (9 + 6) % SHIFT_N
+
+
+def test_shift_aware_addition_quantum_float_operand_qache():
+    """A QuantumFloat operand crossing a qache boundary (traced exponent)."""
+
+    @qache
+    def kernel(a, b):
+        a += b
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = 2
+        a[:] = 9
+        b = QuantumFloat(3, exponent=1)
+        b[:] = 6
+        kernel(a, b)
+        return measure(a)
+
+    assert int(main()) == (9 + 6) % SHIFT_N
+
+
+@pytest.mark.parametrize("qm_m", [0, 2])
+@pytest.mark.parametrize("exponent", [0, 1])
+def test_shift_aware_addition_quantum_float_operand_non_jasp(qm_m, exponent):
+    """A QuantumFloat operand outside of Jasp."""
+    a = QuantumModulus(SHIFT_N)
+    a.m = qm_m
+    a[:] = 9
+    b = QuantumFloat(3, exponent=exponent)
+    b[:] = 6
+    a += b
+    assert list(a.get_measurement().keys()) == [(9 + 6) % SHIFT_N]
+
+
+@pytest.mark.parametrize("op", list(SHIFT_OPS))
+def test_shift_aware_arithmetic_signed_quantum_float_raises(op):
+    """Signed QuantumFloat operands are rejected, since the sign bit has negative weight."""
+    a = QuantumModulus(SHIFT_N)
+    a[:] = 9
+    b = QuantumFloat(3, signed=True)
+    b[:] = -1
+    with pytest.raises(TypeError, match="signed QuantumFloat"):
+        _apply_shift_op(op, a, b)
+
+
+def test_shift_aware_arithmetic_signed_quantum_float_raises_jasp():
+    """Signed QuantumFloat operands are rejected in Jasp mode (signed is static)."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a[:] = 9
+        b = QuantumFloat(3, signed=True)
+        b[:] = -1
+        a += b
+        return measure(a)
+
+    with pytest.raises(TypeError, match="signed QuantumFloat"):
+        main()
+
+
+@pytest.mark.parametrize("am", [0, 2, -3])
+def test_shift_aware_rsub(am):
+    """Classical minus QuantumModulus with a non-zero shift."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = am
+        a[:] = 9
+        return measure(5 - a)
+
+    assert int(main()) == (5 - 9) % SHIFT_N
+
+    a = QuantumModulus(SHIFT_N)
+    a.m = am
+    a[:] = 9
+    res = 5 - a
+    assert list(res.get_measurement().keys()) == [(5 - 9) % SHIFT_N]
+
+
+# 2^31 - 1 fits in one 32-bit limb, but products of two residues do not.
+LARGE_BI_PRIME = 2**31 - 1
+
+
+@pytest.mark.parametrize("am, bm", [(0, 3), (5, -2)])
+def test_shift_aware_addition_large_biginteger_modulus(am, bm):
+    """Mixed-shift addition with a BigInteger modulus whose residue products overflow a limb."""
+    a_val, b_val = 123456789, 2000000000
+
+    @jaspify
+    def main(N):
+        a = QuantumModulus(N)
+        a.m = am
+        a[:] = BigInteger.create(a_val, N.digits.shape[0])
+        b = QuantumModulus(N)
+        b.m = bm
+        b[:] = BigInteger.create(b_val, N.digits.shape[0])
+        a += b
+        return measure(a)
+
+    result = to_int(main(BigInteger.create_static(LARGE_BI_PRIME, 1)))
+    assert result == (a_val + b_val) % LARGE_BI_PRIME
