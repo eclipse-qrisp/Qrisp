@@ -90,54 +90,57 @@ def _ladder1_synth_jax(qf):
     """
     N = jlen(qf)
 
-    # with control(N == 1):
-    #     raise ValueError("The number of qubits should be greater than or equal to 2.")
+    # The general construction below assumes N >= 3 (for N == 2 it would evaluate
+    # 2**k and N >> k with k = -1). A ladder on 0 or 1 qubits is empty.
+    with control(N == 2):
+        cx(qf[0], qf[1])
 
-    # Add the first layer of gates
-    for i in jrange(1, (N + 1) // 2 - 1):
-        cx(qf[2 * i - 1], qf[2 * i])
-    cx(qf[-2], qf[-1])
+    with control(N >= 3):
+        # Add the first layer of gates
+        for i in jrange(1, (N + 1) // 2 - 1):
+            cx(qf[2 * i - 1], qf[2 * i])
+        cx(qf[-2], qf[-1])
 
-    # Compute the number of recursive call in the original algorithm
-    max_iterations = _compute_ladder_iterations(N)
+        # Compute the number of recursive call in the original algorithm
+        max_iterations = _compute_ladder_iterations(N)
 
-    # Fill in the left part of the circuit
-    for k in jrange(max_iterations - 2):
-        # CL
-        cx(
-            qf[_X_prime_func((N >> (k + 1)) - 2, k, N >> k)],
-            qf[_X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
-        )
-
-        for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
-            cx(
-                qf[_X_prime_func(2 * i - 1, k, N >> k)],
-                qf[_X_prime_func(2 * i, k, N >> k)],
-            )
-
-    # Conditionally append the deepest layer
-    with control(N >> (max_iterations - 1) == 2):
-        cx(
-            qf[_X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2))],
-            qf[_X_prime_func(1, max_iterations - 2, N >> (max_iterations - 2))],
-        )
-
-    # Fill in the right part of the circuit
-    with invert():
+        # Fill in the left part of the circuit
         for k in jrange(max_iterations - 2):
-            # CR
-            cx(qf[_X_prime_func(0, k, N >> k)], qf[_X_prime_func(1, k, N >> k)])
+            # CL
+            cx(
+                qf[_X_prime_func((N >> (k + 1)) - 2, k, N >> k)],
+                qf[_X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
+            )
 
             for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
                 cx(
+                    qf[_X_prime_func(2 * i - 1, k, N >> k)],
                     qf[_X_prime_func(2 * i, k, N >> k)],
-                    qf[_X_prime_func(2 * i + 1, k, N >> k)],
                 )
 
-    # Add the last layer of gates
-    cx(qf[0], qf[1])
-    for i in jrange(1, (N + 1) // 2 - 1):
-        cx(qf[2 * i], qf[2 * i + 1])
+        # Conditionally append the deepest layer
+        with control(N >> (max_iterations - 1) == 2):
+            cx(
+                qf[_X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2))],
+                qf[_X_prime_func(1, max_iterations - 2, N >> (max_iterations - 2))],
+            )
+
+        # Fill in the right part of the circuit
+        with invert():
+            for k in jrange(max_iterations - 2):
+                # CR
+                cx(qf[_X_prime_func(0, k, N >> k)], qf[_X_prime_func(1, k, N >> k)])
+
+                for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
+                    cx(
+                        qf[_X_prime_func(2 * i, k, N >> k)],
+                        qf[_X_prime_func(2 * i + 1, k, N >> k)],
+                    )
+
+        # Add the last layer of gates
+        cx(qf[0], qf[1])
+        for i in jrange(1, (N + 1) // 2 - 1):
+            cx(qf[2 * i], qf[2 * i + 1])
 
 
 def _ladder2_synth_jax(x, y, method="khattar"):
@@ -158,64 +161,68 @@ def _ladder2_synth_jax(x, y, method="khattar"):
     """
     N = jlen(x)
 
-    for i in jrange(1, (N + 1) // 2 - 1):
-        mcx(
-            x[2 * i - 1] + y[2 * i - 1],
-            x[2 * i],
-            method=method,
-        )
-    mcx(x[-2] + y[-1], x[-1], method=method)  # CHANGED
+    with control(N == 2):
+        mcx([x[0], y[0]], x[1], method=method)
 
-    max_iterations = _compute_ladder_iterations(N)
-    for k in jrange(max_iterations - 2):
-        # CL
-        mcx(
-            x[_X_prime_func((N >> (k + 1)) - 2, k, N >> k)]
-            + y[_X_prime_func((N >> (k + 1)) - 2, k, N >> k) : _X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
-            x[_X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
-            method=method,
-        )
-
-        for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
+    with control(N >= 3):
+        for i in jrange(1, (N + 1) // 2 - 1):
             mcx(
-                x[_X_prime_func(2 * i - 1, k, N >> k)]
-                + y.reg[_X_prime_func(2 * i - 1, k, N >> k) : _X_prime_func(2 * i, k, N >> k)],
-                x[_X_prime_func(2 * i, k, N >> k)],
+                x[2 * i - 1] + y[2 * i - 1],
+                x[2 * i],
                 method=method,
             )
+        mcx(x[-2] + y[-1], x[-1], method=method)  # CHANGED
 
-    with control(N >> (max_iterations - 1) == 2):
-        mcx(
-            x[_X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2))]
-            + y[
-                _X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2)) : _X_prime_func(
-                    1, max_iterations - 2, N >> (max_iterations - 2)
-                )
-            ],
-            x[_X_prime_func(1, max_iterations - 2, N >> (max_iterations - 2))],
-            method=method,
-        )
-
-    with invert():
+        max_iterations = _compute_ladder_iterations(N)
         for k in jrange(max_iterations - 2):
-            # CR
+            # CL
             mcx(
-                x[_X_prime_func(0, k, N >> k)] + y[_X_prime_func(0, k, N >> k) : _X_prime_func(1, k, N >> k)],
-                x[_X_prime_func(1, k, N >> k)],
+                x[_X_prime_func((N >> (k + 1)) - 2, k, N >> k)]
+                + y[_X_prime_func((N >> (k + 1)) - 2, k, N >> k) : _X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
+                x[_X_prime_func((N >> (k + 1)) - 1, k, N >> k)],
                 method=method,
             )
 
             for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
                 mcx(
-                    x[_X_prime_func(2 * i, k, N >> k)]
-                    + y.reg[_X_prime_func(2 * i, k, N >> k) : _X_prime_func(2 * i + 1, k, N >> k)],
-                    x[_X_prime_func(2 * i + 1, k, N >> k)],
+                    x[_X_prime_func(2 * i - 1, k, N >> k)]
+                    + y.reg[_X_prime_func(2 * i - 1, k, N >> k) : _X_prime_func(2 * i, k, N >> k)],
+                    x[_X_prime_func(2 * i, k, N >> k)],
                     method=method,
                 )
 
-    mcx([x[0], y[0]], x[1], method=method)
-    for i in jrange(1, (N + 1) // 2 - 1):
-        mcx([x[2 * i], y[2 * i]], x[2 * i + 1], method=method)
+        with control(N >> (max_iterations - 1) == 2):
+            mcx(
+                x[_X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2))]
+                + y[
+                    _X_prime_func(0, max_iterations - 2, N >> (max_iterations - 2)) : _X_prime_func(
+                        1, max_iterations - 2, N >> (max_iterations - 2)
+                    )
+                ],
+                x[_X_prime_func(1, max_iterations - 2, N >> (max_iterations - 2))],
+                method=method,
+            )
+
+        with invert():
+            for k in jrange(max_iterations - 2):
+                # CR
+                mcx(
+                    x[_X_prime_func(0, k, N >> k)] + y[_X_prime_func(0, k, N >> k) : _X_prime_func(1, k, N >> k)],
+                    x[_X_prime_func(1, k, N >> k)],
+                    method=method,
+                )
+
+                for i in jrange(1, ((N >> (k + 1)) + 1) // 2 - 1):
+                    mcx(
+                        x[_X_prime_func(2 * i, k, N >> k)]
+                        + y.reg[_X_prime_func(2 * i, k, N >> k) : _X_prime_func(2 * i + 1, k, N >> k)],
+                        x[_X_prime_func(2 * i + 1, k, N >> k)],
+                        method=method,
+                    )
+
+        mcx([x[0], y[0]], x[1], method=method)
+        for i in jrange(1, (N + 1) // 2 - 1):
+            mcx([x[2 * i], y[2 * i]], x[2 * i + 1], method=method)
 
 
 def remaud_adder(a, b, z):
