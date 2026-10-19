@@ -1956,6 +1956,54 @@ class TestQuantumCircuitRunAndStatevector:
         assert sv.shape == (1,)
         assert np.isclose(sv[0], 1.0)
 
+    def test_statevector_array_wide_mcx_does_not_request_wide_unitary(self):
+        """statevector_array dissolves wide controlled operations instead of building their unitary."""
+        import qrisp.simulator.unitary_management as um
+
+        qc = QuantumCircuit(14)
+        for i in range(13):
+            qc.h(i)
+        qc.mcx(list(range(13)), 13)
+
+        original = um.controlled_unitary
+
+        def guard(gate):
+            """Prevent wide controlled unitaries from being allocated during simulation."""
+            if gate.num_qubits > 8:
+                raise RuntimeError(f"unitary requested for {gate.num_qubits} qubits")
+            return original(gate)
+
+        um.controlled_unitary = guard
+        try:
+            sv = qc.statevector_array()
+        finally:
+            um.controlled_unitary = original
+        assert np.isclose(np.linalg.norm(sv), 1.0)
+        assert np.count_nonzero(np.abs(sv) > 1e-6) == 2**13
+
+    def test_statevector_array_keeps_narrow_controlled_operations(self):
+        """Toffolis are simulated via the closed-form controlled unitary, not their synthesized definition."""
+        import qrisp.simulator.unitary_management as um
+
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.h(1)
+        qc.ccx(0, 1, 2)
+
+        calls = []
+        original = um.controlled_unitary
+
+        def spy(gate):
+            calls.append(gate.name)
+            return original(gate)
+
+        um.controlled_unitary = spy
+        try:
+            qc.statevector_array()
+        finally:
+            um.controlled_unitary = original
+        assert "2cx" in calls
+
 
 class TestQuantumCircuitSymbolicSimulation:
     """Tests for simulating circuits that carry unbound SymPy parameters.

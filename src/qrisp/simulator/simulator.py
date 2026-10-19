@@ -28,7 +28,7 @@ from tqdm import tqdm
 from qrisp.circuit import QuantumCircuit, fast_append
 from qrisp.simulator.preprocessing.circuit_preprocessing import _circuit_preprocessor
 from qrisp.simulator.preprocessing.circuit_reordering import _reorder_circuit
-from qrisp.simulator.preprocessing.gate_grouping import _group_qc
+from qrisp.simulator.preprocessing.gate_grouping import _MAX_GROUP_QUBITS, _group_qc
 from qrisp.simulator.preprocessing.measurement_handling import (
     _count_measurements_and_treat_alloc,
     _insert_multiverse_measurements,
@@ -242,7 +242,10 @@ def statevector_sim(qc):
     with fast_append():
         # We convert the circuit which is given with portable objects to a qrisp circuit
 
-        qc = qc.transpile()
+        # Only dissolve operations too wide to fit into a gate group (their unitary
+        # would be a 2^n x 2^n matrix). Narrower operations keep their own unitary,
+        # e.g. Toffolis use the closed form of ControlledOperation.get_unitary.
+        qc = qc.transpile(transpile_predicate=lambda op: op.num_qubits > _MAX_GROUP_QUBITS)
 
         # TO-DO fix qubit ordering
         # qc.qubits = qc.qubits[::-1]
