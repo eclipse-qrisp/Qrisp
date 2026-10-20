@@ -76,7 +76,7 @@ def cks_params(eps: float, kappa: float, max_beta: int = None) -> Tuple[int, int
         Complexity parameter :math:`\\beta = \\lfloor\\kappa^2 \\log(\\kappa/\\epsilon)\\rfloor`.
 
     """
-    if max_beta == None:
+    if max_beta is None:
         beta = kappa**2 * np.log(kappa / eps)
     else:
         beta = min(kappa**2 * np.log(kappa / eps), max_beta)
