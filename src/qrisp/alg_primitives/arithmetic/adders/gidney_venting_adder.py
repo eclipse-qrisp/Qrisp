@@ -25,6 +25,7 @@ from jax.numpy import bitwise_count
 
 from qrisp import QuantumVariable, cx, h, mcx, measure, reset, x, z
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    _is_quantum_register,
     _normalize_optional_input_arg,
     _reject_unsupported_quantum_types,
 )
@@ -762,9 +763,9 @@ def gidney_cq_venting_adder(
     """
     from qrisp.jasp import jlen, jrange
 
-    if isinstance(d, (QuantumVariable, list)):
+    if isinstance(d, list) or _is_quantum_register(d):
         raise TypeError("The first argument must be a classical integer.")
-    if not isinstance(target, QuantumVariable):
+    if not _is_quantum_register(target):
         raise TypeError("The second argument must be a QuantumVariable.")
 
     _reject_unsupported_quantum_types(d, target)
