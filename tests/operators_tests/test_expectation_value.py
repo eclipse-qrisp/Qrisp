@@ -64,11 +64,13 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive=False):
             )
 
             # Jasp tests
+            # With atol=0.002, the tolerance is at least 12 worst-case standard deviations of the
+            # difference for every operator and state in this test.
             @jaspify(terminal_sampling=True)
             def main():
-                return H.expectation_value(state_prep, atol=0.01)()
+                return H.expectation_value(state_prep, atol=0.002)()
 
-            assert abs(main() - H.expectation_value(state_prep, atol=0.01, backend=non_sampling_backend)()) < 1e-1
+            assert abs(main() - H.expectation_value(state_prep, atol=0.002, backend=non_sampling_backend)()) < 1e-1
 
     # Set the random seed for reproducibility
     random.seed(seed)
