@@ -477,6 +477,32 @@ class TestQrispToQiskitUnitary:
         qiskit_qc = convert_to_qiskit(qc)
         _assert_qrisp_qiskit_unitary_equal(qc, qiskit_qc)
 
+    def test_inverted_r_gate(self):
+        """Converting an inverted RGate preserves the 'r' name and negated theta."""
+        qc = QuantumCircuit(1)
+        qc.r(0.3, 0.5, 0)
+        qiskit_qc = convert_to_qiskit(qc.inverse())
+        assert qiskit_qc.data[0].operation.name == "r"
+        assert np.isclose(qiskit_qc.data[0].operation.params[0], -0.3)
+        assert np.isclose(qiskit_qc.data[0].operation.params[1], 0.5)
+
+    def test_double_inverted_u1_gate(self):
+        """Converting a double-inverted U1Gate preserves original phi in Qiskit PhaseGate."""
+        from qrisp.circuit import U1Gate
+
+        qc = QuantumCircuit(1)
+        qc.append(U1Gate(0.3), [0])
+        qiskit_qc = convert_to_qiskit(qc.inverse().inverse())
+        assert qiskit_qc.data[0].operation.name == "p"
+        assert np.isclose(qiskit_qc.data[0].operation.params[0], 0.3)
+
+    def test_inverted_id_gate(self):
+        """Converting an inverted IDGate produces Qiskit IGate."""
+        qc = QuantumCircuit(1)
+        qc.id(0)
+        qiskit_qc = convert_to_qiskit(qc.inverse())
+        assert qiskit_qc.data[0].operation.name == "id"
+
 
 class TestQiskitToQrispUnitary:
     """Qiskit → Qrisp: compare unitaries directly (no round-trip)."""

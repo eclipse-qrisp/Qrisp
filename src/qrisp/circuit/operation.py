@@ -461,11 +461,7 @@ class U3Gate(Operation):
         self.phi = self.params[1]
         self.lam = self.params[2]
 
-        if self.name == "p":
-            self.permeability[0] = True
-            self.is_qfree = True
-            self.params = [self.lam + self.phi]
-        elif self.name == "rz":
+        if self.name in ["p", "rz", "u1"]:
             self.permeability[0] = True
             self.is_qfree = True
             self.params = [self.lam + self.phi]
@@ -473,6 +469,10 @@ class U3Gate(Operation):
             self.permeability[0] = False
             self.is_qfree = False
             self.params = [self.theta]
+        elif self.name == "r":
+            self.permeability[0] = False
+            self.is_qfree = False
+            self.params = [-self.theta, self.phi]
         elif self.name == "gphase":
             self.params = [self.global_phase]
             self.permeability[0] = True
@@ -481,7 +481,7 @@ class U3Gate(Operation):
             self.params = []
             self.permeability[0] = False
             self.is_qfree = False
-        elif self.name in ["s", "s_dg", "t", "t_dg"]:
+        elif self.name in ["s", "s_dg", "t", "t_dg", "id"]:
             self.params = []
             self.permeability[0] = True
             self.is_qfree = True
@@ -491,7 +491,7 @@ class U3Gate(Operation):
         # The inverse of a product of matrices if the reverted product of the inverses,
         # i.e. (A*B*C)^(-1) = C^-1 * B^-1 * A^-1
 
-        if self.name in ["p", "rz", "rx", "ry", "gphase", "h"]:
+        if self.name in ["p", "rz", "rx", "ry", "gphase", "h", "r", "u1", "id"]:
             new_name = str(self.name)
         elif self.name[-3:] == "_dg":
             new_name = self.name[:-3]

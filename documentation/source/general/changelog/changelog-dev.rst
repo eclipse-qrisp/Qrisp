@@ -185,6 +185,15 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed :meth:`U3Gate.inverse <qrisp.circuit.U3Gate.inverse>` turning ``r``,
+  ``u1``, and ``id`` operations into generic ``_dg`` U3 gates. Inverting
+  these gates now preserves their gate identity and parameter format:
+  ``r(theta, phi)`` inverts to ``r(-theta, phi)``, ``u1(phi)`` inverts to
+  ``u1(-phi)``, and ``id`` remains ``id`` with empty parameters. This fixes
+  parameter corruption upon double-inversion and prevents failures when
+  converting inverted circuits to external backends such as Qiskit
+  (`Issue #973 <https://github.com/eclipse-qrisp/Qrisp/issues/973>`_).
+
 * Fixed the :func:`GQSP angle computation <qrisp.gqsp.gqsp_angles>` for
   polynomials with complex coefficients. Unless
   :math:`|p(e^{i\theta})| = |p(e^{-i\theta})|` for all :math:`\theta`, the angles implemented
