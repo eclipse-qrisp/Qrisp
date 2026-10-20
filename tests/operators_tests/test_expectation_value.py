@@ -327,9 +327,86 @@ def test_expectation_value_options_are_keyword_only():
         "precompiled_qc",
         "precision",
         "diagonalisation_method",
-        "_measurement_data",
     ]
     assert all(parameter.kind is inspect.Parameter.KEYWORD_ONLY for parameter in parameters[1:])
+
+
+def test_expectation_value_builds_measurement_plan_once(monkeypatch):
+    import qrisp.operators.qubit.qubit_operator as qubit_operator_module
+
+    calls = []
+    create_plan = qubit_operator_module._create_measurement_plan
+
+    def counting_create_plan(*args, **kwargs):
+        calls.append(None)
+        return create_plan(*args, **kwargs)
+
+    monkeypatch.setattr(qubit_operator_module, "_create_measurement_plan", counting_create_plan)
+
+    ev_function = (X(0) * X(1) + Z(0)).expectation_value(lambda: QuantumVariable(2))
+    for _ in range(3):
+        ev_function()
+
+    @jaspify
+    def main():
+        return ev_function()
+
+    main()
+
+    assert len(calls) == 1
+
+
+def test_expectation_value_measures_operator_as_it_was_when_created():
+    def state_prep():
+        return QuantumVariable(1)
+
+    H = Z(0)
+    ev_function = H.expectation_value(state_prep)
+    H += 2 * Z(0)
+
+    assert ev_function() == pytest.approx(1)
+    assert H.expectation_value(state_prep)() == pytest.approx(3)
+
+
+def test_expectation_value_accepts_subs_dic_per_evaluation():
+    from sympy import Symbol
+
+    from qrisp import ry
+
+    theta = Symbol("theta")
+
+    def state_prep():
+        qv = QuantumVariable(1)
+        ry(theta, qv)
+        return qv
+
+    H = Z(0)
+
+    ev_function = H.expectation_value(state_prep, atol=0.05)
+    assert ev_function(subs_dic={theta: 0}) == pytest.approx(1)
+    assert ev_function(subs_dic={theta: np.pi}) == pytest.approx(-1)
+
+    qc = state_prep().qs.compile()
+    ev_function = H.expectation_value(state_prep, atol=0.05, precompiled_qc=qc, subs_dic={theta: 0})
+    assert ev_function() == pytest.approx(1)
+    assert ev_function(subs_dic={theta: np.pi}) == pytest.approx(-1)
+
+
+def test_expectation_value_function_works_in_static_and_jasp_mode():
+    def state_prep():
+        qv = QuantumVariable(2)
+        x(qv[0])
+        return qv
+
+    # Exact value: -1 - 1 = -2.
+    ev_function = (Z(0) - Z(1)).expectation_value(state_prep, diagonalization_method="commuting")
+
+    @jaspify
+    def main():
+        return ev_function()
+
+    assert ev_function() == pytest.approx(-2)
+    assert main() == pytest.approx(-2)
 
 
 def test_expectation_value_batched_backend():

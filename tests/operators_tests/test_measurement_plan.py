@@ -84,6 +84,29 @@ def test_measurement_plan_rejects_unknown_diagonalization_method():
         _create_measurement_plan(X(0), diagonalization_method="unknown")
 
 
+def test_measurement_plan_serializes_measurement_operators():
+    plan = _create_measurement_plan(X(0) * X(1) + 2 * Z(0) + 3 * Z(1) * Z(2), "commuting")
+
+    num_groups, num_terms, _ = plan.observables.shape
+    assert num_groups == len(plan.groups)
+    assert plan.coefficients.shape == (num_groups, num_terms)
+    for observables, coefficients, operator in zip(plan.observables, plan.coefficients, plan.measurement_operators):
+        size = len(operator.terms_dict)
+        assert [tuple(row) for row in observables[:size]] == [term.serialize() for term in operator.terms_dict]
+        np.testing.assert_allclose(coefficients[:size], np.real(list(operator.terms_dict.values())))
+        assert not observables[size:].any()
+        assert not coefficients[size:].any()
+
+
+def test_measurement_plan_builds_change_of_basis_gates_on_first_use():
+    plan = _create_measurement_plan(X(0) * X(1) + Z(0), "commuting")
+
+    assert plan._change_of_basis_gates is None
+    gates = plan.change_of_basis_gates()
+    assert len(gates) == len(plan.groups)
+    assert plan.change_of_basis_gates() is gates
+
+
 def test_measurement_plan_supports_empty_hamiltonians():
     plan = _create_measurement_plan(0 * X(0))
 
@@ -91,5 +114,6 @@ def test_measurement_plan_supports_empty_hamiltonians():
     assert plan.groups == []
     assert plan.measurement_operators == []
     assert plan.shot_weights == []
+    assert plan.observables.shape == (0, 0, 4)
     assert plan.coefficient_norm == 0
     assert plan.num_qubits == 0

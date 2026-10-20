@@ -142,16 +142,9 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
             qc = qv.qs.compile()
 
             # Find optimal evolution time
-            # Use "precompliled_qc" keyword argument to avoid repeated compilation of the QITE circuit
-            energies = [
-                H.expectation_value(
-                    state_prep,
-                    diagonalization_method="commuting",
-                    subs_dic={theta: s_},
-                    precompiled_qc=qc,
-                )()
-                for s_ in s_values
-            ]
+            # Use "precompiled_qc" keyword argument to avoid repeated compilation of the QITE circuit
+            ev_function = H.expectation_value(state_prep, diagonalization_method="commuting", precompiled_qc=qc)
+            energies = [ev_function(subs_dic={theta: s_}) for s_ in s_values]
 
             index = np.argmin(energies)
             s_min = s_values[index]

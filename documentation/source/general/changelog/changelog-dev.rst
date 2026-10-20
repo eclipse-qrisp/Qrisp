@@ -464,16 +464,25 @@ API Changes
   to keep the previous accuracy. The same default applies to
   :meth:`VQEProblem.run <qrisp.vqe.VQEProblem.run>` and
   :meth:`VQEProblem.train_function <qrisp.vqe.VQEProblem.train_function>`
-  unless ``atol`` or ``rtol`` is passed in ``mes_kwargs``, and to the energy
-  evaluations of :ref:`QITE <QITE>`.
+  unless ``atol`` or ``rtol`` is passed in ``mes_kwargs``.
 
   ``precision`` is deprecated in favor of ``atol``, which has the same
   meaning, and ``diagonalisation_method`` is deprecated in favor of
   ``diagonalization_method``. Both emit a ``QrispDeprecationWarning``. All
   arguments after ``state_prep`` are now keyword-only, and the
-  ``measurement_data`` argument is now private. Every measurement group now
-  receives at least one shot, so operators with groups of very small
-  coefficients, or consisting only of an identity term, no longer fail
+  ``measurement_data`` argument and the ``QubitOperatorMeasurement`` class
+  have been removed. Every measurement group now receives at least one shot,
+  so operators with groups of very small coefficients, or consisting only of
+  an identity term, no longer fail.
+
+  The grouping and shot allocation are now computed once, when
+  ``expectation_value`` is called, instead of on every evaluation of the
+  returned function. The returned function measures the operator as it was
+  at that time and accepts a ``subs_dic`` argument, so a parametrized circuit
+  passed as ``precompiled_qc`` can be evaluated for many parameter values with
+  a single function. :meth:`VQEProblem.run <qrisp.vqe.VQEProblem.run>` and
+  :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>` use this to avoid
+  recomputing the grouping in every optimization step
   (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
 
 * :class:`~qrisp.interface.IQMBackend` is now a delegation shim that

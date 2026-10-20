@@ -18,7 +18,7 @@
 
 import math
 import numbers
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Literal, Sequence
 
 import numpy as np
@@ -33,9 +33,9 @@ _DEFAULT_RTOL = 0.01
 class MeasurementPlan:
     """Static data needed to measure a QubitOperator.
 
-    The plan is computed once from the Hamiltonian and shared by the backend
-    path and the Jasp tracing path. Each path applies the basis changes and
-    evaluates the samples itself.
+    The plan depends only on the operator and the diagonalization method, not
+    on the measured state. It is built once per expectation-value function and
+    shared by the backend path and the Jasp tracing path.
 
     Attributes
     ----------
@@ -46,6 +46,14 @@ class MeasurementPlan:
     measurement_operators : list[Hamiltonian]
         Operators represented by computational-basis samples after each
         group's basis change.
+    observables : numpy.ndarray
+        Serialized terms of each measurement operator, see
+        ``QubitTerm.serialize``, with shape ``(groups, terms, 4)``. Groups with
+        fewer terms are padded with zeros.
+    coefficients : numpy.ndarray
+        Real coefficients matching ``observables``, with shape
+        ``(groups, terms)``. Padding entries are zero, so they do not
+        contribute to the expectation value.
     standard_deviations : list[float]
         Estimated standard deviation for each measurement operator.
     shot_weights : list[float]
@@ -59,21 +67,20 @@ class MeasurementPlan:
         Smallest register size required by the Hamiltonian.
     diagonalization_method : str
         Commutativity strategy used to construct the groups.
-    change_of_basis_gates : list[Any]
-        Basis-change gates for normal backend execution. Jasp plans leave this
-        list empty because gates are applied while tracing state preparation.
 
     """
 
     hamiltonian: Hamiltonian
     groups: list[Hamiltonian]
     measurement_operators: list[Hamiltonian]
+    observables: np.ndarray
+    coefficients: np.ndarray
     standard_deviations: list[float]
     shot_weights: list[float]
     coefficient_norm: float
     num_qubits: int
     diagonalization_method: Literal["commuting", "commuting_qw"]
-    change_of_basis_gates: list[Any]
+    _change_of_basis_gates: list[Any] | None = field(default=None, init=False, repr=False)
 
     def allocate_shots(self, atol: float | None = None, rtol: float | None = None) -> list[int]:
         """Return the shots of each group for the given tolerance.
@@ -83,6 +90,21 @@ class MeasurementPlan:
         """
         target_standard_deviation = atol if atol is not None else rtol * self.coefficient_norm
         return _calculate_shot_counts(self.shot_weights, target_standard_deviation)
+
+    def change_of_basis_gates(self) -> list[Any]:
+        """Return the basis-change gate of each group for backend execution.
+
+        The gates are built on first use, which must happen outside of tracing
+        mode. The Jasp path applies the basis changes while tracing instead.
+        """
+        if self._change_of_basis_gates is None:
+            gates = []
+            for group in self.groups:
+                qv = QuantumVariable(self.num_qubits)
+                group.change_of_basis(qv, self.diagonalization_method)
+                gates.append(qv.qs.to_gate())
+            self._change_of_basis_gates = gates
+        return self._change_of_basis_gates
 
 
 def _normalize_hamiltonian(hamiltonian: Hamiltonian) -> Hamiltonian:
@@ -189,17 +211,28 @@ def _calculate_shot_counts(shot_weights: Sequence[float], target_standard_deviat
     return [max(1, math.ceil(weight / target_standard_deviation**2)) for weight in shot_weights]
 
 
+def _serialize_measurement_operators(measurement_operators: list[Hamiltonian]) -> tuple[np.ndarray, np.ndarray]:
+    """Return the zero-padded serialized terms and real coefficients of the measurement operators."""
+    num_terms = max((len(operator.terms_dict) for operator in measurement_operators), default=0)
+    observables = np.zeros((len(measurement_operators), num_terms, 4), dtype=np.int64)
+    coefficients = np.zeros((len(measurement_operators), num_terms), dtype=np.float64)
+    for i, operator in enumerate(measurement_operators):
+        for j, (term, coeff) in enumerate(operator.terms_dict.items()):
+            observables[i, j] = term.serialize()
+            coefficients[i, j] = np.real(coeff)
+    return observables, coefficients
+
+
 def _create_measurement_plan(
     hamiltonian: Hamiltonian,
     diagonalization_method: Literal["commuting", "commuting_qw"] = "commuting_qw",
-    construct_basis_gates: bool = True,
 ) -> MeasurementPlan:
-    """Build the backend-independent expectation-value measurement plan.
+    """Build the measurement plan of a Hamiltonian.
 
-    The returned plan contains the same grouping, basis-transformed operators,
-    variance estimates and relative shot allocation used by both measurement
-    implementations.  Circuit construction and sample post-processing are
-    intentionally left to those implementations.
+    The plan contains the grouping, the basis-transformed operators in
+    serialized form, the variance estimates and the relative shot allocation
+    used by both measurement paths. It can be built in static and in tracing
+    mode.
 
     Parameters
     ----------
@@ -207,37 +240,18 @@ def _create_measurement_plan(
         Operator to normalize and group.
     diagonalization_method : str, optional
         Grouping strategy, either ``"commuting_qw"`` or ``"commuting"``.
-    construct_basis_gates : bool, optional
-        Whether to create normal backend basis-change gates. Jasp passes
-        ``False`` because its gates are created while tracing state prep.
 
     """
     normalized_hamiltonian = _normalize_hamiltonian(hamiltonian)
     if len(normalized_hamiltonian.terms_dict) == 0:
-        return MeasurementPlan(
-            hamiltonian=normalized_hamiltonian,
-            groups=[],
-            measurement_operators=[],
-            standard_deviations=[],
-            shot_weights=[],
-            coefficient_norm=0.0,
-            num_qubits=0,
-            diagonalization_method=diagonalization_method,
-            change_of_basis_gates=[],
-        )
+        groups = []
+        num_qubits = 0
+    else:
+        groups = _construct_measurement_groups(normalized_hamiltonian, diagonalization_method)
+        num_qubits = normalized_hamiltonian.find_minimal_qubit_amount()
 
-    num_qubits = normalized_hamiltonian.find_minimal_qubit_amount()
-    groups = _construct_measurement_groups(normalized_hamiltonian, diagonalization_method)
-    measurement_operators = []
-    change_of_basis_gates = []
-    for group in groups:
-        if construct_basis_gates:
-            qv = QuantumVariable(num_qubits)
-            measurement_operators.append(group.change_of_basis(qv, diagonalization_method))
-            change_of_basis_gates.append(qv.qs.to_gate())
-        else:
-            measurement_operators.append(group.change_of_basis(method=diagonalization_method))
-
+    measurement_operators = [group.change_of_basis(method=diagonalization_method) for group in groups]
+    observables, coefficients = _serialize_measurement_operators(measurement_operators)
     standard_deviations = [
         float(np.sqrt(measurement_operator.get_operator_variance(n=num_qubits)))
         for measurement_operator in measurement_operators
@@ -247,10 +261,11 @@ def _create_measurement_plan(
         hamiltonian=normalized_hamiltonian,
         groups=groups,
         measurement_operators=measurement_operators,
+        observables=observables,
+        coefficients=coefficients,
         standard_deviations=standard_deviations,
         shot_weights=_calculate_shot_weights(standard_deviations),
         coefficient_norm=_coefficient_norm(normalized_hamiltonian),
         num_qubits=num_qubits,
         diagonalization_method=diagonalization_method,
-        change_of_basis_gates=change_of_basis_gates,
     )

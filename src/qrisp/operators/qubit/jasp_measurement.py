@@ -19,62 +19,40 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import jax
 import jax.numpy as jnp
 
 from qrisp.jasp import sample
-from qrisp.operators.qubit.measurement_plan import _create_measurement_plan
 
 if TYPE_CHECKING:
     from qrisp.core import QuantumVariable
-    from qrisp.operators.hamiltonian import Hamiltonian
+    from qrisp.operators.qubit.measurement_plan import MeasurementPlan
 
 
-def _jasp_expectation_value_helper(  # noqa: PLR0913
-    hamiltonian: Hamiltonian,
+def _jasp_expectation_value_helper(
+    plan: MeasurementPlan,
     state_prep: Callable[..., QuantumVariable],
-    *,
-    atol: float | None = None,
-    rtol: float | None = None,
+    shots: list[int],
     state_args: tuple = (),
-    diagonalization_method: Literal["commuting", "commuting_qw"] = "commuting_qw",
 ) -> jax.Array:
-    """Evaluate a the expectation value of a Hamiltonian using Jasp sampling."""
-    plan = _create_measurement_plan(hamiltonian, diagonalization_method, construct_basis_gates=False)
-    if len(plan.hamiltonian.terms_dict) == 0:
+    """Measure the expectation value of a measurement plan on the state of ``state_prep`` with Jasp sampling."""
+    if not plan.groups:
         return jnp.array(0)
 
     samples = []
-    meas_ops = []
-    meas_coeffs = []
-    shots_list = plan.allocate_shots(atol=atol, rtol=rtol)
-
-    for index, group in enumerate(plan.groups):
-        # Calculate the new measurement operators (after change of basis)
-        meas_op = plan.measurement_operators[index]
+    for group, group_shots in zip(plan.groups, shots):
 
         def new_state_prep(state_args):
             qv = state_prep(*state_args)
-            group.change_of_basis(qv, method=diagonalization_method)
+            group.change_of_basis(qv, method=plan.diagonalization_method)
             return qv
 
-        res = sample(new_state_prep, shots=shots_list[index])(state_args)
-
+        res = sample(new_state_prep, shots=group_shots)(state_args)
         samples.append(jnp.int64(res))
 
-        temp_meas_ops = []
-        temp_coeff = []
-        for term, coeff in meas_op.terms_dict.items():
-            temp_meas_ops.append(jnp.array(term.serialize(), dtype=jnp.int64))
-            temp_coeff.append(jnp.real(coeff))
-
-        meas_coeffs.append(jnp.array(temp_coeff, dtype=jnp.float64))
-        meas_ops.append(jnp.array(temp_meas_ops))
-
-    expectation = jasp_evaluate_expectation_jitted(samples, meas_ops, meas_coeffs)
-    return expectation
+    return jasp_evaluate_expectation_jitted(samples, plan.observables, plan.coefficients)
 
 
 @jax.jit

@@ -14,12 +14,12 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Backend-sampling measurement of QubitOperator expectation values, including result caching."""
+"""Backend-sampling measurement of QubitOperator expectation values."""
 
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numba import njit
@@ -28,31 +28,27 @@ from qrisp.circuit import QuantumCircuit, Qubit
 from qrisp.core import QuantumArray, QuantumSession, QuantumVariable, merge
 from qrisp.core.compilation import qompiler
 from qrisp.interface import BackendLike, BatchedBackend
-from qrisp.operators.qubit.measurement_plan import _create_measurement_plan, _normalize_hamiltonian
 
 if TYPE_CHECKING:
-    from qrisp.operators.hamiltonian import Hamiltonian
+    from qrisp.operators.qubit.measurement_plan import MeasurementPlan
 
 
 def _expectation_value_helper(  # noqa: PLR0912, PLR0913
-    hamiltonian: Hamiltonian,
+    plan: MeasurementPlan,
     qarg: QuantumVariable | QuantumArray | list[Qubit],
+    shots: list[int],
     *,
-    atol: float | None = None,
-    rtol: float | None = None,
     backend: BackendLike | None = None,
     compile: bool = True,
     compilation_kwargs: dict[Any, Any] | None = None,
     subs_dic: dict[Any, Any] | None = None,
     precompiled_qc: QuantumCircuit | None = None,
-    diagonalization_method: Literal["commuting", "commuting_qw"] = "commuting_qw",
-    _measurement_data: QubitOperatorMeasurement | None = None,
 ) -> float:
-    """Evaluate the expectation value of a Hamiltonian."""
+    """Measure the expectation value of a measurement plan on the state of ``qarg`` with a backend."""
+    from qrisp.misc import get_measurement_from_qc
+
     if compilation_kwargs is None:
         compilation_kwargs = {}
-    if subs_dic is None:
-        subs_dic = {}
 
     if isinstance(qarg, QuantumVariable):
         if qarg.is_deleted():
@@ -82,9 +78,8 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     if len(qs.env_stack) != 0:
         raise Exception("Tried to get measurement within open environment")
 
-    hamiltonian = _normalize_hamiltonian(hamiltonian)
-    if len(hamiltonian.terms_dict) == 0:
-        return 0
+    if not plan.groups:
+        return 0.0
 
     # Copy circuit in over to prevent modification
     if precompiled_qc is None:
@@ -106,69 +101,22 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
 
     qc = qc.transpile()
 
-    if _measurement_data is None:
-        _measurement_data = QubitOperatorMeasurement(hamiltonian, diagonalization_method=diagonalization_method)
+    results = []
+    for gate, group_shots in zip(plan.change_of_basis_gates(), shots):
+        qubits = [qubit_list[j] for j in range(gate.num_qubits)]
 
-    return _measurement_data.get_measurement(qc, qubit_list, backend, atol=atol, rtol=rtol)
+        curr = qc.copy()
+        curr.append(gate, qubits)
 
+        results.append(get_measurement_from_qc(curr, list(qubit_list), backend, group_shots))
 
-class QubitOperatorMeasurement:
-    """Cache static measurement data for repeated backend evaluations."""
+    if isinstance(backend, BatchedBackend):
+        backend.dispatch()
 
-    def __init__(
-        self,
-        hamiltonian: Hamiltonian,
-        diagonalization_method: Literal["commuting", "commuting_qw"] = "commuting_qw",
-    ) -> None:
-        """Build and cache the static data needed for backend measurements."""
-        self.plan = _create_measurement_plan(hamiltonian, diagonalization_method)
-        self.groups = self.plan.groups
-        self.stds = self.plan.standard_deviations
-        self.measurement_operators = self.plan.measurement_operators
-        self.shots_list = self.plan.shot_weights
-        self.change_of_basis_gates = self.plan.change_of_basis_gates
+    samples = create_padded_array([list(res.keys()) for res in results]).astype(np.int64)
+    probs = create_padded_array([list(res.values()) for res in results])
 
-    def get_measurement(
-        self,
-        qc: QuantumCircuit,
-        qubit_list: list,
-        backend: BackendLike,
-        *,
-        atol: float | None = None,
-        rtol: float | None = None,
-    ) -> float:
-        """Measure the expectation value using the cached measurement plan."""
-        from qrisp.misc import get_measurement_from_qc
-
-        results = []
-        meas_coeffs = []
-        meas_ops = []
-
-        shots_list = self.plan.allocate_shots(atol=atol, rtol=rtol)
-
-        for group, gate, group_shots in zip(
-            self.measurement_operators,
-            self.change_of_basis_gates,
-            shots_list,
-        ):
-            qubits = [qubit_list[j] for j in range(gate.num_qubits)]
-
-            curr = qc.copy()
-            curr.append(gate, qubits)
-
-            results.append(get_measurement_from_qc(curr, list(qubit_list), backend, group_shots))
-            meas_ops.append([term.serialize() for term in group.terms_dict])
-            meas_coeffs.append(list(group.terms_dict.values()))
-
-        if isinstance(backend, BatchedBackend):
-            backend.dispatch()
-
-        samples = create_padded_array([list(res.keys()) for res in results]).astype(np.int64)
-        probs = create_padded_array([list(res.values()) for res in results])
-        meas_ops = create_padded_array(meas_ops, use_tuples=True).astype(np.int64)
-        meas_coeffs = create_padded_array(meas_coeffs)
-
-        return evaluate_expectation_jitted(samples, probs, meas_ops, meas_coeffs)
+    return evaluate_expectation_jitted(samples, probs, plan.observables, plan.coefficients)
 
 
 def create_padded_array(list_of_lists, use_tuples=False):

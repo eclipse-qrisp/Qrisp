@@ -16,6 +16,8 @@
 
 """Defines the DCQOProblem class for solving QUBOs via COLD/LCD counterdiabatic driving."""
 
+import functools
+
 import numpy as np
 import sympy as sp
 from scipy.optimize import Bounds, minimize
@@ -530,41 +532,32 @@ class DCQOProblem:
                 if costs is None:
                     break
 
+        # Created on first use, because the statevector fast path and the agp_coeff_magnitude
+        # objective never measure the expectation value.
+        @functools.cache
+        def exp_value_function():
+            """Return the function measuring the expectation value of the problem Hamiltonian."""
+            return self.H_prob.expectation_value(
+                qarg, atol=precision, compile=False, precompiled_qc=qc, backend=exp_value_backend
+            )
+
         # Expectation value of the QUBO Hamiltonian
         def objective_exp(params, CRAB):
             """Expectation value of the problem Hamiltonian for the given optimization parameters."""
             # Dict to assign the optimization parameters
             subs_dic = {sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))}
 
-            if exp_value_backend is not None:
-                # Use provided backend
-                exp_val = self.H_prob.expectation_value(
-                    qarg,
-                    atol=precision,
-                    compile=False,
-                    subs_dic=subs_dic,
-                    precompiled_qc=qc,
-                    backend=exp_value_backend,
-                )()
-            else:
-                # Try statevector first, fallback to measurement
+            if exp_value_backend is None:
+                # Try statevector first, fall back to measurement
                 try:
                     if costs is None:
                         raise ValueError("H_prob has non-diagonal terms; fast path unavailable")
-                    bound_qc = qc.bind_parameters(subs_dic)
-                    sv = bound_qc.statevector_array()
-                    probs = np.abs(sv) ** 2
-                    exp_val = float(np.dot(probs, costs))
+                    probs = np.abs(qc.bind_parameters(subs_dic).statevector_array()) ** 2
+                    return float(np.dot(probs, costs))
                 except (MemoryError, ValueError, RuntimeError):
-                    exp_val = self.H_prob.expectation_value(
-                        qarg,
-                        atol=precision,
-                        compile=False,
-                        subs_dic=subs_dic,
-                        precompiled_qc=qc,
-                    )()
+                    pass
 
-            return exp_val
+            return exp_value_function()(subs_dic=subs_dic)
 
         # Magnitude of the AGP coefficients (sum of absolute values over all timesteps)
         def objective_mag(params, CRAB):

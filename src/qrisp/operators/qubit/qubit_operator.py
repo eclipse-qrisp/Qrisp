@@ -52,12 +52,11 @@ from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp.operators.qubit.jasp_measurement import _jasp_expectation_value_helper
 from qrisp.operators.qubit.measurement import _expectation_value_helper
-from qrisp.operators.qubit.measurement_plan import _check_tolerance, _resolve_tolerances
+from qrisp.operators.qubit.measurement_plan import _check_tolerance, _create_measurement_plan, _resolve_tolerances
 from qrisp.operators.qubit.qubit_term import QubitTerm
 
 if TYPE_CHECKING:
     from qrisp.interface import BackendLike
-    from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
 
 threshold = 1e-9
 
@@ -1188,7 +1187,7 @@ class QubitOperator(Hamiltonian):
         # whereas the anchor qubit becomes a Z gate.
 
         n = self.find_minimal_qubit_amount()
-        if not check_for_tracing_mode() and len(qarg) < n:
+        if qarg is not None and not check_for_tracing_mode() and len(qarg) < n:
             raise Exception("Tried to change the basis of an Operator on a quantum argument with insufficient qubits.")
 
         # This dictionary will contain the new terms/coefficient comination for the
@@ -1590,7 +1589,6 @@ class QubitOperator(Hamiltonian):
         precompiled_qc: QuantumCircuit | None = None,
         precision: float | None = None,
         diagonalisation_method: Literal["commuting", "commuting_qw"] | None = None,
-        _measurement_data: QubitOperatorMeasurement | None = None,
     ) -> Callable[..., float | jax.Array]:
         r"""Return a function that estimates the expectation value of the operator.
 
@@ -1616,7 +1614,12 @@ class QubitOperator(Hamiltonian):
         #. The expectation value of each group is computed from the measured
            bitstrings, and the results are summed.
 
-        Each evaluation therefore runs one circuit per group.
+        Each evaluation therefore runs one circuit per group. The grouping and
+        the shot allocation depend only on the operator, so they are computed
+        once, when ``expectation_value`` is called, and reused by every
+        evaluation of the returned function. Later in-place changes of the
+        operator, for example with ``+=``, do not affect a function that was
+        already created.
 
         **Precision and number of shots**
 
@@ -1710,13 +1713,15 @@ class QubitOperator(Hamiltonian):
             :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`.
         subs_dic : dict, optional
             A dictionary mapping SymPy symbols to values, for circuits with
-            :ref:`abstract parameters <QuantumCircuit>`.
+            :ref:`abstract parameters <QuantumCircuit>`. These values are used
+            by every evaluation. Values that change between evaluations are
+            passed to the returned function instead.
         precompiled_qc : QuantumCircuit, optional
             A compiled circuit that prepares the state. If given,
             ``state_prep`` is not called, and the operator is measured on the
-            first qubits of this circuit. Combined with ``subs_dic``, a
-            parametrized circuit can be evaluated for many parameter values
-            without recompiling it.
+            first qubits of this circuit. Combined with the ``subs_dic``
+            argument of the returned function, a parametrized circuit can be
+            evaluated for many parameter values without recompiling it.
         precision : float, optional
             Deprecated. Use ``atol``, which has the same meaning.
         diagonalisation_method : str, optional
@@ -1725,9 +1730,12 @@ class QubitOperator(Hamiltonian):
         Returns
         -------
         callable
-            A function that takes the arguments of ``state_prep`` and returns
-            the estimated expectation value: a ``float`` in static mode and a
-            zero-dimensional ``jax.Array`` in Jasp mode.
+            A function ``f(*args, subs_dic=None)`` that returns the estimated
+            expectation value: a ``float`` in static mode and a
+            zero-dimensional ``jax.Array`` in Jasp mode. ``args`` are passed to
+            ``state_prep``. ``subs_dic`` maps SymPy symbols to values for this
+            evaluation and takes precedence over the ``subs_dic`` given to
+            ``expectation_value``. It is ignored in Jasp mode.
 
         Raises
         ------
@@ -1813,6 +1821,24 @@ class QubitOperator(Hamiltonian):
         shots. For $100 H$, ``rtol=0.01`` targets $\epsilon = 3$ with the same
         number of shots as for $H$, while ``atol=0.01`` would need $10^4$
         times as many shots as for $H$.
+
+        **Evaluating a parametrized circuit**
+
+        To evaluate the same circuit for many parameter values, compile it
+        once with :ref:`abstract parameters <QuantumCircuit>` and pass the
+        values to the returned function:
+
+        ::
+
+            from sympy import Symbol
+
+            theta = Symbol("theta")
+            qc = state_prep(theta).qs.compile()
+
+            H = Z(0)*Z(1)
+            ev_function = H.expectation_value(state_prep, precompiled_qc=qc)
+
+            energies = [ev_function(subs_dic={theta: t}) for t in np.linspace(0, np.pi, 5)]
 
         **Inspecting the circuits sent to the backend**
 
@@ -1906,36 +1932,33 @@ class QubitOperator(Hamiltonian):
 
         atol, rtol = _resolve_tolerances(atol, rtol)
 
-        def return_function(*args):
+        # Everything that depends only on the operator is computed once here. The plan is
+        # built from a normalized copy, so later in-place changes of self do not affect it.
+        plan = _create_measurement_plan(self, diagonalization_method)
+        shots = plan.allocate_shots(atol=atol, rtol=rtol)
+        num_qubits = self.find_minimal_qubit_amount()
+        fixed_subs_dic = subs_dic or {}
+
+        def return_function(*args, subs_dic=None):
 
             if check_for_tracing_mode():
-                return _jasp_expectation_value_helper(
-                    self,
-                    state_prep,
-                    atol=atol,
-                    rtol=rtol,
-                    state_args=args,
-                    diagonalization_method=diagonalization_method,
-                )
-            else:
-                if precompiled_qc is not None:
-                    qarg = QuantumVariable(self.find_minimal_qubit_amount())
-                else:
-                    qarg = state_prep(*args)
+                return _jasp_expectation_value_helper(plan, state_prep, shots, state_args=args)
 
-                return _expectation_value_helper(
-                    self,
-                    qarg,
-                    atol=atol,
-                    rtol=rtol,
-                    diagonalization_method=diagonalization_method,
-                    backend=backend,
-                    compile=compile,
-                    compilation_kwargs=compilation_kwargs,
-                    subs_dic=subs_dic,
-                    precompiled_qc=precompiled_qc,
-                    _measurement_data=_measurement_data,
-                )
+            if precompiled_qc is not None:
+                qarg = QuantumVariable(num_qubits)
+            else:
+                qarg = state_prep(*args)
+
+            return _expectation_value_helper(
+                plan,
+                qarg,
+                shots,
+                backend=backend,
+                compile=compile,
+                compilation_kwargs=compilation_kwargs,
+                subs_dic={**fixed_subs_dic, **(subs_dic or {})},
+                precompiled_qc=precompiled_qc,
+            )
 
         return return_function
 
