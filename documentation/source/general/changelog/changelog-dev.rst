@@ -146,6 +146,9 @@ Improvements
   generation to QuantumSession in a central place.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
+- Centralized the shared in-place adder helpers in ``adder_utilities.py``
+  (`PR #990 <https://github.com/eclipse-qrisp/Qrisp/pull/990>`_).
+
 - Fewer qubits for :func:`reflection <qrisp.reflection>`:
   :func:`reflection <qrisp.reflection>` no longer bundles its operations into a
   single gate. The bundling kept every ancilla of the ``state_function`` allocated
