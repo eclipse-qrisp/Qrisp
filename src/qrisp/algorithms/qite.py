@@ -26,6 +26,7 @@ from qrisp.jasp import check_for_tracing_mode, q_cond, q_fori_loop
 
 def QITE(qarg, U_0, exp_H, s, k, method="GC"):
     r"""Performs `Double-Braket Quantum Imaginary-Time Evolution (DB-QITE) <https://arxiv.org/abs/2412.04554>`_.
+
     Given a Hamiltonian :ref:`Operator <Operators>` $H$, this method implements the unitary $U_k$ that is recursively defined by either of
 
     * Group commutator (GQ) approximation:

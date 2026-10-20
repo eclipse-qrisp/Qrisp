@@ -376,8 +376,9 @@ class VQEProblem:
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
             The keyword arguments for the :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>` function. Default is an empty dictionary.
-            Use ``atol`` or ``rtol`` to set how accurately the Hamiltonian is evaluated in each iteration. By default, ``rtol=0.01`` is used,
-            i.e., the targeted standard deviation is 1% of the sum of the absolute values of the Hamiltonian's Pauli coefficients.
+            Use ``atol`` or ``rtol`` to set how accurately the Hamiltonian is evaluated in each iteration.
+            By default, ``rtol=0.01`` is used, i.e., the targeted standard deviation is 1% of the sum of the
+            absolute values of the Hamiltonian's Pauli coefficients.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -454,8 +455,9 @@ class VQEProblem:
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
             The keyword arguments for the :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>` function. Default is an empty dictionary.
-            Use ``atol`` or ``rtol`` to set how accurately the Hamiltonian is evaluated in each iteration. By default, ``rtol=0.01`` is used,
-            i.e., the targeted standard deviation is 1% of the sum of the absolute values of the Hamiltonian's Pauli coefficients.
+            Use ``atol`` or ``rtol`` to set how accurately the Hamiltonian is evaluated in each iteration.
+            By default, ``rtol=0.01`` is used, i.e., the targeted standard deviation is 1% of the sum of the
+            absolute values of the Hamiltonian's Pauli coefficients.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -537,9 +539,11 @@ class VQEProblem:
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE ansatz layers.
         precision_range : list[float]
-            A list of floats indicating, which precision parameters should be explored. Each value is passed as the absolute tolerance ``atol``
-            to :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`, i.e., the targeted standard deviation of each
-            evaluation of the Hamiltonian. The number of shots the backend performs per iteration scales quadratically with the inverse precision.
+            A list of floats indicating, which precision parameters should be explored.
+            Each value is passed as the absolute tolerance ``atol`` to
+            :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`, i.e., the targeted
+            standard deviation of each evaluation of the Hamiltonian. The number of shots the backend performs per
+            iteration scales quadratically with the inverse precision.
         iter_range : list[int]
             A list of integers indicating, what iterations parameter should be explored. Iterations means the amount of backend calls, the optimizer is allowed to do.
         optimal_energy : float

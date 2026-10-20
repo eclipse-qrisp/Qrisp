@@ -2131,10 +2131,10 @@ class QubitOperator(Hamiltonian):
     #
 
     def qdrift(self, forward_evolution=True):
-        r"""Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift**
-        (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) algorithm.
+        r"""Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift** algorithm.
 
-        QDrift approximates the exact time-evolution operator
+        QDrift (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) approximates the exact
+        time-evolution operator
 
         .. math::
             U(t) = e^{-i H t}, \qquad 
@@ -2277,7 +2277,6 @@ class QubitOperator(Hamiltonian):
         making it a powerful tool for large-scale quantum simulations with bounded resources.
 
         """
-
         # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
         # We create a list of term.simulate functions for all terms in the operator
         # and use the q_switch with classical index to apply the j-th function
