@@ -26,10 +26,12 @@ when ``QubitOperator.expectation_value`` is called, and stored in a ``Measuremen
 2. Grouping: the terms are split into groups whose terms commute qubit-wise
    (``"commuting_qw"``) or commute (``"commuting"``). Groups whose ladder operators act on
    overlapping but different qubits are split further.
-3. Change of basis: for each group, a circuit is constructed that diagonalizes all of its
-   terms at once. Conjugated with this circuit, the group becomes a diagonal measurement
-   operator whose terms consist of Z, P0 and P1 factors, so their values can be read off
-   a computational-basis outcome.
+3. Change of basis: for each group, a change of basis diagonalizes all of its terms at
+   once. Conjugated with it, the group becomes a diagonal measurement operator whose terms
+   consist of Z, P0 and P1 factors, so their values can be read off a computational-basis
+   outcome. The plan stores this diagonal operator. The gates of the change of basis are
+   created by the measurement paths: the backend path builds them on first use and keeps
+   them in the plan, and the Jasp path applies them while tracing the sampling kernel.
 4. Serialization: each diagonal term is stored as a real coefficient and three bit masks
    over the measured qubits (see ``QubitTerm.serialize``): the Z mask z, the AND mask a and
    the control mask c. For an outcome x, the term has the value

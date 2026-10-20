@@ -29,7 +29,8 @@ The expectation value is estimated with the ``MeasurementPlan`` of the operator 
    into chunks of ``_CHUNK_SIZE`` qubits, like the masks of the plan. The outcomes of all
    groups are stored one after the other in an array of shape (outcomes, chunks), with
    their probabilities, and the outcomes of group g are at ``offsets[g]:offsets[g + 1]``.
-   So the arrays hold exactly the distinct outcomes that were measured.
+   So the arrays hold exactly the distinct outcomes that were measured. They are written
+   directly from the backend results, without intermediate copies.
 4. Evaluation: a numba kernel loops over the groups, their outcomes and their terms, and
    sums probability * coefficient * value of the term for the outcome, with the value
    computed chunk by chunk. The probabilities of each group sum to one, so this is the
