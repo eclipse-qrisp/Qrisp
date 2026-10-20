@@ -21,7 +21,7 @@ import inspect
 import numpy as np
 import pytest
 
-from qrisp import QuantumCircuit, QuantumVariable, jaspify
+from qrisp import QuantumArray, QuantumCircuit, QuantumVariable, jaspify
 from qrisp.default_backend import QrispSimulatorBackend
 from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators import X, Z
@@ -174,3 +174,21 @@ def test_expectation_value_accepts_default_compile_in_jasp_mode():
         return Z(0).expectation_value(state_prep, compile=True)()
 
     assert main() == pytest.approx(1)
+
+
+def _quantum_array():
+    return QuantumArray(QuantumVariable(1), shape=2)
+
+
+def _list_of_variables():
+    return [QuantumVariable(1), QuantumVariable(1)]
+
+
+@pytest.mark.parametrize("jasp", [False, True])
+@pytest.mark.parametrize("state_prep", [_quantum_array, _list_of_variables])
+def test_expectation_value_requires_state_prep_to_return_a_quantum_variable(state_prep, jasp):
+    ev_function = Z(0).expectation_value(state_prep)
+    evaluate = jaspify(ev_function) if jasp else ev_function
+
+    with pytest.raises(TypeError, match="state_prep must return a QuantumVariable"):
+        evaluate()

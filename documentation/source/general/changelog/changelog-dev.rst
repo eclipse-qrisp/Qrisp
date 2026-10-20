@@ -485,9 +485,12 @@ API Changes
   ``precision`` is deprecated in favor of ``atol``, which has the same
   meaning, and ``diagonalisation_method`` is deprecated in favor of
   ``diagonalization_method``. Both emit a ``QrispDeprecationWarning``. All
-  arguments after ``state_prep`` are now keyword-only, and the
-  ``measurement_data`` argument and the ``QubitOperatorMeasurement`` class
-  have been removed. In Jasp mode, ``backend``, ``compile=False``,
+  arguments after ``state_prep`` are now keyword-only. ``state_prep`` must
+  return a :ref:`QuantumVariable`; other return values, such as a
+  :ref:`QuantumArray`, raise a ``TypeError``. Previously, only a
+  ``QuantumArray`` of single-qubit variables happened to work, and only in
+  static mode. The ``measurement_data`` argument and the
+  ``QubitOperatorMeasurement`` class have been removed. In Jasp mode, ``backend``, ``compile=False``,
   ``compilation_kwargs``, ``precompiled_qc`` and ``subs_dic`` now raise a
   ``ValueError`` instead of being ignored, because they only apply to static
   execution. Every measurement group now receives at least one shot,

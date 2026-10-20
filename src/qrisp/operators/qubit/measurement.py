@@ -43,9 +43,9 @@ import numpy as np
 from numba import njit
 
 from qrisp import default_backend
-from qrisp.circuit import QuantumCircuit, Qubit
+from qrisp.circuit import QuantumCircuit
 from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
-from qrisp.core import QuantumArray, QuantumSession, QuantumVariable, merge
+from qrisp.core import QuantumVariable
 from qrisp.core.compilation import qompiler
 from qrisp.interface import BackendLike, BatchedBackend
 from qrisp.misc import get_measurement_from_qc
@@ -54,7 +54,7 @@ from qrisp.operators.qubit.measurement_plan import MeasurementPlan, _split_bits
 
 def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     plan: MeasurementPlan,
-    qarg: QuantumVariable | QuantumArray | list[Qubit],
+    qarg: QuantumVariable,
     shots: list[int],
     *,
     backend: BackendLike | None = None,
@@ -67,29 +67,18 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     if compilation_kwargs is None:
         compilation_kwargs = {}
 
-    if isinstance(qarg, QuantumVariable):
-        if qarg.is_deleted():
-            raise Exception("Tried to get measurement from deleted QuantumVariable")
-        qs = qarg.qs
-
-    elif isinstance(qarg, QuantumArray):
-        for qv in qarg.flatten():
-            if qv.is_deleted():
-                raise Exception("Tried to measure QuantumArray containing deleted QuantumVariables")
-        qs = qarg.qs
-    elif isinstance(qarg, list):
-        qs = QuantumSession()
-        for arg in qarg:
-            if isinstance(arg, QuantumVariable) and qv.is_deleted():
-                raise Exception("Tried to measure QuantumArray containing deleted QuantumVariables")
-            merge(qs, arg)
+    if not isinstance(qarg, QuantumVariable):
+        raise TypeError(f"state_prep must return a QuantumVariable, got {type(qarg).__name__}.")
+    if qarg.is_deleted():
+        raise Exception("Tried to get measurement from deleted QuantumVariable")
+    qs = qarg.qs
 
     if backend is None:
         if qs.backend is None:
             # Read at call time, because the default backend can be replaced at runtime.
             backend = default_backend.def_backend
         else:
-            backend = qarg.qs.backend
+            backend = qs.backend
 
     if len(qs.env_stack) != 0:
         raise Exception("Tried to get measurement within open environment")

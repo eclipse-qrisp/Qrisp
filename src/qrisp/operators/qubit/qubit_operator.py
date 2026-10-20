@@ -1742,6 +1742,9 @@ class QubitOperator(Hamiltonian):
             of the diagonalization method are given, if the diagonalization
             method is unknown, or if an argument that only applies to static
             execution is used in Jasp mode.
+        TypeError
+            When the returned function is evaluated, if ``state_prep`` does not
+            return a :ref:`QuantumVariable`.
 
         Warns
         -----

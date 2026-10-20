@@ -84,6 +84,8 @@ def _jasp_expectation_value_helper(
 
         def raw_state_prep(state_args):
             qv = state_prep(*state_args)
+            if not isinstance(qv, QuantumVariable):
+                raise TypeError(f"state_prep must return a QuantumVariable, got {type(qv).__name__}.")
             group.change_of_basis(qv, method=plan.diagonalization_method)
             return _raw_register_chunks(qv, plan.num_qubits)
 
