@@ -14,7 +14,26 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Backend-sampling measurement of QubitOperator expectation values."""
+"""Backend-sampling measurement of QubitOperator expectation values.
+
+The expectation value is estimated with the ``MeasurementPlan`` of the operator (see
+``measurement_plan.py`` for the grouping, the bit masks and the chunks):
+
+1. Circuit: the state preparation is compiled once per evaluation, or ``precompiled_qc``
+   is used, and the abstract parameters are bound with ``subs_dic``.
+2. Measurement: for each group, the group's change-of-basis gate is appended to a copy of
+   the circuit, and the first ``plan.num_qubits`` qubits, the ones the operator acts on,
+   are measured with the group's number of shots. The backend returns the distinct
+   outcomes with their probabilities. A ``BatchedBackend`` receives all circuits at once.
+3. Outcomes: the outcomes are integers with one bit per measured qubit. They are split
+   into chunks of ``_CHUNK_SIZE`` qubits, like the masks of the plan, and stored with their
+   probabilities in arrays of shape (groups, outcomes, chunks) and (groups, outcomes).
+   Groups with fewer distinct outcomes are padded with zero probabilities.
+4. Evaluation: a numba kernel loops over the groups, their outcomes and their terms, and
+   sums probability * coefficient * value of the term for the outcome, with the value
+   computed chunk by chunk. The probabilities of each group sum to one, so this is the
+   sum over the groups of their mean values.
+"""
 
 from __future__ import annotations
 

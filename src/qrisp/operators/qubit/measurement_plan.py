@@ -14,7 +14,39 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Static planning shared by backend and Jasp expectation measurements."""
+"""Static planning shared by the backend and the Jasp expectation-value measurements.
+
+An expectation value is estimated by splitting the operator into groups of terms that can
+be measured simultaneously, measuring each group in its own circuits, and summing the
+estimates of the groups. Everything that depends only on the operator is computed once,
+when ``QubitOperator.expectation_value`` is called, and stored in a ``MeasurementPlan``:
+
+1. Normalization: the operator is hermitized and zero terms are removed. A ladder term and
+   its adjoint are merged into one term, which stands for both.
+2. Grouping: the terms are split into groups whose terms commute qubit-wise
+   (``"commuting_qw"``) or commute (``"commuting"``). Groups whose ladder operators act on
+   overlapping but different qubits are split further.
+3. Change of basis: for each group, a circuit is constructed that diagonalizes all of its
+   terms at once. Conjugated with this circuit, the group becomes a diagonal measurement
+   operator whose terms consist of Z, P0 and P1 factors, so their values can be read off
+   a computational-basis outcome.
+4. Serialization: each diagonal term is stored as a real coefficient and three bit masks
+   over the measured qubits (see ``QubitTerm.serialize``): the Z mask z, the AND mask a and
+   the control mask c. For an outcome x, the term has the value
+   (-1)**popcount(z & x) if (x ^ c) & a == 0, and 0 otherwise. Terms with ladder operators
+   take the values +-1/2, so their coefficients are halved.
+5. Chunks: the masks, and later the outcomes, are integers with one bit per qubit. To
+   handle any number of qubits with 64-bit integers, they are split into chunks of
+   ``_CHUNK_SIZE`` = 53 qubits, lowest qubits first: chunk j holds the qubits 53 j to
+   53 j + 52. 53 bits keep a chunk exact even when Jasp's ``sample`` returns it as a
+   float64. A term is evaluated on all chunks of an outcome together: the sign uses the
+   popcount summed over the chunks, and the AND condition must hold in every chunk. This
+   gives the same value as evaluating the term on the unsplit integers.
+6. Shot allocation: group i receives ceil(sigma_i * sum_j sigma_j / epsilon**2) shots, and
+   at least one, where sigma_i is the standard deviation of the group, averaged over all
+   states, and epsilon is the targeted standard deviation of the estimate. epsilon is
+   ``atol``, or ``rtol`` times the sum of the absolute non-identity Pauli coefficients.
+"""
 
 import math
 import numbers

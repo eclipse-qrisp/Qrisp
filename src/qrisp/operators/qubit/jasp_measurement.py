@@ -14,7 +14,35 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Jasp/JAX-traceable expectation-value measurement of QubitOperators via sampling."""
+"""Jasp/JAX-traceable expectation-value measurement of QubitOperators via sampling.
+
+The expectation value is estimated with the ``MeasurementPlan`` of the operator (see
+``measurement_plan.py`` for the grouping, the bit masks and the chunks). The shot counts
+are fixed when ``expectation_value`` is called, so all arrays have shapes that are known
+while tracing:
+
+1. Sampling: for each group, a sampling kernel prepares the state with ``state_prep``,
+   applies the group's change of basis, and returns the first ``plan.num_qubits`` qubits,
+   the ones the operator acts on, as views of the register in chunks of ``_CHUNK_SIZE``
+   qubits. The views are constructed from a template of a plain ``QuantumVariable``,
+   whose decoder returns the measured integer, so ``sample`` yields the measured bits
+   whatever the type of the prepared variable. All chunks of a shot come from the same
+   measurement. The result is an integer array of shape (shots of the group, chunks).
+2. Concatenation: the sample arrays of all groups are concatenated in group order into
+   one array of shape (total shots, chunks). Since the shots of each group are known, two
+   arrays with one entry per sample are built alongside: ``group_indices``, the index of
+   the group the sample comes from, and ``sample_weights``, one over the shots of that
+   group. For shots [3, 2], they are [0, 0, 0, 1, 1] and [1/3, 1/3, 1/3, 1/2, 1/2].
+3. Evaluation: a single jitted function loops over the term index ``term`` up to the
+   largest number of terms of a group. In each iteration, it looks up the masks and the
+   coefficient of that term of each sample's group, ``observables[group_indices, term]``
+   and ``coefficients[group_indices, term]``, evaluates the term on all samples at once,
+   chunk by chunk, and adds the values times coefficient times sample weight. 
+   Groups with fewer terms are padded with zero coefficients.
+   The total is the sum over the groups of their mean values. Because all groups are
+   evaluated in one loop, the size of the traced program does not grow with the number
+   of groups.
+"""
 
 from __future__ import annotations
 
