@@ -50,7 +50,7 @@ from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp.operators.qubit.jasp_measurement import _jasp_expectation_value_helper
+from qrisp.operators.qubit.jasp_measurement import _check_jasp_arguments, _jasp_expectation_value_helper
 from qrisp.operators.qubit.measurement import _expectation_value_helper
 from qrisp.operators.qubit.measurement_plan import _check_tolerance, _create_measurement_plan, _resolve_tolerances
 from qrisp.operators.qubit.qubit_term import QubitTerm
@@ -1670,10 +1670,10 @@ class QubitOperator(Hamiltonian):
 
         .. note::
 
-            In Jasp mode, only ``state_prep``, ``atol``, ``rtol`` and
-            ``diagonalization_method`` are used. ``backend``, ``compile``,
-            ``compilation_kwargs``, ``subs_dic`` and ``precompiled_qc`` are
-            ignored.
+            In Jasp mode, the state is always prepared by ``state_prep`` and
+            simulated by the Jasp interpreter. ``backend``, ``compile=False``,
+            ``compilation_kwargs``, ``precompiled_qc`` and ``subs_dic`` only
+            apply to static execution and raise a ``ValueError`` in Jasp mode.
 
         Parameters
         ----------
@@ -1732,15 +1732,16 @@ class QubitOperator(Hamiltonian):
             zero-dimensional ``jax.Array`` in Jasp mode. ``args`` are passed to
             ``state_prep``. ``subs_dic`` maps the SymPy symbols of circuits with
             :ref:`abstract parameters <QuantumCircuit>` to values for this
-            evaluation. It is ignored in Jasp mode.
+            evaluation. It cannot be used in Jasp mode.
 
         Raises
         ------
         ValueError
             If more than one of ``atol``, ``rtol`` and ``precision`` is given,
             if a tolerance is not a finite positive number, if both spellings
-            of the diagonalization method are given, or if the diagonalization
-            method is unknown.
+            of the diagonalization method are given, if the diagonalization
+            method is unknown, or if an argument that only applies to static
+            execution is used in Jasp mode.
 
         Warns
         -----
@@ -1928,6 +1929,21 @@ class QubitOperator(Hamiltonian):
             )
             atol = precision
 
+        # Arguments that only apply to backend execution.
+        static_only_arguments = [
+            name
+            for name, given in (
+                ("backend", backend is not None),
+                ("compile=False", compile is not True),
+                ("compilation_kwargs", compilation_kwargs is not None),
+                ("precompiled_qc", precompiled_qc is not None),
+                ("subs_dic", subs_dic is not None),
+            )
+            if given
+        ]
+        if check_for_tracing_mode():
+            _check_jasp_arguments(static_only_arguments)
+
         if subs_dic is not None:
             warnings.warn(
                 "Passing subs_dic to expectation_value is deprecated; pass it to the returned function "
@@ -1948,6 +1964,10 @@ class QubitOperator(Hamiltonian):
         def return_function(*args, subs_dic=None):
 
             if check_for_tracing_mode():
+                call_arguments = (
+                    ["subs_dic"] if subs_dic is not None and "subs_dic" not in static_only_arguments else []
+                )
+                _check_jasp_arguments(static_only_arguments + call_arguments)
                 return _jasp_expectation_value_helper(plan, state_prep, shots, state_args=args)
 
             if precompiled_qc is not None:

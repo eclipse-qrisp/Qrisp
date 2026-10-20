@@ -22,7 +22,7 @@ import random
 import numpy as np
 import pytest
 
-from qrisp import QuantumFloat, QuantumVariable, cx, h, jaspify, x
+from qrisp import QuantumCircuit, QuantumFloat, QuantumVariable, cx, h, jaspify, x
 from qrisp.default_backend import QrispSimulatorBackend
 from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators import P0, P1, A, C, X, Y, Z
@@ -428,6 +428,69 @@ def test_expectation_value_function_works_in_static_and_jasp_mode():
 
     assert ev_function() == pytest.approx(-2)
     assert main() == pytest.approx(-2)
+
+
+STATIC_ONLY_ARGUMENTS = [
+    ({"backend": QrispSimulatorBackend()}, "backend"),
+    ({"compile": False}, "compile=False"),
+    ({"compilation_kwargs": {}}, "compilation_kwargs"),
+    ({"precompiled_qc": QuantumCircuit(1)}, "precompiled_qc"),
+    ({"subs_dic": {}}, "subs_dic"),
+]
+
+
+@pytest.mark.parametrize(("kwargs", "name"), STATIC_ONLY_ARGUMENTS)
+def test_expectation_value_rejects_static_only_arguments_in_jasp_mode(kwargs, name):
+    def state_prep():
+        return QuantumVariable(1)
+
+    @jaspify
+    def main():
+        return X(0).expectation_value(state_prep, **kwargs)()
+
+    with pytest.raises(ValueError, match=f"{name} cannot be used in Jasp mode"):
+        main()
+
+
+@pytest.mark.filterwarnings("ignore::qrisp.misc.exceptions.QrispDeprecationWarning")
+@pytest.mark.parametrize(("kwargs", "name"), STATIC_ONLY_ARGUMENTS)
+def test_static_expectation_value_function_rejects_jasp_mode(kwargs, name):
+    def state_prep():
+        return QuantumVariable(1)
+
+    ev_function = X(0).expectation_value(state_prep, **kwargs)
+
+    @jaspify
+    def main():
+        return ev_function()
+
+    with pytest.raises(ValueError, match=f"{name} cannot be used in Jasp mode"):
+        main()
+
+
+def test_expectation_value_function_rejects_subs_dic_in_jasp_mode():
+    def state_prep():
+        return QuantumVariable(1)
+
+    ev_function = X(0).expectation_value(state_prep)
+
+    @jaspify
+    def main():
+        return ev_function(subs_dic={})
+
+    with pytest.raises(ValueError, match="^subs_dic cannot be used in Jasp mode"):
+        main()
+
+
+def test_expectation_value_accepts_default_compile_in_jasp_mode():
+    def state_prep():
+        return QuantumVariable(1)
+
+    @jaspify
+    def main():
+        return Z(0).expectation_value(state_prep, compile=True)()
+
+    assert main() == pytest.approx(1)
 
 
 def test_expectation_value_batched_backend():

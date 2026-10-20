@@ -31,6 +31,16 @@ if TYPE_CHECKING:
     from qrisp.operators.qubit.measurement_plan import MeasurementPlan
 
 
+def _check_jasp_arguments(static_only_arguments: list[str]) -> None:
+    """Raise a ``ValueError`` if arguments that only apply to static execution are used in Jasp mode."""
+    if static_only_arguments:
+        raise ValueError(
+            f"{', '.join(static_only_arguments)} cannot be used in Jasp mode. In Jasp mode, the state is always "
+            "prepared by state_prep and simulated by the Jasp interpreter; backend, compile=False, "
+            "compilation_kwargs, precompiled_qc and subs_dic only apply to static execution."
+        )
+
+
 def _jasp_expectation_value_helper(
     plan: MeasurementPlan,
     state_prep: Callable[..., QuantumVariable],

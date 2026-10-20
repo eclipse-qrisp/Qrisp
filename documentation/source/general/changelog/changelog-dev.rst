@@ -473,7 +473,10 @@ API Changes
   ``diagonalization_method``. Both emit a ``QrispDeprecationWarning``. All
   arguments after ``state_prep`` are now keyword-only, and the
   ``measurement_data`` argument and the ``QubitOperatorMeasurement`` class
-  have been removed. Every measurement group now receives at least one shot,
+  have been removed. In Jasp mode, ``backend``, ``compile=False``,
+  ``compilation_kwargs``, ``precompiled_qc`` and ``subs_dic`` now raise a
+  ``ValueError`` instead of being ignored, because they only apply to static
+  execution. Every measurement group now receives at least one shot,
   so operators with groups of very small coefficients, or consisting only of
   an identity term, no longer fail.
 
