@@ -152,6 +152,11 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed compilation errors when compiling certain programs with 
+  Catalyst (``@qjit``), e.g. Grover's algorithm.
+  Qrisp now skips Catalyst's ``annotate-invalid-gradient-functions`` pass.
+  (`PR #984 <https://github.com/eclipse-qrisp/Qrisp/pull/984>`_).
+
 * Fixed a failure when a function decorated with
   :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
   raised ``Automatic loop inversion is only supported for jrange-based loops``.
