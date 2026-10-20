@@ -1529,7 +1529,10 @@ class QubitOperator(Hamiltonian):
         return qc, QubitOperator(self.terms_dict)
 
     def get_operator_variance(self, n=1):
-        """Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
+        """Estimate the variance of the hermitian part of the operator, averaged over all states.
+
+        The expectation-value measurement uses this estimate to distribute the shots over
+        the measurement groups, following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
 
         Normally to compute the variance of an operator, the distribution has to be known.
         Since the distribution is not known without querying the quantum device,
@@ -1564,6 +1567,16 @@ class QubitOperator(Hamiltonian):
         It therefore suffices to compute the variance of the Pauli form of the
         QubitOperator.
 
+        Parameters
+        ----------
+        n : int, optional
+            The number of qubits of the state space. The default is 1.
+
+        Returns
+        -------
+        float
+            The variance averaged over all states, alpha_n * sum_i(abs(c_i)**2), where the
+            sum runs over the non-identity Pauli terms.
 
         """
         var = 0

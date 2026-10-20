@@ -661,12 +661,17 @@ class FermionicOperator(Hamiltonian):
         mapping_type : str, optional
             The strategy on how to map the FermionicOperator to a QubitOperator. Default is ``jordan_wigner``.
         measurement_kwargs : dict, optional
-            The keyword arguments of :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
+            The keyword arguments of :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`,
+            such as ``atol``, ``rtol`` or ``diagonalization_method``.
 
         Returns
         -------
         callable
-            A function returning an array containing the expectaion value.
+            The function returned by
+            :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`
+            for the mapped operator, ``f(*args, subs_dic=None)``. It passes ``args`` to
+            ``state_prep`` and returns the estimated expectation value: a ``float`` in static
+            mode and a zero-dimensional ``jax.Array`` in Jasp mode.
 
         Examples
         --------
