@@ -249,3 +249,20 @@ class TestTracingModeError:
             return 0
 
         main()
+
+
+class TestMissingSize:
+    """Test that initializing a QuantumVariable without a size raises in static and tracing mode."""
+
+    def test_missing_size_raises_in_static_mode(self):
+        with pytest.raises(ValueError, match="no size given"):
+            QuantumVariable(None)  # type: ignore[arg-type]
+
+    def test_missing_size_raises_in_tracing_mode(self):
+        @jaspify
+        def main():
+            QuantumVariable(None)  # type: ignore[arg-type]
+            return 0
+
+        with pytest.raises(ValueError, match="no size given"):
+            main()

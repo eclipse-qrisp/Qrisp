@@ -322,7 +322,7 @@ class QuantumSession(QuantumCircuit):
         if not self._is_fresh_name(qv.name):
             raise QuantumVariableNamingError(f"Variable name {qv.name} already exists in quantum session")
         if size is None and not hasattr(qv, "reg"):
-            raise ValueError(f"Cannot register {qv.name}: no size given and no reigster assigned.")
+            raise ValueError(f"Cannot register {qv.name}: no size given and no register assigned.")
 
         # Hand qubits to quantum variable if size is provided.
         if size is not None:

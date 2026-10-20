@@ -294,6 +294,9 @@ class TracingQuantumSession:
 
         self._check_in_scope()
 
+        if size is None and not hasattr(qv, "reg"):
+            raise ValueError(f"Cannot register {qv.name}: no size given and no register assigned.")
+
         if size is not None:
             qv.reg = self.request_qubits(size)
 
