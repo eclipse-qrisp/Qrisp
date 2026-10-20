@@ -37,7 +37,7 @@ while tracing:
    largest number of terms of a group. In each iteration, it looks up the masks and the
    coefficient of that term of each sample's group, ``observables[group_indices, term]``
    and ``coefficients[group_indices, term]``, evaluates the term on all samples at once,
-   chunk by chunk, and adds the values times coefficient times sample weight. 
+   chunk by chunk, and adds the values times coefficient times sample weight.
    Groups with fewer terms are padded with zero coefficients.
    The total is the sum over the groups of their mean values. Because all groups are
    evaluated in one loop, the size of the traced program does not grow with the number
@@ -47,7 +47,6 @@ while tracing:
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
 import jax
 import jax.numpy as jnp
@@ -55,10 +54,7 @@ import numpy as np
 
 from qrisp.core import QuantumVariable
 from qrisp.jasp import QuantumVariableTemplate, sample
-from qrisp.operators.qubit.measurement_plan import _CHUNK_SIZE
-
-if TYPE_CHECKING:
-    from qrisp.operators.qubit.measurement_plan import MeasurementPlan
+from qrisp.operators.qubit.measurement_plan import _CHUNK_SIZE, MeasurementPlan
 
 
 def _check_jasp_arguments(static_only_arguments: list[str]) -> None:

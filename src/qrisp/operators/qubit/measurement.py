@@ -37,19 +37,19 @@ The expectation value is estimated with the ``MeasurementPlan`` of the operator 
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 from numba import njit
 
+from qrisp import default_backend
 from qrisp.circuit import QuantumCircuit, Qubit
+from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
 from qrisp.core import QuantumArray, QuantumSession, QuantumVariable, merge
 from qrisp.core.compilation import qompiler
 from qrisp.interface import BackendLike, BatchedBackend
-from qrisp.operators.qubit.measurement_plan import _split_bits
-
-if TYPE_CHECKING:
-    from qrisp.operators.qubit.measurement_plan import MeasurementPlan
+from qrisp.misc import get_measurement_from_qc
+from qrisp.operators.qubit.measurement_plan import MeasurementPlan, _split_bits
 
 
 def _expectation_value_helper(  # noqa: PLR0912, PLR0913
@@ -64,8 +64,6 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     precompiled_qc: QuantumCircuit | None = None,
 ) -> float:
     """Measure the expectation value of a measurement plan on the state of ``qarg`` with a backend."""
-    from qrisp.misc import get_measurement_from_qc
-
     if compilation_kwargs is None:
         compilation_kwargs = {}
 
@@ -88,9 +86,8 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
 
     if backend is None:
         if qs.backend is None:
-            from qrisp.default_backend import def_backend
-
-            backend = def_backend
+            # Read at call time, because the default backend can be replaced at runtime.
+            backend = default_backend.def_backend
         else:
             backend = qarg.qs.backend
 
@@ -115,8 +112,6 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     # Bind parameters
     if subs_dic:
         qc = qc.bind_parameters(subs_dic)
-        from qrisp.circuit.pass_management.passes.combine_single_qubit_gates import combine_single_qubit_gates
-
         qc = combine_single_qubit_gates(qc)
 
     qc = qc.transpile()
