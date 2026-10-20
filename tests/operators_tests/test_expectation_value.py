@@ -323,10 +323,10 @@ def test_expectation_value_options_are_keyword_only():
         "backend",
         "compile",
         "compilation_kwargs",
-        "subs_dic",
         "precompiled_qc",
         "precision",
         "diagonalisation_method",
+        "subs_dic",
     ]
     assert all(parameter.kind is inspect.Parameter.KEYWORD_ONLY for parameter in parameters[1:])
 
@@ -387,7 +387,26 @@ def test_expectation_value_accepts_subs_dic_per_evaluation():
     assert ev_function(subs_dic={theta: np.pi}) == pytest.approx(-1)
 
     qc = state_prep().qs.compile()
-    ev_function = H.expectation_value(state_prep, atol=0.05, precompiled_qc=qc, subs_dic={theta: 0})
+    ev_function = H.expectation_value(state_prep, atol=0.05, precompiled_qc=qc)
+    assert ev_function(subs_dic={theta: 0}) == pytest.approx(1)
+    assert ev_function(subs_dic={theta: np.pi}) == pytest.approx(-1)
+
+
+def test_expectation_value_subs_dic_at_creation_is_deprecated():
+    from sympy import Symbol
+
+    from qrisp import ry
+
+    theta = Symbol("theta")
+
+    def state_prep():
+        qv = QuantumVariable(1)
+        ry(theta, qv)
+        return qv
+
+    with pytest.warns(QrispDeprecationWarning, match="pass it to the returned function"):
+        ev_function = Z(0).expectation_value(state_prep, atol=0.05, subs_dic={theta: 0})
+
     assert ev_function() == pytest.approx(1)
     assert ev_function(subs_dic={theta: np.pi}) == pytest.approx(-1)
 

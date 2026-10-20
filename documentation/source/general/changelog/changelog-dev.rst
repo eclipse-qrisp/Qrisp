@@ -484,7 +484,9 @@ API Changes
   passed as ``precompiled_qc`` can be evaluated for many parameter values with
   a single function. :meth:`VQEProblem.run <qrisp.vqe.VQEProblem.run>` and
   :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>` use this to avoid
-  recomputing the grouping in every optimization step
+  recomputing the grouping in every optimization step. Passing ``subs_dic``
+  to ``expectation_value`` itself is deprecated and emits a
+  ``QrispDeprecationWarning``; pass it to the returned function instead
   (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
 
 * Removed ``multi_hamiltonian_measurement`` from ``qrisp.operators``. It

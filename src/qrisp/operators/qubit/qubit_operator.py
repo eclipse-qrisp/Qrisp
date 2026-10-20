@@ -1585,10 +1585,10 @@ class QubitOperator(Hamiltonian):
         backend: BackendLike | None = None,
         compile: bool = True,
         compilation_kwargs: dict[Any, Any] | None = None,
-        subs_dic: dict[Any, Any] | None = None,
         precompiled_qc: QuantumCircuit | None = None,
         precision: float | None = None,
         diagonalisation_method: Literal["commuting", "commuting_qw"] | None = None,
+        subs_dic: dict[Any, Any] | None = None,
     ) -> Callable[..., float | jax.Array]:
         r"""Return a function that estimates the expectation value of the operator.
 
@@ -1711,11 +1711,6 @@ class QubitOperator(Hamiltonian):
         compilation_kwargs : dict, optional
             Keyword arguments for the compilation. For more details, see
             :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`.
-        subs_dic : dict, optional
-            A dictionary mapping SymPy symbols to values, for circuits with
-            :ref:`abstract parameters <QuantumCircuit>`. These values are used
-            by every evaluation. Values that change between evaluations are
-            passed to the returned function instead.
         precompiled_qc : QuantumCircuit, optional
             A compiled circuit that prepares the state. If given,
             ``state_prep`` is not called, and the operator is measured on the
@@ -1726,6 +1721,8 @@ class QubitOperator(Hamiltonian):
             Deprecated. Use ``atol``, which has the same meaning.
         diagonalisation_method : str, optional
             Deprecated. Use ``diagonalization_method``.
+        subs_dic : dict, optional
+            Deprecated. Pass ``subs_dic`` to the returned function instead.
 
         Returns
         -------
@@ -1733,9 +1730,9 @@ class QubitOperator(Hamiltonian):
             A function ``f(*args, subs_dic=None)`` that returns the estimated
             expectation value: a ``float`` in static mode and a
             zero-dimensional ``jax.Array`` in Jasp mode. ``args`` are passed to
-            ``state_prep``. ``subs_dic`` maps SymPy symbols to values for this
-            evaluation and takes precedence over the ``subs_dic`` given to
-            ``expectation_value``. It is ignored in Jasp mode.
+            ``state_prep``. ``subs_dic`` maps the SymPy symbols of circuits with
+            :ref:`abstract parameters <QuantumCircuit>` to values for this
+            evaluation. It is ignored in Jasp mode.
 
         Raises
         ------
@@ -1748,7 +1745,8 @@ class QubitOperator(Hamiltonian):
         Warns
         -----
         QrispDeprecationWarning
-            If ``precision`` or ``diagonalisation_method`` is used.
+            If ``precision``, ``diagonalisation_method`` or ``subs_dic`` is
+            passed.
 
         Examples
         --------
@@ -1929,6 +1927,14 @@ class QubitOperator(Hamiltonian):
                 stacklevel=2,
             )
             atol = precision
+
+        if subs_dic is not None:
+            warnings.warn(
+                "Passing subs_dic to expectation_value is deprecated; pass it to the returned function "
+                "instead, e.g. H.expectation_value(state_prep)(subs_dic=...).",
+                QrispDeprecationWarning,
+                stacklevel=2,
+            )
 
         atol, rtol = _resolve_tolerances(atol, rtol)
 
