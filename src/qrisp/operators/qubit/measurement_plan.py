@@ -28,10 +28,16 @@ from qrisp.operators.hamiltonian import Hamiltonian
 
 _DEFAULT_RTOL = 0.01
 
+# Measurement outcomes and the bit masks of the observables are split into chunks
+# of this many qubits, so that registers of any size can be evaluated with 64-bit
+# integers. 53 bits keep every chunk exact when Jasp's sample stores its results
+# as float64.
+_CHUNK_SIZE = 53
+
 
 @dataclass
 class MeasurementPlan:
-    """Static data needed to measure a QubitOperator.
+    r"""Static data needed to measure a QubitOperator.
 
     The plan depends only on the operator and the diagonalization method, not
     on the measured state. It is built once per expectation-value function and
@@ -47,13 +53,16 @@ class MeasurementPlan:
         Operators represented by computational-basis samples after each
         group's basis change.
     observables : numpy.ndarray
-        Serialized terms of each measurement operator, see
-        ``QubitTerm.serialize``, with shape ``(groups, terms, 4)``. Groups with
-        fewer terms are padded with zeros.
+        Bit masks of the terms of each measurement operator, see
+        ``QubitTerm.serialize``, with shape ``(groups, terms, 3, chunks)``. The
+        third axis holds the Z, AND and control masks, the last axis splits
+        them into chunks of ``_CHUNK_SIZE`` qubits. Groups with fewer terms
+        are padded with zeros.
     coefficients : numpy.ndarray
         Real coefficients matching ``observables``, with shape
-        ``(groups, terms)``. Padding entries are zero, so they do not
-        contribute to the expectation value.
+        ``(groups, terms)``. Terms with ladder operators are halved, because
+        their measured value is :math:`\pm 1/2`. Padding entries are zero, so
+        they do not contribute to the expectation value.
     standard_deviations : list[float]
         Estimated standard deviation for each measurement operator.
     shot_weights : list[float]
@@ -211,15 +220,31 @@ def _calculate_shot_counts(shot_weights: Sequence[float], target_standard_deviat
     return [max(1, math.ceil(weight / target_standard_deviation**2)) for weight in shot_weights]
 
 
-def _serialize_measurement_operators(measurement_operators: list[Hamiltonian]) -> tuple[np.ndarray, np.ndarray]:
-    """Return the zero-padded serialized terms and real coefficients of the measurement operators."""
+def _num_chunks(num_qubits: int) -> int:
+    """Return the number of chunks of ``_CHUNK_SIZE`` qubits needed for ``num_qubits`` qubits."""
+    return max(1, math.ceil(num_qubits / _CHUNK_SIZE))
+
+
+def _split_bits(value: int, num_chunks: int) -> list[int]:
+    """Split a non-negative integer into ``num_chunks`` chunks of ``_CHUNK_SIZE`` bits, lowest bits first."""
+    mask = (1 << _CHUNK_SIZE) - 1
+    return [(value >> (_CHUNK_SIZE * chunk)) & mask for chunk in range(num_chunks)]
+
+
+def _serialize_measurement_operators(
+    measurement_operators: list[Hamiltonian], num_qubits: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return the zero-padded bit masks and real coefficients of the measurement operators."""
     num_terms = max((len(operator.terms_dict) for operator in measurement_operators), default=0)
-    observables = np.zeros((len(measurement_operators), num_terms, 4), dtype=np.int64)
+    num_chunks = _num_chunks(num_qubits)
+    observables = np.zeros((len(measurement_operators), num_terms, 3, num_chunks), dtype=np.int64)
     coefficients = np.zeros((len(measurement_operators), num_terms), dtype=np.float64)
     for i, operator in enumerate(measurement_operators):
         for j, (term, coeff) in enumerate(operator.terms_dict.items()):
-            observables[i, j] = term.serialize()
-            coefficients[i, j] = np.real(coeff)
+            z_mask, and_mask, ctrl_mask, contains_ladder = term.serialize()
+            for k, mask in enumerate((z_mask, and_mask, ctrl_mask)):
+                observables[i, j, k] = _split_bits(mask, num_chunks)
+            coefficients[i, j] = np.real(coeff) * (0.5 if contains_ladder else 1)
     return observables, coefficients
 
 
@@ -251,7 +276,7 @@ def _create_measurement_plan(
         num_qubits = normalized_hamiltonian.find_minimal_qubit_amount()
 
     measurement_operators = [group.change_of_basis(method=diagonalization_method) for group in groups]
-    observables, coefficients = _serialize_measurement_operators(measurement_operators)
+    observables, coefficients = _serialize_measurement_operators(measurement_operators, num_qubits)
     standard_deviations = [
         float(np.sqrt(measurement_operator.get_operator_variance(n=num_qubits)))
         for measurement_operator in measurement_operators

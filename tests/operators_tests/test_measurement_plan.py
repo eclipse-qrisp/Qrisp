@@ -19,13 +19,15 @@
 import numpy as np
 import pytest
 
-from qrisp.operators import A, C, X, Y, Z
+from qrisp.operators import P0, P1, A, C, X, Y, Z
 from qrisp.operators.qubit.measurement_plan import (
+    _CHUNK_SIZE,
     _calculate_shot_counts,
     _calculate_shot_weights,
     _create_measurement_plan,
     _normalize_hamiltonian,
     _resolve_tolerances,
+    _split_bits,
 )
 
 
@@ -84,18 +86,38 @@ def test_measurement_plan_rejects_unknown_diagonalization_method():
         _create_measurement_plan(X(0), diagonalization_method="unknown")
 
 
-def test_measurement_plan_serializes_measurement_operators():
-    plan = _create_measurement_plan(X(0) * X(1) + 2 * Z(0) + 3 * Z(1) * Z(2), "commuting")
+@pytest.mark.parametrize(
+    "hamiltonian",
+    [
+        X(0) * X(1) + 2 * Z(0) + 3 * Z(1) * Z(2),
+        A(0) * C(1) + P1(2),
+        Z(0) * Z(70) + X(52) * X(53) + A(1) * C(120) + P0(105),
+    ],
+)
+def test_measurement_plan_serializes_measurement_operators(hamiltonian):
+    plan = _create_measurement_plan(hamiltonian, "commuting")
 
-    num_groups, num_terms, _ = plan.observables.shape
+    num_groups, num_terms, num_masks, num_chunks = plan.observables.shape
     assert num_groups == len(plan.groups)
+    assert num_masks == 3
+    assert num_chunks == -(-plan.num_qubits // _CHUNK_SIZE)
     assert plan.coefficients.shape == (num_groups, num_terms)
     for observables, coefficients, operator in zip(plan.observables, plan.coefficients, plan.measurement_operators):
         size = len(operator.terms_dict)
-        assert [tuple(row) for row in observables[:size]] == [term.serialize() for term in operator.terms_dict]
-        np.testing.assert_allclose(coefficients[:size], np.real(list(operator.terms_dict.values())))
+        for masks, coefficient, (term, coeff) in zip(observables, coefficients, operator.terms_dict.items()):
+            z_mask, and_mask, ctrl_mask, contains_ladder = term.serialize()
+            joined = [sum(int(chunk) << (_CHUNK_SIZE * i) for i, chunk in enumerate(row)) for row in masks]
+            assert joined == [z_mask, and_mask, ctrl_mask]
+            assert coefficient == pytest.approx(np.real(coeff) * (0.5 if contains_ladder else 1))
         assert not observables[size:].any()
         assert not coefficients[size:].any()
+
+
+def test_split_bits():
+    value = (1 << 129) | (1 << 64) | (1 << 52) | 1
+
+    assert _split_bits(value, 3) == [(1 << 52) | 1, 1 << 11, 1 << 23]
+    assert _split_bits(5, 1) == [5]
 
 
 def test_measurement_plan_builds_change_of_basis_gates_on_first_use():
@@ -114,6 +136,6 @@ def test_measurement_plan_supports_empty_hamiltonians():
     assert plan.groups == []
     assert plan.measurement_operators == []
     assert plan.shot_weights == []
-    assert plan.observables.shape == (0, 0, 4)
+    assert plan.observables.shape == (0, 0, 3, 1)
     assert plan.coefficient_norm == 0
     assert plan.num_qubits == 0

@@ -493,6 +493,90 @@ def test_expectation_value_accepts_default_compile_in_jasp_mode():
     assert main() == pytest.approx(1)
 
 
+def _evaluate(H, state_prep, mode, **kwargs):
+    """Evaluate an expectation value statically, in Jasp, or in Jasp with terminal sampling."""
+    if mode == "static":
+        return H.expectation_value(state_prep, **kwargs)()
+
+    @jaspify(terminal_sampling=mode == "jasp_terminal")
+    def main():
+        return H.expectation_value(state_prep, **kwargs)()
+
+    return float(main())
+
+
+EVALUATION_MODES = ["static", "jasp", "jasp_terminal"]
+
+
+def _quantum_float_with_exponent():
+    qf = QuantumFloat(2, -1)  # Decodes the raw value 1 as 0.5.
+    x(qf[0])
+    return qf
+
+
+def _signed_quantum_float():
+    qf = QuantumFloat(3, -2, signed=True)
+    x(qf[1])
+    x(qf[3])  # Sign qubit
+    return qf
+
+
+@pytest.mark.parametrize("mode", EVALUATION_MODES)
+@pytest.mark.parametrize(
+    ("state_prep", "H", "expected"),
+    [
+        (_quantum_float_with_exponent, Z(0) - Z(1), -2),
+        (_signed_quantum_float, Z(0) + 2 * Z(1) + 3 * Z(3), -4),
+    ],
+)
+def test_expectation_value_measures_raw_bits_of_typed_variables(state_prep, H, expected, mode):
+    assert _evaluate(H, state_prep, mode) == pytest.approx(expected)
+
+
+def _wide_state():
+    qv = QuantumVariable(130)
+    x(qv[0])
+    x(qv[60])
+    x(qv[129])
+    h(qv[70])  # X(70) = 1
+    x(qv[100])
+    h(qv[100])  # X(100) = -1
+    # (|q1=0, q120=1> + |q1=1, q120=0>)/sqrt(2)
+    x(qv[120])
+    h(qv[1])
+    cx(qv[1], qv[120])
+    # (|q2=0, q110=0> + |q2=1, q110=1>)/sqrt(2)
+    h(qv[2])
+    cx(qv[2], qv[110])
+    return qv
+
+
+# The state is an eigenstate of every term, so every estimate is exact. The terms act on
+# qubits in all three chunks of 53 qubits and on pairs of qubits in different chunks.
+WIDE_TERMS = [
+    (Z(0) * Z(129), 1),
+    (2 * Z(60), -2),
+    (3 * X(70) * X(100), -3),
+    (4 * P1(0) * P1(129), 4),
+    (5 * Z(5) * X(70), 5),
+    (A(1) * C(120), 0.5),
+    (2 * P0(30), 2),
+    (X(2) * X(110) + Z(2) * Z(110), 2),
+    (Y(2) * Y(110), -1),
+]
+
+
+@pytest.mark.parametrize("mode", EVALUATION_MODES)
+@pytest.mark.parametrize("diagonalization_method", ["commuting_qw", "commuting"])
+def test_expectation_value_of_operators_on_more_than_64_qubits(mode, diagonalization_method):
+    H = sum(term for term, _ in WIDE_TERMS)
+    expected = sum(value for _, value in WIDE_TERMS)
+
+    result = _evaluate(H, _wide_state, mode, rtol=0.05, diagonalization_method=diagonalization_method)
+
+    assert result == pytest.approx(expected)
+
+
 def test_expectation_value_batched_backend():
     """Test the expectation value method with the BatchedBackend."""
 

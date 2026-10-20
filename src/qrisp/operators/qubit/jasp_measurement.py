@@ -23,11 +23,13 @@ from typing import TYPE_CHECKING
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 
-from qrisp.jasp import sample
+from qrisp.core import QuantumVariable
+from qrisp.jasp import QuantumVariableTemplate, sample
+from qrisp.operators.qubit.measurement_plan import _CHUNK_SIZE
 
 if TYPE_CHECKING:
-    from qrisp.core import QuantumVariable
     from qrisp.operators.qubit.measurement_plan import MeasurementPlan
 
 
@@ -48,78 +50,73 @@ def _jasp_expectation_value_helper(
     state_args: tuple = (),
 ) -> jax.Array:
     """Measure the expectation value of a measurement plan on the state of ``state_prep`` with Jasp sampling."""
-    if not plan.groups:
-        return jnp.array(0)
+    if plan.num_qubits == 0:
+        # A multiple of the identity has the same value for every state.
+        return jnp.array(np.sum(plan.coefficients))
 
+    num_chunks = plan.observables.shape[-1]
     samples = []
     for group, group_shots in zip(plan.groups, shots):
 
-        def new_state_prep(state_args):
+        def raw_state_prep(state_args):
             qv = state_prep(*state_args)
             group.change_of_basis(qv, method=plan.diagonalization_method)
-            return qv
+            return _raw_register_chunks(qv, plan.num_qubits)
 
-        res = sample(new_state_prep, shots=group_shots)(state_args)
-        samples.append(jnp.int64(res))
+        res = sample(raw_state_prep, shots=group_shots)(state_args)
+        samples.append(_as_chunk_array(res, group_shots, num_chunks))
 
-    return jasp_evaluate_expectation_jitted(samples, plan.observables, plan.coefficients)
-
-
-@jax.jit
-def jasp_evaluate_expectation_jitted(samples, operators, coefficients):
-    """Evaluate the expectation."""
-    expectation = 0
-
-    # Evaluate and sum intermediate results for each measurement setting
-    for index, ops in enumerate(operators):
-        expectation += sum_over_observables_and_samples(ops, samples[index], coefficients[index]) / len(samples[index])
-
-    return expectation
-
-
-@jax.jit
-def jasp_evaluate_observable_jitted(observable: tuple, x: int):
-    """Evaluate one serialized observable for a sampled bitstring."""
-    # This function evaluates how to compute the energy of a measurement sample x.
-    # Since we are also considering ladder operators, this energy can either be
-    # 0, -1 or 1. For more details check out the comments of QubitOperator.get_conjugation_circuit
-
-    # The observable is given as tuple, containing four integers.
-    # To understand the meaning of these integers check QubitTerm.serialize.
-    # Unwrap the tuple
-    z_int, AND_bits, AND_ctrl_state, contains_ladder = observable
-
-    # Compute whether the sign should be sign flipped based on the Z operators
-    sign_flip_int = z_int & x
-    sign_flip = jax.lax.population_count(sign_flip_int)
-
-    # If there is a ladder operator in the term, we need to half the energy
-    # because we want to measure (|110><110| - |111><111|)/2
-    prefactor = 1 - 0.5 * contains_ladder
-
-    # If there are no AND bits, we return the result
-    # Otherwise we apply the AND_ctrl_state to flip the appropriate bits.
-    corrected_x = x ^ AND_ctrl_state
-
-    # If all bits are in the 0 state the AND is true.
-    return prefactor * jnp.where(sign_flip % 2 == 0, 1, -1) * jnp.int64((AND_bits == 0) | (corrected_x & AND_bits == 0))
-
-
-@jax.jit
-def sum_over_observables_and_samples(observables, x_values, coefficients):
-    """Sum serialized observable values over all samples in one group."""
-
-    def body_fun(i, val):
-        sum_val = val
-        obs = observables[i]
-        c = coefficients[i]
-        results = jax.vmap(jasp_evaluate_observable_jitted, in_axes=(None, 0))(obs, x_values)
-        return sum_val + c * jnp.sum(results)
-
-    total_sum = jax.lax.fori_loop(
-        0,
-        observables.shape[0],
-        body_fun,
-        jnp.float64(0),
+    # All groups are evaluated together. Each sample is weighted by 1/shots of its group.
+    group_indices = np.repeat(np.arange(len(shots)), shots)
+    sample_weights = np.repeat(1 / np.array(shots), shots)
+    return _evaluate_samples(
+        jnp.concatenate(samples), group_indices, sample_weights, plan.observables, plan.coefficients
     )
-    return total_sum
+
+
+# Template of a QuantumVariable without decoder. Views of a register constructed from it
+# are sampled as the raw measured integers, whatever the type of the register. It is
+# created once at import, because creating a QuantumVariable while tracing would
+# allocate qubits.
+_RAW_REGISTER = QuantumVariableTemplate(QuantumVariable(0), size_tracked=False)
+
+
+def _raw_register_chunks(qv: QuantumVariable, num_qubits: int) -> QuantumVariable | tuple[QuantumVariable, ...]:
+    """Return undecoded views of the first ``num_qubits`` qubits of ``qv``, in chunks of ``_CHUNK_SIZE`` qubits."""
+    chunks = tuple(
+        _RAW_REGISTER.construct(reg=qv.reg[start : min(start + _CHUNK_SIZE, num_qubits)])
+        for start in range(0, num_qubits, _CHUNK_SIZE)
+    )
+    return chunks[0] if len(chunks) == 1 else chunks
+
+
+def _as_chunk_array(res: jax.Array | tuple[jax.Array, ...], shots: int, num_chunks: int) -> jax.Array:
+    """Return the samples of the chunks of a register as an integer array of shape ``(shots, chunks)``.
+
+    ``sample`` returns one array, or one array per chunk if its kernel returns several values per shot.
+    """
+    if isinstance(res, tuple):
+        res = jnp.stack(res, axis=-1)
+    return jnp.reshape(res, (shots, num_chunks)).astype(jnp.int64)
+
+
+@jax.jit
+def _evaluate_samples(samples, group_indices, sample_weights, observables, coefficients):
+    r"""Sum the weighted values of all terms over the samples of all groups.
+
+    A term contributes its coefficient times :math:`(-1)^{|z \wedge x|}` for a
+    sample :math:`x` if :math:`(x \oplus c) \wedge a = 0` for its Z mask
+    :math:`z`, AND mask :math:`a` and control mask :math:`c`, and zero
+    otherwise. The masks and samples are split into chunks of equal size, see
+    ``MeasurementPlan.observables``.
+    """
+
+    def add_term(term, total):
+        masks = observables[group_indices, term]
+        coefficient = coefficients[group_indices, term]
+        satisfied = jnp.all(((samples ^ masks[:, 2]) & masks[:, 1]) == 0, axis=1)
+        parity = jnp.sum(jax.lax.population_count(samples & masks[:, 0]), axis=1) % 2
+        values = jnp.where(satisfied, 1 - 2 * parity, 0)
+        return total + jnp.sum(sample_weights * coefficient * values)
+
+    return jax.lax.fori_loop(0, observables.shape[1], add_term, jnp.float64(0))

@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -28,6 +27,7 @@ from qrisp.circuit import QuantumCircuit, Qubit
 from qrisp.core import QuantumArray, QuantumSession, QuantumVariable, merge
 from qrisp.core.compilation import qompiler
 from qrisp.interface import BackendLike, BatchedBackend
+from qrisp.operators.qubit.measurement_plan import _split_bits
 
 if TYPE_CHECKING:
     from qrisp.operators.qubit.measurement_plan import MeasurementPlan
@@ -78,8 +78,9 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     if len(qs.env_stack) != 0:
         raise Exception("Tried to get measurement within open environment")
 
-    if not plan.groups:
-        return 0.0
+    if plan.num_qubits == 0:
+        # A multiple of the identity has the same value for every state.
+        return float(np.sum(plan.coefficients))
 
     # Copy circuit in over to prevent modification
     if precompiled_qc is None:
@@ -101,140 +102,88 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
 
     qc = qc.transpile()
 
+    # Only the qubits the operator acts on are measured.
+    qubits = [qubit_list[j] for j in range(plan.num_qubits)]
+
     results = []
     for gate, group_shots in zip(plan.change_of_basis_gates(), shots):
-        qubits = [qubit_list[j] for j in range(gate.num_qubits)]
-
         curr = qc.copy()
         curr.append(gate, qubits)
 
-        results.append(get_measurement_from_qc(curr, list(qubit_list), backend, group_shots))
+        results.append(get_measurement_from_qc(curr, qubits, backend, group_shots))
 
     if isinstance(backend, BatchedBackend):
         backend.dispatch()
 
-    samples = create_padded_array([list(res.keys()) for res in results]).astype(np.int64)
-    probs = create_padded_array([list(res.values()) for res in results])
+    outcomes, probabilities = _outcome_arrays(results, plan.observables.shape[-1])
 
-    return evaluate_expectation_jitted(samples, probs, plan.observables, plan.coefficients)
+    return _evaluate_expectation(outcomes, probabilities, plan.observables, plan.coefficients)
 
 
-def create_padded_array(list_of_lists):
-    """Create a zero-padded numpy array from a list of lists with varying lengths.
+def _outcome_arrays(results: list, num_chunks: int) -> tuple[np.ndarray, np.ndarray]:
+    """Return the measured outcomes of all groups split into chunks, and their probabilities.
 
-    Parameters
-    ----------
-    list_of_lists : list
-        A list of lists with potentially different lengths.
-
-    Returns
-    -------
-    numpy.ndarray: A 2D numpy array with padded rows.
-
+    The arrays have the shapes ``(groups, outcomes, chunks)`` and
+    ``(groups, outcomes)``. Groups with fewer distinct outcomes are padded with
+    zero probabilities.
     """
-    # Find the maximum length of any list in the input
-    max_length = max(len(lst) for lst in list_of_lists)
-
-    # Create a padded list of lists
-    padded_lists = [lst + [0] * (max_length - len(lst)) for lst in list_of_lists]
-
-    # Convert to numpy array
-    return np.array(padded_lists)
-
-
-#
-# Evaluate expectation
-#
-
-
-def evaluate_observable(observable: tuple, x: int):
-    """Evaluate one serialized observable for a sampled bitstring."""
-    # This function evaluates how to compute the energy of a measurement sample x.
-    # Since we are also considering ladder operators, this energy can either be
-    # 0, -1 or 1. For more details check out the comments of QubitOperator.get_conjugation_circuit
-
-    # The observable is given as tuple, containing for integers and a boolean.
-    # To understand the meaning of these integers check QubitTerm.serialize.
-
-    # Unwrap the tuple
-    z_int, AND_bits, AND_ctrl_state, contains_ladder = observable
-
-    # Compute whether the sign should be sign flipped based on the Z operators
-    sign_flip_int = z_int & x
-    sign_flip = 0
-    while sign_flip_int:
-        sign_flip += sign_flip_int & 1
-        sign_flip_int >>= 1
-
-    # If there is a ladder operator in the term, we need to half the energy
-    # because we want to measure (|110><110| - |111><111|)/2
-    if contains_ladder:
-        prefactor = 0.5
-    else:
-        prefactor = 1
-
-    # If there are no and bits, we return the result
-    if AND_bits == 0:
-        return prefactor * (-1) ** sign_flip
-
-    # Otherwise we apply the AND_ctrl_state to flip the appropriate bits.
-    corrected_x = x ^ AND_ctrl_state
-
-    # If all bits are in the 0 state the AND is true.
-    if corrected_x & AND_bits == 0:
-        return prefactor * (-1) ** sign_flip
-    else:
-        return 0
-
-
-evaluate_observable_jitted = njit(cache=True)(evaluate_observable)
+    results = [list(result.items()) for result in results]
+    num_outcomes = max((len(items) for items in results), default=0)
+    outcomes = np.zeros((len(results), num_outcomes, num_chunks), dtype=np.int64)
+    probabilities = np.zeros((len(results), num_outcomes), dtype=np.float64)
+    for i, items in enumerate(results):
+        if not items:
+            continue
+        keys, values = zip(*items)
+        probabilities[i, : len(values)] = values
+        if num_chunks == 1:
+            outcomes[i, : len(keys), 0] = keys
+        else:
+            outcomes[i, : len(keys)] = [_split_bits(key, num_chunks) for key in keys]
+    return outcomes, probabilities
 
 
 @njit(cache=True)
-def evaluate_expectation_jitted(samples, probs, operators, coefficients):
-    """Evaluate the expectation."""
-    expectation = 0
-
-    for index1, ops in enumerate(operators):
-        for index2, op in enumerate(ops):
-            for i in range(len(samples[index1])):
-                outcome, probability = samples[index1, i], probs[index1, i]
-                expectation += probability * evaluate_observable_jitted(op, outcome) * coefficients[index1][index2]
-
-    return expectation
+def _parity(value: int) -> int:
+    """Return the parity of the set bits of a non-negative 64-bit integer."""
+    value ^= value >> 32
+    value ^= value >> 16
+    value ^= value >> 8
+    value ^= value >> 4
+    value ^= value >> 2
+    value ^= value >> 1
+    return value & 1
 
 
-def partition(values, num_qubits):
-    """Partitions a list of integers into a list of lists of integers with size 64 bit.
+@njit(cache=True)
+def _evaluate_expectation(outcomes, probabilities, observables, coefficients):
+    r"""Sum the values of all terms over the measured outcomes of all groups.
 
-    Parameters
-    ----------
-    values : list[int]
-        A list of integers.
-    num_qubits : int
-        The maximal number of bits.
-
-    Returns
-    -------
-    partition : list[np.array]
-        A list of NumPy numpy.uint64 arrays.
-
+    A term contributes its coefficient times :math:`(-1)^{|z \wedge x|}` for an
+    outcome :math:`x` if :math:`(x \oplus c) \wedge a = 0` for its Z mask
+    :math:`z`, AND mask :math:`a` and control mask :math:`c`, and zero
+    otherwise. The masks and outcomes are split into chunks of equal size, see
+    ``MeasurementPlan.observables``.
     """
-    M = math.ceil(num_qubits / 64)
-    N = len(values)
-
-    zeros = [[0] * N for k in range(M)]
-    partition = [values]
-    partition.extend(zeros)
-
-    lower_mask = (1 << 64) - 1
-
-    for j in range(1, M):
-        for i in range(N):
-            partition[j][i] = partition[j - 1][i] & lower_mask
-            partition[j + 1][i] = partition[j - 1][i] >> 64
-
-    if M == 1:
-        return [np.array(partition[0], dtype=np.uint64)]
-    else:
-        return [np.array(part, dtype=np.uint64) for part in partition[1:]]
+    expectation = 0.0
+    for group in range(outcomes.shape[0]):
+        for outcome_index in range(outcomes.shape[1]):
+            probability = probabilities[group, outcome_index]
+            if probability == 0:
+                continue
+            outcome = outcomes[group, outcome_index]
+            for term in range(observables.shape[1]):
+                coefficient = coefficients[group, term]
+                if coefficient == 0:
+                    continue
+                masks = observables[group, term]
+                sign_bits = 0
+                satisfied = True
+                for chunk in range(outcome.shape[0]):
+                    if (outcome[chunk] ^ masks[2, chunk]) & masks[1, chunk]:
+                        satisfied = False
+                        break
+                    sign_bits ^= outcome[chunk] & masks[0, chunk]
+                if satisfied:
+                    expectation += probability * coefficient * (1 - 2 * _parity(sign_bits))
+    return expectation

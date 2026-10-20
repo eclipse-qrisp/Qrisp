@@ -168,6 +168,20 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`
+  in Jasp mode for quantum types whose decoder does not return the measured
+  integer, such as a :ref:`QuantumFloat` with a non-zero exponent or a signed
+  one. The measured values were decoded before the terms were evaluated on
+  their bits, which gave wrong results. The registers are now sampled without
+  decoding.
+
+* :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`
+  now supports operators on any number of qubits. Operators acting on qubit 63
+  or higher raised an ``OverflowError``, and in Jasp mode without terminal
+  sampling the results of registers with 54 or more qubits lost bits.
+  Measurement outcomes and the masks of the terms are now split into chunks of
+  53 qubits. Only the qubits the operator acts on are measured.
+
 * Fixed the :func:`GQSP angle computation <qrisp.gqsp.gqsp_angles>` for
   polynomials with complex coefficients. Unless
   :math:`|p(e^{i\theta})| = |p(e^{-i\theta})|` for all :math:`\theta`, the angles implemented
