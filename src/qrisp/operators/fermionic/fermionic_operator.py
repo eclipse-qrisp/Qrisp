@@ -641,8 +641,14 @@ class FermionicOperator(Hamiltonian):
             raise Exception(f"Don't know fermionic mapping {mapping_type}.")
 
     def expectation_value(self, state_prep, mapping_type="jordan_wigner", **measurement_kwargs):
-        r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
-        This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
+        r"""Return a function that estimates the expectation value of the operator.
+
+        The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian
+        for a state that is specified by a preparation procedure. This preparation procedure can be
+        supplied via a Python function that returns a :ref:`QuantumVariable`. The operator is mapped
+        to a :ref:`QubitOperator`, whose
+        :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>` performs the
+        measurement.
 
         Note that this method measures the **hermitized** version of the operator:
 
@@ -661,7 +667,8 @@ class FermionicOperator(Hamiltonian):
         mapping_type : str, optional
             The strategy on how to map the FermionicOperator to a QubitOperator. Default is ``jordan_wigner``.
         measurement_kwargs : dict, optional
-            The keyword arguments of :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`,
+            The keyword arguments of
+            :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`,
             such as ``atol``, ``rtol`` or ``diagonalization_method``.
 
         Returns
