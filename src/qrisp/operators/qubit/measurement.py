@@ -50,7 +50,7 @@ from qrisp.core import QuantumVariable
 from qrisp.core.compilation import qompiler
 from qrisp.interface import BackendLike, BatchedBackend
 from qrisp.misc import get_measurement_from_qc
-from qrisp.operators.qubit.measurement_plan import MeasurementPlan, _split_bits
+from qrisp.operators.qubit.measurement_plan import _CHUNK_SIZE, MeasurementPlan
 
 
 def _expectation_value_helper(  # noqa: PLR0912, PLR0913
@@ -131,21 +131,18 @@ def _outcome_arrays(results: list, num_chunks: int) -> tuple[np.ndarray, np.ndar
     ``(outcomes, chunks)`` and ``(outcomes,)``. The outcomes of group ``g`` are at
     ``offsets[g]:offsets[g + 1]``.
     """
-    results = [list(result.items()) for result in results]
     offsets = np.zeros(len(results) + 1, dtype=np.int64)
-    offsets[1:] = np.cumsum([len(items) for items in results])
+    offsets[1:] = np.cumsum([len(result) for result in results])
     outcomes = np.empty((offsets[-1], num_chunks), dtype=np.int64)
     probabilities = np.empty(offsets[-1], dtype=np.float64)
-    for i, items in enumerate(results):
-        if not items:
-            continue
-        keys, values = zip(*items)
-        start, stop = offsets[i], offsets[i + 1]
-        probabilities[start:stop] = values
-        if num_chunks == 1:
-            outcomes[start:stop, 0] = keys
-        else:
-            outcomes[start:stop] = [_split_bits(key, num_chunks) for key in keys]
+    mask = (1 << _CHUNK_SIZE) - 1
+    for result, start, stop in zip(results, offsets[:-1], offsets[1:]):
+        count = stop - start
+        probabilities[start:stop] = np.fromiter(result.values(), dtype=np.float64, count=count)
+        for chunk in range(num_chunks):
+            shift = _CHUNK_SIZE * chunk
+            keys = ((key >> shift) & mask for key in result.keys())
+            outcomes[start:stop, chunk] = np.fromiter(keys, dtype=np.int64, count=count)
     return outcomes, probabilities, offsets
 
 

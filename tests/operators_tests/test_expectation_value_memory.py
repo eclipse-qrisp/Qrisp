@@ -73,3 +73,15 @@ def test_static_outcomes_are_stored_without_padding():
     assert offsets.tolist() == [0, 2, 102, 103]
     assert outcomes[102, 0] == 7
     np.testing.assert_allclose(probabilities[2:102], 0.01)
+
+
+def test_static_outcomes_are_split_into_chunks():
+    """Outcomes wider than one chunk are split into chunks, lowest qubits first."""
+    outcome = (1 << 100) | (1 << 53) | 5
+    results = [{outcome: 1.0}, {3: 0.25, 1 << 60: 0.75}]
+
+    outcomes, probabilities, offsets = _outcome_arrays(results, 2)
+
+    assert outcomes.tolist() == [[5, 1 | (1 << 47)], [3, 0], [0, 1 << 7]]
+    assert probabilities.tolist() == [1.0, 0.25, 0.75]
+    assert offsets.tolist() == [0, 1, 3]
