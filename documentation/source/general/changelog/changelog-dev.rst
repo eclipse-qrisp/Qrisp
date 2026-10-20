@@ -565,6 +565,17 @@ API Changes
   ``jasp_mod_adder(a, b, N, inpl_adder=adder)`` with ``mod_adder(a, b, adder, N)``
   (`PR #965 <https://github.com/eclipse-qrisp/Qrisp/pull/965>`_).
 
+* Renamed the ``QuantumVariable`` attribute ``user_given_name`` to
+  ``is_fixed_name``. Code reading ``qv.user_given_name`` must
+  use ``qv.is_fixed_name`` instead
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* ``QuantumVariable.creation_counter`` is now a plain ``int`` instead of a
+  one-element NumPy array. Code reading it as
+  ``int(QuantumVariable.creation_counter[0])`` must use
+  ``QuantumVariable.creation_counter`` instead
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
 .. Add API changes above this line
 
 Development
