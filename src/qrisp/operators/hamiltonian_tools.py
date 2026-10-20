@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Graph-coloring utilities for grouping Hamiltonian terms and batched expectation-value measurement."""
+"""Graph-coloring utilities for grouping Hamiltonian terms."""
 
 from collections.abc import Callable, Sequence
 from typing import TypeVar
@@ -23,78 +23,9 @@ import numba as nb
 import numpy as np
 import numpy.typing as npt
 
-__all__ = ["group_up_iterable", "multi_hamiltonian_measurement"]
+__all__ = ["group_up_iterable"]
 
 T = TypeVar("T")
-
-
-def multi_hamiltonian_measurement(
-    hamiltonians,
-    qarg,
-    precision=0.01,
-    backend=None,
-    shots=1000000,
-    compile=True,
-    compilation_kwargs={},
-    subs_dic={},
-    precompiled_qc=None,
-    _measurements=None,
-):
-    r"""This method returns the expected value of a list of Hamiltonians for the state of a quantum argument.
-
-    Parameters
-    ----------
-    hamiltonians : list[Hamiltonian]
-        The Hamiltonians for wich the expeced value is to be evaluated.
-    qarg : QuantumVariable, QuantumArray or list[QuantumVariable]
-        The quantum argument to evaluate the Hamiltonians on.
-    precision: float, optional
-        The precision with which the expectation of the Hamiltonians is to be evaluated.
-        The default is 0.01.
-    backend : BackendLike, optional
-        The backend on which to evaluate the quantum circuit. The default can be
-        specified in the file default_backend.py.
-    shots : integer, optional
-        The maximum amount of shots to evaluate the expectation per Hamiltonian.
-        The default is 100000.
-    compile : bool, optional
-        Boolean indicating if the .compile method of the underlying QuantumSession
-        should be called before. The default is True.
-    compilation_kwargs  : dict, optional
-        Keyword arguments for the compile method. For more details check
-        :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`. The default
-        is ``{}``.
-    subs_dic : dict, optional
-        A dictionary of Sympy symbols and floats to specify parameters in the case
-        of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
-        The default is {}.
-    precompiled_qc : QuantumCircuit, optional
-            A precompiled quantum circuit.
-
-    Returns
-    -------
-    list[float]
-        The expected value of the Hamiltonians.
-
-    """
-    expectations = []
-    n = len(hamiltonians)
-    for i in range(n):
-        expectations.append(
-            hamiltonians[i].get_measurement(
-                qarg,
-                precision=precision,
-                backend=backend,
-                shots=shots,
-                compile=compile,
-                compilation_kwargs=compilation_kwargs,
-                subs_dic=subs_dic,
-                precompiled_qc=precompiled_qc,
-                _measurement=None if _measurements == None else _measurements[i],
-            )
-        )
-
-    return expectations
 
 
 @nb.njit(cache=True)

@@ -487,6 +487,13 @@ API Changes
   recomputing the grouping in every optimization step
   (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
 
+* Removed ``multi_hamiltonian_measurement`` from ``qrisp.operators``. It
+  called a method that no longer exists and failed with an ``AttributeError``
+  on every call. Use
+  :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`
+  for each Hamiltonian instead
+  (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
+
 * :class:`~qrisp.interface.IQMBackend` is now a delegation shim that
   re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` (IQM client).
   The backend implementation and its tests live in the IQM client

@@ -76,7 +76,6 @@ def jasp_evaluate_observable_jitted(observable: tuple, x: int):
 
     # The observable is given as tuple, containing four integers.
     # To understand the meaning of these integers check QubitTerm.serialize.
-    # print(observable)
     # Unwrap the tuple
     z_int, AND_bits, AND_ctrl_state, contains_ladder = observable
 

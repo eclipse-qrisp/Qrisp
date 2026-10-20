@@ -119,15 +119,13 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     return evaluate_expectation_jitted(samples, probs, plan.observables, plan.coefficients)
 
 
-def create_padded_array(list_of_lists, use_tuples=False):
-    """Create a padded numpy array from a list of lists with varying lengths.
+def create_padded_array(list_of_lists):
+    """Create a zero-padded numpy array from a list of lists with varying lengths.
 
     Parameters
     ----------
     list_of_lists : list
         A list of lists with potentially different lengths.
-    use_tuples : bool
-        Whether to pad rows with serialized-observable tuples instead of zeros.
 
     Returns
     -------
@@ -138,10 +136,7 @@ def create_padded_array(list_of_lists, use_tuples=False):
     max_length = max(len(lst) for lst in list_of_lists)
 
     # Create a padded list of lists
-    if not use_tuples:
-        padded_lists = [lst + [0] * (max_length - len(lst)) for lst in list_of_lists]
-    else:
-        padded_lists = [lst + [(0, 0, 0, 0)] * (max_length - len(lst)) for lst in list_of_lists]
+    padded_lists = [lst + [0] * (max_length - len(lst)) for lst in list_of_lists]
 
     # Convert to numpy array
     return np.array(padded_lists)
@@ -150,19 +145,6 @@ def create_padded_array(list_of_lists, use_tuples=False):
 #
 # Evaluate expectation
 #
-
-
-def evaluate_expectation(samples, probs, operators, coefficients):
-    """Evaluate the expectation."""
-    expectation = 0
-
-    for index1, ops in enumerate(operators):
-        for index2, op in enumerate(ops):
-            for i in range(len(samples[index1])):
-                outcome, probability = samples[index1, i], probs[index1, i]
-                expectation += probability * evaluate_observable(op, outcome) * np.real(coefficients[index1][index2])
-
-    return expectation
 
 
 def evaluate_observable(observable: tuple, x: int):
@@ -217,9 +199,7 @@ def evaluate_expectation_jitted(samples, probs, operators, coefficients):
         for index2, op in enumerate(ops):
             for i in range(len(samples[index1])):
                 outcome, probability = samples[index1, i], probs[index1, i]
-                expectation += (
-                    probability * evaluate_observable_jitted(op, outcome) * np.real(coefficients[index1][index2])
-                )
+                expectation += probability * evaluate_observable_jitted(op, outcome) * coefficients[index1][index2]
 
     return expectation
 
