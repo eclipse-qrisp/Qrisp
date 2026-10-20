@@ -432,6 +432,15 @@ Bug Fixes
 
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* Fixed simulation of composite operations in :meth:`~qrisp.QuantumCircuit.statevector_array`
+  and :meth:`~qrisp.QuantumCircuit.run`: circuits now transpile composite operations before
+  simulation to avoid computing wide unitary matrices, while preserving narrow controlled
+  operations (such as Toffoli and MCX gates within the maximum gate group size) so they
+  retain their closed-form unitaries for fast simulation. Also fixed a bug in
+  :meth:`~qrisp.QuantumCircuit.transpile` when transpiling circuits containing classical bits
+  without qubits
+  (`PR #975 <https://github.com/eclipse-qrisp/Qrisp/pull/975>`_).
+
 Compatibility
 -------------
 
@@ -572,10 +581,14 @@ Development
 * Added a changelog reminder workflow, the ``make release-notes`` script,
   a developer changelog (``changelog-dev.rst``), a release guide,
   fixed the workflow permissions to allow posting PR comments,
-  and skipped the check for Dependabot PRs
+  and skipped the check for Dependabot PRs. The check now compares against the
+  pull request's head commit instead of GitHub's synthetic merge commit, which
+  also contains the latest ``main`` and therefore made other pull requests'
+  changelog entries count as the current pull request's
   (`PR #658 <https://github.com/eclipse-qrisp/Qrisp/pull/658>`_,
   `PR #715 <https://github.com/eclipse-qrisp/Qrisp/pull/715>`_,
-  `PR #727 <https://github.com/eclipse-qrisp/Qrisp/pull/727>`_).
+  `PR #727 <https://github.com/eclipse-qrisp/Qrisp/pull/727>`_,
+  `PR #983 <https://github.com/eclipse-qrisp/Qrisp/pull/983>`_).
 
 * Added pip dependency caching to the CI test workflow
   (`PR #685 <https://github.com/eclipse-qrisp/Qrisp/pull/685>`_).
@@ -715,3 +728,4 @@ First Time Contributors 🎉
 * `Shanwis <https://github.com/Shanwis>`_
 * `micpap25 <https://github.com/micpap25>`_
 * `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_
+* `Joswin-10 <https://github.com/Joswin-10>`_
