@@ -133,6 +133,20 @@ tutorial_authors = {
             "linkedin": None,
         },
     ],
+    "general/tutorial/dynamical_cooling": [
+        {
+            "name": "Carlotta Koroll",
+            "affiliation": "Fraunhofer FOKUS",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
+        {
+            "name": "René Zander",
+            "affiliation": "Fraunhofer FOKUS",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
+    ],
     "general/tutorial/H2": [
         {
             "name": "Raphael Seidel",
