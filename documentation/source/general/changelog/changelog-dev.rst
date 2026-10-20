@@ -193,14 +193,15 @@ Bug Fixes
   integer, such as a :ref:`QuantumFloat` with a non-zero exponent or a signed
   one. The measured values were decoded before the terms were evaluated on
   their bits, which gave wrong results. The registers are now sampled without
-  decoding.
+  decoding (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
 
 * :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`
   now supports operators on any number of qubits. Operators acting on qubit 63
   or higher raised an ``OverflowError``, and in Jasp mode without terminal
   sampling the results of registers with 54 or more qubits lost bits.
   Measurement outcomes and the masks of the terms are now split into chunks of
-  53 qubits. Only the qubits the operator acts on are measured.
+  53 qubits. Only the qubits the operator acts on are measured
+  (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
 
 * Fixed :func:`cuccaro_adder <qrisp.cuccaro_adder>` to support arbitrary
   quantum inputs, in particular ``list[Qubit]`` and ``DynamicQubitArray``
@@ -567,10 +568,13 @@ API Changes
   :ref:`QuantumArray`, raise a ``TypeError``. Previously, only a
   ``QuantumArray`` of single-qubit variables happened to work, and only in
   static mode. The ``measurement_data`` argument and the
-  ``QubitOperatorMeasurement`` class have been removed. In Jasp mode, ``backend``, ``compile=False``,
-  ``compilation_kwargs``, ``precompiled_qc`` and ``subs_dic`` now raise a
-  ``ValueError`` instead of being ignored, because they only apply to static
-  execution. Every measurement group now receives at least one shot,
+  ``QubitOperatorMeasurement`` class have been removed, as has the
+  ``measurement_data`` argument of ``VQEProblem.optimization_routine``. The
+  internal helpers ``get_measurement`` and ``get_jasp_measurement`` are no
+  longer importable from ``qrisp.operators``. In Jasp mode, ``backend``,
+  ``compile=False``, ``compilation_kwargs``, ``precompiled_qc`` and
+  ``subs_dic`` now raise a ``ValueError`` instead of being ignored, because
+  they only apply to static execution. Every measurement group now receives at least one shot,
   so operators with groups of very small coefficients, or consisting only of
   an identity term, no longer fail.
 
