@@ -185,6 +185,13 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed :func:`~qrisp.jasp.sample` without terminal sampling returning
+  ``float64`` values regardless of what the sampling kernel returns. Integers
+  above :math:`2^{53}` were rounded, so a measured register of 54 or more
+  qubits could lose its lowest bits. Samples now keep the dtype of the decoded
+  values, as with terminal sampling: ``int64`` for :ref:`QuantumVariable`,
+  ``bool`` for :ref:`QuantumBool` and ``float64`` for :ref:`QuantumFloat`.
+
 * Fixed the :func:`GQSP angle computation <qrisp.gqsp.gqsp_angles>` for
   polynomials with complex coefficients. Unless
   :math:`|p(e^{i\theta})| = |p(e^{-i\theta})|` for all :math:`\theta`, the angles implemented

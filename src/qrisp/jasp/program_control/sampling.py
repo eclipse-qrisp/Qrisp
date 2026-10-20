@@ -122,7 +122,10 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     -------
     callable
         A classical, Jax traceable function returning a jax array containing
-        the measurement results of each shot.
+        the measurement results of each shot. The array has the dtype of the
+        decoded values, e.g. ``int64`` for a :ref:`QuantumVariable` and
+        ``float64`` for a :ref:`QuantumFloat`. If several values are returned
+        per shot, they share a common dtype.
 
     Examples
     --------
@@ -331,13 +334,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
                         full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
 
-                        result = post_processor(*full)
-
-                        if isinstance(result, tuple):
-                            return_amount.append(len(result))
-                            if len(acc.shape) == 1:
-                                raise _MultiReturnDetected()
-                        return result
+                        return post_processor(*full)
 
                     sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
                 else:
@@ -345,13 +342,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                     def sampling_helper_2(*meas_ints):
                         decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        result = post_processor(*decoded_q)
-
-                        if isinstance(result, tuple):
-                            return_amount.append(len(result))
-                            if len(acc.shape) == 1:
-                                raise _MultiReturnDetected()
-                        return result
+                        return post_processor(*decoded_q)
 
                     sampling_helper_2 = jax.jit(sampling_helper_2)
 
@@ -362,39 +353,42 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 # No quantum returns — pure classical.  No measurement or
                 # decoding needed; just apply post-processing directly.
                 # ----------------------------------------------------------
-                result = post_processor(*classical_tuple)
+                decoded_values = post_processor(*classical_tuple)
 
-                if isinstance(result, tuple):
-                    return_amount.append(len(result))
-                    if len(acc.shape) == 1:
-                        raise _MultiReturnDetected()
-                decoded_values = result
+            # The accumulator must match the shape and dtype of one sample: one
+            # column per returned value, and the dtype of the decoded values so
+            # that integer results are not rounded through float64.
+            values = decoded_values if isinstance(decoded_values, tuple) else (decoded_values,)
+            shape = (acc.shape[0], len(values)) if isinstance(decoded_values, tuple) else (acc.shape[0],)
+            dtype = jnp.result_type(*values)
+            if acc.shape != shape or acc.dtype != dtype:
+                accumulator_spec.append((shape, dtype))
+                raise _AccumulatorMismatch()
 
             # Insert into the accumulating array
             acc = acc.at[i].set(decoded_values)
 
             return (acc, *args[1:])
 
-        # This list captures the amount of return values. The strategy here is
-        # to initially assume only one QuantumVariable is returned, which is then
-        # added to the expectation value accumulator. If more than one is returned,
-        # the amount is saved in this list and an exception is raised, which
-        # subsequently causes another call but this time with the correct accumulator
-        # dimension.
+        # The shape and dtype of a sample are only known once the kernel has been
+        # traced. The loop is therefore first traced with a one-dimensional float
+        # accumulator. If a sample does not match it, its shape and dtype are saved
+        # in this list and an exception is raised, which causes another trace with
+        # a matching accumulator.
 
-        return_amount = []
+        accumulator_spec = []
 
         try:
             loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
-            return loop_res[0]
-        except _MultiReturnDetected:
+        except _AccumulatorMismatch:
+            shape, dtype = accumulator_spec[-1]
             loop_res = jax.lax.fori_loop(
                 0,
                 tracerized_shots,
                 sampling_body_func,
-                (jnp.zeros((shots, return_amount[0])), *args),
+                (jnp.zeros(shape, dtype=dtype), *args),
             )
-            return loop_res[0]
+        return loop_res[0]
 
     from qrisp.jasp import terminal_sampling
 
@@ -420,8 +414,8 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     return return_function
 
 
-class _MultiReturnDetected(Exception):
-    """Internal signal raised when the post-processor returns multiple values (a tuple) instead of a single scalar.
+class _AccumulatorMismatch(Exception):
+    """Internal signal raised when a sample does not match the shape or dtype of the accumulator.
 
-    This triggers a retry of the sampling loop with a multi-dimensional accumulator of the correct shape.
+    This triggers a retry of the sampling loop with an accumulator of the correct shape and dtype.
     """

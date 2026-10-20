@@ -16,7 +16,10 @@
 
 """Tests for the sample and expectation_value primitives, including classical and mixed returns under Jasp."""
 
-from qrisp import QuantumBool, QuantumFloat, conjugate, control, cx, h, measure, t, x
+import jax.numpy as jnp
+import pytest
+
+from qrisp import QuantumBool, QuantumFloat, QuantumVariable, conjugate, control, cx, h, measure, t, x
 from qrisp.jasp import expectation_value, jaspify, jrange, q_while_loop, sample
 
 
@@ -520,3 +523,56 @@ class TestClassicalAndMixedReturns:
 
         with self.pytest.raises(ValueError):
             main()
+
+
+@pytest.mark.parametrize("terminal_sampling", [False, True])
+@pytest.mark.parametrize(
+    ("sampling_kernel", "dtype", "shape"),
+    [
+        (lambda: QuantumVariable(3), jnp.int64, (4,)),
+        (lambda: QuantumBool(), jnp.bool_, (4,)),
+        (lambda: QuantumFloat(3, -1), jnp.float64, (4,)),
+        (lambda: (QuantumVariable(2), QuantumVariable(3)), jnp.int64, (4, 2)),
+        (lambda: (QuantumVariable(2), QuantumFloat(3, -1)), jnp.float64, (4, 2)),
+    ],
+)
+def test_sample_keeps_dtype_of_decoded_values(sampling_kernel, dtype, shape, terminal_sampling):
+    @jaspify(terminal_sampling=terminal_sampling)
+    def main():
+        return sample(sampling_kernel, shots=4)()
+
+    res = jnp.asarray(main())
+    assert res.dtype == dtype
+    assert res.shape == shape
+
+
+@pytest.mark.parametrize("terminal_sampling", [False, True])
+def test_sample_keeps_wide_integers_exact(terminal_sampling):
+    # 2**62 + 1 is not representable as float64.
+    def sampling_kernel():
+        qv = QuantumVariable(63)
+        x(qv[0])
+        x(qv[62])
+        return qv
+
+    @jaspify(terminal_sampling=terminal_sampling)
+    def main():
+        return sample(sampling_kernel, shots=2)()
+
+    assert [int(value) for value in main()] == [2**62 + 1, 2**62 + 1]
+
+
+def test_sample_keeps_dtype_of_classical_returns():
+    def sampling_kernel():
+        qv = QuantumVariable(63)
+        x(qv[0])
+        x(qv[62])
+        return qv, measure(qv[0])
+
+    @jaspify
+    def main():
+        return sample(sampling_kernel, shots=2)()
+
+    res = jnp.asarray(main())
+    assert res.dtype == jnp.int64
+    assert res.tolist() == [[2**62 + 1, 1], [2**62 + 1, 1]]
