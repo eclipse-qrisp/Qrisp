@@ -425,7 +425,6 @@ Bug Fixes
     does. With a random ``meas_behavior``, they reused the same outcome for
     every measurement of a loop, and could follow different branches than
     ``count_ops`` for the same program.
-
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
@@ -464,6 +463,15 @@ Bug Fixes
   are reduced in unsigned arithmetic. A JAX array that is not an integer scalar
   raises a ``TypeError``
   (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
+
+* Fixed simulation of composite operations in :meth:`~qrisp.QuantumCircuit.statevector_array`
+  and :meth:`~qrisp.QuantumCircuit.run`: circuits now transpile composite operations before
+  simulation to avoid computing wide unitary matrices, while preserving narrow controlled
+  operations (such as Toffoli and MCX gates within the maximum gate group size) so they
+  retain their closed-form unitaries for fast simulation. Also fixed a bug in
+  :meth:`~qrisp.QuantumCircuit.transpile` when transpiling circuits containing classical bits
+  without qubits
+  (`PR #975 <https://github.com/eclipse-qrisp/Qrisp/pull/975>`_).
 
 Compatibility
 -------------
@@ -562,6 +570,12 @@ API Changes
   ``QrispDeprecationWarning``. Programs that exceeded the old limit no longer
   raise ``ValueError``
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+
+* Removed ``jasp_mod_adder``. It was not used anywhere in Qrisp and duplicated
+  ``mod_adder``, which also works in Jasp, needs no spare qubit in the target
+  register and is cheaper when controlled. Replace
+  ``jasp_mod_adder(a, b, N, inpl_adder=adder)`` with ``mod_adder(a, b, adder, N)``
+  (`PR #965 <https://github.com/eclipse-qrisp/Qrisp/pull/965>`_).
 
 .. Add API changes above this line
 
@@ -722,6 +736,11 @@ Dependency Upgrades
   ``sphinx_toolbox.sidebar_links`` Sphinx extensions
   (`PR #961 <https://github.com/eclipse-qrisp/Qrisp/pull/961>`_).
 
+* Pinned ``qiskit`` to ``<2.6``. With qiskit 2.6.0 on Linux, importing
+  ``qiskit_aer``, ``pyscf`` or PennyLane Lightning after ``qrisp`` fails with
+  ``cannot allocate memory in static TLS block``
+  (`PR #976 <https://github.com/eclipse-qrisp/Qrisp/pull/976>`_).
+
 .. Add dependency upgrades above this line
 
 First Time Contributors 🎉
@@ -732,3 +751,4 @@ First Time Contributors 🎉
 * `Shanwis <https://github.com/Shanwis>`_
 * `micpap25 <https://github.com/micpap25>`_
 * `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_
+* `Joswin-10 <https://github.com/Joswin-10>`_
