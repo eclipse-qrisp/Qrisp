@@ -190,7 +190,8 @@ Bug Fixes
   above :math:`2^{53}` were rounded, so a measured register of 54 or more
   qubits could lose its lowest bits. Samples now keep the dtype of the decoded
   values, as with terminal sampling: ``int64`` for :ref:`QuantumVariable`,
-  ``bool`` for :ref:`QuantumBool` and ``float64`` for :ref:`QuantumFloat`.
+  ``bool`` for :ref:`QuantumBool` and ``float64`` for :ref:`QuantumFloat`
+  (`PR #988 <https://github.com/eclipse-qrisp/Qrisp/pull/988>`_).
 
 * Fixed the :func:`GQSP angle computation <qrisp.gqsp.gqsp_angles>` for
   polynomials with complex coefficients. Unless
