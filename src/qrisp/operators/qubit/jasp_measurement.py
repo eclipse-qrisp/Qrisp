@@ -27,21 +27,13 @@ while tracing:
    qubits. The views are constructed from a template of a plain ``QuantumVariable``,
    whose decoder returns the measured integer, so ``sample`` yields the measured bits
    whatever the type of the prepared variable. All chunks of a shot come from the same
-   measurement. The result is an integer array of shape (shots of the group, chunks).
-2. Concatenation: the sample arrays of all groups are concatenated in group order into
-   one array of shape (total shots, chunks). Since the shots of each group are known, two
-   arrays with one entry per sample are built alongside: ``group_indices``, the index of
-   the group the sample comes from, and ``sample_weights``, one over the shots of that
-   group. For shots [3, 2], they are [0, 0, 0, 1, 1] and [1/3, 1/3, 1/3, 1/2, 1/2].
-3. Evaluation: a single jitted function loops over the term index ``term`` up to the
-   largest number of terms of a group. In each iteration, it looks up the masks and the
-   coefficient of that term of each sample's group, ``observables[group_indices, term]``
-   and ``coefficients[group_indices, term]``, evaluates the term on all samples at once,
-   chunk by chunk, and adds the values times coefficient times sample weight.
-   Groups with fewer terms are padded with zero coefficients.
-   The total is the sum over the groups of their mean values. Because all groups are
-   evaluated in one loop, the size of the traced program does not grow with the number
-   of groups.
+   measurement. The result is an array of shape (shots of the group, chunks).
+2. Evaluation: right after a group is sampled, a jitted function computes the group's
+   mean. It converts the samples to integers, loops over the group's terms, evaluates
+   each term on all samples of the group at once, chunk by chunk, and adds coefficient
+   times value. The sum is divided by the group's number of shots, and the means of the
+   groups are added. Each group is evaluated in its own call, so the intermediate arrays
+   of only one group exist at a time.
 """
 
 from __future__ import annotations
@@ -79,8 +71,10 @@ def _jasp_expectation_value_helper(
         return jnp.array(np.sum(plan.coefficients))
 
     num_chunks = plan.observables.shape[-1]
-    samples = []
-    for group, group_shots in zip(plan.groups, shots):
+    expectation = jnp.float64(0)
+    for group, group_shots, measurement_operator, observables, group_coefficients in zip(
+        plan.groups, shots, plan.measurement_operators, plan.observables, plan.coefficients
+    ):
 
         def raw_state_prep(state_args):
             qv = state_prep(*state_args)
@@ -90,14 +84,21 @@ def _jasp_expectation_value_helper(
             return _raw_register_chunks(qv, plan.num_qubits)
 
         res = sample(raw_state_prep, shots=group_shots)(state_args)
-        samples.append(_as_chunk_array(res, group_shots, num_chunks))
+        # Each group is evaluated in its own jitted call to bound the memory. Within one
+        # call, XLA allocates the temporary arrays of the evaluation, which are as large as
+        # the group's samples, and frees them when the call returns. A single jitted
+        # function over all groups would keep the temporaries of all groups alive at once,
+        # i.e., about as much memory again as all samples together. For the same reason, the
+        # samples are converted to integers inside the call, not in a full copy beforehand.
+        # Only the group's own terms are passed, without the padding of the plan.
+        num_terms = len(measurement_operator.terms_dict)
+        expectation = expectation + _group_mean(
+            _as_chunk_array(res, group_shots, num_chunks),
+            observables[:num_terms],
+            group_coefficients[:num_terms],
+        )
 
-    # All groups are evaluated together. Each sample is weighted by 1/shots of its group.
-    group_indices = np.repeat(np.arange(len(shots)), shots)
-    sample_weights = np.repeat(1 / np.array(shots), shots)
-    return _evaluate_samples(
-        jnp.concatenate(samples), group_indices, sample_weights, plan.observables, plan.coefficients
-    )
+    return expectation
 
 
 # Template of a QuantumVariable without decoder. Views of a register constructed from it
@@ -117,32 +118,31 @@ def _raw_register_chunks(qv: QuantumVariable, num_qubits: int) -> QuantumVariabl
 
 
 def _as_chunk_array(res: jax.Array | tuple[jax.Array, ...], shots: int, num_chunks: int) -> jax.Array:
-    """Return the samples of the chunks of a register as an integer array of shape ``(shots, chunks)``.
+    """Return the samples of the chunks of a register as an array of shape ``(shots, chunks)``.
 
     ``sample`` returns one array, or one array per chunk if its kernel returns several values per shot.
     """
     if isinstance(res, tuple):
         res = jnp.stack(res, axis=-1)
-    return jnp.reshape(res, (shots, num_chunks)).astype(jnp.int64)
+    return jnp.reshape(res, (shots, num_chunks))
 
 
 @jax.jit
-def _evaluate_samples(samples, group_indices, sample_weights, observables, coefficients):
-    r"""Sum the weighted values of all terms over the samples of all groups.
+def _group_mean(samples, masks, coefficients):
+    r"""Return the mean value of the terms of one group over its samples.
 
-    A term contributes its coefficient times :math:`(-1)^{|z \wedge x|}` for a
-    sample :math:`x` if :math:`(x \oplus c) \wedge a = 0` for its Z mask
-    :math:`z`, AND mask :math:`a` and control mask :math:`c`, and zero
-    otherwise. The masks and samples are split into chunks of equal size, see
-    ``MeasurementPlan.observables``.
+    ``samples`` has the shape (shots, chunks) and is converted to integers here, ``masks``
+    holds the masks of the group's terms with the shape (terms, 3, chunks), and
+    ``coefficients`` their coefficients. A term contributes its coefficient times
+    :math:`(-1)^{|z \wedge x|}` for a sample :math:`x` if :math:`(x \oplus c) \wedge a = 0`
+    for its Z mask :math:`z`, AND mask :math:`a` and control mask :math:`c`, and zero
+    otherwise.
     """
+    x = samples.astype(jnp.int64)
 
     def add_term(term, total):
-        masks = observables[group_indices, term]
-        coefficient = coefficients[group_indices, term]
-        satisfied = jnp.all(((samples ^ masks[:, 2]) & masks[:, 1]) == 0, axis=1)
-        parity = jnp.sum(jax.lax.population_count(samples & masks[:, 0]), axis=1) % 2
-        values = jnp.where(satisfied, 1 - 2 * parity, 0)
-        return total + jnp.sum(sample_weights * coefficient * values)
+        satisfied = jnp.all(((x ^ masks[term, 2]) & masks[term, 1]) == 0, axis=1)
+        parity = jnp.sum(jax.lax.population_count(x & masks[term, 0]), axis=1) % 2
+        return total + coefficients[term] * jnp.sum(jnp.where(satisfied, 1 - 2 * parity, 0))
 
-    return jax.lax.fori_loop(0, observables.shape[1], add_term, jnp.float64(0))
+    return jax.lax.fori_loop(0, masks.shape[0], add_term, jnp.float64(0)) / samples.shape[0]

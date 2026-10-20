@@ -26,9 +26,10 @@ The expectation value is estimated with the ``MeasurementPlan`` of the operator 
    are measured with the group's number of shots. The backend returns the distinct
    outcomes with their probabilities. A ``BatchedBackend`` receives all circuits at once.
 3. Outcomes: the outcomes are integers with one bit per measured qubit. They are split
-   into chunks of ``_CHUNK_SIZE`` qubits, like the masks of the plan, and stored with their
-   probabilities in arrays of shape (groups, outcomes, chunks) and (groups, outcomes).
-   Groups with fewer distinct outcomes are padded with zero probabilities.
+   into chunks of ``_CHUNK_SIZE`` qubits, like the masks of the plan. The outcomes of all
+   groups are stored one after the other in an array of shape (outcomes, chunks), with
+   their probabilities, and the outcomes of group g are at ``offsets[g]:offsets[g + 1]``.
+   So the arrays hold exactly the distinct outcomes that were measured.
 4. Evaluation: a numba kernel loops over the groups, their outcomes and their terms, and
    sums probability * coefficient * value of the term for the outcome, with the value
    computed chunk by chunk. The probabilities of each group sum to one, so this is the
@@ -118,32 +119,34 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     if isinstance(backend, BatchedBackend):
         backend.dispatch()
 
-    outcomes, probabilities = _outcome_arrays(results, plan.observables.shape[-1])
+    outcomes, probabilities, offsets = _outcome_arrays(results, plan.observables.shape[-1])
 
-    return _evaluate_expectation(outcomes, probabilities, plan.observables, plan.coefficients)
+    return _evaluate_expectation(outcomes, probabilities, offsets, plan.observables, plan.coefficients)
 
 
-def _outcome_arrays(results: list, num_chunks: int) -> tuple[np.ndarray, np.ndarray]:
-    """Return the measured outcomes of all groups split into chunks, and their probabilities.
+def _outcome_arrays(results: list, num_chunks: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return the measured outcomes of all groups split into chunks, their probabilities and the group offsets.
 
-    The arrays have the shapes ``(groups, outcomes, chunks)`` and
-    ``(groups, outcomes)``. Groups with fewer distinct outcomes are padded with
-    zero probabilities.
+    The outcomes of all groups are stored one after the other, with the shapes
+    ``(outcomes, chunks)`` and ``(outcomes,)``. The outcomes of group ``g`` are at
+    ``offsets[g]:offsets[g + 1]``.
     """
     results = [list(result.items()) for result in results]
-    num_outcomes = max((len(items) for items in results), default=0)
-    outcomes = np.zeros((len(results), num_outcomes, num_chunks), dtype=np.int64)
-    probabilities = np.zeros((len(results), num_outcomes), dtype=np.float64)
+    offsets = np.zeros(len(results) + 1, dtype=np.int64)
+    offsets[1:] = np.cumsum([len(items) for items in results])
+    outcomes = np.empty((offsets[-1], num_chunks), dtype=np.int64)
+    probabilities = np.empty(offsets[-1], dtype=np.float64)
     for i, items in enumerate(results):
         if not items:
             continue
         keys, values = zip(*items)
-        probabilities[i, : len(values)] = values
+        start, stop = offsets[i], offsets[i + 1]
+        probabilities[start:stop] = values
         if num_chunks == 1:
-            outcomes[i, : len(keys), 0] = keys
+            outcomes[start:stop, 0] = keys
         else:
-            outcomes[i, : len(keys)] = [_split_bits(key, num_chunks) for key in keys]
-    return outcomes, probabilities
+            outcomes[start:stop] = [_split_bits(key, num_chunks) for key in keys]
+    return outcomes, probabilities, offsets
 
 
 @njit(cache=True)
@@ -159,7 +162,7 @@ def _parity(value: int) -> int:
 
 
 @njit(cache=True)
-def _evaluate_expectation(outcomes, probabilities, observables, coefficients):
+def _evaluate_expectation(outcomes, probabilities, offsets, observables, coefficients):
     r"""Sum the values of all terms over the measured outcomes of all groups.
 
     A term contributes its coefficient times :math:`(-1)^{|z \wedge x|}` for an
@@ -169,12 +172,12 @@ def _evaluate_expectation(outcomes, probabilities, observables, coefficients):
     ``MeasurementPlan.observables``.
     """
     expectation = 0.0
-    for group in range(outcomes.shape[0]):
-        for outcome_index in range(outcomes.shape[1]):
-            probability = probabilities[group, outcome_index]
+    for group in range(offsets.shape[0] - 1):
+        for outcome_index in range(offsets[group], offsets[group + 1]):
+            probability = probabilities[outcome_index]
             if probability == 0:
                 continue
-            outcome = outcomes[group, outcome_index]
+            outcome = outcomes[outcome_index]
             for term in range(observables.shape[1]):
                 coefficient = coefficients[group, term]
                 if coefficient == 0:
