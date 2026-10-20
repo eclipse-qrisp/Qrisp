@@ -494,7 +494,8 @@ class DCQOProblem:
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
         precision : float, optional
-            Targeted standard deviation of the measured expectation values, passed as ``atol`` to
+            Targeted standard deviation of the measured expectation values, relative to the sum of the absolute
+            values of the Pauli coefficients of the problem Hamiltonian. It is passed as ``rtol`` to
             :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`. Default is 0.01.
         exp_value_backend : BackendLike, optional
             Backend for expectation value calculations, if ``exp_value`` is used as objective function.
@@ -538,7 +539,7 @@ class DCQOProblem:
         def exp_value_function():
             """Return the function measuring the expectation value of the problem Hamiltonian."""
             return self.H_prob.expectation_value(
-                qarg, atol=precision, compile=False, precompiled_qc=qc, backend=exp_value_backend
+                qarg, rtol=precision, compile=False, precompiled_qc=qc, backend=exp_value_backend
             )
 
         # Expectation value of the QUBO Hamiltonian
@@ -686,7 +687,8 @@ class DCQOProblem:
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
         precision : float, optional
-            Targeted standard deviation of the measured expectation values, passed as ``atol`` to
+            Targeted standard deviation of the measured expectation values, relative to the sum of the absolute
+            values of the Pauli coefficients of the problem Hamiltonian. It is passed as ``rtol`` to
             :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`. Default is 0.01.
         exp_value_backend : BackendLike, optional
             Backend for expectation value calculations, if ``exp_value`` is used as objective function.
