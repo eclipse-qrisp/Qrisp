@@ -37,6 +37,12 @@ if TYPE_CHECKING:  # noqa
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )  # noqa
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    _binary_string_to_int,
+    _normalize_list_operand,
+    _normalize_optional_input_arg,
+    _reject_unsupported_quantum_types,
+)
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import control, custom_control
@@ -382,17 +388,21 @@ def gidney_adder(
     {9: 1.0}
 
     """
+    _reject_unsupported_quantum_types(a, b)
+    a = _normalize_list_operand(a)
+    b = _normalize_list_operand(b)
     a_is_quantum = _validate_gidney_adder_inputs(a, b)
 
     # Normalise QuantumBool wrappers to raw qubits for downstream code.
-    c_in_qb = c_in[0] if isinstance(c_in, QuantumBool) else c_in
-    c_out_qb = c_out[0] if isinstance(c_out, QuantumBool) else c_out
+    c_in_qb = _normalize_optional_input_arg(c_in, "c_in")
+    c_out_qb = _normalize_optional_input_arg(c_out, "c_out")
+    ctrl = _normalize_optional_input_arg(ctrl, "ctrl")
 
     # Semi-classical path (classical a, quantum b).
     if not a_is_quantum:
         # Binary strings are little-endian; convert to int.
         if isinstance(a, str):
-            a = int(a[::-1], 2) if a else 0
+            a = _binary_string_to_int(a)
 
         is_concrete_int = isinstance(a, (int, np.integer))
 
