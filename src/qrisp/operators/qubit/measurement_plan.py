@@ -16,6 +16,8 @@
 
 """Static planning shared by backend and Jasp expectation measurements."""
 
+import math
+import numbers
 from dataclasses import dataclass
 from typing import Any, Literal, Sequence
 
@@ -24,15 +26,16 @@ import numpy as np
 from qrisp.core import QuantumVariable
 from qrisp.operators.hamiltonian import Hamiltonian
 
+_DEFAULT_RTOL = 0.01
+
 
 @dataclass
 class MeasurementPlan:
     """Static data needed to measure a QubitOperator.
 
-    The plan deliberately contains no circuit or backend state.  It can
-    therefore be reused by the normal backend path and by the Jasp tracing
-    path, while each path remains responsible for applying its basis changes
-    and evaluating samples.
+    The plan is computed once from the Hamiltonian and shared by the backend
+    path and the Jasp tracing path. Each path applies the basis changes and
+    evaluates the samples itself.
 
     Attributes
     ----------
@@ -46,8 +49,12 @@ class MeasurementPlan:
     standard_deviations : list[float]
         Estimated standard deviation for each measurement operator.
     shot_weights : list[float]
-        Relative shot weights.  Dividing these by ``precision**2`` gives the
-        floating-point shot allocation used by the current measurement code.
+        Relative shot weights. Dividing these by the squared target standard
+        deviation of the estimate gives the shots of each group.
+    coefficient_norm : float
+        Sum of the absolute coefficients of the non-identity Pauli terms of the
+        hermitian part of ``hamiltonian``. A relative tolerance is measured
+        against this value.
     num_qubits : int
         Smallest register size required by the Hamiltonian.
     diagonalization_method : str
@@ -63,18 +70,19 @@ class MeasurementPlan:
     measurement_operators: list[Hamiltonian]
     standard_deviations: list[float]
     shot_weights: list[float]
+    coefficient_norm: float
     num_qubits: int
     diagonalization_method: Literal["commuting", "commuting_qw"]
     change_of_basis_gates: list[Any]
 
-    def allocate_shots(
-        self,
-        precision: float = 0.01,
-        shots: int | None = None,
-        max_shots: int | None = None,
-    ) -> list[int]:
-        """Return per-group shots for the requested precision or total."""
-        return _calculate_shot_counts(self.shot_weights, precision, shots, max_shots)
+    def allocate_shots(self, atol: float | None = None, rtol: float | None = None) -> list[int]:
+        """Return the shots of each group for the given tolerance.
+
+        The target standard deviation of the estimate is ``atol`` if it is
+        given, and ``rtol * coefficient_norm`` otherwise.
+        """
+        target_standard_deviation = atol if atol is not None else rtol * self.coefficient_norm
+        return _calculate_shot_counts(self.shot_weights, target_standard_deviation)
 
 
 def _normalize_hamiltonian(hamiltonian: Hamiltonian) -> Hamiltonian:
@@ -128,70 +136,57 @@ def _calculate_shot_weights(standard_deviations: Sequence[float]) -> list[float]
     return [total_standard_deviation * standard_deviation for standard_deviation in standard_deviations]
 
 
-def _validate_shot_parameters(
-    precision: float,
-    shots: int | None,
-    max_shots: int | None,
-) -> None:
-    """Validate static shot-allocation parameters."""
-    if shots is not None:
-        if not isinstance(shots, int) or shots < 1:
-            raise ValueError("shots must be a positive integer.")
-    elif not np.isfinite(precision) or precision <= 0:
-        raise ValueError("precision must be a finite positive number.")
-
-    if max_shots is not None and (not isinstance(max_shots, int) or max_shots < 1):
-        raise ValueError("max_shots must be a positive integer or None.")
+def _coefficient_norm(hamiltonian: Hamiltonian) -> float:
+    """Return the sum of the absolute non-identity Pauli coefficients of the hermitian part."""
+    pauli_terms = hamiltonian.hermitize().to_pauli().terms_dict
+    return float(sum(abs(coeff) for term, coeff in pauli_terms.items() if term.factor_dict))
 
 
-def _calculate_shot_counts(
-    shot_weights: Sequence[float],
-    precision: float = 0.01,
-    shots: int | None = None,
-    max_shots: int | None = None,
-) -> list[int]:
-    """Calculate per-group shots and enforce an optional total-shot limit.
+def _check_tolerance(name: str, value: Any) -> None:
+    """Raise a ``ValueError`` unless ``value`` is a finite positive number."""
+    if isinstance(value, bool) or not isinstance(value, numbers.Real) or not np.isfinite(value) or value <= 0:
+        raise ValueError(f"{name} must be a finite positive number, got {value!r}.")
 
-    When ``shots`` is omitted, the existing precision-based allocation is
-    used: group ``i`` receives ``int(shot_weights[i] / precision**2)`` shots.
-    When ``shots`` is supplied, it is the requested total and is distributed
-    proportionally using largest-remainder rounding. ``max_shots`` applies to
-    both modes and raises before any backend or sampler is called.
+
+def _resolve_tolerances(atol: float | None, rtol: float | None) -> tuple[float | None, float | None]:
+    """Validate ``atol`` and ``rtol`` and fall back to the default relative tolerance.
+
+    Returns
+    -------
+    tuple
+        ``(atol, rtol)`` with exactly one entry set.
+
+    Raises
+    ------
+    ValueError
+        If both tolerances are given or the given one is not a finite positive number.
+
     """
-    _validate_shot_parameters(precision, shots, max_shots)
+    if atol is not None and rtol is not None:
+        raise ValueError("Specify only one of atol and rtol.")
+    if atol is None and rtol is None:
+        rtol = _DEFAULT_RTOL
 
-    if shots is not None:
-        requested_shots = shots
-    else:
-        raw_shots = [weight / precision**2 for weight in shot_weights]
-        requested_shots = int(np.ceil(sum(raw_shots)))
+    if atol is not None:
+        _check_tolerance("atol", atol)
+    if rtol is not None:
+        _check_tolerance("rtol", rtol)
 
-    if max_shots is not None:
-        if requested_shots > max_shots:
-            raise ValueError(
-                f"The measurement requires approximately {requested_shots} shots, "
-                f"which exceeds max_shots={max_shots}. Increase precision or max_shots, "
-                "or provide fewer explicit shots."
-            )
+    return atol, rtol
 
-    if shots is None:
-        return [int(weight / precision**2) for weight in shot_weights]
 
-    if not shot_weights:
-        return []
+def _calculate_shot_counts(shot_weights: Sequence[float], target_standard_deviation: float) -> list[int]:
+    """Return the shots of each group for a target standard deviation of the estimate.
 
-    total_weight = sum(shot_weights)
-    if total_weight == 0:
-        quotient, remainder = divmod(shots, len(shot_weights))
-        return [quotient + int(index < remainder) for index in range(len(shot_weights))]
-
-    # Floor proportional allocations, then distribute leftover shots by remainder.
-    exact_counts = [shots * weight / total_weight for weight in shot_weights]
-    counts = [int(count) for count in exact_counts]
-    remainder = shots - sum(counts)
-    for index in sorted(range(len(counts)), key=lambda i: exact_counts[i] - counts[i], reverse=True)[:remainder]:
-        counts[index] += 1
-    return counts
+    Group ``i`` receives ``ceil(shot_weights[i] / target_standard_deviation**2)``
+    shots, but at least one. Rounding up keeps the estimated standard deviation
+    at or below the target.
+    """
+    if target_standard_deviation == 0:
+        # Only reached for a relative tolerance on an operator without non-identity
+        # terms. Every group then has zero variance and one shot gives the exact value.
+        return [1] * len(shot_weights)
+    return [max(1, math.ceil(weight / target_standard_deviation**2)) for weight in shot_weights]
 
 
 def _create_measurement_plan(
@@ -225,6 +220,7 @@ def _create_measurement_plan(
             measurement_operators=[],
             standard_deviations=[],
             shot_weights=[],
+            coefficient_norm=0.0,
             num_qubits=0,
             diagonalization_method=diagonalization_method,
             change_of_basis_gates=[],
@@ -253,6 +249,7 @@ def _create_measurement_plan(
         measurement_operators=measurement_operators,
         standard_deviations=standard_deviations,
         shot_weights=_calculate_shot_weights(standard_deviations),
+        coefficient_norm=_coefficient_norm(normalized_hamiltonian),
         num_qubits=num_qubits,
         diagonalization_method=diagonalization_method,
         change_of_basis_gates=change_of_basis_gates,

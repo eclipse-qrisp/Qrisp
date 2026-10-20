@@ -31,6 +31,11 @@ from qrisp.operators.fermionic import FermionicOperator
 from qrisp.operators.qubit.measurement import QubitOperatorMeasurement
 
 
+def _get_diagonalization_method(mes_kwargs):
+    """Return the diagonalization method requested in ``mes_kwargs``, accepting the deprecated spelling."""
+    return mes_kwargs.get("diagonalization_method") or mes_kwargs.get("diagonalisation_method") or "commuting_qw"
+
+
 class VQEProblem:
     r"""Central structure to facilitate treatment of VQE problems.
     This class encapsulates the Hamiltonian, the ansatz, and the initial state preparation function for a specific VQE problem instance. 
@@ -399,8 +404,8 @@ class VQEProblem:
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
             The keyword arguments for the :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>` function. Default is an empty dictionary.
-            By default, the target ``precision`` is set to 0.01. Precision refers to how accurately the Hamiltonian is evaluated.
-            The number of shots the backend performs per iteration scales quadratically with the inverse precision.
+            Use ``atol`` or ``rtol`` to set how accurately the Hamiltonian is evaluated in each iteration. By default, ``rtol=0.01`` is used,
+            i.e., the targeted standard deviation is 1% of the sum of the absolute values of the Hamiltonian's Pauli coefficients.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -435,13 +440,6 @@ class VQEProblem:
             def qarg_prep():
                 return template.construct()
 
-        # Set default options
-        if "precision" not in mes_kwargs:
-            mes_kwargs["precision"] = 0.01
-
-        if "diagonalization_method" not in mes_kwargs:
-            mes_kwargs["diagonalization_method"] = "commuting_qw"
-
         options["maxiter"] = max_iter
 
         if check_for_tracing_mode():
@@ -450,7 +448,7 @@ class VQEProblem:
         else:
             measurement_data = QubitOperatorMeasurement(
                 self.hamiltonian,
-                diagonalization_method=mes_kwargs["diagonalization_method"],
+                diagonalization_method=_get_diagonalization_method(mes_kwargs),
             )
 
         opt_theta, opt_res = self.optimization_routine(
@@ -494,8 +492,8 @@ class VQEProblem:
             The amount of VQE ansatz layers.
         mes_kwargs : dict, optional
             The keyword arguments for the :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>` function. Default is an empty dictionary.
-            By default, the target ``precision`` is set to 0.01. Precision refers to how accurately the Hamiltonian is evaluated.
-            The number of shots the backend performs per iteration scales quadratically with the inverse precision.
+            Use ``atol`` or ``rtol`` to set how accurately the Hamiltonian is evaluated in each iteration. By default, ``rtol=0.01`` is used,
+            i.e., the targeted standard deviation is 1% of the sum of the absolute values of the Hamiltonian's Pauli coefficients.
         max_iter : int, optional
             The maximum number of iterations for the optimization method. Default is 50.
         init_type : string, optional
@@ -531,13 +529,6 @@ class VQEProblem:
             def qarg_prep():
                 return template.construct()
 
-        # Set default options
-        if "precision" not in mes_kwargs:
-            mes_kwargs["precision"] = 0.01
-
-        if "diagonalization_method" not in mes_kwargs:
-            mes_kwargs["diagonalization_method"] = "commuting_qw"
-
         options["maxiter"] = max_iter
 
         if check_for_tracing_mode():
@@ -546,7 +537,7 @@ class VQEProblem:
         else:
             measurement_data = QubitOperatorMeasurement(
                 self.hamiltonian,
-                diagonalization_method=mes_kwargs["diagonalization_method"],
+                diagonalization_method=_get_diagonalization_method(mes_kwargs),
             )
 
         opt_theta, opt_res = self.optimization_routine(
@@ -594,8 +585,9 @@ class VQEProblem:
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE ansatz layers.
         precision_range : list[float]
-            A list of floats indicating, which precision parameters should be explored. Precision refers to how accurately the Hamiltonian is evaluated.
-            The number of shots the backend performs per iteration scales quadratically with the inverse precision.
+            A list of floats indicating, which precision parameters should be explored. Each value is passed as the absolute tolerance ``atol``
+            to :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`, i.e., the targeted standard deviation of each
+            evaluation of the Hamiltonian. The number of shots the backend performs per iteration scales quadratically with the inverse precision.
         iter_range : list[int]
             A list of integers indicating, what iterations parameter should be explored. Iterations means the amount of backend calls, the optimizer is allowed to do.
         optimal_energy : float
@@ -683,8 +675,10 @@ class VQEProblem:
                     for k in range(repetitions):
                         start_time = time.time()
 
-                        temp_mes_kwargs = dict(mes_kwargs)
-                        temp_mes_kwargs["precision"] = s
+                        temp_mes_kwargs = {
+                            key: value for key, value in mes_kwargs.items() if key not in ("atol", "rtol", "precision")
+                        }
+                        temp_mes_kwargs["atol"] = s
 
                         energy = self.run(
                             qarg_prep,

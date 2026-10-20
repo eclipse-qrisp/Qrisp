@@ -96,7 +96,7 @@ def test_template():
 
         H = create_heisenberg_hamiltonian(G, 1, 1)
 
-        E = H.expectation_value(prep, diagonalization_method="commuting_qw", max_shots=None)(temp)
+        E = H.expectation_value(prep, diagonalization_method="commuting_qw")(temp)
 
         return E
 

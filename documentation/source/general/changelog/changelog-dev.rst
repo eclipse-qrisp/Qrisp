@@ -453,12 +453,27 @@ New Tutorials/ Updated Documentation
 API Changes
 -----------
 
-* Extended :meth:`~qrisp.operators.qubit.QubitOperator.expectation_value` with
-  explicit ``shots`` and ``max_shots`` controls alongside the existing
-  ``precision`` parameter for managing the measurement shot budget. The
-  method now uses the American-spelled ``diagonalization_method`` parameter;
-  the former ``diagonalisation_method`` name remains available as a deprecated
-  compatibility alias
+* :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`
+  takes the targeted standard deviation of the estimate either as an absolute
+  tolerance ``atol`` or as a tolerance ``rtol`` relative to the sum of the
+  absolute values of the operator's non-identity Pauli coefficients. The
+  default changed from an absolute precision of 0.01 to ``rtol=0.01``. The
+  number of shots therefore no longer grows with the size of the operator
+  and stays below about :math:`10^4`, while the absolute error of operators
+  whose coefficients sum to more than 1 grows accordingly. Pass ``atol=0.01``
+  to keep the previous accuracy. The same default applies to
+  :meth:`VQEProblem.run <qrisp.vqe.VQEProblem.run>` and
+  :meth:`VQEProblem.train_function <qrisp.vqe.VQEProblem.train_function>`
+  unless ``atol`` or ``rtol`` is passed in ``mes_kwargs``, and to the energy
+  evaluations of :ref:`QITE <QITE>`.
+
+  ``precision`` is deprecated in favor of ``atol``, which has the same
+  meaning, and ``diagonalisation_method`` is deprecated in favor of
+  ``diagonalization_method``. Both emit a ``QrispDeprecationWarning``. All
+  arguments after ``state_prep`` are now keyword-only, and the
+  ``measurement_data`` argument is now private. Every measurement group now
+  receives at least one shot, so operators with groups of very small
+  coefficients, or consisting only of an identity term, no longer fail
   (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
 
 * :class:`~qrisp.interface.IQMBackend` is now a delegation shim that

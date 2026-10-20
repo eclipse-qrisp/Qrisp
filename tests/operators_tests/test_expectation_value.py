@@ -19,6 +19,7 @@
 import inspect
 import random
 
+import numpy as np
 import pytest
 
 from qrisp import QuantumFloat, QuantumVariable, cx, h, jaspify, x
@@ -39,10 +40,8 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive=False):
             print(H)
             assert (
                 abs(
-                    H.expectation_value(state_prep, precision=0.0005, max_shots=None, backend=non_sampling_backend)()
-                    - H.to_pauli().expectation_value(
-                        state_prep, precision=0.0005, max_shots=None, backend=non_sampling_backend
-                    )()
+                    H.expectation_value(state_prep, atol=0.0005, backend=non_sampling_backend)()
+                    - H.to_pauli().expectation_value(state_prep, atol=0.0005, backend=non_sampling_backend)()
                 )
                 < 1e-1
             )
@@ -50,15 +49,13 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive=False):
                 abs(
                     H.expectation_value(
                         state_prep,
-                        precision=0.0005,
-                        max_shots=None,
+                        atol=0.0005,
                         diagonalization_method="commuting",
                         backend=non_sampling_backend,
                     )()
                     - H.to_pauli().expectation_value(
                         state_prep,
-                        precision=0.0005,
-                        max_shots=None,
+                        atol=0.0005,
                         diagonalization_method="commuting",
                         backend=non_sampling_backend,
                     )()
@@ -69,9 +66,9 @@ def test_expectation_value(sample_size=100, seed=42, exhaustive=False):
             # Jasp tests
             @jaspify(terminal_sampling=True)
             def main():
-                return H.expectation_value(state_prep, precision=0.01)()
+                return H.expectation_value(state_prep, atol=0.01)()
 
-            assert abs(main() - H.expectation_value(state_prep, precision=0.01, backend=non_sampling_backend)()) < 1e-1
+            assert abs(main() - H.expectation_value(state_prep, atol=0.01, backend=non_sampling_backend)()) < 1e-1
 
     # Set the random seed for reproducibility
     random.seed(seed)
@@ -164,24 +161,144 @@ def test_expectation_value_rejects_both_diagonalization_spellings():
         X(0).expectation_value(lambda: QuantumVariable(1), **method_kwargs)
 
 
-def test_expectation_value_default_max_shots():
-    """The default shot safety limit rejects an over-budget precision estimate."""
+class _ShotRecordingBackend(QrispSimulatorBackend):
+    """Simulator backend that records the shots of every run."""
 
+    def __init__(self):
+        super().__init__()
+        self.shots = []
+
+    def run(self, circuits, shots=None):
+        self.shots.append(shots)
+        return super().run(circuits, shots=shots)
+
+
+def _recorded_shots(H, state_prep, **kwargs):
+    backend = _ShotRecordingBackend()
+    H.expectation_value(state_prep, backend=backend, **kwargs)()
+    return backend.shots
+
+
+def _heisenberg_chain(n):
+    return sum(X(i) * X(i + 1) + Y(i) * Y(i + 1) + Z(i) * Z(i + 1) for i in range(n - 1))
+
+
+def test_expectation_value_default_rtol_is_independent_of_operator_scale_and_offset():
+    def state_prep():
+        return QuantumVariable(4)
+
+    H = _heisenberg_chain(4)
+
+    shots = _recorded_shots(H, state_prep)
+
+    assert _recorded_shots(100 * H, state_prep) == shots
+    assert _recorded_shots(H + 50, state_prep) == shots
+    assert _recorded_shots(H, state_prep, rtol=0.01) == shots
+    assert sum(shots) <= 1 / 0.01**2 + len(shots)
+
+
+def test_expectation_value_atol_scales_shots_with_operator():
+    def state_prep():
+        return QuantumVariable(2)
+
+    H = X(0) * X(1) + Z(0)
+
+    shots = _recorded_shots(H, state_prep, atol=0.1)
+    scaled_shots = _recorded_shots(10 * H, state_prep, atol=0.1)
+
+    assert sum(scaled_shots) == pytest.approx(100 * sum(shots), rel=0.01)
+
+
+def test_expectation_value_rtol_is_relative_to_pauli_coefficient_norm():
+    def state_prep():
+        return QuantumVariable(2)
+
+    # The sum of the absolute non-identity Pauli coefficients is 4.
+    H = X(0) * X(1) - 3 * Z(0) + 7
+
+    assert _recorded_shots(H, state_prep, rtol=0.05) == _recorded_shots(H, state_prep, atol=0.2)
+
+
+def test_expectation_value_precision_is_deprecated_alias_for_atol():
+    def state_prep():
+        return QuantumVariable(2)
+
+    H = X(0) * X(1) + Z(0)
+
+    with pytest.warns(QrispDeprecationWarning, match="precision is deprecated; use atol"):
+        shots = _recorded_shots(H, state_prep, precision=0.1)
+
+    assert shots == _recorded_shots(H, state_prep, atol=0.1)
+
+
+def test_expectation_value_measures_every_group_at_least_once():
+    def state_prep():
+        qv = QuantumVariable(1)
+        x(qv)
+        return qv
+
+    # The Z group has a negligible variance, which used to round to zero shots.
+    H = X(0) + 1e-6 * Z(0)
+
+    assert min(_recorded_shots(H, state_prep, rtol=0.1)) == 1
+
+    @jaspify
+    def main():
+        return H.expectation_value(state_prep, rtol=0.1)()
+
+    assert abs(main()) < 0.5
+
+
+def test_expectation_value_of_identity_operator():
     def state_prep():
         return QuantumVariable(1)
 
-    with pytest.raises(ValueError, match="exceeds max_shots=100000"):
-        X(0).expectation_value(state_prep, precision=0.001)()
+    H = 3 + 0 * X(0)
+
+    assert H.expectation_value(state_prep)() == pytest.approx(3)
+
+    @jaspify
+    def main():
+        return H.expectation_value(state_prep)()
+
+    assert main() == pytest.approx(3)
+
+
+@pytest.mark.parametrize("tolerance", [{"atol": 0.05}, {"rtol": 0.05}, {}])
+def test_jasp_expectation_value_with_tolerances(tolerance):
+    def state_prep():
+        qv = QuantumVariable(2)
+        h(qv[0])
+        cx(qv[0], qv[1])
+        return qv
+
+    # Exact value on the Bell state: 1 + 1 - 1 = 1.
+    H = X(0) * X(1) + Z(0) * Z(1) + Y(0) * Y(1)
+
+    @jaspify
+    def main():
+        return H.expectation_value(state_prep, **tolerance)()
+
+    assert abs(main() - 1) < 0.5
+
+
+def test_expectation_value_rejects_precision_combined_with_tolerance():
+    with pytest.raises(ValueError, match="Specify only one of precision, atol and rtol"):
+        X(0).expectation_value(lambda: QuantumVariable(1), precision=0.1, atol=0.1)
 
 
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [
+        ({"atol": 0.1, "rtol": 0.1}, "Specify only one of atol and rtol"),
+        ({"atol": 0}, "atol must be a finite positive number"),
+        ({"atol": -0.1}, "atol must be a finite positive number"),
+        ({"atol": float("nan")}, "atol must be a finite positive number"),
+        ({"atol": float("inf")}, "atol must be a finite positive number"),
+        ({"atol": True}, "atol must be a finite positive number"),
+        ({"rtol": "0.1"}, "rtol must be a finite positive number"),
+        ({"rtol": 0}, "rtol must be a finite positive number"),
         ({"precision": 0}, "precision must be a finite positive number"),
-        ({"precision": -0.1}, "precision must be a finite positive number"),
-        ({"precision": float("nan")}, "precision must be a finite positive number"),
-        ({"shots": 0}, "shots must be a positive integer"),
-        ({"max_shots": 0}, "max_shots must be a positive integer or None"),
         ({"diagonalization_method": "unknown"}, "Unknown diagonalization method"),
     ],
 )
@@ -190,13 +307,9 @@ def test_expectation_value_rejects_invalid_parameters_at_construction(kwargs, me
         X(0).expectation_value(lambda: QuantumVariable(1), **kwargs)
 
 
-def test_expectation_value_validates_empty_hamiltonian_parameters():
-    with pytest.raises(ValueError, match="shots must be a positive integer"):
-        (0 * X(0)).expectation_value(lambda: QuantumVariable(1), shots=0)
-
-
-def test_expectation_value_shots_take_precedence_over_invalid_precision():
-    X(0).expectation_value(lambda: QuantumVariable(1), precision=0, shots=10)
+def test_expectation_value_accepts_numpy_tolerances():
+    X(0).expectation_value(lambda: QuantumVariable(1), atol=np.float64(0.1))
+    X(0).expectation_value(lambda: QuantumVariable(1), rtol=np.int64(1))
 
 
 def test_expectation_value_options_are_keyword_only():
@@ -204,16 +317,16 @@ def test_expectation_value_options_are_keyword_only():
 
     assert [parameter.name for parameter in parameters] == [
         "state_prep",
-        "precision",
-        "shots",
-        "max_shots",
+        "atol",
+        "rtol",
         "diagonalization_method",
-        "diagonalisation_method",
         "backend",
         "compile",
         "compilation_kwargs",
         "subs_dic",
         "precompiled_qc",
+        "precision",
+        "diagonalisation_method",
         "_measurement_data",
     ]
     assert all(parameter.kind is inspect.Parameter.KEYWORD_ONLY for parameter in parameters[1:])

@@ -38,9 +38,8 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     hamiltonian: Hamiltonian,
     qarg: QuantumVariable | QuantumArray | list[Qubit],
     *,
-    precision: float = 0.01,
-    shots: int | None = None,
-    max_shots: int | None = None,
+    atol: float | None = None,
+    rtol: float | None = None,
     backend: BackendLike | None = None,
     compile: bool = True,
     compilation_kwargs: dict[Any, Any] | None = None,
@@ -110,7 +109,7 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
     if _measurement_data is None:
         _measurement_data = QubitOperatorMeasurement(hamiltonian, diagonalization_method=diagonalization_method)
 
-    return _measurement_data.get_measurement(qc, qubit_list, precision, backend, shots=shots, max_shots=max_shots)
+    return _measurement_data.get_measurement(qc, qubit_list, backend, atol=atol, rtol=rtol)
 
 
 class QubitOperatorMeasurement:
@@ -129,14 +128,14 @@ class QubitOperatorMeasurement:
         self.shots_list = self.plan.shot_weights
         self.change_of_basis_gates = self.plan.change_of_basis_gates
 
-    def get_measurement(  # noqa: PLR0913, PLR0917
+    def get_measurement(
         self,
         qc: QuantumCircuit,
         qubit_list: list,
-        precision: float,
         backend: BackendLike,
-        shots: int | None = None,
-        max_shots: int | None = None,
+        *,
+        atol: float | None = None,
+        rtol: float | None = None,
     ) -> float:
         """Measure the expectation value using the cached measurement plan."""
         from qrisp.misc import get_measurement_from_qc
@@ -145,7 +144,7 @@ class QubitOperatorMeasurement:
         meas_coeffs = []
         meas_ops = []
 
-        shots_list = self.plan.allocate_shots(precision, shots=shots, max_shots=max_shots)
+        shots_list = self.plan.allocate_shots(atol=atol, rtol=rtol)
 
         for group, gate, group_shots in zip(
             self.measurement_operators,

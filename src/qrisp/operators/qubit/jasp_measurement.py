@@ -36,9 +36,8 @@ def _jasp_expectation_value_helper(  # noqa: PLR0913
     hamiltonian: Hamiltonian,
     state_prep: Callable[..., QuantumVariable],
     *,
-    precision: float = 0.01,
-    shots: int | None = None,
-    max_shots: int | None = None,
+    atol: float | None = None,
+    rtol: float | None = None,
     state_args: tuple = (),
     diagonalization_method: Literal["commuting", "commuting_qw"] = "commuting_qw",
 ) -> jax.Array:
@@ -50,7 +49,7 @@ def _jasp_expectation_value_helper(  # noqa: PLR0913
     samples = []
     meas_ops = []
     meas_coeffs = []
-    shots_list = plan.allocate_shots(precision, shots=shots, max_shots=max_shots)
+    shots_list = plan.allocate_shots(atol=atol, rtol=rtol)
 
     for index, group in enumerate(plan.groups):
         # Calculate the new measurement operators (after change of basis)

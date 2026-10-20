@@ -492,7 +492,8 @@ class DCQOProblem:
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
         precision : float, optional
-            Precision for expectation value calculations. Default is 0.01.
+            Targeted standard deviation of the measured expectation values, passed as ``atol`` to
+            :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`. Default is 0.01.
         exp_value_backend : BackendLike, optional
             Backend for expectation value calculations, if ``exp_value`` is used as objective function.
             If provided, uses measurement-based expectation value with this backend.
@@ -539,7 +540,7 @@ class DCQOProblem:
                 # Use provided backend
                 exp_val = self.H_prob.expectation_value(
                     qarg,
-                    precision=precision,
+                    atol=precision,
                     compile=False,
                     subs_dic=subs_dic,
                     precompiled_qc=qc,
@@ -557,7 +558,7 @@ class DCQOProblem:
                 except (MemoryError, ValueError, RuntimeError):
                     exp_val = self.H_prob.expectation_value(
                         qarg,
-                        precision=precision,
+                        atol=precision,
                         compile=False,
                         subs_dic=subs_dic,
                         precompiled_qc=qc,
@@ -692,7 +693,8 @@ class DCQOProblem:
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
         precision : float, optional
-            Precision for expectation value calculations. Default is 0.01.
+            Targeted standard deviation of the measured expectation values, passed as ``atol`` to
+            :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`. Default is 0.01.
         exp_value_backend : BackendLike, optional
             Backend for expectation value calculations, if ``exp_value`` is used as objective function.
             If provided, uses measurement-based expectation value with this backend. Default is the Qrisp

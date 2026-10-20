@@ -48,7 +48,7 @@ def test_qite_heisenberg():
         U_0(qv)
         return qv
 
-    E_0 = H.expectation_value(state_prep, max_shots=None)()
+    E_0 = H.expectation_value(state_prep)()
 
     def exp_H(qv, t):
         H.trotterization(method="commuting")(qv, t, 5)
@@ -77,7 +77,7 @@ def test_qite_heisenberg():
                 subs_dic={theta: s_},
                 precompiled_qc=qc,
                 diagonalization_method="commuting",
-                max_shots=None,
+                atol=0.01,
             )()
             for s_ in s_values
         ]

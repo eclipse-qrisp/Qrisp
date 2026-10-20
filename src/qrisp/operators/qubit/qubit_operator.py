@@ -52,7 +52,7 @@ from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp.operators.qubit.jasp_measurement import _jasp_expectation_value_helper
 from qrisp.operators.qubit.measurement import _expectation_value_helper
-from qrisp.operators.qubit.measurement_plan import _validate_shot_parameters
+from qrisp.operators.qubit.measurement_plan import _check_tolerance, _resolve_tolerances
 from qrisp.operators.qubit.qubit_term import QubitTerm
 
 if TYPE_CHECKING:
@@ -1580,107 +1580,172 @@ class QubitOperator(Hamiltonian):
         self,
         state_prep: Callable[..., QuantumVariable],
         *,
-        precision: float = 0.01,
-        shots: int | None = None,
-        max_shots: int | None = 100_000,
+        atol: float | None = None,
+        rtol: float | None = None,
         diagonalization_method: Literal["commuting", "commuting_qw"] | None = None,
-        diagonalisation_method: Literal["commuting", "commuting_qw"] | None = None,
         backend: BackendLike | None = None,
         compile: bool = True,
         compilation_kwargs: dict[Any, Any] | None = None,
         subs_dic: dict[Any, Any] | None = None,
         precompiled_qc: QuantumCircuit | None = None,
+        precision: float | None = None,
+        diagonalisation_method: Literal["commuting", "commuting_qw"] | None = None,
         _measurement_data: QubitOperatorMeasurement | None = None,
     ) -> Callable[..., float | jax.Array]:
-        r"""Estimate a Hamiltonian expectation value from a prepared quantum state.
+        r"""Return a function that estimates the expectation value of the operator.
 
-        The ``expectation value`` function allows to estimate the expectation value
-        of a Hamiltonian for a state that is specified by a preparation procedure.
-        This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
+        The returned function passes its arguments to ``state_prep``, measures
+        the operator on the prepared state $\ket{\psi}$ and returns an estimate
+        of $\bra{\psi}H\ket{\psi}$. It can be called in static mode, where the
+        circuits are run on a backend, and inside :ref:`Jasp <jasp>` functions,
+        where the measurement is traced with :func:`~qrisp.jasp.sample`.
 
-        Note that this method measures the **hermitized** version of the operator:
+        Only the **hermitian part** of the operator $O$ is measured:
 
         .. math::
 
             H = (O + O^\dagger)/2
 
+        **How the measurement works**
+
+        #. The terms of $H$ are split into groups of commuting terms, as
+           selected by ``diagonalization_method``.
+        #. For each group, the prepared state is followed by a change of basis
+           that diagonalizes the group, and the qubits are measured in the
+           computational basis.
+        #. The expectation value of each group is computed from the measured
+           bitstrings, and the results are summed.
+
+        Each evaluation therefore runs one circuit per group.
+
+        **Precision and number of shots**
+
+        The result is a statistical estimate. Its precision is set by the
+        targeted standard deviation $\epsilon$ of the estimate, given either as
+        an absolute value with ``atol`` or relative to the size of the
+        operator with ``rtol``:
+
+        .. math::
+
+            \epsilon = \texttt{atol}
+            \qquad\text{or}\qquad
+            \epsilon = \texttt{rtol} \cdot \|H\|_1,
+            \qquad
+            \|H\|_1 = \sum_{P \neq I} |c_P|.
+
+        Here, $H = \sum_P c_P P$ is the decomposition of $H$ into Pauli
+        strings $P$. The identity term is left out because it does not need to
+        be measured. If neither ``atol`` nor ``rtol`` is given, ``rtol=0.01``
+        is used.
+
+        The shots are distributed over the groups in proportion to the
+        standard deviations $\sigma_i$ of the groups, which minimizes the total
+        number of shots for a given $\epsilon$. Group $i$ receives
+
+        .. math::
+
+            N_i = \left\lceil \frac{\sigma_i \sum_j \sigma_j}{\epsilon^2} \right\rceil
+
+        shots. The $\sigma_i$ cannot be known before measuring, so they are
+        estimated as the average over all states, following
+        `Crawford et al. <https://quantum-journal.org/papers/q-2021-01-20-385/>`_.
+        $\epsilon$ is therefore a target rather than a guaranteed bound.
+
+        The total number of shots grows as $1/\epsilon^2$:
+
+        * With ``atol``, it grows quadratically with the size of the operator:
+          measuring $100 H$ to the same ``atol`` takes $10^4$ times as many
+          shots as measuring $H$.
+        * With ``rtol``, it does not depend on the size of the operator. For a
+          sum of Pauli strings, it is at most $1/\texttt{rtol}^2$ plus one
+          shot per group, i.e., about $10^4$ shots for the default
+          ``rtol=0.01``.
+
+        Use ``rtol`` to keep the measurement cost bounded, and ``atol`` when a
+        fixed absolute accuracy is required, for example chemical accuracy
+        for molecular energies.
+
         .. note::
 
-            When used with Jasp, ``state_prep``, ``precision``, ``shots``,
-            ``max_shots`` and ``diagonalization_method`` control measurement.
-            Circuit and backend parameters are ignored.
+            In Jasp mode, only ``state_prep``, ``atol``, ``rtol`` and
+            ``diagonalization_method`` are used. ``backend``, ``compile``,
+            ``compilation_kwargs``, ``subs_dic`` and ``precompiled_qc`` are
+            ignored.
 
         Parameters
         ----------
         state_prep : callable
-            A function returning a QuantumVariable.
-            The expectation of the Hamiltonian for the state of this QuantumVariable will be measured.
-            The state preparation function can only take classical values as arguments.
-            This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
-        precision : float, optional
-            Target absolute precision for the expectation value. The number of
-            shots is estimated from the measurement-group variances and scales
-            approximately as ``1 / precision**2``. It also increases with the
-            magnitude of the Hamiltonian through the coefficient-dependent
-            variances (and hence its norm). These variances are estimated from
-            the operator rather than measured from the state, so the resulting
-            shot count and achieved precision are estimates, not guarantees.
-            The default is 0.01.
-        shots : int, optional
-            Explicit total number of shots. If supplied, this takes precedence
-            over ``precision`` and is distributed across measurement groups.
-            The requested total must not exceed ``max_shots``.
-        max_shots : int, optional
-            Hard upper bound for the total number of shots. With the default
-            ``100_000``, a ``ValueError`` is raised before measurement if the
-            precision-based shot estimate exceeds this limit. For explicit
-            ``shots``, the requested total is checked directly. Pass ``None``
-            to disable this safety limit.
+            A function returning the :ref:`QuantumVariable` whose state is
+            measured. The arguments of the returned function are passed to
+            ``state_prep``. They can only be classical values, because a
+            quantum state cannot be copied for repeated measurements
+            (no-cloning theorem).
+        atol : float, optional
+            Targeted standard deviation of the estimate, as an absolute value.
+            Cannot be combined with ``rtol``.
+        rtol : float, optional
+            Targeted standard deviation of the estimate, relative to the sum
+            $\|H\|_1$ of the absolute values of the non-identity Pauli
+            coefficients. Cannot be combined with ``atol``. If neither
+            ``atol`` nor ``rtol`` is given, ``rtol=0.01`` is used.
         diagonalization_method : str, optional
-            Specifies the method for grouping and diagonalizing the :ref:`QubitOperator`.
-            Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms,
-            and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
-            The default is ``commuting_qw``.
-        diagonalisation_method : str, optional
-            Deprecated alias for ``diagonalization_method``. Using this argument
-            raises :class:`~qrisp.misc.exceptions.QrispDeprecationWarning`.
+            How the terms are grouped for measurement. The default is
+            ``"commuting_qw"``.
+
+            * ``"commuting_qw"``: terms that commute qubit-wise are grouped.
+              The change of basis only uses single-qubit gates.
+            * ``"commuting"``: terms that commute are grouped. This yields
+              fewer groups and therefore fewer shots, but the change of basis
+              requires entangling gates.
+
         backend : BackendLike, optional
-            The backend on which to evaluate the quantum circuit. By default, the
-            :class:`~qrisp.interface.QrispSimulatorBackend` is used.
+            The backend that runs the circuits. By default, the backend of the
+            :ref:`QuantumSession` of the prepared variable is used if it has
+            one, and the default simulator otherwise.
         compile : bool, optional
-            Boolean indicating if the .compile method of the underlying QuantumSession
-            should be called before. The default is ``True``.
-        compilation_kwargs  : dict, optional
-            Keyword arguments for the compile method. For more details check
+            Whether to compile the :ref:`QuantumSession` before measuring. The
+            default is ``True``.
+        compilation_kwargs : dict, optional
+            Keyword arguments for the compilation. For more details, see
             :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`.
         subs_dic : dict, optional
-            A dictionary of Sympy symbols and floats to specify parameters in the case
-            of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
+            A dictionary mapping SymPy symbols to values, for circuits with
+            :ref:`abstract parameters <QuantumCircuit>`.
         precompiled_qc : QuantumCircuit, optional
-            A precompiled quantum circuit.
-        _measurement_data : QubitOperatorMeasurement
-            Cached data to accelerate the measurement procedure. Automatically generated by default.
+            A compiled circuit that prepares the state. If given,
+            ``state_prep`` is not called, and the operator is measured on the
+            first qubits of this circuit. Combined with ``subs_dic``, a
+            parametrized circuit can be evaluated for many parameter values
+            without recompiling it.
+        precision : float, optional
+            Deprecated. Use ``atol``, which has the same meaning.
+        diagonalisation_method : str, optional
+            Deprecated. Use ``diagonalization_method``.
 
         Returns
         -------
         callable
-            A function returning a Python ``float`` in static mode or a
-            zero-dimensional :class:`jax.Array` in Jasp mode.
+            A function that takes the arguments of ``state_prep`` and returns
+            the estimated expectation value: a ``float`` in static mode and a
+            zero-dimensional ``jax.Array`` in Jasp mode.
 
         Raises
         ------
         ValueError
-            If both diagonalization-method spellings are supplied, if the
-            measurement method or shot parameters are invalid, or if the
-            calculated shot requirement exceeds ``max_shots``.
+            If more than one of ``atol``, ``rtol`` and ``precision`` is given,
+            if a tolerance is not a finite positive number, if both spellings
+            of the diagonalization method are given, or if the diagonalization
+            method is unknown.
+
+        Warns
+        -----
         QrispDeprecationWarning
-            If the deprecated ``diagonalisation_method`` spelling is used.
+            If ``precision`` or ``diagonalisation_method`` is used.
 
         Examples
         --------
-        We define a Hamiltonian, and measure its expectation value for the state of a :ref:`QuantumFloat`.
-
-        We prepare the state
+        We define a Hamiltonian, and measure its expectation value for the
+        state of a :ref:`QuantumFloat`. We prepare the state
 
         .. math::
 
@@ -1689,17 +1754,18 @@ class QubitOperator(Hamiltonian):
         ::
 
             from qrisp import *
-            from qrisp.operators import X,Y,Z
+            from qrisp.operators import X, Y, Z
             import numpy as np
 
             def state_prep(theta):
                 qv = QuantumFloat(2)
 
-                ry(theta,qv)
+                ry(theta, qv)
 
                 return qv
 
-        And compute the expectation value of the Hamiltonion $H=Z_0Z_1$ for the state $\ket{\psi_{\theta}}$
+        and compute the expectation value of the Hamiltonian $H=Z_0Z_1$ for
+        the state $\ket{\psi_{\theta}}$:
 
         ::
 
@@ -1710,7 +1776,10 @@ class QubitOperator(Hamiltonian):
             print(ev_function(np.pi/2))
             # Yields: 0.010126265783222899
 
-        Similiarly, expectation values can be calculated with Jasp
+        The exact value is $0$. Since $\|H\|_1 = 1$, the default ``rtol=0.01``
+        targets a standard deviation of $0.01$.
+
+        Similarly, expectation values can be calculated with Jasp:
 
         ::
 
@@ -1725,6 +1794,25 @@ class QubitOperator(Hamiltonian):
 
             print(main())
             # Yields: 0.010126265783222899
+
+        **Absolute and relative tolerance**
+
+        For the Heisenberg interaction $H = X_0X_1 + Y_0Y_1 + Z_0Z_1$, we have
+        $\|H\|_1 = 3$. The default ``rtol=0.01`` therefore targets a standard
+        deviation of $0.03$. To target a standard deviation of $0.01$
+        instead, either tighten ``rtol`` or specify ``atol``:
+
+        ::
+
+            H = X(0)*X(1) + Y(0)*Y(1) + Z(0)*Z(1)
+
+            ev_rel = H.expectation_value(state_prep)              # epsilon = 0.03
+            ev_abs = H.expectation_value(state_prep, atol=0.01)   # epsilon = 0.01
+
+        Both estimate the same value; ``ev_abs`` uses about nine times as many
+        shots. For $100 H$, ``rtol=0.01`` targets $\epsilon = 3$ with the same
+        number of shots as for $H$, while ``atol=0.01`` would need $10^4$
+        times as many shots as for $H$.
 
         **Inspecting the circuits sent to the backend**
 
@@ -1804,7 +1892,19 @@ class QubitOperator(Hamiltonian):
         if diagonalization_method not in ["commuting", "commuting_qw"]:
             raise ValueError(f"Unknown diagonalization method: {diagonalization_method}.")
 
-        _validate_shot_parameters(precision, shots, max_shots)
+        if precision is not None:
+            if atol is not None or rtol is not None:
+                raise ValueError("Specify only one of precision, atol and rtol.")
+            _check_tolerance("precision", precision)
+            warnings.warn(
+                "precision is deprecated; use atol, which has the same meaning, "
+                "or rtol for a tolerance relative to the size of the operator.",
+                QrispDeprecationWarning,
+                stacklevel=2,
+            )
+            atol = precision
+
+        atol, rtol = _resolve_tolerances(atol, rtol)
 
         def return_function(*args):
 
@@ -1812,9 +1912,8 @@ class QubitOperator(Hamiltonian):
                 return _jasp_expectation_value_helper(
                     self,
                     state_prep,
-                    precision=precision,
-                    shots=shots,
-                    max_shots=max_shots,
+                    atol=atol,
+                    rtol=rtol,
                     state_args=args,
                     diagonalization_method=diagonalization_method,
                 )
@@ -1827,9 +1926,8 @@ class QubitOperator(Hamiltonian):
                 return _expectation_value_helper(
                     self,
                     qarg,
-                    precision=precision,
-                    shots=shots,
-                    max_shots=max_shots,
+                    atol=atol,
+                    rtol=rtol,
                     diagonalization_method=diagonalization_method,
                     backend=backend,
                     compile=compile,
@@ -2121,7 +2219,7 @@ class QubitOperator(Hamiltonian):
             T_values = np.arange(0, 1.5, 0.05)
             M_values = []
             for t in T_values:
-                ev_M = M.expectation_value(psi, precision=0.01)
+                ev_M = M.expectation_value(psi, atol=0.01)
                 M_values.append(float(ev_M(t)))
 
             plt.scatter(T_values, M_values, color='#6929C4', marker="o", 
