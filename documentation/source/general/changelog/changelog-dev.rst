@@ -142,6 +142,9 @@ Improvements
   no longer replayed event by event in Python. The returned dictionary is
   unchanged
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+- Refactored quantum_variable.py by adding more typing, explicit attributes and delegating name
+  generation to QuantumSession in a central place.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
 - Fewer qubits for :func:`reflection <qrisp.reflection>`:
   :func:`reflection <qrisp.reflection>` no longer bundles its operations into a
@@ -441,6 +444,40 @@ Bug Fixes
   without qubits
   (`PR #975 <https://github.com/eclipse-qrisp/Qrisp/pull/975>`_).
 
+* Fixed a bug in ``resolve_naming_collisions`` where in the "qv_0 is newer" conditional branch,
+  ``qv_1.is_fixed_name`` (called ``user_given_name`` earlier) was checked 
+  when it should have been ``qv_0``'s.
+  As a result, merging two sessions could rename a variable with 
+  an explicitly given (fixed) name. Now a fixed name is never renamed.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed a bug where calls of :meth:`~qrisp.QuantumVariable.duplicate` of the form ``duplicate(name="foo*")`` 
+  caused the variable being duplicated to change.
+  There, ``self.is_fixed_name`` (called ``user_given_name`` earlier) was set to ``False``, instead of the duplicate's ``is_fixed_name``.
+  This is fixed now.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed a bug where a :ref:`QuantumVariable <QuantumVariable>` created at the top level of a
+  plain Python script (e.g. ``qv = QuantumVariable(2)``) was not named after its Python variable,
+  but received a generic name such as ``qv_0`` instead. ``find_calling_line`` picked the wrong
+  stack frame whenever the declaring line was the bottom of the call stack. Inside functions,
+  pytest or Jupyter the inferred name was already correct; at module level, scripts now get the
+  inferred name too, which changes the names shown e.g. in printed circuits.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed the name inferred for a :ref:`QuantumVariable <QuantumVariable>` declared with a type
+  annotation or through tuple unpacking. ``x: QuantumFloat = QuantumFloat(3)`` was named ``x:``
+  and ``a, b = QuantumFloat(2), QuantumFloat(2)`` named its first variable ``a,``; they are now
+  named ``x`` and ``a`` respectively.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed a bug where deleting a :ref:`QuantumVariable <QuantumVariable>` could remove a different
+  variable with the same name, living in another QuantumSession, from ``QuantumVariable.live_qvs``.
+  Names are only unique within a single QuantumSession, so variables are now matched by their
+  creation time instead. Since the ``auto_uncompute`` decorator uses ``live_qvs`` to find the
+  variables a function created, it could previously miss such a variable.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
 Compatibility
 -------------
 
@@ -549,6 +586,17 @@ API Changes
   register and is cheaper when controlled. Replace
   ``jasp_mod_adder(a, b, N, inpl_adder=adder)`` with ``mod_adder(a, b, adder, N)``
   (`PR #965 <https://github.com/eclipse-qrisp/Qrisp/pull/965>`_).
+
+* Renamed the ``QuantumVariable`` attribute ``user_given_name`` to
+  ``is_fixed_name``. Code reading ``qv.user_given_name`` must
+  use ``qv.is_fixed_name`` instead
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* ``QuantumVariable.creation_counter`` is now a plain ``int`` instead of a
+  one-element NumPy array. Code reading it as
+  ``int(QuantumVariable.creation_counter[0])`` must use
+  ``QuantumVariable.creation_counter`` instead
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
 .. Add API changes above this line
 

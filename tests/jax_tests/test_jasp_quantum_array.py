@@ -144,6 +144,18 @@ def test_error_matmul_invalid_qtype():
         main()
 
 
+def test_error_get_measurement_in_tracing_mode():
+    """Test that a TracingModeError is raised when calling get_measurement on a QuantumArray in tracing mode"""
+
+    @jaspify
+    def main():
+        qa = QuantumArray(QuantumFloat(2), shape=(2,))
+        qa.get_measurement()
+
+    with pytest.raises(TracingModeError, match="Tried to get_measurement from QuantumArray in tracing mode"):
+        main()
+
+
 def test_injection():
     @jaspify
     def test():
