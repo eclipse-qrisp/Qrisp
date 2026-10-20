@@ -559,10 +559,14 @@ Development
 * Added a changelog reminder workflow, the ``make release-notes`` script,
   a developer changelog (``changelog-dev.rst``), a release guide,
   fixed the workflow permissions to allow posting PR comments,
-  and skipped the check for Dependabot PRs
+  and skipped the check for Dependabot PRs. The check now compares against the
+  pull request's head commit instead of GitHub's synthetic merge commit, which
+  also contains the latest ``main`` and therefore made other pull requests'
+  changelog entries count as the current pull request's
   (`PR #658 <https://github.com/eclipse-qrisp/Qrisp/pull/658>`_,
   `PR #715 <https://github.com/eclipse-qrisp/Qrisp/pull/715>`_,
-  `PR #727 <https://github.com/eclipse-qrisp/Qrisp/pull/727>`_).
+  `PR #727 <https://github.com/eclipse-qrisp/Qrisp/pull/727>`_,
+  `PR #983 <https://github.com/eclipse-qrisp/Qrisp/pull/983>`_).
 
 * Added pip dependency caching to the CI test workflow
   (`PR #685 <https://github.com/eclipse-qrisp/Qrisp/pull/685>`_).
