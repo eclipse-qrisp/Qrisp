@@ -81,6 +81,20 @@ tutorial_authors = {
             "linkedin": None,
         },
     ],
+    "general/tutorial/CUDAQ": [
+        {
+            "name": "René Zander",
+            "affiliation": "Fraunhofer FOKUS",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
+        {
+            "name": "Matic Petrič",
+            "affiliation": "Fraunhofer FOKUS",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
+    ],
     "general/tutorial/FT_compilation": [
         {
             "name": "Raphael Seidel",

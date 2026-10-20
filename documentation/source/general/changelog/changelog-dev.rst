@@ -10,6 +10,23 @@ changelog enforcement.
 New Features
 ------------
 
+* **CUDA-Q interface.** Qrisp programs can now be compiled to and run on
+  `CUDA-Q <https://nvidia.github.io/cuda-quantum/>`_, NVIDIA's platform for
+  hybrid quantum-classical computing. The interface ships as the separate
+  package `qrisp-cudaq <https://github.com/eclipse-qrisp/qrisp-cudaq>`_;
+  install it with ``pip install "qrisp[cudaq]"``
+  (`PR #943 <https://github.com/eclipse-qrisp/Qrisp/pull/943>`_).
+
+  * :func:`cudaq_kernel <qrisp_cudaq.cudaq_kernel>` turns a Qrisp function into
+    a CUDA-Q kernel, executable with ``cudaq.run`` or, with
+    ``execution_mode="sample"``, with ``cudaq.sample``.
+  * Hybrid control flow lowers natively to Quake, including mid-circuit
+    measurement with feed-forward, ``q_while_loop``, ``q_cond`` and
+    ``q_switch``.
+  * Kernels accept scalar (``int``, ``float``, ``bool``) and array parameters
+    via :class:`FixedShapeNDArray <qrisp_cudaq.FixedShapeNDArray>`, and can
+    return multiple values.
+
 - **sample() and expectation_value() now accept arbitrary return values**
   Sampling kernels (the functions passed to :func:`~qrisp.jasp.sample` and
   :func:`~qrisp.jasp.expectation_value`) may now return classical values
@@ -125,6 +142,9 @@ Improvements
   no longer replayed event by event in Python. The returned dictionary is
   unchanged
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+- Refactored quantum_variable.py by adding more typing, explicit attributes and delegating name
+  generation to QuantumSession in a central place.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
 - Fewer qubits for :func:`reflection <qrisp.reflection>`:
   :func:`reflection <qrisp.reflection>` no longer bundles its operations into a
@@ -181,6 +201,15 @@ Bug Fixes
   sampling the results of registers with 54 or more qubits lost bits.
   Measurement outcomes and the masks of the terms are now split into chunks of
   53 qubits. Only the qubits the operator acts on are measured.
+
+* Fixed :func:`cuccaro_adder <qrisp.cuccaro_adder>` to support arbitrary
+  quantum inputs, in particular ``list[Qubit]`` and ``DynamicQubitArray``
+  targets. Previously, a classical addend with a ``list[Qubit]`` target raised
+  ``AttributeError: 'list' object has no attribute 'duplicate'``, so
+  ``QuantumModulus(..., inpl_adder=cuccaro_adder)`` failed. Classical addends
+  larger than the target register are now truncated modulo ``2**len(b)``
+  (`PR #848 <https://github.com/eclipse-qrisp/Qrisp/pull/848>`_,
+  `issue #839 <https://github.com/eclipse-qrisp/Qrisp/issues/839>`_).
 
 * Fixed the :func:`GQSP angle computation <qrisp.gqsp.gqsp_angles>` for
   polynomials with complex coefficients. Unless
@@ -429,6 +458,49 @@ Bug Fixes
 
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* Fixed simulation of composite operations in :meth:`~qrisp.QuantumCircuit.statevector_array`
+  and :meth:`~qrisp.QuantumCircuit.run`: circuits now transpile composite operations before
+  simulation to avoid computing wide unitary matrices, while preserving narrow controlled
+  operations (such as Toffoli and MCX gates within the maximum gate group size) so they
+  retain their closed-form unitaries for fast simulation. Also fixed a bug in
+  :meth:`~qrisp.QuantumCircuit.transpile` when transpiling circuits containing classical bits
+  without qubits
+  (`PR #975 <https://github.com/eclipse-qrisp/Qrisp/pull/975>`_).
+
+* Fixed a bug in ``resolve_naming_collisions`` where in the "qv_0 is newer" conditional branch,
+  ``qv_1.is_fixed_name`` (called ``user_given_name`` earlier) was checked 
+  when it should have been ``qv_0``'s.
+  As a result, merging two sessions could rename a variable with 
+  an explicitly given (fixed) name. Now a fixed name is never renamed.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed a bug where calls of :meth:`~qrisp.QuantumVariable.duplicate` of the form ``duplicate(name="foo*")`` 
+  caused the variable being duplicated to change.
+  There, ``self.is_fixed_name`` (called ``user_given_name`` earlier) was set to ``False``, instead of the duplicate's ``is_fixed_name``.
+  This is fixed now.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed a bug where a :ref:`QuantumVariable <QuantumVariable>` created at the top level of a
+  plain Python script (e.g. ``qv = QuantumVariable(2)``) was not named after its Python variable,
+  but received a generic name such as ``qv_0`` instead. ``find_calling_line`` picked the wrong
+  stack frame whenever the declaring line was the bottom of the call stack. Inside functions,
+  pytest or Jupyter the inferred name was already correct; at module level, scripts now get the
+  inferred name too, which changes the names shown e.g. in printed circuits.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed the name inferred for a :ref:`QuantumVariable <QuantumVariable>` declared with a type
+  annotation or through tuple unpacking. ``x: QuantumFloat = QuantumFloat(3)`` was named ``x:``
+  and ``a, b = QuantumFloat(2), QuantumFloat(2)`` named its first variable ``a,``; they are now
+  named ``x`` and ``a`` respectively.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed a bug where deleting a :ref:`QuantumVariable <QuantumVariable>` could remove a different
+  variable with the same name, living in another QuantumSession, from ``QuantumVariable.live_qvs``.
+  Names are only unique within a single QuantumSession, so variables are now matched by their
+  creation time instead. Since the ``auto_uncompute`` decorator uses ``live_qvs`` to find the
+  variables a function created, it could previously miss such a variable.
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
 Compatibility
 -------------
 
@@ -447,6 +519,11 @@ Compatibility
 
 New Tutorials/ Updated Documentation
 -------------------------------------
+
+* :doc:`CUDA-Q tutorial </general/tutorial/CUDAQ>` - Compiling and running
+  Qrisp kernels on NVIDIA's CUDA-Q platform, from a Bell-state example to
+  hybrid quantum-classical workflows
+  (`PR #943 <https://github.com/eclipse-qrisp/Qrisp/pull/943>`_).
 
 * Fixed outdated or inaccurate docstrings and examples across the Jasp
   module (control flow, sampling, simulators, optimization tools,
@@ -582,6 +659,17 @@ API Changes
   ``jasp_mod_adder(a, b, N, inpl_adder=adder)`` with ``mod_adder(a, b, adder, N)``
   (`PR #965 <https://github.com/eclipse-qrisp/Qrisp/pull/965>`_).
 
+* Renamed the ``QuantumVariable`` attribute ``user_given_name`` to
+  ``is_fixed_name``. Code reading ``qv.user_given_name`` must
+  use ``qv.is_fixed_name`` instead
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* ``QuantumVariable.creation_counter`` is now a plain ``int`` instead of a
+  one-element NumPy array. Code reading it as
+  ``int(QuantumVariable.creation_counter[0])`` must use
+  ``QuantumVariable.creation_counter`` instead
+  (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
 .. Add API changes above this line
 
 Development
@@ -613,10 +701,14 @@ Development
 * Added a changelog reminder workflow, the ``make release-notes`` script,
   a developer changelog (``changelog-dev.rst``), a release guide,
   fixed the workflow permissions to allow posting PR comments,
-  and skipped the check for Dependabot PRs
+  and skipped the check for Dependabot PRs. The check now compares against the
+  pull request's head commit instead of GitHub's synthetic merge commit, which
+  also contains the latest ``main`` and therefore made other pull requests'
+  changelog entries count as the current pull request's
   (`PR #658 <https://github.com/eclipse-qrisp/Qrisp/pull/658>`_,
   `PR #715 <https://github.com/eclipse-qrisp/Qrisp/pull/715>`_,
-  `PR #727 <https://github.com/eclipse-qrisp/Qrisp/pull/727>`_).
+  `PR #727 <https://github.com/eclipse-qrisp/Qrisp/pull/727>`_,
+  `PR #983 <https://github.com/eclipse-qrisp/Qrisp/pull/983>`_).
 
 * Added pip dependency caching to the CI test workflow
   (`PR #685 <https://github.com/eclipse-qrisp/Qrisp/pull/685>`_).
@@ -756,3 +848,4 @@ First Time Contributors 🎉
 * `Shanwis <https://github.com/Shanwis>`_
 * `micpap25 <https://github.com/micpap25>`_
 * `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_
+* `Joswin-10 <https://github.com/Joswin-10>`_
