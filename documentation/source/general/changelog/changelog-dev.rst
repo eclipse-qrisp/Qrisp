@@ -738,7 +738,7 @@ Development
 * CI workflows no longer store the ``GITHUB_TOKEN`` in the checked-out
   repository (``persist-credentials: false``), so code from a pull request that
   runs in a later step cannot read it
-  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/XXX>`_).
+  (`PR #992 <https://github.com/eclipse-qrisp/Qrisp/pull/992>`_).
 
 Dependency Upgrades
 -------------------
