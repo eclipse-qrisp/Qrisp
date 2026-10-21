@@ -159,7 +159,7 @@ Improvements
 * The simulator shows its progress bar only in terminals and Jupyter notebooks.
   Redirected or captured output, such as log files, CI runs and doctests, no
   longer contains progress bar text
-  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/XXX>`_).
+  (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
 
 Other New Features
 ------------------
@@ -742,7 +742,7 @@ Development
 
 * Added a doctest workflow that runs the docstring examples of ``qrisp.qtypes``
   on pull requests. Further packages are added as their examples are fixed
-  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/XXX>`_).
+  (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
 
 Dependency Upgrades
 -------------------
