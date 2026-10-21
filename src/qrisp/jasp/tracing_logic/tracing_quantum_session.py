@@ -304,8 +304,6 @@ class TracingQuantumSession:
 
         qv.creation_time = QuantumVariable.creation_counter
         QuantumVariable.creation_counter += 1
-        if hash(qv) in QuantumVariable.live_qvs:
-            raise Exception(f"Tried to register {qv!r}, whose hash collides with a live QuantumVariable")
         QuantumVariable.live_qvs[hash(qv)] = qv
 
     def request_qubits(self, amount: int | Tracer) -> DynamicQubitArray:
