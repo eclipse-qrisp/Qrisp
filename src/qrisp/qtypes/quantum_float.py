@@ -300,7 +300,7 @@ class QuantumFloat(QuantumVariable):
 
     >>> from qrisp import h
     >>> a = QuantumFloat(4)
-    >>> _ = h(a[2])
+    >>> h(a[2])
     >>> print(a)
     {0: 0.5, 4: 0.5}
     >>> comparison_qbl_0 = (a < 4 )
@@ -1070,7 +1070,7 @@ class QuantumFloat(QuantumVariable):
         >>> n_amp = 1/3**0.5
         >>> qf[:] = {-1 : n_amp, -2 : n_amp, 1 : n_amp}
         >>> qbl = QuantumBool()
-        >>> _ = cx(qf.sign(), qbl)
+        >>> cx(qf.sign(), qbl)
         >>> print(qbl)
         {True: 0.66667, False: 0.33333}
 
@@ -1152,13 +1152,13 @@ class QuantumFloat(QuantumVariable):
 
         >>> from qrisp import QuantumFloat, x
         >>> qf = QuantumFloat(6, -3)
-        >>> _ = x(qf.significant(-2))
+        >>> x(qf.significant(-2))
         >>> print(qf)
         {0.25: 1.0}
 
         The qubit with significance $-2$ corresponds to the value $0.25 = 2^{-2}$.
 
-        >>> _ = x(qf.significant(2))
+        >>> x(qf.significant(2))
         >>> print(qf)
         {4.25: 1.0}
 
@@ -1247,7 +1247,7 @@ class QuantumFloat(QuantumVariable):
 
         >>> from qrisp import QuantumFloat, h
         >>> qf = QuantumFloat(4)
-        >>> _ = h(qf)
+        >>> h(qf)
         >>> qf.get_ev()
         7.5
 
@@ -1294,20 +1294,15 @@ class QuantumFloat(QuantumVariable):
         We create a QuantumFloat and a QuantumBool to perform a controlled bit
         shift, then evaluate the resulting (superposed) state:
 
-        ::
-
-            from qrisp import QuantumFloat, QuantumBool, h
-            qf = QuantumFloat(4)
-            qf[:] = 1
-            qbl = QuantumBool()
-            h(qbl)
-
-            with qbl:
-                qf.quantum_bit_shift(2)
-
-            print(qf.qs.statevector())
-            # Yields
-            # sqrt(2)*(|1>*|False> + |4>*|True>)/2
+        >>> from qrisp import QuantumFloat, QuantumBool, h
+        >>> qf = QuantumFloat(4)
+        >>> qf[:] = 1
+        >>> qbl = QuantumBool()
+        >>> h(qbl)
+        >>> with qbl:
+        ...     qf.quantum_bit_shift(2)
+        >>> print(qf.qs.statevector())
+        sqrt(2)*(|1>*|False> + |4>*|True>)/2
 
         """
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).

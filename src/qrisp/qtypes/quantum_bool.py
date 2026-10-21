@@ -31,7 +31,7 @@ class QuantumBool(QuantumVariable):
     Apart from their behavior as a QuantumVariable, they can also be treated like
     :ref:`ControlEnvironments <ControlEnvironment>`.
 
-    .. note:
+    .. note::
         QuantumBools that are evaluated directly after a ``with`` statement are
         uncomputed automatically upon leaving the ControlEnvironment.
 
@@ -39,7 +39,7 @@ class QuantumBool(QuantumVariable):
     --------
     We create a QuantumBool and set it to uniform superposition
 
-    >>> from qrisp import QuantumBool, h
+    >>> from qrisp import QuantumBool, h, x
     >>> q_bool_0 = QuantumBool()
     >>> h(q_bool_0)
     >>> print(q_bool_0)
@@ -76,45 +76,39 @@ class QuantumBool(QuantumVariable):
     To use a QuantumBool as a :ref:`ControlEnvironment`, we simply put it in a ``with``
     statement:
 
-    ::
-
-        with q_bool_3:
-            qf += 2
-
+    >>> with q_bool_3:
+    ...     qf += 2
     >>> print(qf)
     {0: 0.5, 10: 0.5}
 
     QuantumBools that are created directly after a ``with`` statement are uncomputed
     automatically:
 
-    ::
-
-        with qf == 10:
-            q_bool_3.flip()
-
-    >>> print(qf.qs)
+    >>> with qf == 10:
+    ...     x(q_bool_3)
+    >>> print(qf.qs)  # doctest: +SKIP
 
     .. code-block:: none
 
         QuantumCircuit:
-        --------------
-                           ┌────────────┐     ┌───────────┐
-                qf.0: ─────┤0           ├─────┤0          ├──o─────────o──
-                           │            │     │           │  │         │
-                qf.1: ─────┤1           ├─────┤1          ├──■─────────■──
-                           │            │     │  __iadd__ │  │         │
-                qf.2: ─────┤2           ├─────┤2          ├──o─────────o──
-                      ┌───┐│  less_than │     │           │  │         │
-                qf.3: ┤ H ├┤3           ├─────┤3          ├──■─────────■──
-                      └───┘│            │┌───┐└─────┬─────┘  │  ┌───┐  │
-            lt_qbl.0: ─────┤4           ├┤ X ├──────■────────┼──┤ X ├──┼──
-                           │            │└───┘               │  └─┬─┘  │
-        lt_ancilla.0: ─────┤5           ├────────────────────┼────┼────┼──
-                           └────────────┘                  ┌─┴─┐  │  ┌─┴─┐
-          cond_env.0: ─────────────────────────────────────┤ X ├──■──┤ X ├
-                                                           └───┘     └───┘
+        ---------------
+                           ┌────────────┐     ┌────────────────┐┌────────┐     ┌───────────┐
+                qf.0: ─────┤0           ├─────┤0               ├┤0       ├─────┤0          ├
+                           │            │     │                ││        │     │           │
+                qf.1: ─────┤1           ├─────┤1               ├┤1       ├─────┤1          ├
+                           │            │     │                ││        │     │           │
+                qf.2: ─────┤2           ├─────┤2 cusc___iadd__ ├┤2       ├─────┤2          ├
+                      ┌───┐│  less_than │     │                ││        │     │           │
+                qf.3: ┤ H ├┤3           ├─────┤3               ├┤3 equal ├─────┤3 equal_dg ├
+                      └───┘│            │┌───┐│                ││        │┌───┐│           │
+            lt_qbl.0: ─────┤4           ├┤ X ├┤4               ├┤        ├┤ X ├┤           ├
+                           │            │└───┘└────────────────┘│        │└─┬─┘│           │
+        lt_ancilla.0: ─────┤5           ├───────────────────────┤        ├──┼──┤           ├
+                           └────────────┘                       │        │  │  │           │
+          cond_env.0: ──────────────────────────────────────────┤4       ├──■──┤4          ├
+                                                                └────────┘     └───────────┘
         Live QuantumVariables:
-        ---------------------
+        ----------------------
         QuantumFloat qf
         QuantumBool lt_qbl
 
