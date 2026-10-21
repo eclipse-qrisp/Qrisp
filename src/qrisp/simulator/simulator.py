@@ -42,13 +42,11 @@ def _progress_enabled():
     if sys.stdout.isatty():
         return True
 
-    # A Jupyter kernel always has IPython imported, so there is no need to import it here.
-    ipython = sys.modules.get("IPython")
-    if ipython is None:
-        return False
-
-    shell = ipython.get_ipython()
-    return shell is not None and "IPKernelApp" in shell.config
+    # In a Jupyter kernel, stdout is ipykernel's OutStream. Streams that replace it
+    # (redirect_stdout, %%capture) are not, so their output stays clean. A running kernel
+    # has already imported ipykernel, so there is no need to import it here.
+    iostream = sys.modules.get("ipykernel.iostream")
+    return iostream is not None and isinstance(sys.stdout, iostream.OutStream)
 
 
 def _clear_progress_line():
