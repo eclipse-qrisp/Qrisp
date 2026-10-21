@@ -24,6 +24,11 @@ import jax.numpy as jnp
 from jax.numpy import bitwise_count
 
 from qrisp import QuantumVariable, cx, h, mcx, measure, reset, x, z
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    _is_quantum_register,
+    _normalize_optional_input_arg,
+    _reject_unsupported_quantum_types,
+)
 from qrisp.environments import control, custom_control
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumBool
@@ -280,13 +285,8 @@ def carry_venting_adder(
 
     clean_anc = ancilla
 
-    if c_in is None:
-        carry_in = None
-    else:
-        try:
-            carry_in = c_in[0]
-        except (TypeError, AttributeError, IndexError):
-            carry_in = c_in
+    carry_in = _normalize_optional_input_arg(c_in, "c_in")
+    c_out = _normalize_optional_input_arg(c_out, "c_out")
 
     # Bitmask that records the measurement outcome of each vented carry.
     # The k-th bit of ventmask stores the vent measurement at position k.
@@ -441,7 +441,7 @@ def carry_venting_adder(
 
         # XOR the final carry into c_out before venting it.
         if c_out is not None:
-            cx(current_carry, c_out[0])
+            cx(current_carry, c_out)
 
         # Vent (common to both paths) — X-basis measurement
         h(current_carry)
@@ -463,7 +463,7 @@ def carry_venting_adder(
 
     def skip_final_block(target, clean_anc, ventmask, carry_xor_cnt):
         if c_out is not None:
-            cx(clean_anc[0], c_out[0])
+            cx(clean_anc[0], c_out)
         if vent_final:
             h(clean_anc[0])
             m_i = measure(clean_anc[0])
@@ -525,13 +525,7 @@ def carry_xor_block(
 
     num_dirty_qubits = jlen(dirty_ancillas)
 
-    if c_in is None:
-        carry_in = None
-    else:
-        try:
-            carry_in = c_in[0]
-        except (TypeError, AttributeError, IndexError):
-            carry_in = c_in
+    carry_in = _normalize_optional_input_arg(c_in, "c_in")
 
     # Reverse chain
     # Walk the dirty qubits from most significant bit to least significant bit.
@@ -769,10 +763,12 @@ def gidney_cq_venting_adder(
     """
     from qrisp.jasp import jlen, jrange
 
-    if isinstance(d, (QuantumVariable, list)):
+    if isinstance(d, list) or _is_quantum_register(d):
         raise TypeError("The first argument must be a classical integer.")
-    if not isinstance(target, QuantumVariable):
+    if not _is_quantum_register(target):
         raise TypeError("The second argument must be a QuantumVariable.")
+
+    _reject_unsupported_quantum_types(d, target)
 
     if not check_for_tracing_mode():
         raise RuntimeError("The Gidney Classical-Quantum adder does not work in standard python execution mode.")
