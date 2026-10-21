@@ -21,6 +21,7 @@ import functools
 import jax.numpy as jnp
 
 from qrisp.jasp import (
+    bind_variant_to_jit_call,
     check_for_tracing_mode,
     get_last_equation,
     make_jaspr,
@@ -166,7 +167,9 @@ def custom_inversion(*func, **cusi_kwargs):
             # Retrieve the pjit equation
             jit_eqn = get_last_equation()
 
-            if not jit_eqn.params["jaxpr"].inv_jaspr:
+            forward_jaspr = jit_eqn.params["jaxpr"]
+
+            if not forward_jaspr.inv_jaspr:
                 # Trace the inverted version
 
                 def ammended_func(*args, **kwargs):
@@ -175,9 +178,15 @@ def custom_inversion(*func, **cusi_kwargs):
 
                 inverted_jaspr = make_jaspr(ammended_func)(*args, **kwargs)
 
-                # Store controlled version
-                jit_eqn.params["jaxpr"].inv_jaspr = inverted_jaspr
-                inverted_jaspr.inv_jaspr = jit_eqn.params["jaxpr"]
+                # make_jaspr leaves what the inverse captured from the surrounding
+                # code in its consts, while jit_eqn passes what the forward version
+                # captured as leading operands. Bind the former to the latter, so
+                # the inverse can replace the callee of jit_eqn.
+                inverted_jaspr = bind_variant_to_jit_call(inverted_jaspr, jit_eqn, func.__name__, "inverse")
+
+                # Store inverted version
+                forward_jaspr.inv_jaspr = inverted_jaspr
+                inverted_jaspr.inv_jaspr = forward_jaspr
 
         return res
 
