@@ -115,7 +115,7 @@ def update_index_rst(version):
     are already there.
     """
     index_file = CHANGELOG_DIR / "index.rst"
-    lines = index_file.read_text().split("\n")
+    lines = index_file.read_text(encoding="utf-8").split("\n")
 
     # Locate the first line containing ":maxdepth:" — entries start on the
     # line immediately after this option directive.
@@ -176,7 +176,7 @@ def update_index_rst(version):
         lines.insert(end, f"   {version}")
 
     # Persist the modified lines back to disk.
-    index_file.write_text("\n".join(lines))
+    index_file.write_text("\n".join(lines), encoding="utf-8")
     print(f"  Updated index.rst (added {version})")
     return True
 
@@ -258,7 +258,7 @@ First Time Contributors 🎉
 .. Add new contributors above this line
 """
 
-    (CHANGELOG_DIR / "changelog-dev.rst").write_text(content)
+    (CHANGELOG_DIR / "changelog-dev.rst").write_text(content, encoding="utf-8")
     print(f"  Created new changelog-dev.rst for v{next_label}")
     return True
 
