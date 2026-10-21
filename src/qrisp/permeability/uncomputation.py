@@ -60,7 +60,7 @@ def auto_uncompute_inner(function):
         qs = qs_list[0]
 
         # Determine quantum variables to uncompute
-        initial_qvs = set([hash(qv()) for qv in QuantumVariable.live_qvs])
+        initial_qvs = set(QuantumVariable.live_qvs.keys())
 
         # Execute function
         result = function(*args, **kwargs)

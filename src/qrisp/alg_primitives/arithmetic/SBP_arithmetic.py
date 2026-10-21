@@ -886,7 +886,7 @@ def hybrid_mult(
     # Free up the qubit which we identified as containing no information
 
     h(output_qf[0])
-    output_qf.reduce(output_qf[0])
+    output_qf.reduce([output_qf[0]])
 
     # Perform terminal qft
     if terminal_op == "qft":

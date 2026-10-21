@@ -18,6 +18,8 @@
 
 import subprocess
 import sys
+from collections import Counter
+from weakref import WeakValueDictionary
 
 import pytest
 
@@ -45,13 +47,15 @@ def _isolated_quantum_variable_naming_state():
     original_name_tracker = QuantumVariable.name_tracker
     original_live_qvs = QuantumVariable.live_qvs
     original_creation_counter = QuantumVariable.creation_counter
-    QuantumVariable.name_tracker = {}
-    QuantumVariable.live_qvs = []
+    QuantumVariable.name_tracker = Counter()
+    QuantumVariable.live_qvs = WeakValueDictionary()
     QuantumVariable.creation_counter = 0
-    yield
-    QuantumVariable.name_tracker = original_name_tracker
-    QuantumVariable.live_qvs = original_live_qvs
-    QuantumVariable.creation_counter = original_creation_counter
+    try:
+        yield
+    finally:
+        QuantumVariable.name_tracker = original_name_tracker
+        QuantumVariable.live_qvs = original_live_qvs
+        QuantumVariable.creation_counter = original_creation_counter
 
 
 class TestRequestedName:
