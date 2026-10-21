@@ -39,7 +39,7 @@ class QuantumBool(QuantumVariable):
     --------
     We create a QuantumBool and set it to uniform superposition
 
-    >>> from qrisp import QuantumBool, h, x
+    >>> from qrisp import QuantumBool, h
     >>> q_bool_0 = QuantumBool()
     >>> h(q_bool_0)
     >>> print(q_bool_0)
@@ -85,7 +85,7 @@ class QuantumBool(QuantumVariable):
     automatically:
 
     >>> with qf == 10:
-    ...     x(q_bool_3)
+    ...     _ = q_bool_3.flip()
     >>> print(qf.qs)  # doctest: +SKIP
 
     .. code-block:: none
