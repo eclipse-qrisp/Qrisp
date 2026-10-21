@@ -330,6 +330,7 @@ class QuantumVariable:
         return or_res
 
     def __and__(self, other: QuantumVariable):
+        """Return a new QuantumVariable holding the qubit-wise AND of ``self`` and ``other``."""
         # Imported locally: the qrisp package imports this module before defining these names.
         from qrisp import mcx
 
@@ -341,6 +342,7 @@ class QuantumVariable:
         return and_res
 
     def __xor__(self, other: QuantumVariable):
+        """Return a new QuantumVariable holding the qubit-wise XOR of ``self`` and ``other``."""
         # Imported locally: the qrisp package imports this module before defining these names.
         from qrisp import cx
 
@@ -352,7 +354,12 @@ class QuantumVariable:
 
         return and_res
 
-    def __lshift__(self, other: Callable[[Any], QuantumVariable]):
+    def __lshift__(self, other: Callable[..., QuantumVariable]):
+        """Return a variadic function that calls ``other`` and stores its result in ``self``.
+
+        The returned function forwards its arguments to ``other`` and writes the
+        QuantumVariable that ``other`` returns into ``self``.
+        """
         if not callable(other):
             raise Exception("Tried to inject QuantumVariable into non-callable")
 
@@ -615,8 +622,7 @@ class QuantumVariable:
         raise Exception("Value " + str(value) + " not supported by encoder.")
 
     def encode(self, value: Hashable, permit_dirtyness=False):
-        """The encode method allows to quickly bring a QuantumVariable in a desired
-        computational basis state.
+        """The encode method allows to quickly bring a QuantumVariable in a desired computational basis state.
 
         A shorthand for this method is given by the ``[:]`` operator.
 
@@ -845,8 +851,7 @@ class QuantumVariable:
                 self.reg.insert(position + i, insertion_qubits[i])
 
     def reduce(self, qubits: list[Qubit], verify=False):
-        r"""Reduces the qubit count of the QuantumVariable by removing a specified set of
-        qubits.
+        r"""Reduces the qubit count of the QuantumVariable by removing a specified set of qubits.
 
         Parameters
         ----------
@@ -1079,12 +1084,14 @@ class QuantumVariable:
         return self.reg[key]
 
     def __repr__(self):
+        """Return a short representation showing the type and name of this QuantumVariable."""
         return "<" + str(type(self)).split(".")[-1][:-2] + " '" + self.name + "'>"
         # QUESTION: Are these still needed?
         # return str(type(self)).split(".")[-1][:-2] + "(name = " + self.name + ")"
         # return str(self)
 
     def __str__(self):
+        """Return the measurement results, or the repr when in tracing mode."""
         # Imported locally: qrisp.jasp imports QuantumVariable from this module.
         from qrisp.jasp import check_for_tracing_mode
 
@@ -1098,6 +1105,7 @@ class QuantumVariable:
             return self.reg.size
 
     def __len__(self):
+        """Return the number of qubits of this QuantumVariable."""
         return self.size
 
     # Overload equality operator to use python syntax for if environments?
@@ -1381,6 +1389,7 @@ class QuantumVariable:
             self.qs.uncomp_stack.append(self)
 
     def get_unique_name(self, name: str | None = None):
+        """Return ``name`` (or a type-based default) suffixed with a counter so no live QuantumVariable shares it."""
         if name is None:
             # Imported locally: the qrisp package imports this module before defining these names.
             from qrisp import QuantumBool, QuantumChar, QuantumFloat
@@ -1554,6 +1563,7 @@ class QuantumVariable:
 
 
 def plot_histogram(outcome_labels: list[str], counts: dict[Any, float], filename=None):
+    """Plot ``counts`` as a bar chart over ``outcome_labels``, saving to ``filename`` if given, otherwise showing it."""
     res_list = []
 
     for k in range(len(outcome_labels)):
