@@ -11,7 +11,7 @@ SOURCEDIR     = source
 BUILDDIR      = build
 
 docs-install:
-	pip install -e "..[docs]"
+	pip install -e "..[docs,cudaq]"
 	sudo apt install -y pandoc
 
 # Put it first so that "make" without argument is like "make help".

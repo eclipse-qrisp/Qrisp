@@ -16,7 +16,15 @@
 
 """Defines the Clbit class representing classical bits in a QuantumCircuit."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+from weakref import ReferenceType
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from qrisp.core.quantum_session import QuantumSession
 
 
 class Clbit:
@@ -39,6 +47,7 @@ class Clbit:
 
     """
 
+    qs: ReferenceType[QuantumSession] | None = None
     dtype = np.dtype("bool")
     clbit_hash = np.zeros(1)
 
