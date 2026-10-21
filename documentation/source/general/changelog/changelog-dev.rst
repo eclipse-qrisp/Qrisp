@@ -785,7 +785,7 @@ Dependency Upgrades
   Python 3.13, where Sphinx 9.2.0 requires ``packaging>=25`` while recent
   ``iqm-client`` releases require ``packaging<25``, and ``pip install
   ".[all]"`` resolved to ``iqm-client`` 15.3
-  (`PR #XXX <https://github.com/eclipse-qrisp/Qrisp/pull/XXX>`_).
+  (`PR #995 <https://github.com/eclipse-qrisp/Qrisp/pull/995>`_).
 
 .. Add dependency upgrades above this line
 
