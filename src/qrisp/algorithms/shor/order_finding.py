@@ -28,7 +28,7 @@ import jax.numpy as jnp
 import numpy as np
 from jax import Array
 
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import DTYPE, BigInteger, _static_digits
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import _LIMB_BITS
 from qrisp.alg_primitives.iterative_qpe import _semiclassical_phase_estimation
 from qrisp.jasp import check_for_tracing_mode
@@ -38,29 +38,6 @@ __all__ = ["semiclassical_order_finding"]
 
 # The Montgomery multiplication needs an odd modulus, and order finding a modulus of at least 3
 _MIN_MODULUS = 3
-
-
-def _to_limbs(value: int, num_limbs: int) -> np.ndarray:
-    """Return the little-endian 32-bit limbs of a non-negative Python integer, as in a BigInteger.
-
-    The limbs of ``BigInteger.create_static`` are traced in Jasp mode, where this
-    function is called, so they could not fill the NumPy tables of the multipliers.
-
-    Parameters
-    ----------
-    value : int
-        The integer, smaller than ``2**(32 * num_limbs)``.
-    num_limbs : int
-        The number of limbs.
-
-    Returns
-    -------
-    np.ndarray
-        The limbs, of dtype ``uint32``.
-
-    """
-    mask = (1 << _LIMB_BITS) - 1
-    return np.array([(value >> (_LIMB_BITS * i)) & mask for i in range(num_limbs)], dtype=np.uint32)
 
 
 def semiclassical_order_finding(
@@ -110,7 +87,7 @@ def semiclassical_order_finding(
     inpl_adder : Callable, optional
         The in-place adder of the modular multiplication, see
         :ref:`QuantumModulus <QuantumModulus>`. The default is the
-        :meth:`gidney_adder <qrisp.gidney_adder>`.
+        :func:`gidney_adder <qrisp.gidney_adder>`.
 
     Returns
     -------
@@ -181,13 +158,14 @@ def semiclassical_order_finding(
     # multiplication widens them itself to hold its intermediate products
     num_limbs = -(-num_register_qubits // _LIMB_BITS)
     # Step j multiplies by a**(2**(t - 1 - j)) mod N. The multipliers and their
-    # inverses modulo N are computed here exactly with Python integers.
-    multipliers = np.empty((precision, num_limbs), dtype=np.uint32)
-    inverses = np.empty((precision, num_limbs), dtype=np.uint32)
+    # inverses modulo N are computed here exactly with Python integers, in NumPy
+    # arrays, since the limbs of a BigInteger would be traced.
+    multipliers = np.empty((precision, num_limbs), dtype=DTYPE)
+    inverses = np.empty((precision, num_limbs), dtype=DTYPE)
     multiplier, inverse = a % N, pow(a, -1, N)
     for k in range(precision):
-        multipliers[k] = _to_limbs(multiplier, num_limbs)
-        inverses[k] = _to_limbs(inverse, num_limbs)
+        multipliers[k] = _static_digits(multiplier, num_limbs)
+        inverses[k] = _static_digits(inverse, num_limbs)
         multiplier = multiplier * multiplier % N
         inverse = inverse * inverse % N
     multipliers, inverses = jnp.asarray(multipliers), jnp.asarray(inverses)

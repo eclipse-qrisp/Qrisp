@@ -71,7 +71,30 @@ def test_IQPE_exact_phases(iter_spec):
         assert estimate(y / 2**precision) == y / 2**precision, y
 
 
-def test_IQPE_rejects_precision_above_63():
+def test_IQPE_passes_kwargs():
+    """The keyword arguments are passed on to U."""
+
+    @jaspify
+    def estimate():
+        def U(qv, phase):
+            p(2 * np.pi * phase, qv[0])
+
+        qv = QuantumVariable(1)
+        x(qv)
+        return IQPE(qv, U, precision=3, kwargs={"phase": 5 / 8})
+
+    assert estimate() == 5 / 8
+
+
+@pytest.mark.parametrize("precision", [64, np.int64(64)], ids=["int", "NumPy integer"])
+def test_IQPE_rejects_precision_above_63(precision):
     """IQPE applies U up to 2**(precision - 1) times, which overflows a 64-bit integer from a precision of 64 on."""
     with pytest.raises(ValueError):
-        IQPE(None, lambda qv: None, precision=64)
+        IQPE(None, lambda qv: None, precision=precision)
+
+
+def test_iterative_qpe_exports_only_IQPE():
+    """The module is star-imported into qrisp, which should not receive its imports."""
+    namespace = {}
+    exec("from qrisp.alg_primitives.iterative_qpe import *", namespace)
+    assert set(namespace) - {"__builtins__"} == {"IQPE"}

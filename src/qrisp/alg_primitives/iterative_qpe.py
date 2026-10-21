@@ -33,8 +33,12 @@ import numpy as np
 from jax import Array
 
 from qrisp import QuantumBool, control, h, measure, rz
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import DTYPE
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import _LIMB_BITS
 from qrisp.jasp import jrange, q_fori_loop
+
+# The module is star-imported into qrisp, which should not receive its imports
+__all__ = ["IQPE"]
 
 # IQPE applies U up to 2**(precision - 1) times, counted with 64-bit integers
 _MAX_IQPE_PRECISION = 63
@@ -78,7 +82,7 @@ def _semiclassical_phase_estimation(
 
     """
     # Otherwise JAX would drop the bits of the missing limbs silently
-    if num_limbs and isinstance(precision, int) and num_limbs * _LIMB_BITS < precision:
+    if num_limbs and isinstance(precision, (int, np.integer)) and num_limbs * _LIMB_BITS < precision:
         raise ValueError(f"{num_limbs} limbs cannot hold an outcome of {precision} bits")
 
     def step(j: Array, carry: tuple) -> tuple:
@@ -114,11 +118,11 @@ def _semiclassical_phase_estimation(
 
         if num_limbs:
             limb = j // _LIMB_BITS
-            shift = jnp.asarray(j % _LIMB_BITS, dtype=jnp.uint32)
-            digits = digits.at[limb].set(digits[limb] | (jnp.asarray(bit, dtype=jnp.uint32) << shift))
+            shift = jnp.asarray(j % _LIMB_BITS, dtype=DTYPE)
+            digits = digits.at[limb].set(digits[limb] | (jnp.asarray(bit, dtype=DTYPE) << shift))
         return ((phase + bit) / 2, args, digits)
 
-    initial = (jnp.asarray(0.0), args, jnp.zeros(num_limbs, dtype=jnp.uint32))
+    initial = (jnp.asarray(0.0), args, jnp.zeros(num_limbs, dtype=DTYPE))
     phase, _, digits = q_fori_loop(0, precision, step, initial)
     return phase, digits
 
@@ -215,7 +219,7 @@ def IQPE(
     Array(0.1875, dtype=float64)
 
     """
-    if isinstance(precision, int) and precision > _MAX_IQPE_PRECISION:
+    if isinstance(precision, (int, np.integer)) and precision > _MAX_IQPE_PRECISION:
         raise ValueError(f"The precision of IQPE is at most {_MAX_IQPE_PRECISION}, got {precision}")
     kwargs = {} if kwargs is None else kwargs
 

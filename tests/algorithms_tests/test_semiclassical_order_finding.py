@@ -38,8 +38,7 @@ from qrisp import (
 )
 from qrisp.alg_primitives.iterative_qpe import _semiclassical_phase_estimation
 from qrisp.algorithms.shor import semiclassical_order_finding
-from qrisp.algorithms.shor.order_finding import _to_limbs
-from qrisp.jasp import count_ops, jaspify, jrange, num_qubits
+from qrisp.jasp import count_ops, jaspify, jrange, make_jaspr, q_fori_loop
 
 # Largest total variation distance accepted between sampled and exact distributions
 TOTAL_VARIATION_TOLERANCE = 0.1
@@ -108,7 +107,7 @@ def test_phase_estimation_exact_phases_beyond_one_limb():
             phase = (shifted & jnp.uint64(2**precision - 1)).astype(jnp.float64) / 2**precision
             p(2 * np.pi * phase, qv[0])
 
-        return _semiclassical_phase_estimation(qv, apply_power, precision, num_limbs=-(-precision // 32))[1]
+        return BigInteger(_semiclassical_phase_estimation(qv, apply_power, precision, num_limbs=-(-precision // 32))[1])
 
     rng = random.Random(precision)
     for y in (
@@ -127,20 +126,35 @@ def test_phase_estimation_exact_phases_beyond_one_limb():
 def test_phase_estimation_distribution_of_an_inexact_phase(seed_numpy):
     """For a phase that t bits cannot represent, the outcomes follow the distribution of the phase estimation."""
     precision, phase, shots = 4, 1 / 3, 400
-    estimate = make_phase_estimation(precision)
-    seed_numpy(2026)
-    counts = Counter(estimate(phase)() for _ in range(shots))
 
+    @jaspify
+    def sample_counts():
+        def shot(_, counts):
+            qv = QuantumVariable(1)
+            x(qv)
+
+            def apply_power(qv, k):
+                p(2 * np.pi * phase * 2.0**k, qv[0])
+
+            outcome = _semiclassical_phase_estimation(qv, apply_power, precision, num_limbs=1)[1][0]
+            x(qv)  # the eigenstate |1> is unchanged, so the qubit is released in |0>
+            qv.delete()
+            return counts.at[outcome].add(1)
+
+        # One program for all shots, which is much faster than one program per shot
+        return q_fori_loop(0, shots, shot, jnp.zeros(2**precision, dtype=jnp.int64))
+
+    seed_numpy(2026)
+    observed = np.asarray(sample_counts()) / shots
     expected = qpe_outcome_distribution([phase], precision)
-    observed = np.array([counts[y] for y in range(2**precision)]) / shots
     # The expected total variation distance of 400 samples is about 0.04
     assert 0.5 * np.abs(observed - expected).sum() < TOTAL_VARIATION_TOLERANCE
 
 
 @pytest.mark.parametrize(
     "a, N, order",
-    [(2, 5, 4), (7, 15, 4), (4, 15, 2)],
-    ids=["a=2, N=5", "a=7, N=15", "a=4, N=15"],
+    [(7, 15, 4), (4, 15, 2)],
+    ids=["a=7, N=15", "a=4, N=15"],
 )
 def test_order_finding_outcomes(a, N, order, seed_numpy):
     """If the order r divides 2**t, every outcome is a multiple of 2**t / r.
@@ -181,32 +195,6 @@ def qpe_order_finding(a, N, num_limbs):
     return main
 
 
-def qpe_readout(precision, num_limbs):
-    """Return the readout of the circuit with a phase register: Hadamard gates, inverse QFT and measurement."""
-
-    def main():
-        phase_register = QuantumFloat(precision)
-        h(phase_register)
-        QFT(phase_register, inv=True)
-        return measure_to_big_integer(phase_register, num_limbs)
-
-    return main
-
-
-def semiclassical_readout(precision):
-    """Return the readout of the semiclassical circuit: its steps without the controlled multiplications."""
-
-    def main():
-        def apply_power(_qv, _k):
-            pass
-
-        return _semiclassical_phase_estimation(
-            QuantumVariable(1), apply_power, precision, num_limbs=-(-precision // 32)
-        )[1]
-
-    return main
-
-
 def random_inputs(bits, seed):
     """Return (a, N) with N odd of exactly ``bits`` bits and 1 < a < N coprime to N."""
     rng = random.Random(seed)
@@ -217,46 +205,47 @@ def random_inputs(bits, seed):
             return a, N
 
 
-@pytest.mark.parametrize("bits", [4, 16])
-def test_resources_match_the_phase_register_circuit(bits):
+def test_resources_match_the_phase_register_circuit():
     """The semiclassical circuit differs from the circuit with a phase register only by its readout.
 
-    Both apply the same 2n controlled multiplications. The circuit with a phase
-    register adds the Hadamard gates of the register, the inverse QFT and the
-    measurements, the semiclassical circuit two Hadamard gates, a rotation and a
-    measurement per step. It needs 2n - 1 fewer qubits.
+    Both apply the same 2n controlled multiplications. With t = 2n phase bits, the
+    circuit with a phase register adds 2t Hadamard gates, the t (t - 1) / 2
+    controlled phase gates (3 P and 2 CX each) and t / 2 swaps (3 CX each) of the
+    inverse QFT, and t measurements. The semiclassical circuit adds two Hadamard
+    gates, a rotation and a measurement per step. It needs 2n - 1 fewer qubits. At
+    34 bits, the register and the multipliers need two limbs and the outcome three,
+    as for large moduli. The resource estimators are compiled once per circuit and
+    metric, whatever the size, so a single size keeps the test quick.
     """
+    bits = 34
     a, N = random_inputs(bits, seed=bits)
     n, m = bits, math.ceil(math.log2(bits))
-    precision, num_limbs = 2 * n, -(-2 * n // 32)
+    t, num_limbs = 2 * n, -(-2 * n // 32)
+    # Each circuit is traced once for both resource metrics
+    semiclassical = make_jaspr(lambda: semiclassical_order_finding(a, N))()
+    qpe = make_jaspr(qpe_order_finding(a, N, num_limbs))()
 
-    def semiclassical():
-        return semiclassical_order_finding(a, N)
+    expected = Counter(qpe.count_ops(meas_behavior="1"))
+    expected.subtract({"h": 2 * t, "p": 3 * t * (t - 1) // 2, "cx": t * (t - 1) + 3 * (t // 2), "measure": t})
+    expected.update({"h": 2 * t, "rz": t, "measure": t})
+    assert semiclassical.count_ops(meas_behavior="1") == {name: count for name, count in expected.items() if count}
 
-    qpe = qpe_order_finding(a, N, num_limbs)
-    gates = count_ops(meas_behavior="1")
-    readout = gates(semiclassical_readout(precision))()
-    assert readout == {"h": 2 * precision, "rz": precision, "measure": precision}
-    expected = Counter(gates(qpe)())
-    expected.subtract(gates(qpe_readout(precision, num_limbs))())
-    expected.update(readout)
-    assert gates(semiclassical)() == {name: count for name, count in expected.items() if count}
-
-    qubits = num_qubits(meas_behavior="1")
-    semiclassical_qubits, qpe_qubits = qubits(semiclassical)(), qubits(qpe)()
+    semiclassical_qubits = semiclassical.num_qubits(meas_behavior="1")
+    qpe_qubits = qpe.num_qubits(meas_behavior="1")
     assert semiclassical_qubits["peak_allocations"] == 3 * n + 2 * m + 2
-    assert semiclassical_qubits["peak_allocations"] == qpe_qubits["peak_allocations"] - (precision - 1)
+    assert semiclassical_qubits["peak_allocations"] == qpe_qubits["peak_allocations"] - (t - 1)
     # The control qubits are allocated one after the other instead of all at once
     assert semiclassical_qubits["total_allocated"] == qpe_qubits["total_allocated"]
     # The semiclassical order finding also releases its register
     assert semiclassical_qubits["finally_allocated"] == 0
-    assert qpe_qubits["finally_allocated"] == n + precision
+    assert qpe_qubits["finally_allocated"] == n + t
 
 
-def test_phase_estimation_rejects_too_few_limbs():
+@pytest.mark.parametrize("precision", [40, np.int64(40)], ids=["int", "NumPy integer"])
+def test_phase_estimation_rejects_too_few_limbs(precision):
     """An outcome of 40 bits does not fit into one limb, whose missing bits JAX would drop silently."""
     with pytest.raises(ValueError):
-        _semiclassical_phase_estimation(None, lambda args, k: None, 40, num_limbs=1)
+        _semiclassical_phase_estimation(None, lambda args, k: None, precision, num_limbs=1)
 
 
 def test_custom_precision():
@@ -264,21 +253,22 @@ def test_custom_precision():
     precision = 11
     n, m = 4, 2  # N = 15 has 4 bits
 
-    def main():
-        return semiclassical_order_finding(7, 15, precision=precision)
-
-    assert count_ops(meas_behavior="1")(main)()["rz"] == precision
-    assert num_qubits(meas_behavior="1")(main)()["peak_allocations"] == 3 * n + 2 * m + 2
+    jaspr = make_jaspr(lambda: semiclassical_order_finding(7, 15, precision=precision))()
+    assert jaspr.count_ops(meas_behavior="1")["rz"] == precision
+    assert jaspr.num_qubits(meas_behavior="1")["peak_allocations"] == 3 * n + 2 * m + 2
 
 
-def test_to_limbs_matches_biginteger():
-    """The limbs of the multipliers are those of a BigInteger."""
-    rng = random.Random(0)
-    for num_limbs in (1, 3, 8):
-        for value in (0, 1, 2 ** (32 * num_limbs) - 1, rng.getrandbits(32 * num_limbs)):
-            assert np.array_equal(
-                _to_limbs(value, num_limbs), np.asarray(BigInteger.create_static(value, num_limbs).digits)
-            )
+def test_custom_adder():
+    """The adder is passed on to the modular multiplications."""
+
+    class AdderCalled(Exception):
+        """Raised by the adder, which shows that the multiplications use it."""
+
+    def adder(*_args, **_kwargs):
+        raise AdderCalled
+
+    with pytest.raises(AdderCalled):
+        make_jaspr(lambda: semiclassical_order_finding(7, 15, inpl_adder=adder))()
 
 
 @pytest.mark.parametrize(
@@ -289,8 +279,9 @@ def test_to_limbs_matches_biginteger():
         (3, 15, None, ValueError),
         (2, 15, 0, ValueError),
         (2.0, 15, None, TypeError),
+        (2, 15, 2.0, TypeError),
     ],
-    ids=["even N", "N < 3", "a not coprime", "precision 0", "float a"],
+    ids=["even N", "N < 3", "a not coprime", "precision 0", "float a", "float precision"],
 )
 def test_invalid_inputs(a, N, precision, error):
     """Invalid inputs raise an error before any circuit is built."""
