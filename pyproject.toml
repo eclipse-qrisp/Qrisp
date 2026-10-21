@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qrisp"
-version = "0.9.9"
+version = "0.9.10"
 authors = [
     {name = "The Qrisp authors"},
 ]
@@ -31,7 +31,10 @@ license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
 dependencies = [
     "numpy>=2.0,<2.5",
     "sympy<=1.13",
-    "qiskit>=0.44.0",
+    # qiskit 2.6.0 takes up almost all of glibc's static TLS reserve on Linux,
+    # so libgomp (bundled by qiskit-aer, pyscf, pennylane-lightning) fails to
+    # load after `import qrisp` with "cannot allocate memory in static TLS block"
+    "qiskit>=0.44.0,<2.6",
     "matplotlib>=3.5.1",
     "scipy>=1.10.0",
     "numba",
@@ -51,6 +54,7 @@ iqm = [
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
+cudaq = ["qrisp-cudaq"]
 docs = [
     "sphinx>=7,<10",
     "nbsphinx==0.9.8",
@@ -65,7 +69,7 @@ docs = [
     "pydata-sphinx-theme==0.23.0",
 ]
 dev-code-style = [
-    "ruff==0.16.5",
+    "ruff==0.17.0",
 ]
 dev-testing = [
     "pytest==9.1.1",
@@ -86,6 +90,9 @@ dev = [
 # the release of the Qiskit SDK v2.x series and no longer receives bug fixes,
 # security updates, or other patches
 # (https://www.ibm.com/quantum/blog/qiskit-2-5-release-summary).
+# cudaq is intentionally excluded from `all`: the Qrisp test suites do not
+# exercise the CUDA-Q backend, so installing CUDA-Q in every CI job only costs
+# time. The CUDA-Q tests run in eclipse-qrisp/qrisp-cudaq.
 all = [
     "qrisp[qiskit,iqm,catalyst,xdsl,docs,dev]",
 ]
