@@ -25,9 +25,9 @@ Workflow
 3. Review with ``git diff`` and commit.
 
 The script reads the current version from ``pyproject.toml``, archives
-``changelog-dev.rst`` as ``<version>.rst``, inserts it into the
-``index.rst`` toctree in descending order, and writes a fresh
-``changelog-dev.rst`` for the next minor release.
+``changelog-dev.rst`` as ``<version>.rst`` (removing the in-development
+warning), inserts it into the ``index.rst`` toctree in descending order, and
+writes a fresh ``changelog-dev.rst`` for the next minor release.
 
 Run this script only once per release. If something goes wrong partway
 through, fix the issue and restore ``changelog-dev.rst`` from git before
@@ -49,11 +49,38 @@ except ModuleNotFoundError:
 CHANGELOG_DIR = Path("documentation/source/general/changelog")
 
 
+def strip_dev_warning(path):
+    """Remove the in-development warning block from an archived changelog."""
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+
+    for start, line in enumerate(lines):
+        if line.strip() != ".. warning::":
+            continue
+
+        end = start + 1
+        while end < len(lines):
+            candidate = lines[end]
+            if candidate.strip() and not candidate.startswith((" ", "\t")):
+                break
+            end += 1
+
+        block = "".join(lines[start:end])
+        if "in-development" not in block and "NOT RELEASED YET" not in block:
+            continue
+
+        del lines[start:end]
+        path.write_text("".join(lines), encoding="utf-8")
+        return True
+
+    return False
+
+
 def rename_dev_changelog(version):
     """Step 1: Archive the current dev changelog under the release version.
 
     The file changelog-dev.rst becomes <version>.rst so the entry
     survives in the versioned toctree alongside 0.1.rst, 0.2.rst, etc.
+    The in-development warning banner is removed from the archived file.
     """
     dev = CHANGELOG_DIR / "changelog-dev.rst"
     release = CHANGELOG_DIR / f"{version}.rst"
@@ -71,6 +98,10 @@ def rename_dev_changelog(version):
 
     # Rename changelog-dev.rst -> <version>.rst within the changelog directory.
     shutil.move(str(dev), str(release))
+
+    if not strip_dev_warning(release):
+        print(f"  WARNING: no in-development banner found in {release.name}")
+
     print(f"  Renamed: changelog-dev.rst -> {version}.rst")
     return True
 
