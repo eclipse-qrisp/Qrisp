@@ -39,7 +39,9 @@ from qrisp.simulator.quantum_state import QuantumState
 # Progress bars are shown on terminals and in Jupyter kernels (whose stdout is not a
 # TTY). Captured or redirected output (pytest, doctest, CI logs, files) stays clean.
 def _progress_enabled():
-    if sys.stdout.isatty():
+    # stdout can be None or a write-only sink without isatty (e.g. via redirect_stdout)
+    isatty = getattr(sys.stdout, "isatty", None)
+    if isatty is not None and isatty():
         return True
 
     # In a Jupyter kernel, stdout is ipykernel's OutStream. Streams that replace it
