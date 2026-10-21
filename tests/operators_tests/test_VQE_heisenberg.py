@@ -19,9 +19,11 @@
 import jax.numpy as jnp
 import networkx as nx
 import numpy as np
+import pytest
 from qrisp.vqe.problems.heisenberg import *
 
 from qrisp import QuantumFloat, QuantumVariable
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.jasp import jaspify
 
 
@@ -35,7 +37,7 @@ def test_vqe_heisenberg():
 
     results = []
     for i in range(5):
-        res = vqe.run(QuantumVariable(G.number_of_nodes()), depth=2, max_iter=50)
+        res = vqe.run(QuantumVariable(G.number_of_nodes()), depth=2, max_iter=50, mes_kwargs={"atol": 0.01})
         results.append(res)
 
     assert np.abs(min(results) - (-8.0)) < 1e-1
@@ -61,3 +63,17 @@ def test_jasp_vqe_heisenberg():
     results = main()
 
     assert np.abs(min(results) - (-8.0)) < 2
+
+
+@pytest.mark.parametrize(
+    ("mes_kwargs", "message"),
+    [
+        ({"diagonalisation_method": "commuting"}, "use diagonalization_method instead"),
+        ({"precision": 0.05}, "precision is deprecated; use atol"),
+    ],
+)
+def test_vqe_accepts_deprecated_measurement_kwargs(mes_kwargs, message):
+    vqe = heisenberg_problem(nx.path_graph(2), 1, 0)
+
+    with pytest.warns(QrispDeprecationWarning, match=message):
+        vqe.run(QuantumVariable(2), depth=1, max_iter=2, mes_kwargs=mes_kwargs)

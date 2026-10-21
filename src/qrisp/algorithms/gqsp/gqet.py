@@ -112,7 +112,7 @@ def GQET(
 
 
         # Calculate the energy
-        E = H.expectation_value(psi_prep, precision=0.001)()
+        E = H.expectation_value(psi_prep, atol=0.001)()
         print(E)
 
     Define a polynomial and use GQET to obtain a BlockEncoding of $p(H)$.
@@ -132,7 +132,7 @@ def GQET(
 
         @jaspify(terminal_sampling=True)
         def main():
-            E = H.expectation_value(transformed_psi_prep, precision=0.001)()
+            E = H.expectation_value(transformed_psi_prep, atol=0.001)()
             return E
 
         print(main())

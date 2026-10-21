@@ -71,12 +71,8 @@ def test_qite_heisenberg():
         qc = qv.qs.compile()
 
         # Find optimal evolution time
-        energies = [
-            H.expectation_value(
-                state_prep, subs_dic={theta: s_}, precompiled_qc=qc, diagonalisation_method="commuting"
-            )()
-            for s_ in s_values
-        ]
+        ev_function = H.expectation_value(state_prep, precompiled_qc=qc, diagonalization_method="commuting", atol=0.01)
+        energies = [ev_function(subs_dic={theta: s_}) for s_ in s_values]
         index = np.argmin(energies)
         s_min = s_values[index]
 

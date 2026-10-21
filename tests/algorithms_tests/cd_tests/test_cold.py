@@ -281,9 +281,7 @@ def test_cold_expvalue_fast_path_matches_hprob():
 
     subs_dic = {sp.Symbol("par_0"): float(opt_params[0])}
     qarg3 = QuantumVariable(N)
-    ground_truth = H_prob.expectation_value(
-        qarg3, compile=False, subs_dic=subs_dic, precompiled_qc=qc, precision=0.01
-    )()
+    ground_truth = H_prob.expectation_value(qarg3, compile=False, precompiled_qc=qc, atol=0.01)(subs_dic=subs_dic)
 
     assert abs(cost - ground_truth) < _COST_TOL
 
@@ -337,9 +335,7 @@ def test_cold_expvalue_fast_path_handles_projectors():
 
     subs_dic = {sp.Symbol("par_0"): float(opt_params[0])}
     qarg3 = QuantumVariable(N)
-    ground_truth = H_prob.expectation_value(
-        qarg3, compile=False, subs_dic=subs_dic, precompiled_qc=qc, precision=0.01
-    )()
+    ground_truth = H_prob.expectation_value(qarg3, compile=False, precompiled_qc=qc, atol=0.01)(subs_dic=subs_dic)
 
     assert abs(cost - ground_truth) < _COST_TOL
 
@@ -392,9 +388,7 @@ def test_cold_expvalue_falls_back_for_nondiagonal_hprob():
 
     subs_dic = {sp.Symbol("par_0"): float(opt_params[0])}
     qarg3 = QuantumVariable(N)
-    ground_truth = H_prob.expectation_value(
-        qarg3, compile=False, subs_dic=subs_dic, precompiled_qc=qc, precision=0.01
-    )()
+    ground_truth = H_prob.expectation_value(qarg3, compile=False, precompiled_qc=qc, atol=0.01)(subs_dic=subs_dic)
 
     assert abs(cost - ground_truth) < _COST_TOL
 

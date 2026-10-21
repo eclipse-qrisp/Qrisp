@@ -68,7 +68,7 @@ With all the necessary ingredients, we conduct the experiment: For varying evolu
 
     for t in T_values:
     
-        magnetization = M.expectation_value(psi, precision=0.005)(t)
+        magnetization = M.expectation_value(psi, atol=0.005)(t)
         M_values.append(magnetization)
 
 Finally, we visualize the results. As expected, the total magnetization decreases in the presence of a transverse field with increasing evolution time $T$.

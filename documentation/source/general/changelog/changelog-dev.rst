@@ -195,6 +195,21 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`
+  in Jasp mode for quantum types whose decoder does not return the measured
+  integer, such as a :ref:`QuantumFloat` with a non-zero exponent or a signed
+  one. The measured values were decoded before the terms were evaluated on
+  their bits, which gave wrong results. The registers are now sampled without
+  decoding (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
+
+* :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`
+  now supports operators on any number of qubits. Operators acting on qubit 63
+  or higher raised an ``OverflowError``, and in Jasp mode without terminal
+  sampling the results of registers with 54 or more qubits lost bits.
+  Measurement outcomes and the masks of the terms are now split into chunks of
+  53 qubits. Only the qubits the operator acts on are measured
+  (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
+
 * Fixed :func:`cuccaro_adder <qrisp.cuccaro_adder>` to support arbitrary
   quantum inputs, in particular ``list[Qubit]`` and ``DynamicQubitArray``
   targets. Previously, a classical addend with a ``list[Qubit]`` target raised
@@ -540,6 +555,58 @@ New Tutorials/ Updated Documentation
 
 API Changes
 -----------
+
+* :meth:`QubitOperator.expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`
+  takes the targeted standard deviation of the estimate either as an absolute
+  tolerance ``atol`` or as a tolerance ``rtol`` relative to the sum of the
+  absolute values of the operator's non-identity Pauli coefficients. The
+  default changed from an absolute precision of 0.01 to ``rtol=0.01``. The
+  number of shots therefore no longer grows with the size of the operator
+  and stays below about :math:`10^4`, while the absolute error of operators
+  whose coefficients sum to more than 1 grows accordingly. Pass ``atol=0.01``
+  to keep the previous accuracy. The same default applies to
+  :meth:`VQEProblem.run <qrisp.vqe.VQEProblem.run>` and
+  :meth:`VQEProblem.train_function <qrisp.vqe.VQEProblem.train_function>`
+  unless ``atol`` or ``rtol`` is passed in ``mes_kwargs``. The ``precision``
+  argument of :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>` is now
+  passed as ``rtol`` as well.
+
+  ``precision`` is deprecated in favor of ``atol``, which has the same
+  meaning, and ``diagonalisation_method`` is deprecated in favor of
+  ``diagonalization_method``. Both emit a ``QrispDeprecationWarning``. All
+  arguments after ``state_prep`` are now keyword-only. ``state_prep`` must
+  return a :ref:`QuantumVariable`; other return values, such as a
+  :ref:`QuantumArray`, raise a ``TypeError``. Previously, only a
+  ``QuantumArray`` of single-qubit variables happened to work, and only in
+  static mode. The ``measurement_data`` argument and the
+  ``QubitOperatorMeasurement`` class have been removed, as has the
+  ``measurement_data`` argument of ``VQEProblem.optimization_routine``. The
+  internal helpers ``get_measurement`` and ``get_jasp_measurement`` are no
+  longer importable from ``qrisp.operators``. In Jasp mode, ``backend``,
+  ``compile=False``, ``compilation_kwargs``, ``precompiled_qc`` and
+  ``subs_dic`` now raise a ``ValueError`` instead of being ignored, because
+  they only apply to static execution. Every measurement group now receives at least one shot,
+  so operators with groups of very small coefficients, or consisting only of
+  an identity term, no longer fail.
+
+  The grouping and shot allocation are now computed once, when
+  ``expectation_value`` is called, instead of on every evaluation of the
+  returned function. The returned function measures the operator as it was
+  at that time and accepts a ``subs_dic`` argument, so a parametrized circuit
+  passed as ``precompiled_qc`` can be evaluated for many parameter values with
+  a single function. :meth:`VQEProblem.run <qrisp.vqe.VQEProblem.run>` and
+  :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>` use this to avoid
+  recomputing the grouping in every optimization step. Passing ``subs_dic``
+  to ``expectation_value`` itself is deprecated and emits a
+  ``QrispDeprecationWarning``; pass it to the returned function instead
+  (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
+
+* Removed ``multi_hamiltonian_measurement`` from ``qrisp.operators``. It
+  called a method that no longer exists and failed with an ``AttributeError``
+  on every call. Use
+  :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`
+  for each Hamiltonian instead
+  (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
 
 * :class:`~qrisp.interface.IQMBackend` is now a delegation shim that
   re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` (IQM client).

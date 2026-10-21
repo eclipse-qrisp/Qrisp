@@ -16,8 +16,13 @@
 
 """Implements the QubitOperator class for Pauli/ladder operators, measurement, and trotterization."""
 
-from itertools import product
+from __future__ import annotations
 
+import warnings
+from itertools import product
+from typing import TYPE_CHECKING, Any, Callable, Literal
+
+import jax
 import jax.numpy as jnp
 import numpy as np
 import scipy.sparse as sp_sparse  # aliased: `sp` is already sympy, below
@@ -41,12 +46,17 @@ from qrisp import (
     sx_dg,
 )
 from qrisp.jasp import check_for_tracing_mode, jrange, q_switch
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators.hamiltonian import Hamiltonian
 from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
-from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
-from qrisp.operators.qubit.measurement import get_measurement
+from qrisp.operators.qubit.jasp_measurement import _check_jasp_arguments, _jasp_expectation_value_helper
+from qrisp.operators.qubit.measurement import _expectation_value_helper
+from qrisp.operators.qubit.measurement_plan import _check_tolerance, _create_measurement_plan, _resolve_tolerances
 from qrisp.operators.qubit.qubit_term import QubitTerm
+
+if TYPE_CHECKING:
+    from qrisp.interface import BackendLike
 
 threshold = 1e-9
 
@@ -1177,7 +1187,7 @@ class QubitOperator(Hamiltonian):
         # whereas the anchor qubit becomes a Z gate.
 
         n = self.find_minimal_qubit_amount()
-        if not check_for_tracing_mode() and len(qarg) < n:
+        if qarg is not None and not check_for_tracing_mode() and len(qarg) < n:
             raise Exception("Tried to change the basis of an Operator on a quantum argument with insufficient qubits.")
 
         # This dictionary will contain the new terms/coefficient comination for the
@@ -1519,7 +1529,10 @@ class QubitOperator(Hamiltonian):
         return qc, QubitOperator(self.terms_dict)
 
     def get_operator_variance(self, n=1):
-        """Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
+        """Estimate the variance of the hermitian part of the operator, averaged over all states.
+
+        The expectation-value measurement uses this estimate to distribute the shots over
+        the measurement groups, following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
 
         Normally to compute the variance of an operator, the distribution has to be known.
         Since the distribution is not known without querying the quantum device,
@@ -1554,6 +1567,16 @@ class QubitOperator(Hamiltonian):
         It therefore suffices to compute the variance of the Pauli form of the
         QubitOperator.
 
+        Parameters
+        ----------
+        n : int, optional
+            The number of qubits of the state space. The default is 1.
+
+        Returns
+        -------
+        float
+            The variance averaged over all states, alpha_n * sum_i(abs(c_i)**2), where the
+            sum runs over the non-identity Pauli terms.
 
         """
         var = 0
@@ -1567,73 +1590,185 @@ class QubitOperator(Hamiltonian):
 
     def expectation_value(
         self,
-        state_prep,
-        precision=0.01,
-        diagonalisation_method="commuting_qw",
-        backend=None,
-        compile=True,
-        compilation_kwargs={},
-        subs_dic={},
-        precompiled_qc=None,
-        measurement_data=None,  # measurement settings
-    ):
-        r"""The ``expectation value`` function allows to estimate the expectation value of a Hamiltonian for a state that is specified by a preparation procedure.
-        This preparation procedure can be supplied via a Python function that returns a :ref:`QuantumVariable`.
+        state_prep: Callable[..., QuantumVariable],
+        *,
+        atol: float | None = None,
+        rtol: float | None = None,
+        diagonalization_method: Literal["commuting", "commuting_qw"] | None = None,
+        backend: BackendLike | None = None,
+        compile: bool = True,
+        compilation_kwargs: dict[Any, Any] | None = None,
+        precompiled_qc: QuantumCircuit | None = None,
+        precision: float | None = None,
+        diagonalisation_method: Literal["commuting", "commuting_qw"] | None = None,
+        subs_dic: dict[Any, Any] | None = None,
+    ) -> Callable[..., float | jax.Array]:
+        r"""Return a function that estimates the expectation value of the operator.
 
-        Note that this method measures the **hermitized** version of the operator:
+        The returned function passes its arguments to ``state_prep``, measures
+        the operator on the prepared state $\ket{\psi}$ and returns an estimate
+        of $\bra{\psi}H\ket{\psi}$. It can be called in static mode, where the
+        circuits are run on a backend, and inside :ref:`Jasp <jasp>` functions,
+        where the measurement is traced with :func:`~qrisp.jasp.sample`.
+
+        Only the **hermitian part** of the operator $O$ is measured:
 
         .. math::
 
             H = (O + O^\dagger)/2
 
+        **How the measurement works**
+
+        #. The terms of $H$ are split into groups of commuting terms, as
+           selected by ``diagonalization_method``.
+        #. For each group, the prepared state is followed by a change of basis
+           that diagonalizes the group, and the qubits are measured in the
+           computational basis.
+        #. The expectation value of each group is computed from the measured
+           bitstrings, and the results are summed.
+
+        Each evaluation therefore runs one circuit per group. The grouping and
+        the shot allocation depend only on the operator, so they are computed
+        once, when ``expectation_value`` is called, and reused by every
+        evaluation of the returned function. Later in-place changes of the
+        operator, for example with ``+=``, do not affect a function that was
+        already created.
+
+        **Precision and number of shots**
+
+        The result is a statistical estimate. Its precision is set by the
+        targeted standard deviation $\epsilon$ of the estimate, given either as
+        an absolute value with ``atol`` or relative to the size of the
+        operator with ``rtol``:
+
+        .. math::
+
+            \epsilon = \texttt{atol}
+            \qquad\text{or}\qquad
+            \epsilon = \texttt{rtol} \cdot \|H\|_1,
+            \qquad
+            \|H\|_1 = \sum_{P \neq I} |c_P|.
+
+        Here, $H = \sum_P c_P P$ is the decomposition of $H$ into Pauli
+        strings $P$. The identity term is left out because it does not need to
+        be measured. If neither ``atol`` nor ``rtol`` is given, ``rtol=0.01``
+        is used.
+
+        The shots are distributed over the groups in proportion to the
+        standard deviations $\sigma_i$ of the groups, which minimizes the total
+        number of shots for a given $\epsilon$. Group $i$ receives
+
+        .. math::
+
+            N_i = \left\lceil \frac{\sigma_i \sum_j \sigma_j}{\epsilon^2} \right\rceil
+
+        shots. The $\sigma_i$ cannot be known before measuring, so they are
+        estimated as the average over all states, following
+        `Crawford et al. <https://quantum-journal.org/papers/q-2021-01-20-385/>`_.
+        $\epsilon$ is therefore a target rather than a guaranteed bound.
+
+        The total number of shots grows as $1/\epsilon^2$:
+
+        * With ``atol``, it grows quadratically with the size of the operator:
+          measuring $100 H$ to the same ``atol`` takes $10^4$ times as many
+          shots as measuring $H$.
+        * With ``rtol``, it does not depend on the size of the operator. For a
+          sum of Pauli strings, it is at most $1/\texttt{rtol}^2$ plus one
+          shot per group, i.e., about $10^4$ shots for the default
+          ``rtol=0.01``.
+
+        Use ``rtol`` to keep the measurement cost bounded, and ``atol`` when a
+        fixed absolute accuracy is required, for example chemical accuracy
+        for molecular energies.
+
         .. note::
 
-            When used with Jasp, only ``state_prep``, ``precision`` and ``diagonalisation_method`` are relevant parameters. Additional parameters are ignored.
+            In Jasp mode, the state is always prepared by ``state_prep`` and
+            simulated by the Jasp interpreter. ``backend``, ``compile=False``,
+            ``compilation_kwargs``, ``precompiled_qc`` and ``subs_dic`` only
+            apply to static execution and raise a ``ValueError`` in Jasp mode.
 
         Parameters
         ----------
         state_prep : callable
-            A function returning a QuantumVariable.
-            The expectation of the Hamiltonian for the state of this QuantumVariable will be measured.
-            The state preparation function can only take classical values as arguments.
-            This is because a quantum value would need to be copied for each sampling iteration, which is prohibited by the no-cloning theorem.
-        precision : float, optional
-            The precision with which the expectation of the Hamiltonian is to be evaluated.
-            The default is 0.01. The number of shots scales quadratically with the inverse precision.
-        diagonalisation_method : str, optional
-            Specifies the method for grouping and diagonalizing the :ref:`QubitOperator`.
-            Available are ``commuting_qw``, i.e., the operator is grouped based on qubit-wise commutativity of terms,
-            and ``commuting``, i.e., the operator is grouped based on commutativity of terms.
-            The default is ``commuting_qw``.
+            A function returning the :ref:`QuantumVariable` whose state is
+            measured. The arguments of the returned function are passed to
+            ``state_prep``. They can only be classical values, because a
+            quantum state cannot be copied for repeated measurements
+            (no-cloning theorem).
+        atol : float, optional
+            Targeted standard deviation of the estimate, as an absolute value.
+            Cannot be combined with ``rtol``.
+        rtol : float, optional
+            Targeted standard deviation of the estimate, relative to the sum
+            $\|H\|_1$ of the absolute values of the non-identity Pauli
+            coefficients. Cannot be combined with ``atol``. If neither
+            ``atol`` nor ``rtol`` is given, ``rtol=0.01`` is used.
+        diagonalization_method : str, optional
+            How the terms are grouped for measurement. The default is
+            ``"commuting_qw"``.
+
+            * ``"commuting_qw"``: terms that commute qubit-wise are grouped.
+              The change of basis only uses single-qubit gates.
+            * ``"commuting"``: terms that commute are grouped. This yields
+              fewer groups and therefore fewer shots, but the change of basis
+              requires entangling gates.
+
         backend : BackendLike, optional
-            The backend on which to evaluate the quantum circuit. The default can be
-            specified in the file default_backend.py.
+            The backend that runs the circuits. By default, the backend of the
+            :ref:`QuantumSession` of the prepared variable is used if it has
+            one, and the default simulator otherwise.
         compile : bool, optional
-            Boolean indicating if the .compile method of the underlying QuantumSession
-            should be called before. The default is ``True``.
-        compilation_kwargs  : dict, optional
-            Keyword arguments for the compile method. For more details check
-            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`. The default
-            is ``{}``.
-        subs_dic : dict, optional
-            A dictionary of Sympy symbols and floats to specify parameters in the case
-            of a circuit with unspecified, :ref:`abstract parameters<QuantumCircuit>`.
-            The default is ``{}``.
+            Whether to compile the :ref:`QuantumSession` before measuring. The
+            default is ``True``.
+        compilation_kwargs : dict, optional
+            Keyword arguments for the compilation. For more details, see
+            :meth:`QuantumSession.compile <qrisp.QuantumSession.compile>`.
         precompiled_qc : QuantumCircuit, optional
-            A precompiled quantum circuit.
-        measurement_data : QubitOperatorMeasurement
-            Cached data to accelerate the measurement procedure. Automatically generated by default.
+            A compiled circuit that prepares the state. If given,
+            ``state_prep`` is not called, and the operator is measured on the
+            first qubits of this circuit. Combined with the ``subs_dic``
+            argument of the returned function, a parametrized circuit can be
+            evaluated for many parameter values without recompiling it.
+        precision : float, optional
+            Deprecated. Use ``atol``, which has the same meaning.
+        diagonalisation_method : str, optional
+            Deprecated. Use ``diagonalization_method``.
+        subs_dic : dict, optional
+            Deprecated. Pass ``subs_dic`` to the returned function instead.
 
         Returns
         -------
         callable
-            A function returning an array containing the expectaion value.
+            A function ``f(*args, subs_dic=None)`` that returns the estimated
+            expectation value: a ``float`` in static mode and a
+            zero-dimensional ``jax.Array`` in Jasp mode. ``args`` are passed to
+            ``state_prep``. ``subs_dic`` maps the SymPy symbols of circuits with
+            :ref:`abstract parameters <QuantumCircuit>` to values for this
+            evaluation. It cannot be used in Jasp mode.
+
+        Raises
+        ------
+        ValueError
+            If more than one of ``atol``, ``rtol`` and ``precision`` is given,
+            if a tolerance is not a finite positive number, if both spellings
+            of the diagonalization method are given, if the diagonalization
+            method is unknown, or if an argument that only applies to static
+            execution is used in Jasp mode.
+        TypeError
+            When the returned function is evaluated, if ``state_prep`` does not
+            return a :ref:`QuantumVariable`.
+
+        Warns
+        -----
+        QrispDeprecationWarning
+            If ``precision``, ``diagonalisation_method`` or ``subs_dic`` is
+            passed.
 
         Examples
         --------
-        We define a Hamiltonian, and measure its expectation value for the state of a :ref:`QuantumFloat`.
-
-        We prepare the state
+        We define a Hamiltonian, and measure its expectation value for the
+        state of a :ref:`QuantumFloat`. We prepare the state
 
         .. math::
 
@@ -1642,17 +1777,18 @@ class QubitOperator(Hamiltonian):
         ::
 
             from qrisp import *
-            from qrisp.operators import X,Y,Z
+            from qrisp.operators import X, Y, Z
             import numpy as np
 
             def state_prep(theta):
                 qv = QuantumFloat(2)
 
-                ry(theta,qv)
+                ry(theta, qv)
 
                 return qv
 
-        And compute the expectation value of the Hamiltonion $H=Z_0Z_1$ for the state $\ket{\psi_{\theta}}$
+        and compute the expectation value of the Hamiltonian $H=Z_0Z_1$ for
+        the state $\ket{\psi_{\theta}}$:
 
         ::
 
@@ -1663,7 +1799,10 @@ class QubitOperator(Hamiltonian):
             print(ev_function(np.pi/2))
             # Yields: 0.010126265783222899
 
-        Similiarly, expectation values can be calculated with Jasp
+        The exact value is $0$. Since $\|H\|_1 = 1$, the default ``rtol=0.01``
+        targets a standard deviation of $0.01$.
+
+        Similarly, expectation values can be calculated with Jasp:
 
         ::
 
@@ -1678,6 +1817,43 @@ class QubitOperator(Hamiltonian):
 
             print(main())
             # Yields: 0.010126265783222899
+
+        **Absolute and relative tolerance**
+
+        For the Heisenberg interaction $H = X_0X_1 + Y_0Y_1 + Z_0Z_1$, we have
+        $\|H\|_1 = 3$. The default ``rtol=0.01`` therefore targets a standard
+        deviation of $0.03$. To target a standard deviation of $0.01$
+        instead, either tighten ``rtol`` or specify ``atol``:
+
+        ::
+
+            H = X(0)*X(1) + Y(0)*Y(1) + Z(0)*Z(1)
+
+            ev_rel = H.expectation_value(state_prep)              # epsilon = 0.03
+            ev_abs = H.expectation_value(state_prep, atol=0.01)   # epsilon = 0.01
+
+        Both estimate the same value; ``ev_abs`` uses about nine times as many
+        shots. For $100 H$, ``rtol=0.01`` targets $\epsilon = 3$ with the same
+        number of shots as for $H$, while ``atol=0.01`` would need $10^4$
+        times as many shots as for $H$.
+
+        **Evaluating a parametrized circuit**
+
+        To evaluate the same circuit for many parameter values, compile it
+        once with :ref:`abstract parameters <QuantumCircuit>` and pass the
+        values to the returned function:
+
+        ::
+
+            from sympy import Symbol
+
+            theta = Symbol("theta")
+            qc = state_prep(theta).qs.compile()
+
+            H = Z(0)*Z(1)
+            ev_function = H.expectation_value(state_prep, precompiled_qc=qc)
+
+            energies = [ev_function(subs_dic={theta: t}) for t in np.linspace(0, np.pi, 5)]
 
         **Inspecting the circuits sent to the backend**
 
@@ -1741,35 +1917,90 @@ class QubitOperator(Hamiltonian):
         applied.
 
         """
+        if diagonalization_method is not None and diagonalisation_method is not None:
+            raise ValueError("Specify only one of diagonalization_method and diagonalisation_method.")
 
-        def return_function(*args):
+        if diagonalisation_method is not None:
+            warnings.warn(
+                "diagonalisation_method is deprecated; use diagonalization_method instead.",
+                QrispDeprecationWarning,
+                stacklevel=2,
+            )
+            diagonalization_method = diagonalisation_method
+
+        if diagonalization_method is None:
+            diagonalization_method = "commuting_qw"
+        if diagonalization_method not in ["commuting", "commuting_qw"]:
+            raise ValueError(f"Unknown diagonalization method: {diagonalization_method}.")
+
+        if precision is not None:
+            if atol is not None or rtol is not None:
+                raise ValueError("Specify only one of precision, atol and rtol.")
+            _check_tolerance("precision", precision)
+            warnings.warn(
+                "precision is deprecated; use atol, which has the same meaning, "
+                "or rtol for a tolerance relative to the size of the operator.",
+                QrispDeprecationWarning,
+                stacklevel=2,
+            )
+            atol = precision
+
+        # Arguments that only apply to backend execution.
+        static_only_arguments = [
+            name
+            for name, given in (
+                ("backend", backend is not None),
+                ("compile=False", compile is not True),
+                ("compilation_kwargs", compilation_kwargs is not None),
+                ("precompiled_qc", precompiled_qc is not None),
+                ("subs_dic", subs_dic is not None),
+            )
+            if given
+        ]
+        if check_for_tracing_mode():
+            _check_jasp_arguments(static_only_arguments)
+
+        if subs_dic is not None:
+            warnings.warn(
+                "Passing subs_dic to expectation_value is deprecated; pass it to the returned function "
+                "instead, e.g. H.expectation_value(state_prep)(subs_dic=...).",
+                QrispDeprecationWarning,
+                stacklevel=2,
+            )
+
+        atol, rtol = _resolve_tolerances(atol, rtol)
+
+        # Everything that depends only on the operator is computed once here. The plan is
+        # built from a normalized copy, so later in-place changes of self do not affect it.
+        plan = _create_measurement_plan(self, diagonalization_method)
+        shots = plan.allocate_shots(atol=atol, rtol=rtol)
+        num_qubits = self.find_minimal_qubit_amount()
+        fixed_subs_dic = subs_dic or {}
+
+        def return_function(*args, subs_dic=None):
 
             if check_for_tracing_mode():
-                return get_jasp_measurement(
-                    self,
-                    state_prep,
-                    args,
-                    precision=precision,
-                    diagonalisation_method=diagonalisation_method,
+                call_arguments = (
+                    ["subs_dic"] if subs_dic is not None and "subs_dic" not in static_only_arguments else []
                 )
-            else:
-                if precompiled_qc is not None:
-                    qarg = QuantumVariable(self.find_minimal_qubit_amount())
-                else:
-                    qarg = state_prep(*args)
+                _check_jasp_arguments(static_only_arguments + call_arguments)
+                return _jasp_expectation_value_helper(plan, state_prep, shots, state_args=args)
 
-                return get_measurement(
-                    self,
-                    qarg,
-                    precision=precision,
-                    diagonalisation_method=diagonalisation_method,
-                    backend=backend,
-                    compile=compile,
-                    compilation_kwargs=compilation_kwargs,
-                    subs_dic=subs_dic,
-                    precompiled_qc=precompiled_qc,
-                    measurement_data=measurement_data,
-                )
+            if precompiled_qc is not None:
+                qarg = QuantumVariable(num_qubits)
+            else:
+                qarg = state_prep(*args)
+
+            return _expectation_value_helper(
+                plan,
+                qarg,
+                shots,
+                backend=backend,
+                compile=compile,
+                compilation_kwargs=compilation_kwargs,
+                subs_dic={**fixed_subs_dic, **(subs_dic or {})},
+                precompiled_qc=precompiled_qc,
+            )
 
         return return_function
 
@@ -1942,10 +2173,10 @@ class QubitOperator(Hamiltonian):
     #
 
     def qdrift(self, forward_evolution=True):
-        r"""Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift**
-        (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) algorithm.
+        r"""Simulates the time-evolution of a quantum state under a Hamiltonian using the **QDrift** algorithm.
 
-        QDrift approximates the exact time-evolution operator
+        QDrift (`Quantum Stochastic Drift Protocol <https://arxiv.org/pdf/1811.08017>`_) approximates the exact
+        time-evolution operator
 
         .. math::
             U(t) = e^{-i H t}, \qquad 
@@ -2053,7 +2284,7 @@ class QubitOperator(Hamiltonian):
             T_values = np.arange(0, 1.5, 0.05)
             M_values = []
             for t in T_values:
-                ev_M = M.expectation_value(psi, precision=0.01)
+                ev_M = M.expectation_value(psi, atol=0.01)
                 M_values.append(float(ev_M(t)))
 
             plt.scatter(T_values, M_values, color='#6929C4', marker="o", 
@@ -2088,7 +2319,6 @@ class QubitOperator(Hamiltonian):
         making it a powerful tool for large-scale quantum simulations with bounded resources.
 
         """
-
         # JAX-traceable implementation of https://arxiv.org/pdf/1811.08017.
         # We create a list of term.simulate functions for all terms in the operator
         # and use the q_switch with classical index to apply the j-th function

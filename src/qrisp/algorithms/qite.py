@@ -26,6 +26,7 @@ from qrisp.jasp import check_for_tracing_mode, q_cond, q_fori_loop
 
 def QITE(qarg, U_0, exp_H, s, k, method="GC"):
     r"""Performs `Double-Braket Quantum Imaginary-Time Evolution (DB-QITE) <https://arxiv.org/abs/2412.04554>`_.
+
     Given a Hamiltonian :ref:`Operator <Operators>` $H$, this method implements the unitary $U_k$ that is recursively defined by either of
 
     * Group commutator (GQ) approximation:
@@ -142,8 +143,9 @@ def QITE(qarg, U_0, exp_H, s, k, method="GC"):
             qc = qv.qs.compile()
 
             # Find optimal evolution time
-            # Use "precompliled_qc" keyword argument to avoid repeated compilation of the QITE circuit
-            energies = [H.expectation_value(state_prep, diagonalisation_method='commuting', subs_dic={theta:s_}, precompiled_qc=qc)() for s_ in s_values]
+            # Use "precompiled_qc" keyword argument to avoid repeated compilation of the QITE circuit
+            ev_function = H.expectation_value(state_prep, diagonalization_method="commuting", precompiled_qc=qc)
+            energies = [ev_function(subs_dic={theta: s_}) for s_ in s_values]
 
             index = np.argmin(energies)
             s_min = s_values[index]
