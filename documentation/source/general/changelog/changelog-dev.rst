@@ -786,6 +786,14 @@ Dependency Upgrades
   ``cannot allocate memory in static TLS block``
   (`PR #976 <https://github.com/eclipse-qrisp/Qrisp/pull/976>`_).
 
+* Required ``iqm-client[qrisp]>=35.0.0`` in the ``iqm`` and ``dev-testing``
+  dependency groups. Older releases do not provide the ``qrisp`` extra, so pip
+  could fall back to one of them and install no IQM backend. This happened on
+  Python 3.13, where Sphinx 9.2.0 requires ``packaging>=25`` while recent
+  ``iqm-client`` releases require ``packaging<25``, and ``pip install
+  ".[all]"`` resolved to ``iqm-client`` 15.3
+  (`PR #995 <https://github.com/eclipse-qrisp/Qrisp/pull/995>`_).
+
 .. Add dependency upgrades above this line
 
 First Time Contributors 🎉
