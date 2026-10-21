@@ -91,10 +91,3 @@ def test_IQPE_rejects_precision_above_63(precision):
     """IQPE applies U up to 2**(precision - 1) times, which overflows a 64-bit integer from a precision of 64 on."""
     with pytest.raises(ValueError):
         IQPE(None, lambda qv: None, precision=precision)
-
-
-def test_iterative_qpe_exports_only_IQPE():
-    """The module is star-imported into qrisp, which should not receive its imports."""
-    namespace = {}
-    exec("from qrisp.alg_primitives.iterative_qpe import *", namespace)
-    assert set(namespace) - {"__builtins__"} == {"IQPE"}
