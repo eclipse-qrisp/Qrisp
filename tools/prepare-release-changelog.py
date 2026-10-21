@@ -177,8 +177,10 @@ def create_new_dev_changelog(version):
 
 .. warning::
 
-   This changelog covers an **in-development** version of Qrisp. It has not
-   been released yet, and its contents are subject to change.
+   🚧🧪 **IN DEVELOPMENT — NOT RELEASED YET** 🧪🚧
+
+   ✨ This changelog covers an **in-development** version of Qrisp. It has not
+   been released yet, and its contents are subject to change. ✨
 
 {title} continues to push the boundaries of high-level quantum programming.
 
