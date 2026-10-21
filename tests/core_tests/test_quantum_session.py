@@ -16,8 +16,8 @@
 
 """Tests for the QuantumSession class in qrisp.core.quantum_session."""
 
-import weakref
 from dataclasses import dataclass
+from weakref import WeakValueDictionary
 
 import pytest
 
@@ -29,7 +29,7 @@ class _SessionState:
     qv_names: list[str]
     deleted_qv_names: list[str]
     qubit_count: int
-    live_qvs: list[weakref.ref]
+    live_qv_hashes: set[int]
     creation_counter: int
 
 
@@ -38,7 +38,7 @@ def _capture_state(qs: QuantumSession) -> _SessionState:
         qv_names=[existing.name for existing in qs.qv_list],
         deleted_qv_names=[existing.name for existing in qs.deleted_qv_list],
         qubit_count=len(qs.qubits),
-        live_qvs=list(QuantumVariable.live_qvs),
+        live_qv_hashes=set(QuantumVariable.live_qvs.keys()),
         creation_counter=QuantumVariable.creation_counter,
     )
 
@@ -46,8 +46,8 @@ def _capture_state(qs: QuantumSession) -> _SessionState:
 def _assert_registered(qv: QuantumVariable, qs: QuantumSession, before: _SessionState) -> None:
     assert [existing.name for existing in qs.qv_list] == [*before.qv_names, qv.name]
     assert [existing.name for existing in qs.deleted_qv_list] == before.deleted_qv_names
-    assert len(QuantumVariable.live_qvs) == len(before.live_qvs) + 1
-    assert QuantumVariable.live_qvs[-1]() is qv
+    assert set(QuantumVariable.live_qvs.keys()) == {*before.live_qv_hashes, hash(qv)}
+    assert QuantumVariable.live_qvs[hash(qv)] is qv
     assert qv.creation_time == before.creation_counter
     assert QuantumVariable.creation_counter == before.creation_counter + 1
 
@@ -56,7 +56,7 @@ def _assert_unchanged(qs: QuantumSession, before: _SessionState) -> None:
     assert [existing.name for existing in qs.qv_list] == before.qv_names
     assert [existing.name for existing in qs.deleted_qv_list] == before.deleted_qv_names
     assert len(qs.qubits) == before.qubit_count
-    assert QuantumVariable.live_qvs == before.live_qvs
+    assert set(QuantumVariable.live_qvs.keys()) == before.live_qv_hashes
     assert QuantumVariable.creation_counter == before.creation_counter
 
 
@@ -69,11 +69,13 @@ def _isolated_quantum_variable_class_state():
     """
     original_live_qvs = QuantumVariable.live_qvs
     original_creation_counter = QuantumVariable.creation_counter
-    QuantumVariable.live_qvs = []
+    QuantumVariable.live_qvs = WeakValueDictionary()
     QuantumVariable.creation_counter = 0
-    yield
-    QuantumVariable.live_qvs = original_live_qvs
-    QuantumVariable.creation_counter = original_creation_counter
+    try:
+        yield
+    finally:
+        QuantumVariable.live_qvs = original_live_qvs
+        QuantumVariable.creation_counter = original_creation_counter
 
 
 class TestRegisterQv:

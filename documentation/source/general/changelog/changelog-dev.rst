@@ -146,6 +146,12 @@ Improvements
   generation to QuantumSession in a central place.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
+- Refactored the remaining methods of :ref:`QuantumVariable <QuantumVariable>`, adding type
+  hints and simplifying the bookkeeping of live variables. ``QuantumVariable.live_qvs`` no longer
+  has to be swept for dead weak references on every deletion, and ``QuantumVariable.__del__`` has
+  been removed
+  (`PR #989 <https://github.com/eclipse-qrisp/Qrisp/pull/989>`_).
+
 - Fewer qubits for :func:`reflection <qrisp.reflection>`:
   :func:`reflection <qrisp.reflection>` no longer bundles its operations into a
   single gate. The bundling kept every ancilla of the ``state_function`` allocated
@@ -607,10 +613,30 @@ API Changes
   ``QuantumVariable.creation_counter`` instead
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
+* ``QuantumVariable.live_qvs`` is now a ``weakref.WeakValueDictionary`` mapping
+  ``hash(qv)`` to the variable, instead of a list of weak references, and
+  ``QuantumVariable.name_tracker`` is now a ``collections.Counter``. Code iterating
+  ``live_qvs`` must use ``QuantumVariable.live_qvs.values()`` instead of dereferencing
+  weak references
+  (`PR #989 <https://github.com/eclipse-qrisp/Qrisp/pull/989>`_).
+
+* :meth:`QuantumVariable.reduce <qrisp.QuantumVariable.reduce>` now only accepts a list of
+  qubits. Passing a single :ref:`Qubit <Qubit>` raises a ``TypeError``; wrap it in a list
+  instead, e.g. ``qv.reduce([qv[0]])`` rather than ``qv.reduce(qv[0])``. Calling ``reduce``
+  in tracing mode now raises an exception
+  (`PR #989 <https://github.com/eclipse-qrisp/Qrisp/pull/989>`_).
+
 .. Add API changes above this line
 
 Development
 -----------
+
+* Removed the ``None`` check from ``QuantumVariable.__setitem__``. It was written as
+  ``isinstance(type(value), type(None))``, which is never true, so the early return for
+  ``qv[:] = None`` was never executed. It was removed deliberately instead of fixed, because
+  ``None`` can be a valid label, e.g. for ``QuantumVariable.custom([None, ...])``, so
+  ``qv[:] = None`` keeps being passed on to the encoder
+  (`PR #989 <https://github.com/eclipse-qrisp/Qrisp/pull/989>`_).
 
 * Added ``jaspr_to_static_register_jaspr``, which rewrites a Jaspr so that all
   qubits come from a single register of fixed size allocated at program start.

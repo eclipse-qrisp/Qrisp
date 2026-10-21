@@ -83,7 +83,7 @@ class qRange:
                     x(self.index_qf)
                     self.index_qf += self.c_index - 1
 
-                    self.index_qf.reduce(self.index_qf[-1])
+                    self.index_qf.reduce([self.index_qf[-1]])
 
                 perm_unlock(self.index_qf)
                 raise StopIteration

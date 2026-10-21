@@ -58,7 +58,7 @@ def q_int_mult(factor_1, factor_2, inpl_adder=fourier_adder, target_qf=None):
 
     cx(factor_1[-1], s)
     x(s)
-    s.reduce(s[0], verify=False)
+    s.reduce([s[0]], verify=False)
 
     return s
 
