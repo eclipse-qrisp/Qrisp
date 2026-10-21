@@ -184,7 +184,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
         # the first iteration. This does not produce a qubit overhead,
         # because the upcomming add function needs more than one ancilla anyway
         if i == n - 1:
-            quotient.reduce(quotient[1])
+            quotient.reduce([quotient[1]])
 
         # Perform the D = D/2 instruction
         divisor.exp_shift(-1)
@@ -251,7 +251,7 @@ def q_int_div(numerator, divisor, adder="thapliyal", n=None, log_output=True):
         qs.cx(divisor[-1], quotient.reg)
 
         # Remove 0.5 significance qubit (contains 0 now)
-        quotient.reduce(quotient[0])
+        quotient.reduce([quotient[0]])
         quotient.exp_shift(1)
 
         # Incase the divisor is not only signed but actually negative, we CNOT the

@@ -69,7 +69,7 @@ def less_than_gate(a, b):
     if added_sign:
         res = a[-1]
 
-        a.reduce(a[-1])
+        a.reduce([a[-1]])
         a.qs.data.pop(-1)
     else:
         res_qbl = QuantumBool()
@@ -84,12 +84,12 @@ def less_than_gate(a, b):
             cx(a[-1], a[-2])
 
         if added_sign:
-            a.reduce(a[-1], verify=False)
+            a.reduce([a[-1]], verify=False)
         else:
-            a.reduce(a[-2], verify=False)
+            a.reduce([a[-2]], verify=False)
 
     for i in range(added_qubits_lower):
-        a.reduce(a[0], verify=False)
+        a.reduce([a[0]], verify=False)
         a.exponent += 1
 
     if added_sign:
@@ -187,7 +187,7 @@ def less_than(a, b):
         x(b)
 
         if added_sign:
-            b.reduce(b.reg[-1])
+            b.reduce([b.reg[-1]])
             b.signed = False
 
         return res
