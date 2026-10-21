@@ -21,6 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Check out the PR head, not the synthetic merge commit. The merge
+          # commit contains everything on main as well, so diffing it against
+          # the base would count other PRs' changelog entries as this PR's.
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Check changelog-dev.rst for entries
