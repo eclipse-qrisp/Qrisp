@@ -3,6 +3,11 @@
 Qrisp 0.10
 ==========
 
+.. warning::
+
+   This changelog covers an **in-development** version of Qrisp. It has not
+   been released yet, and its contents are subject to change.
+
 Qrisp 0.10 continues to push the boundaries of high-level quantum programming.
 This release brings a streamlined contribution experience with automated
 changelog enforcement.
