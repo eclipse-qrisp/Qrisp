@@ -605,8 +605,9 @@ New Tutorials/ Updated Documentation
   coprime base, uses BigIntegers wide enough for the products before their
   reduction, and passes precomputed multipliers and inverses to the in-place
   multiplication. The 2048-bit counts are therefore correct, and they take
-  minutes instead of hours. The operator examples no longer overflow, and the
-  code uses explicit imports
+  minutes instead of hours. The tutorial also counts the peak number of qubits,
+  on the first multiplication, which reaches the peak of the whole circuit. The
+  operator examples no longer overflow, and the code uses explicit imports
   (`PR #1002 <https://github.com/eclipse-qrisp/Qrisp/pull/1002>`_).
 
 * :doc:`CUDA-Q tutorial </general/tutorial/CUDAQ>` - Compiling and running
