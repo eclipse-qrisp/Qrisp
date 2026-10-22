@@ -50,7 +50,10 @@ dependencies = [
 aqt = ["qiskit-aqt-provider>=1.15.0"]
 qiskit = ["qiskit-aer", "qiskit-ibm-runtime"]
 iqm = [
-    "iqm-client[qrisp]"
+    # The qrisp extra (and iqm.qrisp_iqm) exists only from 35.0.0 on. Without
+    # this floor pip can backtrack to an older iqm-client, drop the extra with
+    # just a warning, and silently install no IQM backend.
+    "iqm-client[qrisp]>=35.0.0"
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
@@ -78,7 +81,7 @@ dev-testing = [
     "pyscf",
     "cirq",
     "tqecd",
-    "iqm-client[qrisp]",
+    "iqm-client[qrisp]>=35.0.0",
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",

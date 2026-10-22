@@ -16,19 +16,74 @@
 
 """Tests for Jasp Montgomery modular multiplication and order-finding via QPE."""
 
+import math
+import random
+
+import jax
 import jax.numpy as jnp
+import numpy as np
 import pytest
 
-from qrisp import BigInteger
-from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import smallest_power_of_two
+from qrisp import (
+    QFT,
+    BigInteger,
+    QuantumArray,
+    QuantumBool,
+    QuantumFloat,
+    QuantumModulus,
+    best_montgomery_shift,
+    boolean_simulation,
+    control,
+    fourier_adder,
+    gidney_adder,
+    h,
+    jasp_fourier_adder,
+    jrange,
+    measure,
+    modinv,
+    multi_measurement,
+    terminal_sampling,
+    x,
+)
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+    _jax_mulmod,
+    bi_pow2mod,
+    egcd,
+    montgomery_decoder,
+    montgomery_encoder,
+    new_montgomery_decoder,
+    pow2_mod_N,
+    smallest_power_of_two,
+)
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv as jasp_modinv
+from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
+    _aux_constant,
+    _aux_inverses,
+    _inverse_mod_2_64,
+    _partial_product_table,
+    cq_montgomery_multiply,
+    cq_montgomery_multiply_inplace,
+    qq_montgomery_multiply,
+    qq_montgomery_multiply_modulus,
+)
+
+
+@pytest.mark.parametrize(
+    "n, N, shift",
+    [(10, 97, 4), (5, 3, 2), (32, 3221225473, 5), (62, 2**62 - 57, 6)],
+    ids=["n=10, N=97", "n=5, N=3", "32-bit N", "62-bit N"],
+)
+def test_best_montgomery_shift(n, N, shift):
+    """The shift is ceil(log2(ceil(n (N - 1) / N))) in Python and under tracing, also for moduli close to 2**63.
+
+    Regression test: under tracing, n * (N - 1) was computed in int64 and
+    overflowed for large moduli, which gave a wrong shift.
+    """
+    assert best_montgomery_shift(n, N) == shift
+    assert int(boolean_simulation(best_montgomery_shift)(n, N)) == shift
 
 
 def test_montgomery_jasp_qq():
-    import numpy as np
-
-    from qrisp import QuantumFloat, best_montgomery_shift, boolean_simulation, gidney_adder, measure, modinv
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import qq_montgomery_multiply
-
     @boolean_simulation
     def qq(a, b, n, N):
         qa = QuantumFloat(n)
@@ -52,9 +107,6 @@ def test_montgomery_jasp_qq():
 
 
 def test_montgomery_not_jasp_qq():
-    from qrisp import QuantumFloat, best_montgomery_shift, gidney_adder, modinv, multi_measurement
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import qq_montgomery_multiply
-
     X = 29
     y = 21
     N = 31
@@ -75,16 +127,11 @@ def test_montgomery_not_jasp_qq():
 
 
 def test_montgomery_jasp_cq():
-    import numpy as np
-
-    from qrisp import QuantumFloat, best_montgomery_shift, boolean_simulation, gidney_adder, measure
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply
-
     @boolean_simulation
     def cq(a, b, n, N):
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a)
+        shift = best_montgomery_shift(n, N)  # one partial product per qubit of qb
         res = cq_montgomery_multiply(a, qb, N, shift, gidney_adder)
         return measure(qb), measure(res)
 
@@ -99,23 +146,17 @@ def test_montgomery_jasp_cq():
 
 
 def test_montgomery_jasp_cq_inplace():
-    import numpy as np
-
-    from qrisp import QuantumFloat, best_montgomery_shift, boolean_simulation, gidney_adder, measure
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
-
     @boolean_simulation
     def icq(a, b, n, N):
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a)
+        shift = best_montgomery_shift(n, N)  # one partial product per qubit of qb
         cq_montgomery_multiply_inplace(a, qb, N, shift, gidney_adder)
         return measure(qb)
 
     for N in range(11, 50, 8):
         n = int(np.ceil(np.log2(N)))
-        q = modinv(2**n, N)
+        q = jasp_modinv(2**n, N)
         for a in range(4, 50, 3):
             for b in range(4, 50, 5):
                 if a % N != 0 and b % N != 0 and np.gcd(a, N) == 1:
@@ -124,25 +165,11 @@ def test_montgomery_jasp_cq_inplace():
 
 
 def test_montgomery_jasp_cq_inplace_controlled():
-    import numpy as np
-
-    from qrisp import (
-        QuantumBool,
-        QuantumFloat,
-        best_montgomery_shift,
-        boolean_simulation,
-        control,
-        gidney_adder,
-        measure,
-    )
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import modinv
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
-
     @boolean_simulation
     def cicq(a, b, n, N, c):
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a)
+        shift = best_montgomery_shift(n, N)  # one partial product per qubit of qb
         qc = QuantumBool()
         qc[:] = c
         with control(qc[0]):
@@ -151,7 +178,7 @@ def test_montgomery_jasp_cq_inplace_controlled():
 
     for N in range(11, 50, 8):
         n = int(np.ceil(np.log2(N)))
-        q = modinv(2**n, N)
+        q = jasp_modinv(2**n, N)
         for a in range(4, 50, 3):
             for b in range(4, 50, 5):
                 for c in [0, 1]:
@@ -161,27 +188,13 @@ def test_montgomery_jasp_cq_inplace_controlled():
 
 
 def test_montgomery_jasp_cq_inplace_bi():
-    import numpy as np
-
-    from qrisp import (
-        BigInteger,
-        QuantumBool,
-        QuantumFloat,
-        best_montgomery_shift,
-        boolean_simulation,
-        control,
-        gidney_adder,
-        measure,
-    )
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import cq_montgomery_multiply_inplace
-
     @boolean_simulation
     def bicicq(a, b, n, N, c):
         a = BigInteger.create(a, 3)
         N = BigInteger.create(N, 3)
         qb = QuantumFloat(n)
         qb[:] = b
-        shift = best_montgomery_shift(a)
+        shift = best_montgomery_shift(n, N)  # one partial product per qubit of qb
         qc = QuantumBool()
         qc[:] = c
         with control(qc[0]):
@@ -199,23 +212,6 @@ def test_montgomery_jasp_cq_inplace_bi():
 
 
 def test_montgomery_find_order():
-    import numpy as np
-
-    from qrisp import (
-        QFT,
-        BigInteger,
-        QuantumFloat,
-        QuantumModulus,
-        control,
-        fourier_adder,
-        gidney_adder,
-        h,
-        jasp_fourier_adder,
-        jrange,
-        terminal_sampling,
-        x,
-    )
-
     def find_order(a, N, inpl_adder):
         qg = QuantumModulus(N, inpl_adder)
         qg[:] = 1
@@ -266,10 +262,6 @@ def test_montgomery_find_order():
 
 def test_egcd_bezout_identity():
     """`egcd` must return the gcd and Bézout coefficients satisfying a*x + b*y = gcd(a, b)."""
-    import math
-
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import egcd
-
     for a, b in [(35, 15), (240, 46), (17, 5), (100, 1)]:
         g, x, y = egcd(a, b)
         g, x, y = int(g), int(x), int(y)
@@ -279,9 +271,6 @@ def test_egcd_bezout_identity():
 
 def test_bi_pow2mod_matches_python_pow():
     """`bi_pow2mod` must compute 2**exp mod m as a BigInteger, matching Python's pow."""
-    from qrisp import BigInteger
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import bi_pow2mod
-
     for exp, mod in [(10, 97), (0, 97), (1, 3), (37, 1009)]:
         mod_bi = BigInteger.create_static(mod, 4)
         result = bi_pow2mod(exp, mod_bi)
@@ -290,10 +279,6 @@ def test_bi_pow2mod_matches_python_pow():
 
 def test_pow2_mod_n_traced_matches_python_pow():
     """`pow2_mod_N` must compute 2**exp mod N under jax.jit tracing, matching Python's pow."""
-    import jax
-
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import pow2_mod_N
-
     traced = jax.jit(pow2_mod_N)
     for exp, mod in [(10, 97), (0, 97), (37, 1009)]:
         assert int(traced(exp, mod)) == pow(2, exp, mod)
@@ -303,11 +288,62 @@ def test_pow2_mod_n_traced_matches_python_pow():
 @pytest.mark.parametrize("exp", [0, 1, 63, 64, 100, 1000])
 def test_pow2_mod_n_traced_large_modulus_no_overflow(exp, mod):
     """`pow2_mod_N` must not overflow int64 for moduli whose residue products exceed 2**63."""
-    import jax
-
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import pow2_mod_N
-
     assert int(jax.jit(pow2_mod_N)(exp, jnp.int64(mod))) == pow(2, exp, mod)
+
+
+def test_pow2_mod_n_large_moduli():
+    """`pow2_mod_N` matches Python's pow for moduli of 33 to 63 bits.
+
+    Regression test: the products were computed in int64, which overflowed for
+    moduli above 2**31.5.
+    """
+    rng = random.Random(0)
+    cases = [
+        (rng.randrange(200), rng.randrange(2 ** (bits - 1) + 1, 2**bits, 2)) for bits in range(33, 64) for _ in range(8)
+    ]
+    results = jax.vmap(pow2_mod_N)(jnp.array([e for e, _ in cases]), jnp.array([n for _, n in cases]))
+    assert results.tolist() == [pow(2, e, n) for e, n in cases]
+
+
+@pytest.mark.parametrize("bits", [32, 40, 50, 62])
+def test_traced_montgomery_encoder_and_decoder_large_moduli(bits):
+    """Under tracing, `montgomery_encoder` and `montgomery_decoder` match the Python results for large moduli.
+
+    Regression test: x * R was computed in int64, which overflowed for moduli above 2**31.5.
+    """
+    rng = random.Random(bits)
+    N = rng.randrange(2 ** (bits - 1) + 1, 2**bits, 2)
+    encode = boolean_simulation(montgomery_encoder)
+    decode = boolean_simulation(montgomery_decoder)
+    for _ in range(5):
+        x, R = rng.randrange(N), rng.randrange(1, N)
+        assert int(encode(x, R, N)) == x * R % N
+        assert int(decode(x, 8, N)) == montgomery_decoder(x, 8, N)
+
+
+def test_traced_smallest_power_of_two_exact():
+    """Under tracing, `smallest_power_of_two` gives ceil(log2(n)) exactly around every power of two below 2**63.
+
+    Regression test: a float log2 gave one bit too few for n = 2**k + 1 with k >= 49.
+    """
+    traced = boolean_simulation(smallest_power_of_two)
+    for k in range(1, 63):
+        for n in (2**k - 1, 2**k, 2**k + 1):
+            if n < 2**63:
+                assert int(traced(n)) == smallest_power_of_two(n), n
+    assert int(traced(0)) == 0
+    assert int(traced(1)) == 0
+
+
+def test_traced_smallest_power_of_two_unsigned():
+    """Under tracing, `smallest_power_of_two` counts all 64 bits of an unsigned integer.
+
+    Regression test (review of #918): uint64 values were cast to int64, so the
+    values from 2**63 on were negative and gave 0.
+    """
+    traced = boolean_simulation(smallest_power_of_two)
+    for n in (0, 1, 5, 2**63 - 1, 2**63, 2**63 + 1, 3 * 2**62, 2**64 - 1):
+        assert int(traced(jnp.uint64(n))) == smallest_power_of_two(n), n
 
 
 def test_smallest_power_of_two_bigint_matches_int_at_powers_of_two():
@@ -319,12 +355,6 @@ def test_smallest_power_of_two_bigint_matches_int_at_powers_of_two():
 
 def test_montgomery_encoder_decoder_mixed_bigint_roundtrip():
     """`montgomery_encoder`/`montgomery_decoder` round-trip a BigInteger with plain-int args."""
-    from qrisp import BigInteger
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-        montgomery_decoder,
-        montgomery_encoder,
-    )
-
     radix, modulus, x = 1024, 97, 42
     x_bi = BigInteger.create(x, 4)
     encoded = montgomery_encoder(x_bi, radix, modulus)
@@ -337,21 +367,12 @@ def test_montgomery_encoder_decoder_mixed_bigint_roundtrip():
 
 def test_montgomery_encoder_rejects_mismatched_bigint_widths():
     """`montgomery_encoder` must reject BigIntegers with different limb widths, not silently return a wrong result."""
-    import pytest
-
-    from qrisp import BigInteger
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_encoder
-
     with pytest.raises(ValueError):
         montgomery_encoder(BigInteger.create(42, 4), BigInteger.create(1024, 8), 97)
 
 
 def test_new_montgomery_decoder_positive_and_negative_shift():
     """`new_montgomery_decoder` must decode both positive (inverse) and non-positive shifts."""
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
-        new_montgomery_decoder,
-    )
-
     modulus, x, m = 97, 55, 10
     encoded = (pow(2, m, modulus) * x) % modulus
     assert new_montgomery_decoder(encoded, m, modulus) == x
@@ -361,11 +382,6 @@ def test_new_montgomery_decoder_positive_and_negative_shift():
 
 def test_qq_montgomery_multiply_modulus():
     """`qq_montgomery_multiply_modulus` must compute the montgomery product of two QuantumModuli."""
-    from qrisp import QuantumModulus, gidney_adder, multi_measurement
-    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_montgomery import (
-        qq_montgomery_multiply_modulus,
-    )
-
     qx = QuantumModulus(97, inpl_adder=gidney_adder)
     qy = QuantumModulus(97, inpl_adder=gidney_adder)
     qx[:] = 12
@@ -376,10 +392,6 @@ def test_qq_montgomery_multiply_modulus():
 
 def test_cq_montgomery_mat_multiply():
     """`QuantumArray @ np.ndarray` must work for a standard numpy integer matrix."""
-    import numpy as np
-
-    from qrisp import QuantumArray, QuantumModulus, gidney_adder, multi_measurement
-
     modulus = 7
     a_array = QuantumArray(qtype=QuantumModulus(modulus, inpl_adder=gidney_adder), shape=(2, 2))
     a_array[:] = np.array([[1, 2], [3, 4]])
@@ -387,3 +399,115 @@ def test_cq_montgomery_mat_multiply():
     r_array = a_array @ b_array
     (outcome,) = list(multi_measurement([r_array]).keys())
     assert outcome[0].tolist() == [[0, 3], [1, 1]]
+
+
+def test_cq_montgomery_mat_multiply_shift_depends_on_register_size():
+    """The circuit of ``QuantumArray @ matrix`` does not depend on the value of the matrix entries.
+
+    Regression test: the Montgomery shift was computed from the value of each entry
+    instead of the number of qubits of the register, as for ``qm *= X`` before.
+    """
+
+    def num_compiled_qubits(entry):
+        a_array = QuantumArray(qtype=QuantumModulus(97, inpl_adder=gidney_adder), shape=(1, 1))
+        a_array[:] = np.array([[3]])
+        r_array = a_array @ np.array([[entry]])
+        return r_array.qs.compile().num_qubits()
+
+    assert num_compiled_qubits(2) == num_compiled_qubits(95)
+
+
+def test_inverse_mod_2_64():
+    """``_inverse_mod_2_64`` is the inverse modulo 2**64, for Python integers, JAX integers and BigIntegers."""
+    rng = random.Random(0)
+    for _ in range(16):
+        N = rng.randrange(1, 2**63, 2)
+        for value in (N, jnp.int64(N), BigInteger.create_static(N, 2), BigInteger.create_static(N, 3)):
+            assert int(_inverse_mod_2_64(value)) * N % 2**64 == 1
+
+
+# Largest aux register of a multiplication with an integer modulus
+INTEGER_AUX_BITS = 64
+
+
+@pytest.mark.parametrize("num_bits", [1, 5, 32, 33, 40, 63, 64, 65, 80])
+def test_aux_constant(num_bits):
+    """The constant added to the (m + 1)-qubit aux register is X * 2**j * N**-1 mod 2**(m + 1), for every size.
+
+    Regression test: the inverse of N was computed from its lowest 32 bits only, so the
+    aux register was not uncomputed for shifts m >= 32, for example in QuantumArray @ matrix.
+    """
+    rng = random.Random(num_bits)
+    width = 4
+    N = rng.randrange(2**100 + 1, 2**101, 2)
+    m = num_bits - 1
+    inverse_64, inverse = _aux_inverses(
+        BigInteger.create_static(N, width), BigInteger.create_static(2**m, width), jnp.int64(m)
+    )
+    for _ in range(4):
+        partial_product = rng.randrange(N)
+        constant = _aux_constant(
+            BigInteger.create_static(partial_product, width), inverse_64, inverse, jnp.int64(num_bits)
+        )
+        assert constant() % 2**num_bits == partial_product * pow(N, -1, 2**num_bits) % 2**num_bits
+
+    # An integer modulus has at most 63 bits, so its aux register at most 64 qubits
+    if num_bits <= INTEGER_AUX_BITS:
+        N_int = rng.randrange(2**61 + 1, 2**62, 2)
+        inverse_64, _ = _aux_inverses(jnp.int64(N_int), jnp.int64(0), jnp.int64(m))
+        partial_product = rng.randrange(N_int)
+        constant = int(_aux_constant(jnp.int64(partial_product), inverse_64, jnp.int64(0), jnp.int64(num_bits)))
+        assert constant % 2**num_bits == partial_product * pow(N_int, -1, 2**num_bits) % 2**num_bits
+
+
+@pytest.mark.parametrize("limbs", [None, 63, 2, 4], ids=["int", "63-bit int", "2 limbs", "4 limbs"])
+def test_partial_product_table(limbs):
+    """Every row j < n of the table is X * 2**j mod N, as computed with Python integers."""
+    rng = random.Random(limbs or 1)
+    bits = {None: 61, 63: 63}.get(limbs, 32 * (limbs or 0) // 2)
+    N = rng.randrange(2 ** (bits - 1) + 1, 2**bits, 2)
+    X = rng.randrange(N)
+    n = bits
+    if limbs in (None, 63):
+        table = _partial_product_table(jnp.int64(X), jnp.int64(N), n)
+        rows = [int(table[j]) for j in range(n)]
+    else:
+        table = _partial_product_table(BigInteger.create_static(X, limbs), BigInteger.create_static(N, limbs), n)
+        rows = [BigInteger(table[j])() for j in range(n)]
+    assert rows == [(X << j) % N for j in range(n)]
+
+
+@pytest.mark.parametrize("limbs", [1, 2])
+def test_partial_product_table_full_width_modulus(limbs):
+    """The table is exact for a modulus that uses every bit of its limbs.
+
+    Regression test (review of #918): doubling a partial product of 2**(32 * limbs - 1)
+    or more dropped its top bit, for example for X = 2**W - 2 and N = 2**W - 1.
+    """
+    bits = 32 * limbs
+    N, X = 2**bits - 1, 2**bits - 2
+    X_bi, N_bi = BigInteger.create_static(X, limbs), BigInteger.create_static(N, limbs)
+    table = _partial_product_table(X_bi, N_bi, bits)
+    assert [BigInteger(table[j])() for j in range(bits)] == [(X << j) % N for j in range(bits)]
+
+
+def test_partial_product_table_negative_factor():
+    """The table reduces a negative factor modulo N, as ``(X << j) % N`` did.
+
+    Regression test (review of #918): the factor was cast to uint64, so the
+    table held (2**64 - 3) * 2**j mod N for X = -3.
+    """
+    table = _partial_product_table(jnp.int64(-3), jnp.int64(13), 6)
+    assert [int(table[j]) for j in range(6)] == [(-3 << j) % 13 for j in range(6)]
+
+
+@pytest.mark.parametrize("N", [13, 2**62 + 135])
+def test_jax_mulmod_unsigned_factors(N):
+    """``_jax_mulmod`` reduces unsigned factors of 2**63 or more in unsigned arithmetic.
+
+    Regression test (review of #918): the factors were cast to int64, which made
+    them negative, and ``_jax_mulmod(jnp.uint64(2**63), 1, 13)`` returned 5 instead of 8.
+    """
+    for a, b in [(2**63, 1), (2**63 + 5, 3), (2**64 - 1, 2**64 - 1)]:
+        assert int(_jax_mulmod(jnp.uint64(a), jnp.uint64(b), N)) == a * b % N
+        assert int(_jax_mulmod(jnp.uint64(a), b % 2**62, jnp.int64(N))) == a * (b % 2**62) % N
