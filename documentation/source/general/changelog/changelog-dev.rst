@@ -153,6 +153,19 @@ Improvements
   generation to QuantumSession in a central place.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
+- **Faster resource estimation of modular multiplications in Jasp**
+  The classical constants of the multiplication of a
+  :class:`~qrisp.QuantumModulus` by a classical factor are now computed by
+  doubling modulo ``N`` and with machine integers, instead of a long division
+  per partial product and a ``BigInteger`` inverse modulo a power of two. The
+  new :meth:`QuantumModulus.inpl_mult <qrisp.QuantumModulus.inpl_mult>` also
+  accepts the inverse of the factor modulo ``N``, the most expensive classical
+  step, when it is known in advance, as for the powers of Shor's algorithm. The
+  circuit is unchanged. For a controlled multiplication of a 512-bit register,
+  ``count_ops`` takes 1.6 s instead of 2.2 s with ``qm *= X``, and 0.04 s with
+  ``qm.inpl_mult(X, inverse)``
+  (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
+
 - Fewer qubits for :func:`reflection <qrisp.reflection>`:
   :func:`reflection <qrisp.reflection>` no longer bundles its operations into a
   single gate. The bundling kept every ancilla of the ``state_function`` allocated
@@ -450,6 +463,43 @@ Bug Fixes
     ``count_ops`` for the same program.
 
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
+
+* The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
+  (``qm *= X`` and ``qm * X``, and ``QuantumArray @ matrix``) now chooses the
+  Montgomery shift from the number of qubits of the register, as the Montgomery
+  reduction requires, instead of from the value of the factor. For large factors the shift was about as large
+  as the register, so a controlled multiplication of an n-qubit register used
+  3 to 4 times more T gates (for n between 32 and 512) and about 5n instead of
+  3n qubits. For integer moduli of 32 bits or more, computing the shift also
+  overflowed, which gave wrong results. ``best_montgomery_shift`` no longer
+  overflows for traced moduli close to 2**63
+  (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
+
+* The modular arithmetic helpers behind :class:`~qrisp.QuantumModulus` are
+  exact for large integer moduli under tracing. ``pow2_mod_N``,
+  ``montgomery_encoder`` and ``montgomery_decoder`` multiplied in int64, which
+  overflowed for moduli above 2**31.5, so for example a ``QuantumModulus`` with
+  a non-zero Montgomery shift decoded wrong values. ``smallest_power_of_two``
+  used a floating-point logarithm, which gave one bit too few from 2**49 on.
+  ``qm * X`` now also accepts the same classical factors as ``qm *= X``,
+  including JAX integers
+  (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
+
+* In Jasp mode, the multiplication of a :class:`~qrisp.QuantumModulus` with an
+  integer modulus by a classical factor computed its partial products as
+  ``(X << j) % N`` in int64, which overflowed for moduli above about 33 bits and
+  gave wrong results. The partial products are now computed by doubling modulo
+  ``N``, which is exact for moduli below 2**63
+  (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
+
+* The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
+  reduces a factor with more bits than the modulus modulo it, instead of
+  truncating it to the limbs of a BigInteger modulus (or to 64 bits under
+  tracing). A BigInteger factor with a different number of limbs than the
+  modulus is accepted, also with an integer modulus, and unsigned JAX factors
+  are reduced in unsigned arithmetic. A JAX array that is not an integer scalar
+  raises a ``TypeError``
+  (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
 
 * Fixed simulation of composite operations in :meth:`~qrisp.QuantumCircuit.statevector_array`
   and :meth:`~qrisp.QuantumCircuit.run`: circuits now transpile composite operations before
