@@ -698,6 +698,384 @@ def test_static_modulus_hardcoded_literal_repeated_calls():
         assert int(solve()) == 8
 
 
+# ----- Montgomery shift handling under Jasp (issue #925) -----
+
+SHIFT_N = 13
+
+SHIFT_PAIRS = [(0, 0), (2, 2), (2, 0), (0, -3), (-5, 1)]
+
+SHIFT_OPS = {
+    "add": lambda x, y: (x + y) % SHIFT_N,
+    "sub": lambda x, y: (x - y) % SHIFT_N,
+    "iadd": lambda x, y: (x + y) % SHIFT_N,
+    "isub": lambda x, y: (x - y) % SHIFT_N,
+}
+
+
+def _apply_shift_op(op, a, b):
+    if op == "add":
+        return a + b
+    if op == "sub":
+        return a - b
+    if op == "iadd":
+        a += b
+    else:
+        a -= b
+    return a
+
+
+def test_shift_qache_multiplication_no_tracer_leak():
+    """The shift of a product computed inside qache must not leak a tracer."""
+
+    @qache
+    def mul(a, b):
+        return a * b
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        b = QuantumModulus(SHIFT_N)
+        a[:] = 3
+        b[:] = 5
+        return measure(mul(a, b))
+
+    assert int(main()) == 2
+
+
+def test_shift_part_of_qache_key():
+    """A qached function called with differing shifts must not reuse a stale trace."""
+
+    @qache
+    def measure_inside(a):
+        return measure(a)
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a[:] = 3
+        b = QuantumModulus(SHIFT_N)
+        b[:] = 3
+        b.m = 2
+        return measure(a), measure(b), measure_inside(a), measure_inside(b)
+
+    assert tuple(int(x) for x in main()) == (3, 4, 3, 4)
+
+
+def test_shift_inplace_addition_after_multiplication():
+    """In-place addition of operands with differing shifts (product has a negative shift)."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        b = QuantumModulus(SHIFT_N)
+        a[:] = 3
+        b[:] = 5
+        c = a * b
+        c += a
+        return measure(c)
+
+    assert int(main()) == 5
+
+
+def test_shift_negative_classical_addition():
+    """Encoding a classical operand into a QuantumModulus with negative shift."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        b = QuantumModulus(SHIFT_N)
+        a[:] = 3
+        b[:] = 5
+        c = a * b
+        c += 1
+        return measure(c)
+
+    assert int(main()) == 3
+
+
+@pytest.mark.parametrize("am, bm", SHIFT_PAIRS)
+@pytest.mark.parametrize("op", list(SHIFT_OPS))
+def test_shift_aware_arithmetic_static_shift(op, am, bm):
+    """Addition/subtraction with mixed shifts known at trace time."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = am
+        a[:] = 9
+        b = QuantumModulus(SHIFT_N)
+        b.m = bm
+        b[:] = 7
+        return measure(_apply_shift_op(op, a, b))
+
+    assert int(main()) == SHIFT_OPS[op](9, 7)
+
+
+@pytest.mark.parametrize("am, bm", SHIFT_PAIRS)
+@pytest.mark.parametrize("op", list(SHIFT_OPS))
+def test_shift_aware_arithmetic_traced_shift(op, am, bm):
+    """Addition/subtraction with mixed shifts that are traced (crossing a qache boundary)."""
+
+    @qache
+    def kernel(a, b):
+        if op in ("iadd", "isub"):
+            _apply_shift_op(op, a, b)
+            return
+        return _apply_shift_op(op, a, b)
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = am
+        a[:] = 9
+        b = QuantumModulus(SHIFT_N)
+        b.m = bm
+        b[:] = 7
+        res = kernel(a, b)
+        return measure(a if res is None else res)
+
+    assert int(main()) == SHIFT_OPS[op](9, 7)
+
+
+@pytest.mark.parametrize("am, bm", SHIFT_PAIRS)
+@pytest.mark.parametrize("op", list(SHIFT_OPS))
+def test_shift_aware_arithmetic_non_jasp(op, am, bm):
+    """Addition/subtraction with mixed shifts outside of Jasp."""
+    a = QuantumModulus(SHIFT_N)
+    a.m = am
+    a[:] = 9
+    b = QuantumModulus(SHIFT_N)
+    b.m = bm
+    b[:] = 7
+    res = _apply_shift_op(op, a, b)
+    assert list(res.get_measurement().keys()) == [SHIFT_OPS[op](9, 7)]
+
+
+def test_shift_aware_addition_quantum_float_operand():
+    """A QuantumFloat operand is treated as having shift 0."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = 2
+        a[:] = 9
+        b = QuantumFloat(4)
+        b[:] = 7
+        a += b
+        return measure(a)
+
+    assert int(main()) == 3
+
+
+@pytest.mark.parametrize("qm_m", [0, -1, 3])
+def test_shift_aware_addition_quantum_float_exponent(qm_m):
+    """A QuantumFloat operand with exponent e (value = raw * 2^e) acts as shift -e."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = qm_m
+        a[:] = 9
+        b = QuantumFloat(3, exponent=1)
+        b[:] = 6
+        a += b
+        return measure(a)
+
+    assert int(main()) == (9 + 6) % SHIFT_N
+
+
+def test_shift_aware_addition_quantum_float_operand_qache():
+    """A QuantumFloat operand crossing a qache boundary (traced exponent)."""
+
+    @qache
+    def kernel(a, b):
+        a += b
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = 2
+        a[:] = 9
+        b = QuantumFloat(3, exponent=1)
+        b[:] = 6
+        kernel(a, b)
+        return measure(a)
+
+    assert int(main()) == (9 + 6) % SHIFT_N
+
+
+@pytest.mark.parametrize("qm_m", [0, 2])
+@pytest.mark.parametrize("exponent", [0, 1])
+def test_shift_aware_addition_quantum_float_operand_non_jasp(qm_m, exponent):
+    """A QuantumFloat operand outside of Jasp."""
+    a = QuantumModulus(SHIFT_N)
+    a.m = qm_m
+    a[:] = 9
+    b = QuantumFloat(3, exponent=exponent)
+    b[:] = 6
+    a += b
+    assert list(a.get_measurement().keys()) == [(9 + 6) % SHIFT_N]
+
+
+@pytest.mark.parametrize("op", list(SHIFT_OPS))
+def test_shift_aware_arithmetic_signed_quantum_float_raises(op):
+    """Signed QuantumFloat operands are rejected, since the sign bit has negative weight."""
+    a = QuantumModulus(SHIFT_N)
+    a[:] = 9
+    b = QuantumFloat(3, signed=True)
+    b[:] = -1
+    with pytest.raises(TypeError, match="signed QuantumFloat"):
+        _apply_shift_op(op, a, b)
+
+
+def test_shift_aware_arithmetic_signed_quantum_float_raises_jasp():
+    """Signed QuantumFloat operands are rejected in Jasp mode (signed is static)."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a[:] = 9
+        b = QuantumFloat(3, signed=True)
+        b[:] = -1
+        a += b
+        return measure(a)
+
+    with pytest.raises(TypeError, match="signed QuantumFloat"):
+        main()
+
+
+@pytest.mark.parametrize("am", [0, 2, -3])
+def test_shift_aware_rsub(am):
+    """Classical minus QuantumModulus with a non-zero shift."""
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = am
+        a[:] = 9
+        return measure(5 - a)
+
+    assert int(main()) == (5 - 9) % SHIFT_N
+
+    a = QuantumModulus(SHIFT_N)
+    a.m = am
+    a[:] = 9
+    res = 5 - a
+    assert list(res.get_measurement().keys()) == [(5 - 9) % SHIFT_N]
+
+
+@pytest.mark.parametrize("flag_on", [True, False])
+def test_shift_aware_addition_controlled(flag_on):
+    """Controlled ``b += a`` with differing shifts adds a only if the control is set.
+
+    Regression test: in static mode, ``custom_control`` replaced the per-bit
+    ``ctrl=a[i]`` of ``mod_adder`` with the enclosing control qubit, so every
+    bit's constant was added regardless of a.
+    """
+    N = 5
+
+    @jaspify
+    def main(a_val):
+        a = QuantumModulus(N)
+        b = QuantumModulus(N)
+        b.m = 1
+        a[:] = a_val
+        b[:] = 2
+        flag = QuantumBool()
+        if flag_on:
+            x(flag)
+        with control(flag):
+            b += a
+        return measure(b)
+
+    for a_val in range(N):
+        expected = (2 + a_val) % N if flag_on else 2
+        assert int(main(a_val)) == expected, a_val
+
+        a = QuantumModulus(N)
+        b = QuantumModulus(N)
+        b.m = 1
+        a[:] = a_val
+        b[:] = 2
+        flag = QuantumBool()
+        if flag_on:
+            x(flag)
+        with control(flag):
+            b += a
+        assert list(b.get_measurement().keys()) == [expected], a_val
+
+
+@pytest.mark.parametrize("N", [12, np.int64(12)])
+def test_shift_aware_addition_even_modulus_raises(N):
+    """Differing shifts need 2 to be invertible modulo N."""
+    a = QuantumModulus(N)
+    a[:] = 1
+    b = QuantumModulus(N)
+    b[:] = 1
+    b.m = 1
+    with pytest.raises(ValueError, match="odd modulus"):
+        a += b
+
+
+def test_shift_aware_addition_even_biginteger_modulus_raises():
+    """A BigInteger modulus with concrete digits is checked for parity as well."""
+    N = BigInteger.create_static(12, 1)
+
+    @jaspify
+    def main():
+        a = QuantumModulus(N)
+        a[:] = BigInteger.create(1, 1)
+        b = QuantumModulus(N)
+        b[:] = BigInteger.create(1, 1)
+        b.m = 1
+        a += b
+        return measure(a)
+
+    with pytest.raises(ValueError, match="odd modulus"):
+        main()
+
+
+def test_shift_aware_addition_odd_biginteger_modulus_closure():
+    """A concrete odd BigInteger modulus passes the parity check."""
+    N = BigInteger.create_static(SHIFT_N, 1)
+
+    @jaspify
+    def main():
+        a = QuantumModulus(N)
+        a.m = 2
+        a[:] = BigInteger.create(9, 1)
+        b = QuantumModulus(N)
+        b[:] = BigInteger.create(7, 1)
+        a += b
+        return measure(a)
+
+    assert to_int(main()) == (9 + 7) % SHIFT_N
+
+
+# 2^31 - 1 fits in one 32-bit limb, but products of two residues do not.
+LARGE_BI_PRIME = 2**31 - 1
+
+
+@pytest.mark.parametrize("am, bm", [(0, 3), (5, -2)])
+def test_shift_aware_addition_large_biginteger_modulus(am, bm):
+    """Mixed-shift addition with a BigInteger modulus whose residue products overflow a limb."""
+    a_val, b_val = 123456789, 2000000000
+
+    @jaspify
+    def main(N):
+        a = QuantumModulus(N)
+        a.m = am
+        a[:] = BigInteger.create(a_val, N.digits.shape[0])
+        b = QuantumModulus(N)
+        b.m = bm
+        b[:] = BigInteger.create(b_val, N.digits.shape[0])
+        a += b
+        return measure(a)
+
+    result = to_int(main(BigInteger.create_static(LARGE_BI_PRIME, 1)))
+    assert result == (a_val + b_val) % LARGE_BI_PRIME
+
+
 # ----------------- Montgomery shift of the multiplication by a classical factor -----------------
 
 # The multiplication by a classical factor X uses a Montgomery reduction with a
