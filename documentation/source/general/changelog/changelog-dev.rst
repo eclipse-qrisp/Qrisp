@@ -3,6 +3,13 @@
 Qrisp 0.10
 ==========
 
+.. warning::
+
+   🚧🧪 **IN DEVELOPMENT — NOT RELEASED YET** 🧪🚧
+
+   This changelog covers an **in-development** version of Qrisp. It has not
+   been released yet, and its contents are subject to change.
+
 Qrisp 0.10 continues to push the boundaries of high-level quantum programming.
 This release brings a streamlined contribution experience with automated
 changelog enforcement.
@@ -465,6 +472,7 @@ Bug Fixes
     does. With a random ``meas_behavior``, they reused the same outcome for
     every measurement of a loop, and could follow different branches than
     ``count_ops`` for the same program.
+
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
@@ -554,6 +562,10 @@ Bug Fixes
   creation time instead. Since the ``auto_uncompute`` decorator uses ``live_qvs`` to find the
   variables a function created, it could previously miss such a variable.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
+
+* Fixed ``reset`` on a single qubit, such as ``reset(qv[0])``, failing to
+  compile with :ref:`qjit <qjit>`. Resetting a whole QuantumVariable was not
+  affected (`PR #941 <https://github.com/eclipse-qrisp/Qrisp/pull/941>`_).
 
 Compatibility
 -------------
@@ -847,6 +859,14 @@ Dependency Upgrades
   ``qiskit_aer``, ``pyscf`` or PennyLane Lightning after ``qrisp`` fails with
   ``cannot allocate memory in static TLS block``
   (`PR #976 <https://github.com/eclipse-qrisp/Qrisp/pull/976>`_).
+
+* Required ``iqm-client[qrisp]>=35.0.0`` in the ``iqm`` and ``dev-testing``
+  dependency groups. Older releases do not provide the ``qrisp`` extra, so pip
+  could fall back to one of them and install no IQM backend. This happened on
+  Python 3.13, where Sphinx 9.2.0 requires ``packaging>=25`` while recent
+  ``iqm-client`` releases require ``packaging<25``, and ``pip install
+  ".[all]"`` resolved to ``iqm-client`` 15.3
+  (`PR #995 <https://github.com/eclipse-qrisp/Qrisp/pull/995>`_).
 
 .. Add dependency upgrades above this line
 

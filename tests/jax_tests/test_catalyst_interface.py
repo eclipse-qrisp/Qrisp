@@ -163,6 +163,28 @@ def test_catalyst_interface():
     qir_str = jaspr.to_qir()
 
 
+def test_reset_catalyst():
+    """Test reset on a single qubit and on a whole QubitArray under qjit."""
+
+    @qjit
+    def single_qubit_reset():
+        qf = QuantumFloat(2)
+        x(qf)
+        reset(qf[0])
+        return measure(qf)
+
+    assert single_qubit_reset() == 2
+
+    @qjit
+    def array_reset():
+        qf = QuantumFloat(2)
+        x(qf)
+        reset(qf)
+        return measure(qf)
+
+    assert array_reset() == 0
+
+
 def test_parity_catalyst():
     """Test parity primitive with catalyst interface."""
 
