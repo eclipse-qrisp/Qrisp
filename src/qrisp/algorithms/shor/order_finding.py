@@ -56,19 +56,22 @@ def semiclassical_order_finding(
     that $r$ can be recovered classically, for example with continued fractions.
 
     Instead of a $t$-qubit phase register followed by the inverse quantum Fourier
-    transform, the phase estimation uses one control qubit at a time (`Griffiths
-    and Niu, 1996 <https://arxiv.org/abs/quant-ph/9511007>`_): step $j$ applies the
-    multiplication by $a^{2^{t-1-j}} \bmod N$ controlled on a fresh qubit, rotates
-    the qubit by the phase of the bits measured before, and measures bit $j$ of
-    $y$. The outcome has the same distribution as with the full phase register,
-    while the circuit needs $t - 1$ fewer qubits and $t$ single-qubit rotations
-    instead of the $t (t - 1) / 2$ controlled phase gates of the inverse quantum
-    Fourier transform. It requires mid-circuit measurements and rotations that
-    depend on their outcomes.
+    transform, the phase estimation uses the semiclassical Fourier transform of
+    `Griffiths and Niu (1996) <https://arxiv.org/abs/quant-ph/9511007>`_, with one
+    control qubit at a time following `Mosca and Ekert (1999)
+    <https://arxiv.org/abs/quant-ph/9903071>`_. Step $j$ applies the multiplication
+    by $a^{2^{t-1-j}} \bmod N$ controlled on a fresh qubit, rotates the qubit by the
+    phase of the bits measured before, measures bit $j$ of $y$, and resets the
+    qubit before releasing it. The outcome has the same distribution as with the
+    full phase register. The circuit needs $t - 1$ fewer qubits, and $t$
+    single-qubit rotations replace the $t (t - 1) / 2$ controlled phase gates and
+    $\lfloor t / 2 \rfloor$ swaps of the inverse quantum Fourier transform. It
+    requires mid-circuit measurements and rotations that depend on their outcomes.
 
     The classical multipliers $a^{2^k} \bmod N$ and their inverses modulo $N$,
-    which the in-place multiplications need, are computed exactly before the
-    circuit is traced, so ``a`` and ``N`` must be Python integers.
+    which the in-place multiplications need, are computed exactly with Python
+    integers when the function is called, so ``a`` and ``N`` must be integers and
+    cannot be traced.
 
     .. note::
 
@@ -110,34 +113,28 @@ def semiclassical_order_finding(
     Examples
     --------
     The order of 7 modulo 15 is $r = 4$, and $2^t$ with the default precision
-    $t = 8$ is a multiple of $r$. The outcome is therefore exactly one of the
-    multiples $s \cdot 2^8 / 4$, each with probability $1/4$:
+    $t = 8$ is a multiple of $r$. The outcome is therefore one of the multiples
+    $s \cdot 2^8 / 4 = 64 s$, each with probability $1/4$. Calling the returned
+    :ref:`BigInteger <scalable_integer_type>` gives its value:
 
-    ::
+    >>> from qrisp.algorithms.shor import semiclassical_order_finding
+    >>> from qrisp.jasp import jaspify
+    >>> def order_finding():
+    ...     return semiclassical_order_finding(7, 15)
+    >>> outcome = jaspify(order_finding)()  # doctest: +SKIP
+    >>> print(outcome() % 64)  # doctest: +SKIP
+    0
 
-        from qrisp.algorithms.shor import semiclassical_order_finding
-        from qrisp.jasp import jaspify
+    The resource estimators count the same circuit without simulating it. With
+    the default adder, the circuit needs $3n + 2 \lceil \log_2 n \rceil + 2$
+    qubits, 18 for the $n = 4$ qubits of the register. It applies one rotation per
+    bit of the outcome, 8 for $t = 8$:
 
-        @jaspify
-        def main():
-            return semiclassical_order_finding(7, 15)
-
-        outcome = main()
-        print(outcome())  # The value of the BigInteger
-        # 0, 64, 128 or 192
-
-    The resource estimators count the circuit without simulating it. With the
-    default adder, the circuit needs $3n + 2 \lceil \log_2 n \rceil + 2$ qubits:
-
-    ::
-
-        from qrisp.jasp import num_qubits
-
-        def main():
-            return semiclassical_order_finding(7, 15)
-
-        print(num_qubits(meas_behavior="1")(main)()["peak_allocations"])
-        # 18
+    >>> from qrisp.jasp import count_ops, num_qubits
+    >>> print(num_qubits(meas_behavior="1")(order_finding)()["peak_allocations"])
+    18
+    >>> print(count_ops(meas_behavior="1")(order_finding)()["rz"])
+    8
 
     """
     a = operator.index(a)
@@ -188,8 +185,7 @@ def semiclassical_order_finding(
         """
         register.inpl_mult(BigInteger(multipliers[k]), inverse=BigInteger(inverses[k]))
 
-    num_outcome_limbs = -(-precision // _LIMB_BITS)
-    _, digits = _semiclassical_phase_estimation(register, multiply_by_power, precision, num_limbs=num_outcome_limbs)
+    _, digits = _semiclassical_phase_estimation(register, multiply_by_power, precision, outcome_limbs=True)
     # The phase estimation leaves the register in a state other than |0>, and a released
     # qubit must be in |0> for the interpreters that reuse it
     reset(register)

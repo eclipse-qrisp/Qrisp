@@ -588,8 +588,10 @@ Compatibility
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
 * :ref:`IQPE <IQPE>` returns the phase instead of twice the phase modulo 1
-  (see Bug Fixes), and raises a ``ValueError`` for a precision above 63, for
-  which the number of calls of the unitary overflowed a 64-bit integer
+  (see Bug Fixes). It raises a ``TypeError`` for a precision that is not an
+  integer and, unless the precision is traced, a ``ValueError`` for a precision
+  above 63, for which the number of calls of the unitary overflowed a 64-bit
+  integer
   (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
 .. Add compatibility notes above this line

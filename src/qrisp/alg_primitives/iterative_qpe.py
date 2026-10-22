@@ -25,12 +25,14 @@
 
 from __future__ import annotations
 
+import operator
 from collections.abc import Callable
 from typing import Any
 
 import jax.numpy as jnp
 import numpy as np
 from jax import Array
+from jax.core import Tracer
 
 from qrisp import QuantumBool, control, h, measure, reset, rz
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import DTYPE
@@ -49,7 +51,7 @@ def _semiclassical_phase_estimation(
     apply_power: Callable[[Any, Array], None],
     precision: int,
     ctrl_method: str | None = None,
-    num_limbs: int = 0,
+    outcome_limbs: bool = False,
 ) -> tuple[Array, Array]:
     """Estimate the phase of a unitary ``U`` with one control qubit at a time, measured after every step.
 
@@ -65,25 +67,26 @@ def _semiclassical_phase_estimation(
     ctrl_method : str, optional
         The method of the controlled ``U``, see :meth:`.control <qrisp.Operation.control>`.
         The default is None.
-    num_limbs : int, optional
-        The number of 32-bit limbs of the outcome ``y``, at least ``ceil(t / 32)``,
-        or 0 to compute only the estimated phase. The default is 0.
+    outcome_limbs : bool, optional
+        If True, the outcome ``y`` is also assembled into its ``ceil(t / 32)`` 32-bit
+        limbs, which requires a precision that is not traced. The default is False,
+        which computes only the estimated phase.
 
     Returns
     -------
     tuple
         The estimated phase ``y / 2**t`` as a float, exact for up to 53 bits, and the
-        limbs of the outcome ``y`` (the digits of a BigInteger), of dtype ``uint32``.
+        limbs of the outcome ``y`` (the digits of a BigInteger), of dtype ``uint32``,
+        or no limbs if ``outcome_limbs`` is False.
 
     Raises
     ------
-    ValueError
-        If ``num_limbs`` is positive and too small for the outcome.
+    TypeError
+        If ``outcome_limbs`` is True and the precision is traced or not an integer.
 
     """
-    # Otherwise JAX would drop the bits of the missing limbs silently
-    if num_limbs and isinstance(precision, (int, np.integer)) and num_limbs * _LIMB_BITS < precision:
-        raise ValueError(f"{num_limbs} limbs cannot hold an outcome of {precision} bits")
+    # The number of limbs sets the shape of an array, so it must be known while tracing
+    num_limbs = -(-operator.index(precision) // _LIMB_BITS) if outcome_limbs else 0
 
     def step(j: Array, carry: tuple) -> tuple:
         """Measure bit ``j`` of the outcome.
@@ -179,8 +182,12 @@ def IQPE(  # noqa: PLR0913, PLR0917
 
     Raises
     ------
+    TypeError
+        If ``precision`` is not an integer.
     ValueError
-        If ``precision`` is larger than 63.
+        If ``precision`` is larger than 63. A traced precision, for example an
+        argument of a jaspified function, is not checked, since its value is only
+        known when the program runs.
 
     Notes
     -----
@@ -223,7 +230,8 @@ def IQPE(  # noqa: PLR0913, PLR0917
     Array(0.1875, dtype=float64)
 
     """
-    if isinstance(precision, (int, np.integer)) and precision > _MAX_IQPE_PRECISION:
+    # A traced precision is only known when the program runs, so it cannot be checked here
+    if not isinstance(precision, Tracer) and operator.index(precision) > _MAX_IQPE_PRECISION:
         raise ValueError(f"The precision of IQPE is at most {_MAX_IQPE_PRECISION}, got {precision}")
     kwargs = {} if kwargs is None else kwargs
 

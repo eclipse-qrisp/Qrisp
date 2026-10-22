@@ -72,7 +72,7 @@ def make_phase_estimation(precision):
         def apply_power(qv, k):
             p(2 * np.pi * phase * 2.0**k, qv[0])
 
-        return BigInteger(_semiclassical_phase_estimation(qv, apply_power, precision, num_limbs=-(-precision // 32))[1])
+        return BigInteger(_semiclassical_phase_estimation(qv, apply_power, precision, outcome_limbs=True)[1])
 
     return estimate
 
@@ -108,7 +108,7 @@ def test_phase_estimation_exact_phases_beyond_one_limb():
             phase = (shifted & jnp.uint64(2**precision - 1)).astype(jnp.float64) / 2**precision
             p(2 * np.pi * phase, qv[0])
 
-        return BigInteger(_semiclassical_phase_estimation(qv, apply_power, precision, num_limbs=-(-precision // 32))[1])
+        return BigInteger(_semiclassical_phase_estimation(qv, apply_power, precision, outcome_limbs=True)[1])
 
     rng = random.Random(precision)
     for y in (
@@ -137,7 +137,7 @@ def test_phase_estimation_distribution_of_an_inexact_phase(seed_numpy):
             def apply_power(qv, k):
                 p(2 * np.pi * phase * 2.0**k, qv[0])
 
-            outcome = _semiclassical_phase_estimation(qv, apply_power, precision, num_limbs=1)[1][0]
+            outcome = _semiclassical_phase_estimation(qv, apply_power, precision, outcome_limbs=True)[1][0]
             x(qv)  # the eigenstate |1> is unchanged, so the qubit is released in |0>
             qv.delete()
             return counts.at[outcome].add(1)
@@ -171,8 +171,14 @@ def test_order_finding_outcomes(a, N, order, seed_numpy):
 
     run = jaspify(main)
     seed_numpy(a * N)
-    for _ in range(3):
-        assert run()() % (2**precision // order) == 0
+    # Each shot gives 0 with probability 1 / r, and a circuit that never applied the
+    # multiplications would always give 0, so sample until another outcome appears
+    max_shots = 12
+    outcomes = [run()() for _ in range(3)]
+    while not any(outcomes) and len(outcomes) < max_shots:
+        outcomes.append(run()())
+    assert any(outcomes), f"no outcome other than 0 in {outcomes}"
+    assert all(outcome % (2**precision // order) == 0 for outcome in outcomes)
 
 
 def qpe_order_finding(a, N, num_limbs):
@@ -241,13 +247,6 @@ def test_resources_match_the_phase_register_circuit():
     # The semiclassical order finding also releases its register
     assert semiclassical_qubits["finally_allocated"] == 0
     assert qpe_qubits["finally_allocated"] == n + t
-
-
-@pytest.mark.parametrize("precision", [40, np.int64(40)], ids=["int", "NumPy integer"])
-def test_phase_estimation_rejects_too_few_limbs(precision):
-    """An outcome of 40 bits does not fit into one limb, whose missing bits JAX would drop silently."""
-    with pytest.raises(ValueError):
-        _semiclassical_phase_estimation(None, lambda args, k: None, precision, num_limbs=1)
 
 
 def test_custom_precision():

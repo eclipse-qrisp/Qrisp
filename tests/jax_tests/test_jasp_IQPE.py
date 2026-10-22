@@ -16,6 +16,7 @@
 
 """Tests IQPE (iterative quantum phase estimation) under Jasp tracing."""
 
+import jax.numpy as jnp
 import numpy as np
 import pytest
 
@@ -102,8 +103,26 @@ def test_IQPE_resets_its_control_qubit():
     assert jaspr_to_static_register_jaspr(make_jaspr(main)(), 2)() == phase
 
 
-@pytest.mark.parametrize("precision", [64, np.int64(64)], ids=["int", "NumPy integer"])
-def test_IQPE_rejects_precision_above_63(precision):
-    """IQPE applies U up to 2**(precision - 1) times, which overflows a 64-bit integer from a precision of 64 on."""
-    with pytest.raises(ValueError):
+def test_IQPE_traced_precision():
+    """A traced precision, such as an argument of the traced function, is accepted without the bound check."""
+    phase = 5 / 8
+
+    def main(precision):
+        qv = QuantumVariable(1)
+        x(qv)
+        return IQPE(qv, lambda qv: p(2 * np.pi * phase, qv[0]), precision=precision)
+
+    # The precision is an argument of main, so it is traced
+    jaspr = make_jaspr(main)(3)
+    assert jaspr(3) == phase
+
+
+@pytest.mark.parametrize(
+    "precision, error",
+    [(64, ValueError), (np.int64(64), ValueError), (jnp.int64(64), ValueError), (3.0, TypeError)],
+    ids=["int above 63", "NumPy integer above 63", "JAX integer above 63", "float"],
+)
+def test_IQPE_rejects_invalid_precision(precision, error):
+    """The precision must be an integer, and at most 63, since IQPE applies U up to 2**(precision - 1) times."""
+    with pytest.raises(error):
         IQPE(None, lambda qv: None, precision=precision)
