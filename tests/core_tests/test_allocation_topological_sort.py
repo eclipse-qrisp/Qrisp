@@ -25,17 +25,27 @@ from qrisp.permeability.qc_transformations.memory_management import toposort_hel
 
 def reference_toposort(indptr, indices, node_amount, delay_nodes, prefered_nodes):
     """The greedy of toposort_helper with dense matrices (only for small graphs)."""
+    # adjacency[u, v] = 1 for every edge u -> v (row u holds the successors of u, as in the CSR arrays)
     adjacency = sps.csr_matrix(
         (np.ones(indices.size, dtype=np.int64), indices, indptr), shape=(node_amount, node_amount)
     ).toarray()
 
-    # reachable[u, v] is True if there is a path from u to v (or u == v), by repeated squaring
+    # reachable[u, v] is True if there is a path from u to v with at most L edges, starting with L = 1 (the
+    # identity adds the paths without edges, u == v). Squaring doubles L: (R @ R)[u, v] > 0 if there is a node w
+    # with R[u, w] and R[w, v], and a path of at most 2 L edges splits at its middle node w into two paths of at
+    # most L edges (one of them may be empty, which the diagonal covers). Once a squaring adds nothing, reachable
+    # is complete: a pair whose shortest path had more than L edges would have a first piece of L + 1 edges,
+    # which is itself a shortest path and would have been added. The products count the nodes w, integers of at
+    # most node_amount, so float64 is exact.
     reachable = (np.eye(node_amount, dtype=np.int64) + adjacency) > 0
     while True:
         squared = (reachable.astype(np.float64) @ reachable.astype(np.float64)) > 0
         if np.array_equal(squared, reachable):
             break
         reachable = squared
+
+    # ancestors[v, u] is True if u is an ancestor of v or u == v; the greedy below uses the rows of the prefered
+    # nodes and the columns of the delay nodes
     ancestors = reachable.T
 
     res = []
