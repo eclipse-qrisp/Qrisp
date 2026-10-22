@@ -73,6 +73,16 @@ New Features
 Improvements
 ------------
 
+- **Faster ordering of qubit (de)allocations in the compiler**
+  The topological sort that :meth:`compile <qrisp.QuantumSession.compile>` uses to
+  place qubit deallocations early and allocations late (and, in the light cone
+  reduction, intended measurements early) returns the same order as before, but no
+  longer grows cubically with the number of (de)allocations. Compiling Grover's
+  algorithm with the tutorial's ``sqrt_oracle`` and 128 iterations takes 4.8 s
+  instead of 69 s, of which the sort took 64 s. The dense and sparse variants of
+  the sort are replaced by a single implementation, and the ``psutil`` dependency,
+  which only chose between them, is removed.
+
 - **Cheaper tracing for** :func:`q_switch <qrisp.q_switch>`
   The ``"tree"`` method resolves conditionals whose predicate is already known at
   trace time instead of tracing both arms and discarding one. The emitted circuit
