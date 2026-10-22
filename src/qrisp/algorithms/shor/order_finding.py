@@ -31,6 +31,7 @@ from jax import Array
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import DTYPE, BigInteger, _static_digits
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import _LIMB_BITS
 from qrisp.alg_primitives.iterative_qpe import _semiclassical_phase_estimation
+from qrisp.core import reset
 from qrisp.jasp import check_for_tracing_mode
 from qrisp.qtypes import QuantumModulus
 
@@ -92,8 +93,9 @@ def semiclassical_order_finding(
     Returns
     -------
     BigInteger
-        The outcome $y$, with $\lceil t / 32 \rceil$ limbs. The register is deleted
-        before returning, so that repeated calls do not keep it allocated.
+        The outcome $y$, with $\lceil t / 32 \rceil$ limbs. The register is reset and
+        deleted before returning, so that repeated calls do not keep it allocated and
+        later allocations can reuse its qubits.
 
     Raises
     ------
@@ -188,5 +190,8 @@ def semiclassical_order_finding(
 
     num_outcome_limbs = -(-precision // _LIMB_BITS)
     _, digits = _semiclassical_phase_estimation(register, multiply_by_power, precision, num_limbs=num_outcome_limbs)
+    # The phase estimation leaves the register in a state other than |0>, and a released
+    # qubit must be in |0> for the interpreters that reuse it
+    reset(register)
     register.delete()
     return BigInteger(digits)

@@ -520,6 +520,12 @@ Bug Fixes
   phase) needs to be updated
   (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
+* :ref:`IQPE <IQPE>` released its control qubit after measuring it, without
+  resetting it. Interpreters that reuse released qubits, such as the Catalyst
+  interpreter, could therefore start the next step with the qubit in ``|1>`` and
+  give a wrong estimate. The control qubit is now reset before it is released
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
+
 * Fixed simulation of composite operations in :meth:`~qrisp.QuantumCircuit.statevector_array`
   and :meth:`~qrisp.QuantumCircuit.run`: circuits now transpile composite operations before
   simulation to avoid computing wide unitary matrices, while preserving narrow controlled

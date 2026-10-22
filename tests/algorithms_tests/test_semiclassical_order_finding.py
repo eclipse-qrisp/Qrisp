@@ -32,13 +32,14 @@ from qrisp import (
     QuantumVariable,
     control,
     h,
+    measure,
     measure_to_big_integer,
     p,
     x,
 )
 from qrisp.alg_primitives.iterative_qpe import _semiclassical_phase_estimation
 from qrisp.algorithms.shor import semiclassical_order_finding
-from qrisp.jasp import count_ops, jaspify, jrange, make_jaspr, q_fori_loop
+from qrisp.jasp import count_ops, jaspify, jaspr_to_static_register_jaspr, jrange, make_jaspr, q_fori_loop
 
 # Largest total variation distance accepted between sampled and exact distributions
 TOTAL_VARIATION_TOLERANCE = 0.1
@@ -212,7 +213,8 @@ def test_resources_match_the_phase_register_circuit():
     circuit with a phase register adds 2t Hadamard gates, the t (t - 1) / 2
     controlled phase gates (3 P and 2 CX each) and t / 2 swaps (3 CX each) of the
     inverse QFT, and t measurements. The semiclassical circuit adds two Hadamard
-    gates, a rotation and a measurement per step. It needs 2n - 1 fewer qubits. At
+    gates, a rotation and a measurement per step. The resets of the control qubits
+    and of the register are not counted. It needs 2n - 1 fewer qubits. At
     34 bits, the register and the multipliers need two limbs and the outcome three,
     as for large moduli. The resource estimators are compiled once per circuit and
     metric, whatever the size, so a single size keeps the test quick.
@@ -256,6 +258,21 @@ def test_custom_precision():
     jaspr = make_jaspr(lambda: semiclassical_order_finding(7, 15, precision=precision))()
     assert jaspr.count_ops(meas_behavior="1")["rz"] == precision
     assert jaspr.num_qubits(meas_behavior="1")["peak_allocations"] == 3 * n + 2 * m + 2
+
+
+def test_register_is_reset_before_release():
+    """The register is reset before it is released, so that later allocations can reuse its qubits.
+
+    A static register of three qubits, the peak for a = 1 and N = 3 (whose trivial
+    multiplications allocate nothing), gives the released qubits to the next allocation
+    without resetting them. The phase estimation leaves the register in |1> here.
+    """
+
+    def main():
+        semiclassical_order_finding(1, 3)
+        return measure(QuantumFloat(3))
+
+    assert jaspr_to_static_register_jaspr(make_jaspr(main)(), 3)() == 0
 
 
 def test_custom_adder():

@@ -32,7 +32,7 @@ import jax.numpy as jnp
 import numpy as np
 from jax import Array
 
-from qrisp import QuantumBool, control, h, measure, rz
+from qrisp import QuantumBool, control, h, measure, reset, rz
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import DTYPE
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import _LIMB_BITS
 from qrisp.jasp import jrange, q_fori_loop
@@ -114,6 +114,9 @@ def _semiclassical_phase_estimation(
         rz(-np.pi * phase, control_qubit)
         h(control_qubit)
         bit = measure(control_qubit)
+        # A released qubit must be in |0>, since interpreters that reuse it (such as the
+        # Catalyst and static-register interpreters) do not reset it
+        reset(control_qubit)
         control_qubit.delete()
 
         if num_limbs:
@@ -127,7 +130,8 @@ def _semiclassical_phase_estimation(
     return phase, digits
 
 
-def IQPE(
+# The public signature keeps its six parameters, which callers may pass positionally
+def IQPE(  # noqa: PLR0913, PLR0917
     args: Any,
     U: Callable,
     precision: int,

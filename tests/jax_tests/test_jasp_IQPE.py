@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 from qrisp import IQPE, QuantumVariable, h, p, rx, x
-from qrisp.jasp import jaspify, make_jaspr
+from qrisp.jasp import jaspify, jaspr_to_static_register_jaspr, make_jaspr
 
 
 def test_IQPE_integration():
@@ -84,6 +84,22 @@ def test_IQPE_passes_kwargs():
         return IQPE(qv, U, precision=3, kwargs={"phase": 5 / 8})
 
     assert estimate() == 5 / 8
+
+
+def test_IQPE_resets_its_control_qubit():
+    """The control qubit is reset before it is released, so that the next step can reuse it.
+
+    A static register of two qubits gives every step the control qubit of the previous
+    one, without resetting it. Without the reset, the phase 0.75 was estimated as 0.25.
+    """
+    phase = 0.75
+
+    def main():
+        qv = QuantumVariable(1)
+        x(qv)
+        return IQPE(qv, lambda qv: p(2 * np.pi * phase, qv[0]), precision=2)
+
+    assert jaspr_to_static_register_jaspr(make_jaspr(main)(), 2)() == phase
 
 
 @pytest.mark.parametrize("precision", [64, np.int64(64)], ids=["int", "NumPy integer"])
