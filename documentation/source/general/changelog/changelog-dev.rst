@@ -176,6 +176,11 @@ Improvements
   operations instead of a single ``reflection`` gate. Jasp mode is unaffected
   (`PR #947 <https://github.com/eclipse-qrisp/Qrisp/pull/947>`_).
 
+* The simulator shows its progress bar only in terminals and Jupyter notebooks.
+  Redirected or captured output, such as log files, CI runs and doctests, no
+  longer contains progress bar text
+  (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
+
 Other New Features
 ------------------
 
@@ -791,6 +796,10 @@ Development
 * Removed the duplicate PyPI badge from the README, keeping a single
   version badge linked to the PyPI project page
   (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
+
+* Added a doctest workflow that runs the docstring examples of ``qrisp.qtypes``
+  on pull requests. Further packages are added as their examples are fixed
+  (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
 
 Dependency Upgrades
 -------------------
