@@ -29,13 +29,13 @@ def reference_toposort(indptr, indices, node_amount, delay_nodes, prefered_nodes
         (np.ones(indices.size, dtype=np.int64), indices, indptr), shape=(node_amount, node_amount)
     ).toarray()
 
-    # reachable[u, v] is True if there is a path from u to v (or u == v)
-    reachable = np.eye(node_amount, dtype=bool)
+    # reachable[u, v] is True if there is a path from u to v (or u == v), by repeated squaring
+    reachable = (np.eye(node_amount, dtype=np.int64) + adjacency) > 0
     while True:
-        extended = reachable | (reachable.astype(np.int64) @ adjacency > 0)
-        if np.array_equal(extended, reachable):
+        squared = (reachable.astype(np.float64) @ reachable.astype(np.float64)) > 0
+        if np.array_equal(squared, reachable):
             break
-        reachable = extended
+        reachable = squared
     ancestors = reachable.T
 
     res = []
@@ -85,6 +85,40 @@ def test_toposort_helper_matches_reference(roles):
             continue
         args = (indptr, indices, node_amount, delay_nodes, prefered_nodes)
         assert np.array_equal(toposort_helper(*args), reference_toposort(*args))
+
+
+def test_toposort_helper_matches_reference_beyond_one_bitset_word():
+    # the dependencies are bitsets of 64 delay nodes per word: graphs with 64 to about 250 delay nodes
+    rng = np.random.default_rng(5)
+    for _ in range(60):
+        node_amount = int(rng.integers(100, 260))
+        indptr, indices = random_dag(rng, node_amount, rng.uniform(0.005, 0.05), topological_numbering=False)
+        role = rng.choice(3, size=node_amount, p=[0.1, 0.1, 0.8])
+        prefered_nodes = np.flatnonzero(role == 1).astype(np.int32)
+        delay_nodes = np.flatnonzero(role == 2).astype(np.int32)
+        assert delay_nodes.size > 64
+        args = (indptr, indices, node_amount, delay_nodes, prefered_nodes)
+        assert np.array_equal(toposort_helper(*args), reference_toposort(*args))
+
+
+@pytest.mark.parametrize("delay_amount, dependency", [(64, 63), (65, 64), (128, 63), (128, 64), (128, 127)])
+def test_toposort_helper_at_bitset_word_boundaries(delay_amount, dependency):
+    # The first prefered node depends only on delay node number `dependency` (the last bit of the first word, or the
+    # first or last bit of the second word), the second prefered node on none. The second one has to be placed first;
+    # if the dependency on the boundary bit were lost, both would require no delay node and the first one would win.
+    node_amount = delay_amount + 2
+    dependent, independent = delay_amount, delay_amount + 1
+    adjacency = sps.csr_matrix(([1], ([dependency], [dependent])), shape=(node_amount, node_amount), dtype=np.int8)
+    args = (
+        adjacency.indptr.astype(np.int32),
+        adjacency.indices.astype(np.int32),
+        node_amount,
+        np.arange(delay_amount, dtype=np.int32),
+        np.array([dependent, independent], dtype=np.int32),
+    )
+    res = toposort_helper(*args)
+    assert res[0] == independent
+    assert np.array_equal(res, reference_toposort(*args))
 
 
 def test_toposort_helper_returns_topological_order():
