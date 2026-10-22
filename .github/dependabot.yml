@@ -11,6 +11,11 @@ updates:
       - "dependabot-dependency-upgrade"
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   # Maintain dependencies for pip
   - package-ecosystem: "pip"
@@ -22,3 +27,16 @@ updates:
       - "dependabot-dependency-upgrade"
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+
+  # Bump the qrisp-cudaq version pinned for the Read the Docs build
+  - package-ecosystem: "pip"
+    directory: "/documentation"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependabot-dependency-upgrade"

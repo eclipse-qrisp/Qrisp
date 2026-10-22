@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests the Catalyst/QIR/MLIR compilation interface for Jasp programs via qjit."""
 
 import itertools
 import time
@@ -160,6 +161,28 @@ def test_catalyst_interface():
 
     jaspr = main()
     qir_str = jaspr.to_qir()
+
+
+def test_reset_catalyst():
+    """Test reset on a single qubit and on a whole QubitArray under qjit."""
+
+    @qjit
+    def single_qubit_reset():
+        qf = QuantumFloat(2)
+        x(qf)
+        reset(qf[0])
+        return measure(qf)
+
+    assert single_qubit_reset() == 2
+
+    @qjit
+    def array_reset():
+        qf = QuantumFloat(2)
+        x(qf)
+        reset(qf)
+        return measure(qf)
+
+    assert array_reset() == 0
 
 
 def test_parity_catalyst():

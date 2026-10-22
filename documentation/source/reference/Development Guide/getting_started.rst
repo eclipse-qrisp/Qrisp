@@ -76,7 +76,7 @@ Confirm that Qrisp can be imported and reports the expected version:
 
 .. code-block:: bash
 
-    python -c "import qrisp; print(qrisp.__version__)"
+    python -c "import qrisp; from importlib.metadata import version; print(version('qrisp'))"
 
 Running the test suite
 ----------------------

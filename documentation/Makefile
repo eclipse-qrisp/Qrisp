@@ -3,13 +3,15 @@
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.
-SPHINXOPTS    ?=
+# Warnings are errors by default so local builds match the ``docs build`` CI
+# workflow; override with ``make html SPHINXOPTS=""`` to allow warnings.
+SPHINXOPTS    ?= -W --keep-going
 SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = source
 BUILDDIR      = build
 
 docs-install:
-	pip install -e "..[docs]"
+	pip install -e "..[docs,cudaq]"
 	sudo apt install -y pandoc
 
 # Put it first so that "make" without argument is like "make help".
