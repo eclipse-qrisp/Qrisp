@@ -964,6 +964,47 @@ def test_shift_aware_rsub(am):
     assert list(res.get_measurement().keys()) == [(5 - 9) % SHIFT_N]
 
 
+@pytest.mark.parametrize("flag_on", [True, False])
+def test_shift_aware_addition_controlled(flag_on):
+    """Controlled ``b += a`` with differing shifts adds a only if the control is set.
+
+    Regression test: in static mode, ``custom_control`` replaced the per-bit
+    ``ctrl=a[i]`` of ``mod_adder`` with the enclosing control qubit, so every
+    bit's constant was added regardless of a.
+    """
+    N = 5
+
+    @jaspify
+    def main(a_val):
+        a = QuantumModulus(N)
+        b = QuantumModulus(N)
+        b.m = 1
+        a[:] = a_val
+        b[:] = 2
+        flag = QuantumBool()
+        if flag_on:
+            x(flag)
+        with control(flag):
+            b += a
+        return measure(b)
+
+    for a_val in range(N):
+        expected = (2 + a_val) % N if flag_on else 2
+        assert int(main(a_val)) == expected, a_val
+
+        a = QuantumModulus(N)
+        b = QuantumModulus(N)
+        b.m = 1
+        a[:] = a_val
+        b[:] = 2
+        flag = QuantumBool()
+        if flag_on:
+            x(flag)
+        with control(flag):
+            b += a
+        assert list(b.get_measurement().keys()) == [expected], a_val
+
+
 @pytest.mark.parametrize("N", [12, np.int64(12)])
 def test_shift_aware_addition_even_modulus_raises(N):
     """Differing shifts need 2 to be invertible modulo N."""

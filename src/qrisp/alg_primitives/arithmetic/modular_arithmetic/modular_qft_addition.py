@@ -76,7 +76,10 @@ def montgomery_addition(a, b):
     shift = b.m - a_m
 
     for i in jrange(a.size):
-        mod_adder(pow2mod_signed(shift + i, N), b, b.inpl_adder, N, ctrl=a[i])
+        # Nest the control instead of passing ctrl=a[i]: in static mode, custom_control
+        # replaces an explicit ctrl with the qubit of an enclosing control environment
+        with control(a[i]):
+            mod_adder(pow2mod_signed(shift + i, N), b, b.inpl_adder, N)
 
 
 def beauregard_adder(a, b, modulus):
