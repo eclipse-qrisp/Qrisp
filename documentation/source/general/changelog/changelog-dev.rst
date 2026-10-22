@@ -584,7 +584,10 @@ New Tutorials/ Updated Documentation
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
-
+* Added a :doc:`Quantum computing from scratch <../tutorial/QC_from_scratch>`
+  tutorial for newcomers without a physics background. It introduces qubits,
+  superposition, entanglement and interference through small Qrisp experiments
+  and builds up to the Deutsch–Jozsa, Bernstein–Vazirani and Grover algorithms.
 
 .. Add new tutorials above this line
 
