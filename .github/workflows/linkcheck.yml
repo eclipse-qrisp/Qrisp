@@ -1,0 +1,49 @@
+name: Link check
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  linkcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+
+      - name: Install documentation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[docs,xdsl]"
+          # conf.py mocks cudaq, so the CUDA-Q wrapper can be installed without
+          # its NVIDIA dependencies. This matches the Read the Docs setup and
+          # lets autodoc resolve qrisp_cudaq without warnings.
+          pip install --no-deps -r documentation/requirements-cudaq.txt
+
+      - name: Run linkcheck
+        run: make -C documentation linkcheck
