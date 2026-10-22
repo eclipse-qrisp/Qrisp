@@ -16,20 +16,14 @@
 
 """Defines ConditionEnvironment for quantum if-conditionals and related condition-building decorators."""
 
-from qrisp.circuit import fast_append
+from qrisp.circuit import fast_append, perm_lock, perm_unlock, unlock
 from qrisp.core.gate_application_functions import p, rz, x, z
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.core.session_merging_tools import merge
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.environments.quantum_inversion import invert
 from qrisp.jasp import check_for_tracing_mode
-from qrisp.misc import (
-    find_calling_line,
-    perm_lock,
-    perm_unlock,
-    redirect_qfunction,
-    unlock,
-)
+from qrisp.misc import find_calling_line, redirect_qfunction
 
 
 def quantum_condition(function):

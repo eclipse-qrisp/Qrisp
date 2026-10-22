@@ -22,8 +22,8 @@ import pytest
 
 from qrisp import QuantumBool, control, h, measure, x
 from qrisp.jasp import jrange, qache
+from qrisp.jasp.evaluation_tools.profiler import _meas_rng as meas_rng
 from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import normalize_slice_bounds
-from qrisp.jasp.interpreter_tools.interpreters.utilities import meas_rng
 
 
 def test_normalize_slice_bounds_matches_python():

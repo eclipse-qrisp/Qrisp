@@ -34,13 +34,13 @@ from qrisp import (
     x,
 )
 from qrisp.jasp import expectation_value, jlen, jrange, make_jaspr, profile_jaspr, qache
+from qrisp.jasp.evaluation_tools.profiler import (
+    _always_one as always_one,
+    _always_zero as always_zero,
+)
 from qrisp.jasp.interpreter_tools.interpreters.num_qubits_metric import (
     extract_num_qubits,
     get_num_qubits_profiler,
-)
-from qrisp.jasp.interpreter_tools.interpreters.utilities import (
-    always_one,
-    always_zero,
 )
 from qrisp.misc.exceptions import QrispDeprecationWarning
 

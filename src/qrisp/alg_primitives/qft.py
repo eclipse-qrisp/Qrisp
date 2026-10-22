@@ -30,7 +30,7 @@ def QFT_inner(
     use_gms=False,
     inpl_adder=None,
 ):
-    from qrisp.misc import is_inv
+    from qrisp.alg_primitives.arithmetic.arithmetic_tools import is_inv
 
     qv = list(qv)
     n = len(qv)

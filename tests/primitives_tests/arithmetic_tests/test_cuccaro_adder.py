@@ -38,8 +38,9 @@ from qrisp import (
 from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
 from qrisp.circuit import Qubit
 from qrisp.default_backend import def_backend
+from qrisp.interface import get_measurement_from_qc
 from qrisp.jasp import jaspify
-from qrisp.misc import get_measurement_from_qc, int_encoder
+from qrisp.misc import int_encoder
 
 # ---------------------------------------------------------------------------
 # Static smoke tests — a few representative cases with small registers to catch

@@ -16,3 +16,7 @@
 
 
 from qrisp.alg_primitives.state_preparation.prepare_func import *
+from qrisp.alg_primitives.state_preparation.qswitch_state_preparation import (
+    bit_reverse,
+    swap_endianness,
+)

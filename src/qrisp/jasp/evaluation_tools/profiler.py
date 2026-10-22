@@ -29,6 +29,7 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, NamedTuple
 
+import jax
 from jax.tree_util import tree_flatten
 
 from qrisp.jasp.evaluation_tools.jaspification import simulate_jaspr
@@ -48,11 +49,6 @@ from qrisp.jasp.interpreter_tools.interpreters.num_qubits_metric import (
 )
 from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
     get_cached_jaspr,
-)
-from qrisp.jasp.interpreter_tools.interpreters.utilities import (
-    always_one,
-    always_zero,
-    simulation,
 )
 from qrisp.jasp.jasp_expression import Jaspr
 from qrisp.misc.exceptions import QrispDeprecationWarning
@@ -97,6 +93,25 @@ METRIC_DISPATCH = {
 }
 
 
+def _always_zero(_: Any) -> bool:
+    """Return False for all inputs, simulating measurements that always yield 0."""
+    return False
+
+
+def _always_one(_: Any) -> bool:
+    """Return True for all inputs, simulating measurements that always yield 1."""
+    return True
+
+
+def _simulation() -> None:
+    """Simulate measurements normally without any forced behavior."""
+
+
+def _meas_rng(key: jax.Array) -> jax.Array:
+    """Simulate measurements using the provided random key (deterministic for every key)."""
+    return jax.numpy.bool_(jax.random.randint(key, (1,), 0, 2)[0])
+
+
 def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
     """Normalize the measurement behavior into a callable.
 
@@ -120,11 +135,11 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
     """
     if isinstance(meas_behavior, str):
         if meas_behavior == "0":
-            return always_zero
+            return _always_zero
         if meas_behavior == "1":
-            return always_one
+            return _always_one
         if meas_behavior == "sim":
-            return simulation
+            return _simulation
         raise ValueError(f"Don't know how to compute required resources via method {meas_behavior}")
 
     if callable(meas_behavior):
@@ -657,7 +672,7 @@ def profile_jaspr(jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", 
     meas_behavior_callable = _normalize_meas_behavior(meas_behavior)
     metric_spec = METRIC_DISPATCH[mode]
 
-    if meas_behavior_callable.__name__ == "simulation" and metric_spec.simulate_fallback is not None:
+    if meas_behavior_callable.__name__ == "_simulation" and metric_spec.simulate_fallback is not None:
 
         @wraps(metric_spec.simulate_fallback)
         def simulation_wrapper(*args):
