@@ -38,6 +38,10 @@ h1:not(.sd-d-none) {
     letter-spacing: -0.02em;
 }
 
+html[data-theme="dark"] h1:not(.sd-d-none) {
+    color: var(--pst-color-primary);
+}
+
 h3:not(#hero h3) {
     font-weight: bold;
     text-align: center;
@@ -319,6 +323,10 @@ h3:not(#hero h3) {
     background: linear-gradient(180deg, #f8fafc 0%, #f0f4f8 100%);
     border-radius: 20px;
     padding: 3rem 2rem !important;
+}
+
+html[data-theme="dark"] #dive-into-qrisp-code {
+    background: var(--pst-color-surface);
 }
 
 /* ===== PARTNER LOGOS ===== */
