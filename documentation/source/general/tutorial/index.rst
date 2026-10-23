@@ -372,6 +372,24 @@ This track demonstrates how to bridge the gap between complex scientific theory 
         +++
         **Solving systems of linear equations via HHL**
 
+    .. grid-item-card::
+        :shadow: sm
+        :text-align: center
+
+        .. raw:: html
+
+            <a href="./dynamical_cooling.html">
+            <div class="example-img-plot-overlay">
+            <p class="sd-card-text">Use block encodings to dynamically prepare the groundstate of a Hamiltonian.</p>
+            </div>
+            </a>
+
+        .. image:: ../../_static/cooling.png
+            :alt: Dynamical Cooling Algorithm
+
+        +++
+        **Dynamical Groundstate Preparation**
+
 
 You’ve now explored the breadth of what’s possible when you trade gate-level surgery for high-level logic.
 From your first QuantumVariable to fault-tolerant resource estimation, you have the roadmap to develop utility-scale applications that once seemed out of reach.
@@ -400,3 +418,4 @@ So, take these concepts, experiment, and start building the future of quantum co
    BE_tutorial/index
    GQSP_filtering.ipynb
    HHL.ipynb
+   dynamical_cooling.ipynb
