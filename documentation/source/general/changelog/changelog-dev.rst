@@ -208,6 +208,30 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed the handling of the Montgomery shift ``m`` of
+  :class:`~qrisp.QuantumModulus` in Jasp mode
+  (`Issue #925 <https://github.com/eclipse-qrisp/Qrisp/issues/925>`_).
+  ``m`` is now a traced attribute. Previously it was stored as static data that
+  :func:`qache <qrisp.jasp.qache>` ignored, which caused three failures:
+
+  * A ``qache``\ d function multiplying two ``QuantumModulus`` raised
+    ``UnexpectedTracerError``.
+  * A ``qache``\ d function called with differing shifts silently reused
+    the trace of the first call and returned wrong results.
+  * ``+=`` with differing shifts raised ``TracerIntegerConversionError``.
+
+  Addition and subtraction (``+``, ``-``, ``+=``, ``-=``) now support operands
+  with differing shifts in both Jasp and static mode, and no longer raise
+  ``ValueError``. The other operand is converted into the target's
+  representation, and the result keeps the left operand's shift. A
+  :class:`~qrisp.QuantumFloat` operand with exponent ``e`` is treated as having
+  shift ``-e``, so its bit weights are taken into account. Signed
+  :class:`~qrisp.QuantumFloat` operands now raise ``TypeError``. In Jasp
+  mode, encoding a classical value into a ``QuantumModulus`` with a negative
+  shift (e.g. after ``c = a * b; c += 1``) no longer raises
+  ``ValueError: negative shift count``.
+  (`PR #958 <https://github.com/eclipse-qrisp/Qrisp/pull/958>`_).
+
 * Fixed :func:`cuccaro_adder <qrisp.cuccaro_adder>` to support arbitrary
   quantum inputs, in particular ``list[Qubit]`` and ``DynamicQubitArray``
   targets. Previously, a classical addend with a ``list[Qubit]`` target raised

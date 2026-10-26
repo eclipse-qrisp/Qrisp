@@ -284,6 +284,13 @@ def test_pow2_mod_n_traced_matches_python_pow():
         assert int(traced(exp, mod)) == pow(2, exp, mod)
 
 
+@pytest.mark.parametrize("mod", [1, 2, 3037000493, 2**61 - 1, 2**63 - 25])
+@pytest.mark.parametrize("exp", [0, 1, 63, 64, 100, 1000])
+def test_pow2_mod_n_traced_large_modulus_no_overflow(exp, mod):
+    """`pow2_mod_N` must not overflow int64 for moduli whose residue products exceed 2**63."""
+    assert int(jax.jit(pow2_mod_N)(exp, jnp.int64(mod))) == pow(2, exp, mod)
+
+
 def test_pow2_mod_n_large_moduli():
     """`pow2_mod_N` matches Python's pow for moduli of 33 to 63 bits.
 
