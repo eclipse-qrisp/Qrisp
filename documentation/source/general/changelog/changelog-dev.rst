@@ -821,7 +821,8 @@ Development
   against Qrisp ``main``, and its status badge to the README, so that changes
   that break the CUDA-Q interface show up before the next release. It tests
   the qrisp-cudaq version pinned in ``documentation/requirements-cudaq.txt``,
-  and also runs on the Dependabot pull requests that bump this pin.
+  and also runs on the Dependabot pull requests that bump this pin
+  (`PR #1009 <https://github.com/eclipse-qrisp/Qrisp/pull/1009>`_).
 
 Dependency Upgrades
 -------------------
