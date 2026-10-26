@@ -284,11 +284,11 @@ This implies that any controlled gate is permeable on its control qubit because
 .. math::
    :nowrap:
 
-   \begin{align*}
+   \begin{aligned}
    \text{Z}_0 \text{cU} &= \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix} \begin{pmatrix} 1 & 0 \\ 0 & U \end{pmatrix}\\
    &= \begin{pmatrix} 1 & 0 \\ 0 & -U \end{pmatrix}\\
    &= \text{cU} \text{Z}_0
-   \end{align*}
+   \end{aligned}
 
 However, not every permeable unitary is equal to a controlled gate (example: $\text{Z}_0 \text{CX}_{01}$).
 
