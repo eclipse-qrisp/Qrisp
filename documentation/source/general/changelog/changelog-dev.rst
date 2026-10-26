@@ -584,6 +584,11 @@ New Tutorials/ Updated Documentation
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
+* Fixed equations in the tutorials and API docs that displayed
+  “Erroneous nesting of equation structures”. Nested ``align`` environments
+  now use ``aligned``, so they render correctly with MathJax
+  (`PR #1006 <https://github.com/eclipse-qrisp/Qrisp/pull/1006>`_).
+
 
 
 .. Add new tutorials above this line

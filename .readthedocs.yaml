@@ -9,6 +9,14 @@ build:
     python: "3.12"
   apt_packages:
     - pandoc
+    # imgmath compiles equations during the build, so invalid LaTeX fails the
+    # build instead of only showing a MathJax error in the browser.
+    - texlive-latex-base
+    - texlive-latex-recommended
+    - texlive-latex-extra
+    - texlive-fonts-recommended
+    - texlive-science
+    - dvisvgm
   jobs:
     # The CUDA-Q Interface page documents qrisp-cudaq. Install the version
     # pinned in requirements-cudaq.txt (bumped by Dependabot) without CUDA-Q

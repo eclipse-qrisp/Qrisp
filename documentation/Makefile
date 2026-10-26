@@ -12,7 +12,8 @@ BUILDDIR      = build
 
 docs-install:
 	pip install -e "..[docs,cudaq]"
-	sudo apt install -y pandoc
+	sudo apt install -y pandoc texlive-latex-base texlive-latex-recommended \
+		texlive-latex-extra texlive-fonts-recommended texlive-science dvisvgm
 
 # Put it first so that "make" without argument is like "make help".
 help:

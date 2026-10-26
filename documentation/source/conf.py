@@ -68,10 +68,10 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.mathjax",
+    "sphinx.ext.imgmath",
     "sphinx.ext.viewcode",
     # texext's math_dollar rewrites $...$ in docstrings/RST to :math:`...`; Sphinx core
-    # (incl. sphinx.ext.mathjax) does not parse dollar-delimited math itself.
+    # does not parse dollar-delimited math itself.
     "texext",
     "numpydoc",
     "sphinx_sitemap",
@@ -96,7 +96,11 @@ pygments_style = "sphinx"
 # Recognize code cells as Python 3 for highlighting:
 nbsphinx_codecell_lexer = "ipython3"
 
-imgmath_latex_preamble = r"\usepackage{braket}\n\usepackage{xcolor}"
+imgmath_latex_preamble = r"""
+\usepackage{braket}
+\usepackage{xcolor}
+"""
+imgmath_image_format = "svg"
 
 thebe_config = {
     "repository_url": "https://github.com/fraunhoferfokus/Qrisp",

@@ -56,8 +56,9 @@ threshold = 1e-9
 
 
 class QubitOperator(Hamiltonian):
-    r"""This class provides an efficient implementation of QubitOperators, i.e.
-    Operators, that act on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
+    r"""Efficient implementation of QubitOperators.
+
+    Operators act on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
     Supported are operators of the following form:
     
     .. math::
@@ -104,10 +105,10 @@ class QubitOperator(Hamiltonian):
     
     .. math::
         
-        \begin{align}
+        \begin{aligned}
         A_0 C_1 &= (X_0 - i Y_0)(X_1 + Y_1)/4 \\
         & = (X_0X_1 + X_0Y_1 - Y_0X_1 + Y_0Y_1)/4
-        \end{align}
+        \end{aligned}
     
     Recently, a much more efficient method of simulating ``A`` and ``C`` `has 
     been proposed by Kornell and Selinger <https://arxiv.org/abs/2310.12256>`_,

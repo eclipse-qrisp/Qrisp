@@ -187,8 +187,9 @@ branch_qa = |0>|0>|1>|0>|0>|0>
 
 
 class QuantumBacktrackingTree:
-    r"""This class describes the central data structure to run backtracking algorithms in
-    a quantum setting. `Backtracking algorithms <https://en.wikipedia.org/wiki/Backtracking>`_
+    r"""Central data structure for quantum backtracking algorithms.
+
+    `Backtracking algorithms <https://en.wikipedia.org/wiki/Backtracking>`_
     are a very general class of algorithms which cover many problems of combinatorial
     optimization such as 3-SAT or TSP.
 
@@ -269,11 +270,11 @@ class QuantumBacktrackingTree:
 
     .. math::
         
-        \begin{align}
+        \begin{aligned}
         \ket{\text{branch_qa}} &= \ket{0}\ket{0}\ket{0}\ket{1}\ket{1}\\
         \ket{\text{h}} &= \ket{3} = \ket{00010}\\
         \ket{x} &= \ket{\text{branch_qa}}\ket{\text{h}}
-        \end{align}
+        \end{aligned}
     
 
     **Details on the predicate functions**
@@ -293,22 +294,22 @@ class QuantumBacktrackingTree:
     
     .. math::
         
-        \begin{align}
+        \begin{aligned}
         \ket{\text{branch_qa}} &= \ket{0}\ket{1}\ket{0}\ket{0}\\
         \ket{\text{h}} &= \ket{1}\\
         \ket{x} &= \ket{\text{branch_qa}}\ket{\text{h}}
-        \end{align}
+        \end{aligned}
     
     A state from the non-algorithmic subspace of x is now a state that has non-zero
     entries in ``branch_qa`` at indices less than ``h`` ie.
     
     .. math::
         
-        \begin{align}
+        \begin{aligned}
         \ket{\text{branch_qa}_{NA}} &= \ket{1}\ket{1}\ket{0}\ket{0}\\
         \ket{\text{h}} &= \ket{1}\\
         \ket{\tilde{x}} &= \ket{\text{branch_qa}_{NA}}\ket{\text{h}}
-        \end{align}
+        \end{aligned}
         
     For the ``subspace_optimization`` to return proper results, the ``reject``
     function must therefore satisfy:
