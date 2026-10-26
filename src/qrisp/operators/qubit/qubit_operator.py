@@ -56,8 +56,9 @@ threshold = 1e-9
 
 
 class QubitOperator(Hamiltonian):
-    r"""This class provides an efficient implementation of QubitOperators, i.e.
-    Operators, that act on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
+    r"""Efficient implementation of QubitOperators.
+
+    Operators act on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
     Supported are operators of the following form:
     
     .. math::

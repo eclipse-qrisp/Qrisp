@@ -187,8 +187,9 @@ branch_qa = |0>|0>|1>|0>|0>|0>
 
 
 class QuantumBacktrackingTree:
-    r"""This class describes the central data structure to run backtracking algorithms in
-    a quantum setting. `Backtracking algorithms <https://en.wikipedia.org/wiki/Backtracking>`_
+    r"""Central data structure for quantum backtracking algorithms.
+
+    `Backtracking algorithms <https://en.wikipedia.org/wiki/Backtracking>`_
     are a very general class of algorithms which cover many problems of combinatorial
     optimization such as 3-SAT or TSP.
 
