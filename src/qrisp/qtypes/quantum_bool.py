@@ -26,12 +26,13 @@ from qrisp.core.quantum_variable import QuantumVariable
 
 class QuantumBool(QuantumVariable):
     """QuantumBools are the quantum type, which represents boolean truth values.
+
     They are the return type of comparison operators like the equality ``==``.
 
     Apart from their behavior as a QuantumVariable, they can also be treated like
     :ref:`ControlEnvironments <ControlEnvironment>`.
 
-    .. note:
+    .. note::
         QuantumBools that are evaluated directly after a ``with`` statement are
         uncomputed automatically upon leaving the ControlEnvironment.
 
@@ -76,47 +77,38 @@ class QuantumBool(QuantumVariable):
     To use a QuantumBool as a :ref:`ControlEnvironment`, we simply put it in a ``with``
     statement:
 
-    ::
-
-        with q_bool_3:
-            qf += 2
-
+    >>> with q_bool_3:
+    ...     qf += 2
     >>> print(qf)
     {0: 0.5, 10: 0.5}
 
     QuantumBools that are created directly after a ``with`` statement are uncomputed
     automatically:
 
-    ::
-
-        with qf == 10:
-            q_bool_3.flip()
-
-    >>> print(qf.qs)
-
-    .. code-block:: none
-
-        QuantumCircuit:
-        --------------
-                           ┌────────────┐     ┌───────────┐
-                qf.0: ─────┤0           ├─────┤0          ├──o─────────o──
-                           │            │     │           │  │         │
-                qf.1: ─────┤1           ├─────┤1          ├──■─────────■──
-                           │            │     │  __iadd__ │  │         │
-                qf.2: ─────┤2           ├─────┤2          ├──o─────────o──
-                      ┌───┐│  less_than │     │           │  │         │
-                qf.3: ┤ H ├┤3           ├─────┤3          ├──■─────────■──
-                      └───┘│            │┌───┐└─────┬─────┘  │  ┌───┐  │
-            lt_qbl.0: ─────┤4           ├┤ X ├──────■────────┼──┤ X ├──┼──
-                           │            │└───┘               │  └─┬─┘  │
-        lt_ancilla.0: ─────┤5           ├────────────────────┼────┼────┼──
-                           └────────────┘                  ┌─┴─┐  │  ┌─┴─┐
-          cond_env.0: ─────────────────────────────────────┤ X ├──■──┤ X ├
-                                                           └───┘     └───┘
-        Live QuantumVariables:
-        ---------------------
-        QuantumFloat qf
-        QuantumBool lt_qbl
+    >>> with qf == 10:
+    ...     _ = q_bool_3.flip()
+    >>> print(qf.qs)  # doctest: +SKIP
+    QuantumCircuit:
+    ---------------
+                       ┌────────────┐     ┌────────────────┐┌────────┐     ┌───────────┐
+            qf.0: ─────┤0           ├─────┤0               ├┤0       ├─────┤0          ├
+                       │            │     │                ││        │     │           │
+            qf.1: ─────┤1           ├─────┤1               ├┤1       ├─────┤1          ├
+                       │            │     │                ││        │     │           │
+            qf.2: ─────┤2           ├─────┤2 cusc___iadd__ ├┤2       ├─────┤2          ├
+                  ┌───┐│  less_than │     │                ││        │     │           │
+            qf.3: ┤ H ├┤3           ├─────┤3               ├┤3 equal ├─────┤3 equal_dg ├
+                  └───┘│            │┌───┐│                ││        │┌───┐│           │
+        lt_qbl.0: ─────┤4           ├┤ X ├┤4               ├┤        ├┤ X ├┤           ├
+                       │            │└───┘└────────────────┘│        │└─┬─┘│           │
+    lt_ancilla.0: ─────┤5           ├───────────────────────┤        ├──┼──┤           ├
+                       └────────────┘                       │        │  │  │           │
+      cond_env.0: ──────────────────────────────────────────┤4       ├──■──┤4          ├
+                                                            └────────┘     └───────────┘
+    Live QuantumVariables:
+    ----------------------
+    QuantumFloat qf
+    QuantumBool lt_qbl
 
     Note that there is only a single QuantumBool listed in the "Live QuantumVariables"
     section, because the QuantumBool of the comparison
