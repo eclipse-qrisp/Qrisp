@@ -17,6 +17,7 @@
 """Tests for PRXGate construction, inverse, and unitary in qrisp.circuit.pass_management.passes.convert_to_prx."""
 
 import numpy as np
+import sympy
 
 from qrisp import U3Gate
 from qrisp.circuit import PRXGate
@@ -99,6 +100,19 @@ class TestPRXGateInverse:
         inv_inv = prx.inverse().inverse()
         assert abs(inv_inv.alpha - prx.alpha) < 1e-10
         assert abs(inv_inv.beta - prx.beta) < 1e-10
+
+
+class TestPRXGateBindParameters:
+    """Tests for binding symbolic PRXGate parameters."""
+
+    def test_bind_parameters_keeps_prx_gate(self):
+        """Binding symbolic parameters returns a PRXGate with bound alpha and beta, not a plain U3Gate."""
+        alpha, beta = sympy.symbols("alpha beta")
+        gate = PRXGate(alpha, beta).bind_parameters({alpha: 0.7, beta: 1.2})
+        assert isinstance(gate, PRXGate)
+        assert np.isclose(gate.alpha, 0.7)
+        assert np.isclose(gate.beta, 1.2)
+        assert np.allclose(gate.get_unitary(), PRXGate(0.7, 1.2).get_unitary())
 
 
 class TestPRXGateUnitary:

@@ -267,6 +267,8 @@ def create_qiskit_instruction(op, params=[]):
 
 op_dic = {op().name: op for op in op_list}
 op_dic["u"] = op_dic["u3"]
+# Qiskit's u1 is the phase gate, while Qrisp's U1Gate is RZ
+op_dic["u1"] = op_dic["p"]
 
 
 def convert_from_qiskit(qiskit_qc):

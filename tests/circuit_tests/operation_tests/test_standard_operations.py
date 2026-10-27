@@ -174,6 +174,14 @@ class TestRGate:
             gate = RGate(0.0, phi)
             assert np.allclose(gate.get_unitary(), np.eye(2), atol=1e-6)
 
+    def test_r_bind_parameters_keeps_r_gate(self):
+        """Binding symbolic parameters returns an RGate with params [theta, phi], not a plain U3Gate."""
+        theta, phi = sympy.symbols("theta phi")
+        gate = RGate(theta, phi).bind_parameters({theta: 1.2, phi: 0.7})
+        assert isinstance(gate, RGate)
+        assert gate.params == [1.2, 0.7]
+        assert np.allclose(gate.get_unitary(), RGate(1.2, 0.7).get_unitary())
+
 
 class TestCPGate:
     """Tests for CPGate and its special-case short-circuits."""
