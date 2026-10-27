@@ -15,7 +15,7 @@ BUILDDIR      = build
 # --group needs pip 25.1 or later.
 docs-install:
 	pip install -e "..[docs,xdsl]"
-	pip install --no-deps --group ../pyproject.toml:docs-cudaq
+	pip install --upgrade --no-deps --group ../pyproject.toml:docs-cudaq
 	sudo apt install -y pandoc
 
 # Put it first so that "make" without argument is like "make help".
