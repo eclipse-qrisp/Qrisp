@@ -456,3 +456,18 @@ div.highlight>div.thebelab-cell {
   color: #5a6a85;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
+
+/* Dark theme: code output text and link colour */
+
+/* Pygments (monokai) colours printed output, e.g. print(qc) circuits in
+   doctest blocks, cyan, which looks like a link. Use the normal code text
+   colour, as plain code blocks and notebook outputs already do. */
+html[data-theme="dark"] .highlight .go {
+  color: var(--pst-color-text-base);
+}
+
+/* The theme colours links that wrap inline code with a second teal.
+   Use the regular link colour. */
+html[data-theme="dark"] {
+  --pst-color-link-higher-contrast: var(--pst-color-link);
+}
