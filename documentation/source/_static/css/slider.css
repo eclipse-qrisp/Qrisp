@@ -53,12 +53,12 @@
 
 .logo-slider::before {
   left: 0;
-  background: linear-gradient(to right, var(--theme-bg, white) 0%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(to right, var(--pst-color-background) 0%, transparent 100%);
 }
 
 .logo-slider::after {
   right: 0;
-  background: linear-gradient(to left, var(--theme-bg, white) 0%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(to left, var(--pst-color-background) 0%, transparent 100%);
 }
 
 /* --- 4. The Moving Track --- */

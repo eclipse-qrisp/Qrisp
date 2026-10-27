@@ -329,6 +329,12 @@ html[data-theme="dark"] #dive-into-qrisp-code {
     background: var(--pst-color-surface);
 }
 
+/* The theme dims every content image in dark mode and puts a white tile behind
+   it, which turns the front page artwork grey. Keep the original colours. */
+html[data-theme="dark"] .bd-content img:not(.only-dark, .dark-light) {
+    filter: none;
+}
+
 /* ===== PARTNER LOGOS ===== */
 #who-is-behind-qrisp .sd-card {
     transition: all 0.3s ease;
@@ -337,6 +343,11 @@ html[data-theme="dark"] #dive-into-qrisp-code {
 
 #who-is-behind-qrisp .sd-card:hover {
     transform: translateY(-3px);
+}
+
+html[data-theme="dark"] #who-is-behind-qrisp .sd-card img {
+    filter: none;
+    opacity: 1;
 }
 
 #who-is-behind-qrisp .sd-card img {
