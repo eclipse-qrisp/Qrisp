@@ -188,16 +188,16 @@ def qpe_order_finding(a, N, num_limbs):
     def main():
         modulus = BigInteger.create_static(N, num_limbs)
         multiplier = BigInteger.create_static(a, num_limbs)
-        register = QuantumModulus(modulus)
-        register[:] = 1
-        phase_register = QuantumFloat(precision)
-        h(phase_register)
+        qm = QuantumModulus(modulus)
+        qm[:] = 1
+        qpe_res = QuantumFloat(precision)
+        h(qpe_res)
         for i in jrange(precision):
-            with control(phase_register[i]):
-                register *= multiplier
+            with control(qpe_res[i]):
+                qm *= multiplier
             multiplier = (multiplier * multiplier) % modulus
-        QFT(phase_register, inv=True)
-        return measure_to_big_integer(phase_register, num_limbs)
+        QFT(qpe_res, inv=True)
+        return measure_to_big_integer(qpe_res, num_limbs)
 
     return main
 
@@ -220,8 +220,8 @@ def test_resources_match_the_phase_register_circuit():
     controlled phase gates (3 P and 2 CX each) and t / 2 swaps (3 CX each) of the
     inverse QFT, and t measurements. The semiclassical circuit adds two Hadamard
     gates, a rotation and a measurement per step. The resets of the control qubits
-    and of the register are not counted. It needs 2n - 1 fewer qubits. At
-    34 bits, the register and the multipliers need two limbs and the outcome three,
+    and of the QuantumModulus are not counted. It needs 2n - 1 fewer qubits. At
+    34 bits, the modulus and the multipliers need two limbs and the outcome three,
     as for large moduli. The resource estimators are compiled once per circuit and
     metric, whatever the size, so a single size keeps the test quick.
     """
@@ -244,7 +244,7 @@ def test_resources_match_the_phase_register_circuit():
     assert semiclassical_qubits["peak_allocations"] == qpe_qubits["peak_allocations"] - (t - 1)
     # The control qubits are allocated one after the other instead of all at once
     assert semiclassical_qubits["total_allocated"] == qpe_qubits["total_allocated"]
-    # The semiclassical order finding also releases its register
+    # The semiclassical order finding also releases its QuantumModulus
     assert semiclassical_qubits["finally_allocated"] == 0
     assert qpe_qubits["finally_allocated"] == n + t
 
@@ -259,12 +259,12 @@ def test_custom_precision():
     assert jaspr.num_qubits(meas_behavior="1")["peak_allocations"] == 3 * n + 2 * m + 2
 
 
-def test_register_is_reset_before_release():
-    """The register is reset before it is released, so that later allocations can reuse its qubits.
+def test_qubits_are_reset_before_release():
+    """The QuantumModulus is reset before it is released, so that later allocations can reuse its qubits.
 
     A static register of three qubits, the peak for a = 1 and N = 3 (whose trivial
     multiplications allocate nothing), gives the released qubits to the next allocation
-    without resetting them. The phase estimation leaves the register in |1> here.
+    without resetting them. The phase estimation leaves the QuantumModulus in |1> here.
     """
 
     def main():

@@ -87,7 +87,7 @@ def semiclassical_order_finding(
         The modulus, an odd integer larger than 2.
     precision : int, optional
         The number $t$ of bits of the outcome. The default is $2n$, where
-        $n = \lceil \log_2 N \rceil$ is the number of qubits of the register.
+        $n = \lceil \log_2 N \rceil$ is the number of bits of $N$.
     inpl_adder : Callable, optional
         The in-place adder of the modular multiplication, see
         :ref:`QuantumModulus <QuantumModulus>`. The default is the
@@ -96,9 +96,9 @@ def semiclassical_order_finding(
     Returns
     -------
     BigInteger
-        The outcome $y$, with $\lceil t / 32 \rceil$ limbs. The register is reset and
-        deleted before returning, so that repeated calls do not keep it allocated and
-        later allocations can reuse its qubits.
+        The outcome $y$, with $\lceil t / 32 \rceil$ limbs. All qubits are reset and
+        released before returning, so that repeated calls do not keep them allocated
+        and later allocations can reuse them.
 
     Raises
     ------
@@ -127,7 +127,7 @@ def semiclassical_order_finding(
 
     The resource estimators count the same circuit without simulating it. With
     the default adder, the circuit needs $3n + 2 \lceil \log_2 n \rceil + 2$
-    qubits, 18 for the $n = 4$ qubits of the register. It applies one rotation per
+    qubits, 18 for $n = 4$. It applies one rotation per
     bit of the outcome, 8 for $t = 8$:
 
     >>> from qrisp.jasp import count_ops, num_qubits
@@ -146,16 +146,16 @@ def semiclassical_order_finding(
     if not check_for_tracing_mode():
         raise RuntimeError("semiclassical_order_finding can only be called in Jasp mode")
 
-    num_register_qubits = (N - 1).bit_length()  # the size of QuantumModulus(N)
+    n = (N - 1).bit_length()  # the number of qubits of QuantumModulus(N)
     if precision is None:
-        precision = 2 * num_register_qubits
+        precision = 2 * n
     precision = operator.index(precision)
     if precision < 1:
         raise ValueError(f"The precision must be at least 1, got {precision}")
 
-    # The modulus and the multipliers need the limbs of the register only: the
-    # multiplication widens them itself to hold its intermediate products
-    num_limbs = -(-num_register_qubits // _LIMB_BITS)
+    # The modulus and the multipliers need only n bits: the multiplication widens
+    # them itself to hold its intermediate products
+    num_limbs = -(-n // _LIMB_BITS)
     # Step j multiplies by a**(2**(t - 1 - j)) mod N. The multipliers and their
     # inverses modulo N are computed here exactly with Python integers, in NumPy
     # arrays, since the limbs of a BigInteger would be traced.
@@ -169,25 +169,25 @@ def semiclassical_order_finding(
         inverse = inverse * inverse % N
     multipliers, inverses = jnp.asarray(multipliers), jnp.asarray(inverses)
 
-    register = QuantumModulus(BigInteger.create_static(N, num_limbs), inpl_adder=inpl_adder)
-    register[:] = 1
+    qm = QuantumModulus(BigInteger.create_static(N, num_limbs), inpl_adder=inpl_adder)
+    qm[:] = 1
 
-    def multiply_by_power(register: QuantumModulus, k: Array) -> None:
-        """Multiply the register in place by ``a**(2**k) mod N``.
+    def multiply_by_power(qm: QuantumModulus, k: Array) -> None:
+        """Multiply ``qm`` in place by ``a**(2**k) mod N``.
 
         Parameters
         ----------
-        register : QuantumModulus
-            The register.
+        qm : QuantumModulus
+            The QuantumModulus that the multiplication acts on.
         k : Array
             The exponent of the power of two.
 
         """
-        register.inpl_mult(BigInteger(multipliers[k]), inverse=BigInteger(inverses[k]))
+        qm.inpl_mult(BigInteger(multipliers[k]), inverse=BigInteger(inverses[k]))
 
-    _, digits = _semiclassical_phase_estimation(register, multiply_by_power, precision, outcome_limbs=True)
-    # The phase estimation leaves the register in a state other than |0>, and a released
-    # qubit must be in |0> for the interpreters that reuse it
-    reset(register)
-    register.delete()
+    _, digits = _semiclassical_phase_estimation(qm, multiply_by_power, precision, outcome_limbs=True)
+    # The phase estimation leaves qm in a state other than |0>, and a released qubit
+    # must be in |0> for the interpreters that reuse it
+    reset(qm)
+    qm.delete()
     return BigInteger(digits)
