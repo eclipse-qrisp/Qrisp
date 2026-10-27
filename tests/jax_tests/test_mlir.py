@@ -622,3 +622,60 @@ def test_mlir_integer_signedness_after_stablehlo_lowering(dtype, expected_ops, u
     for op in unexpected_ops:
         assert op not in mlir_str, f"{op} should not appear for {dtype.__name__} operands"
     assert "unrealized_conversion_cast" not in mlir_str, "Casts from the signless conversion should be removed"
+
+
+def _fori_loop(x, y):
+    def body(i, acc):
+        return (acc * jnp.uint64(3)) % jnp.uint64(2**63 + 25)
+
+    return lax.fori_loop(0, 3, body, x)
+
+
+def _cond(x, y):
+    return lax.cond(x < y, lambda a: a % jnp.uint64(7), lambda a: a // jnp.uint64(7), x)
+
+
+@pytest.mark.parametrize(
+    "main, expected_ops",
+    [
+        (_fori_loop, ["scf.while", "arith.remui"]),
+        (_cond, ["scf.if", "arith.cmpi ult", "arith.remui", "arith.divui"]),
+    ],
+)
+def test_mlir_unsigned_control_flow_after_stablehlo_lowering(main, expected_ops):
+    """Test that unsigned values carried through control flow are lowered to signless types.
+
+    The legalizer leaves stablehlo.while/case untouched, so their unsigned region
+    arguments must be converted by stablehlo-convert-to-signless for the
+    unrealized_conversion_casts to become identities and be removed.
+
+    See https://github.com/eclipse-qrisp/Qrisp/issues/1008
+    """
+    xdsl_module = make_jaspr(main)(jnp.uint64(1), jnp.uint64(2)).to_mlir(lower_stablehlo=True)
+    xdsl_module.verify()
+    mlir_str = str(xdsl_module)
+
+    for op in expected_ops:
+        assert op in mlir_str, f"{op} not found in MLIR output"
+    assert not re.search(r"\bui\d+\b", mlir_str), "Unsigned integer types should be converted to signless ones"
+    assert "unrealized_conversion_cast" not in mlir_str, "Casts from the signless conversion should be removed"
+
+
+def test_mlir_quantum_modulus_after_stablehlo_lowering():
+    """Test that QuantumModulus arithmetic, which computes with uint64 in Jasp mode, lowers to valid MLIR.
+
+    See https://github.com/eclipse-qrisp/Qrisp/issues/1008
+    """
+
+    def main(a):
+        qm = QuantumModulus(13)
+        qm[:] = 4
+        qm += a
+        return measure(qm)
+
+    xdsl_module = make_jaspr(main)(5).to_mlir(lower_stablehlo=True)
+    xdsl_module.verify()
+    mlir_str = str(xdsl_module)
+
+    assert not re.search(r"\bui\d+\b", mlir_str), "Unsigned integer types should be converted to signless ones"
+    assert "unrealized_conversion_cast" not in mlir_str, "Casts from the signless conversion should be removed"
