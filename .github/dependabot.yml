@@ -32,11 +32,3 @@ updates:
         update-types:
           - "version-update:semver-minor"
           - "version-update:semver-patch"
-
-  # Bump the qrisp-cudaq version pinned for the docs build
-  - package-ecosystem: "pip"
-    directory: "/documentation"
-    schedule:
-      interval: "daily"
-    labels:
-      - "dependabot-dependency-upgrade"

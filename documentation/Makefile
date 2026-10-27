@@ -12,9 +12,10 @@ BUILDDIR      = build
 
 # Install qrisp-cudaq the same way as the Read the Docs build: without CUDA-Q
 # and its NVIDIA libraries (conf.py mocks cudaq), with xdsl from the extra.
+# --group needs pip 25.1 or later.
 docs-install:
 	pip install -e "..[docs,xdsl]"
-	pip install --no-deps -r requirements-cudaq.txt
+	pip install --no-deps --group ../pyproject.toml:docs-cudaq
 	sudo apt install -y pandoc
 
 # Put it first so that "make" without argument is like "make help".
