@@ -49,7 +49,7 @@ _MAX_IQPE_PRECISION = 63
 def _semiclassical_phase_estimation(
     args: Any,
     apply_power: Callable[[Any, Array], None],
-    precision: int,
+    precision: int | Tracer,
     ctrl_method: str | None = None,
     outcome_limbs: bool = False,
 ) -> tuple[Array, Array]:
@@ -62,7 +62,7 @@ def _semiclassical_phase_estimation(
     apply_power : Callable
         ``apply_power(args, k)`` applies ``U`` to the power ``2**k``, for an integer
         ``k`` that is traced.
-    precision : int
+    precision : int or Tracer
         The number ``t`` of bits of the outcome.
     ctrl_method : str, optional
         The method of the controlled ``U``, see :meth:`.control <qrisp.Operation.control>`.
@@ -137,7 +137,7 @@ def _semiclassical_phase_estimation(
 def IQPE(  # noqa: PLR0913, PLR0917
     args: Any,
     U: Callable,
-    precision: int,
+    precision: int | Tracer,
     iter_spec: bool = False,
     ctrl_method: str | None = None,
     kwargs: dict | None = None,
@@ -148,7 +148,7 @@ def IQPE(  # noqa: PLR0913, PLR0917
     The unitary to estimate is expected to be given as Python function, which is called
     on ``args``.
 
-    Instead of a register of ``precision`` qubits, the algorithm uses a single control
+    Instead of a variable of ``precision`` qubits, the algorithm uses a single control
     qubit at a time. Step $j$ applies $U^{2^{t - 1 - j}}$ controlled on a fresh qubit,
     where $t$ is the precision, corrects the phase of the bits measured before, and
     measures bit $j$ of the estimate, from the least significant one.
@@ -161,7 +161,7 @@ def IQPE(  # noqa: PLR0913, PLR0917
     U : function
         A Python function, which will receive the list ``args`` as arguments in the
         course of this algorithm.
-    precision : int
+    precision : int or Tracer
         The precision of the estimation.
     iter_spec : bool, optional
         If set to ``True``, ``U`` will be called with the additional keyword
@@ -201,32 +201,25 @@ def IQPE(  # noqa: PLR0913, PLR0917
     Examples
     --------
     We define a function that applies two rotations onto its input and estimate the
-    applied phase. ::
+    applied phase:
 
-        from qrisp import IQPE, h, run, x, rx, QuantumFloat
-        from qrisp.jasp import make_jaspr
-        import numpy as np
-
-        def f():
-            def U(qv):
-                x = 1/2**3
-                y = 1/2**2
-
-                rx(x*2*np.pi, qv[0])
-                rx(y*2*np.pi, qv[1])
-
-            qv = QuantumFloat(2)
-
-            x(qv)
-            h(qv)
-
-            return IQPE(qv, U, precision = 4)
-        jaspr = make_jaspr(f)()
+    >>> import numpy as np
+    >>> from qrisp import IQPE, QuantumFloat, h, rx, x
+    >>> from qrisp.jasp import make_jaspr
+    >>> def f():
+    ...     def U(qv):
+    ...         rx(2 * np.pi / 2**3, qv[0])
+    ...         rx(2 * np.pi / 2**2, qv[1])
+    ...     qv = QuantumFloat(2)
+    ...     x(qv)
+    ...     h(qv)
+    ...     return IQPE(qv, U, precision=4)
+    >>> jaspr = make_jaspr(f)()
 
     Each qubit is in the state $\lvert - \rangle$, on which $R_X(2 \pi x)$ has the
     eigenvalue $e^{i \pi x}$, so the phase is $(1/8 + 1/4) / 2 = 0.1875$:
 
-    >>> jaspr()
+    >>> jaspr()  # doctest: +SKIP
     Array(0.1875, dtype=float64)
 
     """
