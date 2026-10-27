@@ -571,6 +571,18 @@ Bug Fixes
 * Fixed ``reset`` on a single qubit, such as ``reset(qv[0])``, failing to
   compile with :ref:`qjit <qjit>`. Resetting a whole QuantumVariable was not
   affected (`PR #941 <https://github.com/eclipse-qrisp/Qrisp/pull/941>`_).
+* Fixed the matrices of several standard gates and their conversions:
+
+  - ``RGate(theta, phi)`` now implements ``RZ(phi) RX(theta) RZ(-phi)``,
+    matching the standard R gate. Its PennyLane conversion is now
+    ``qml.Rot(pi/2 - phi, theta, phi - pi/2)``.
+  - ``SXGate`` and ``SXDGGate`` now carry the global phase ``±pi/4``, so they
+    are the exact square roots of ``X`` instead of ``RX(±pi/2)``. This phase is
+    also kept when they are controlled. They are now converted to ``qml.SX``
+    in PennyLane.
+  - ``U1Gate`` now converts to Qiskit's ``RZGate`` instead of ``PhaseGate``,
+    since Qrisp's ``U1`` is an RZ rotation.
+  (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
 
 Compatibility
 -------------

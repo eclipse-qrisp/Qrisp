@@ -2830,8 +2830,8 @@ class QuantumCircuit:
 
             R(\theta, \phi) =
             \begin{pmatrix}
-                \cos\!\tfrac{\theta}{2} & e^{-i\phi}\sin\!\tfrac{\theta}{2} \\
-                -e^{i\phi}\sin\!\tfrac{\theta}{2} & \cos\!\tfrac{\theta}{2}
+                \cos\!\tfrac{\theta}{2} & -i e^{-i\phi}\sin\!\tfrac{\theta}{2} \\
+                -i e^{i\phi}\sin\!\tfrac{\theta}{2} & \cos\!\tfrac{\theta}{2}
             \end{pmatrix}
 
         Parameters
