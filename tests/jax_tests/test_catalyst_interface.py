@@ -183,6 +183,8 @@ def test_reset_catalyst():
         return measure(qf)
 
     assert array_reset() == 0
+
+
 def test_sx_catalyst():
     """SX is lowered to RX(pi/2) since Catalyst has no native SX gate."""
     try:
