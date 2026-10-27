@@ -255,8 +255,8 @@ def RZGate(phi: FloatLike = 0):
     return res
 
 
-def RGate(theta: FloatLike = 0, phi: FloatLike = 0):
-    """Return an R gate.
+class RGate(U3Gate):
+    """R gate.
 
     Parameters
     ----------
@@ -265,15 +265,23 @@ def RGate(theta: FloatLike = 0, phi: FloatLike = 0):
     phi : FloatLike, optional
         The axis angle in radians. The default is 0.
 
-    Returns
-    -------
-    :class:`.Operation`
-        The R gate operation.
-
     """
-    res = U3Gate(theta, phi - (np.pi / 2), (np.pi / 2) - phi, name="r", global_phase=0)
-    res.params = [theta, phi]
-    return res
+
+    def __init__(self, theta: FloatLike = 0, phi: FloatLike = 0) -> None:
+        """Initialize the R gate as ``U3(theta, phi - pi/2, pi/2 - phi)``."""
+        super().__init__(theta, phi - (np.pi / 2), (np.pi / 2) - phi, name="r", global_phase=0)
+        self.params = [theta, phi]
+
+    def inverse(self) -> RGate:
+        """Return the inverse of the R gate, ``RGate(-theta, phi)``."""
+        theta, phi = self.params
+        return RGate(-theta, phi)
+
+    def bind_parameters(self, subs_dic: dict) -> RGate:
+        """Return the R gate with the abstract parameters in ``subs_dic`` bound to their values."""
+        # U3Gate.bind_parameters would return a plain U3Gate with the raw U3 angles as params
+        theta, phi = Operation.bind_parameters(self, subs_dic).params
+        return RGate(theta, phi)
 
 
 def GPhaseGate(phi: FloatLike = 0):
@@ -540,7 +548,10 @@ def u3Gate(theta: FloatLike = 0, phi: FloatLike = 0, lam: FloatLike = 0):
 
 
 def U1Gate(phi: FloatLike = 0):
-    """Return a U1 gate, equivalent to :func:`RZGate` up to a global phase.
+    """Return a U1 gate, identical to :func:`RZGate`.
+
+    Unlike Qiskit's ``u1``, which is the phase gate :func:`PGate`, this gate
+    includes the global phase of RZ.
 
     Parameters
     ----------

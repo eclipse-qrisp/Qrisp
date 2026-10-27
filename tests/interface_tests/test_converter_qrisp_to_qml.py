@@ -22,7 +22,7 @@ import pytest
 from qrisp.grover import diffuser
 from sympy import symbols
 
-from qrisp import QuantumFloat, QuantumVariable, auto_uncompute, h, z
+from qrisp import QuantumCircuit, QuantumFloat, QuantumVariable, auto_uncompute, h, z
 from qrisp.circuit.standard_operations import (  # Barrier,
     CPGate,
     CXGate,
@@ -264,6 +264,15 @@ class TestSingleGateConversion:
         check_qml_operations(qml_circ, expected_ops)
 
         check_statevector_equivalence(qv, qml_res)
+
+    @pytest.mark.parametrize("theta,phi", [(0.3, 0.5), (np.pi / 3, -1.2), (np.pi, 2.0)])
+    def test_inverse_r_gate_unitary(self, theta, phi):
+        """The inverse R gate converts to the conjugate transpose of R(theta, phi)."""
+        qc = QuantumCircuit(1)
+        qc.r(theta, phi, 0)
+        tape = qml.tape.make_qscript(qml_converter(qc.inverse()))()
+        expected = RGate(theta, phi).get_unitary().conj().T
+        assert np.allclose(qml.matrix(tape, wire_order=tape.wires), expected)
 
     def test_inner_wires(self):
         """Test conversion of a circuit with inner wires provided to the converter."""
@@ -530,6 +539,7 @@ class TestSingleGateConversion:
         qrisp_qs.append(SXGate().inverse(), qrisp_qv[0])
         qrisp_qs.append(TGate().inverse(), qrisp_qv[0])
         qrisp_qs.append(RXGate(0.5).inverse(), qrisp_qv[0])
+        qrisp_qs.append(RGate(0.3, 0.5).inverse(), qrisp_qv[0])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
         qml_res = qml_converted_circuit()
@@ -539,6 +549,7 @@ class TestSingleGateConversion:
             qml.adjoint(qml.SX(wires=qrisp_qv[0].identifier)),
             qml.adjoint(qml.T)(wires=qrisp_qv[0].identifier),
             qml.RX(-0.5, wires=qrisp_qv[0].identifier),
+            qml.Rot(np.pi / 2 - 0.5, -0.3, 0.5 - np.pi / 2, wires=qrisp_qv[0].identifier),
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
