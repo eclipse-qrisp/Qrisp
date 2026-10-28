@@ -350,6 +350,17 @@ html[data-theme="dark"] #who-is-behind-qrisp .sd-card img {
     opacity: 1;
 }
 
+/* Dark theme: show logos and artwork on a white tile slightly larger than the
+   image, so logos with dark text stay readable. */
+html[data-theme="dark"] #who-is-behind-qrisp .sd-card img,
+html[data-theme="dark"] .slide img,
+html[data-theme="dark"] #key-features .sd-card img {
+    background-color: #fff;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    box-sizing: border-box;
+}
+
 #who-is-behind-qrisp .sd-card img {
     filter: grayscale(20%);
     opacity: 0.85;
