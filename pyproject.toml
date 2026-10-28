@@ -34,7 +34,7 @@ dependencies = [
     # qiskit 2.6.0 takes up almost all of glibc's static TLS reserve on Linux,
     # so libgomp (bundled by qiskit-aer, pyscf, pennylane-lightning) fails to
     # load after `import qrisp` with "cannot allocate memory in static TLS block"
-    "qiskit>=0.44.0,<2.6",
+    "qiskit>=0.44.0,<2.7",
     "matplotlib>=3.5.1",
     "scipy>=1.10.0",
     "numba",
