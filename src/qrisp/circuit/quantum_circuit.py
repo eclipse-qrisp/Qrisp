@@ -2168,6 +2168,20 @@ class QuantumCircuit:
 
         return convert_to_cirq(self)
 
+    def to_pyzx(self):
+        """Method to convert the given QuantumCircuit to a PyZX Circuit.
+
+        Returns
+        -------
+        pyzx.Circuit
+            A PyZX Circuit equivalent to the Qrisp QuantumCircuit.
+
+        """
+        # NOTE: This is here to avoid circular imports
+        from qrisp.interface import convert_to_pyzx
+
+        return convert_to_pyzx(self)
+
     @classmethod
     def from_cirq(cls, cirq_circuit):
         """Class method to create QuantumCircuits from Cirq Circuits.
@@ -2205,6 +2219,26 @@ class QuantumCircuit:
         from qrisp.interface import convert_from_cirq
 
         return convert_from_cirq(cirq_circuit)
+
+    @classmethod
+    def from_pyzx(cls, pyzx_circuit):
+        """Class method to create QuantumCircuits from PyZX Circuits.
+
+        Parameters
+        ----------
+        pyzx_circuit : pyzx.Circuit
+            The PyZX Circuit to convert.
+
+        Returns
+        -------
+        QuantumCircuit
+            The converted QuantumCircuit.
+
+        """
+        # NOTE: This is here to avoid circular imports
+        from qrisp.interface import convert_from_pyzx
+
+        return convert_from_pyzx(pyzx_circuit)
 
     def to_pdag(self, remove_artificials: bool = False):
         """Method to convert the given QuantumCircuit to a PermeabilityGraph.
