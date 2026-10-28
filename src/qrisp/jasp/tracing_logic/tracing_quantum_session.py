@@ -1,25 +1,27 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines TracingQuantumSession, the singleton managing tracing-time quantum state construction."""
 
 from __future__ import annotations
 
 import weakref
-from collections.abc import Sequence
-from typing import Any, TYPE_CHECKING
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any
 
 import jax
 from jax.core import Tracer
@@ -29,11 +31,12 @@ from qrisp.circuit.operation import Operation
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp.primitives import AbstractQuantumState, create_qubits, delete_qubits_p, quantum_gate_p
 from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
+from qrisp.misc import infer_python_var_name
 from qrisp.typing import ClbitLike, FloatLike
 
 if TYPE_CHECKING:
     from jax._src.core import JaxprEqn
-    from qrisp.core import QuantumArray
+
 
 greek_letters = symbols(
     "alpha beta gamma delta epsilon zeta eta theta iota kappa"
@@ -46,6 +49,15 @@ _LOST_TRACK_MSG = (
     " (like q_fori_loop, q_cond). Please visit"
     " https://www.qrisp.eu/reference/Jasp/Quantum%20Kernel.html for more details"
 )
+
+
+class TracingModeError(RuntimeError):
+    """Raised when an operation is not supported while tracing a Jasp program.
+
+    The call itself is valid, but cannot be carried out because the involved
+    QuantumVariables are registered in a ``TracingQuantumSession`` rather
+    than a :class:`~qrisp.QuantumSession`.
+    """
 
 
 class TracingQuantumSession:
@@ -97,6 +109,7 @@ class TracingQuantumSession:
         ----------
         abs_qst : AbstractQuantumState
             The abstract quantum state to start recording into.
+
         """
         self.abs_qst_stack.append(self.abs_qst)
         self.qubit_cache_stack.append(self.qubit_cache)
@@ -114,6 +127,7 @@ class TracingQuantumSession:
         -------
         AbstractQuantumState or None
             The abstract quantum state that was active in the concluded scope.
+
         """
         temp = self.abs_qst
         self.abs_qst = self.abs_qst_stack.pop()
@@ -154,11 +168,14 @@ class TracingQuantumSession:
         Exception
             If the abstract quantum state has gone out of scope, or if classical
             bits are provided, or if mixed qubit types or incompatible shapes are used.
+        TracingModeError
+            If classical bits are provided.
+
         """
         self._check_in_scope()
 
         if clbits:
-            raise Exception("Tried to append Operation with non-zero classical bits in JAX mode.")
+            raise TracingModeError("Tried to append Operation with non-zero classical bits in JAX mode.")
 
         if qubits is None:
             qubits = ()
@@ -205,6 +222,56 @@ class TracingQuantumSession:
 
         self.abs_qst = quantum_gate_p.bind(*qubits, *param_tracers, self.abs_qst, gate=operation)
 
+    def generate_name(
+        self, name: str | None, qv: QuantumVariable, declaration_stack_level: int, is_duplicated_name=False
+    ) -> tuple[str, bool]:
+        """Determine the name to register ``qv`` under in this TracingQuantumSession.
+
+        Mirrors ``QuantumSession.generate_name``,
+        so that QuantumVariable can name itself the same way in static and
+        tracing mode, except that names are never checked for collisions, so no
+        numerical suffixes are appended and no error is raised.
+
+        Parameters
+        ----------
+        name : str or None
+            The name to register ``qv`` under, or None to infer/generate one.
+        qv : QuantumVariable
+            The QuantumVariable being named.
+            Used for its type-dependent generic-name generation method
+                in the final fallback case.
+        declaration_stack_level : int
+            How many stack frames above the caller of this method the line
+            declaring ``qv`` is expected to be found (0 being the caller's own
+            line), used for code introspection when ``name`` is None.
+        is_duplicated_name : bool, optional
+            If True and ``name`` is given, a ``"_dupl"`` suffix is appended to
+            ``name`` and the result is not fixed.
+            Used by :meth:`QuantumVariable.duplicate <qrisp.QuantumVariable.duplicate>`
+            when no explicit name was requested for the duplicate. The default is
+            False.
+
+        Raises
+        ------
+        ValueError
+            ``name`` is the empty string.
+
+        Returns
+        -------
+        tuple[str, bool]
+            The resolved name, and whether that name is fixed (see
+            ``QuantumVariable.is_fixed_name``).
+
+        """
+        if name == "":
+            raise ValueError("QuantumVariable name must not be empty")
+        if name is not None:
+            if is_duplicated_name:
+                return (name + "_dupl", False)
+            return (name.removesuffix("*"), not name.endswith("*"))
+
+        return (infer_python_var_name(declaration_stack_level + 1) or qv.get_unique_name(), False)
+
     def register_qv(self, qv: QuantumVariable, size: int | Tracer | None) -> None:
         """Register a quantum variable in this session and optionally allocate qubits.
 
@@ -215,8 +282,20 @@ class TracingQuantumSession:
         size : int or jax.core.Tracer or None
             Number of qubits to allocate. If ``None``, no allocation is performed
             (the variable already has qubits assigned).
+
         """
+
+        if self.abs_qst is None:
+            raise RuntimeError(
+                "Tried to create QuantumVariable outside of a quantum tracing "
+                "context (use jaspify, make_jaspr, sample or similar features "
+                "to enter a quantum tracing context)"
+            )
+
         self._check_in_scope()
+
+        if size is None and not hasattr(qv, "reg"):
+            raise ValueError(f"Cannot register {qv.name}: no size given and no register assigned.")
 
         if size is not None:
             qv.reg = self.request_qubits(size)
@@ -225,7 +304,7 @@ class TracingQuantumSession:
         qv.qs = self
 
         QuantumVariable.live_qvs.append(weakref.ref(qv))
-        qv.creation_time = int(QuantumVariable.creation_counter[0])
+        qv.creation_time = QuantumVariable.creation_counter
         QuantumVariable.creation_counter += 1
 
     def request_qubits(self, amount: int | Tracer) -> DynamicQubitArray:
@@ -240,6 +319,7 @@ class TracingQuantumSession:
         -------
         DynamicQubitArray
             A dynamic array backed by the newly allocated qubits.
+
         """
         qb_array_tracer, self.abs_qst = create_qubits(amount, self.abs_qst)
         return DynamicQubitArray(qb_array_tracer)
@@ -260,11 +340,14 @@ class TracingQuantumSession:
         Exception
             If *verify* is ``True``, if the abstract quantum state is out of scope,
             or if *qv* is not registered in this session.
+        TracingModeError
+            If *verify* is ``True``.
+
         """
         self._check_in_scope()
 
         if verify:
-            raise Exception("Tried to verify deletion in tracing mode.")
+            raise TracingModeError("Tried to verify deletion in tracing mode.")
 
         try:
             idx = next(i for i, existing_qv in enumerate(self.qv_list) if existing_qv.name == qv.name)
@@ -284,6 +367,7 @@ class TracingQuantumSession:
             The qubit array to deallocate.
         verify : bool, optional
             Unused in tracing mode; present for interface compatibility. Default is ``False``.
+
         """
         self.abs_qst = delete_qubits_p.bind(qubits.tracer, self.abs_qst)
 
@@ -293,7 +377,7 @@ class TracingQuantumSession:
 
     @classmethod
     def get_instance(cls) -> "TracingQuantumSession":
-        """Return the module-level singleton :class:`TracingQuantumSession`.
+        """Return the module-level singleton ``TracingQuantumSession``.
 
         The instance is created at import time and is always available.
         """
@@ -316,6 +400,7 @@ def get_last_equation(i: int = -1) -> JaxprEqn:
     i : int, optional
         Index into the current frame's equation list. The default is ``-1``
         (the most recently recorded equation).
+
     """
     return jax._src.core.trace_ctx.trace.frame.tracing_eqns[i]()
 
@@ -327,7 +412,36 @@ def check_live(tracer: Tracer | None) -> bool:
     ----------
     tracer : JAX tracer or None
         The tracer to check. ``None`` is treated as always live.
+
     """
     if tracer is None:
         return True
     return bool(tracer._trace.main.jaxpr_stack)
+
+
+@contextmanager
+def tracing_scope(qs: TracingQuantumSession, initial_abs_qst: AbstractQuantumState | None) -> Iterator[None]:
+    """Start a nested tracing scope on qs, calling conclude_tracing() if the
+    wrapped code raises.
+
+    Centralizes the exception-safe ``start_tracing``/``conclude_tracing`` idiom
+    shared by qache (qaching.py) and quantum_kernel (quantum_kernel.py). On
+    success, ``conclude_tracing()`` is *not* called here -- the caller calls it
+    itself afterward, since its return value (the resulting AbstractQuantumState)
+    feeds into follow-up logic that differs per call site.
+
+    Parameters
+    ----------
+    qs : TracingQuantumSession
+        The tracing session to start/conclude a nested scope on.
+
+    initial_abs_qst : AbstractQuantumState | None
+        The AbstractQuantumState value to start the nested scope with.
+
+    """
+    qs.start_tracing(initial_abs_qst)
+    try:
+        yield
+    except Exception:
+        qs.conclude_tracing()
+        raise

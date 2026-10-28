@@ -1,32 +1,32 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the quantum_gate primitive that applies parametrized gate operations to qubits."""
 
 import jax
 import jax.numpy as jnp
 from sympy import symbols
 
-from qrisp.jasp.primitives import (
-    AbstractQuantumState,
-    AbstractQubit,
-    QuantumPrimitive,
-)
+from qrisp.jasp.primitives.abstract_quantum_state import AbstractQuantumState
+from qrisp.jasp.primitives.abstract_qubit import AbstractQubit
+from qrisp.jasp.primitives.quantum_primitive import QuantumPrimitive
 
 greek_letters = symbols(
-    "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega"
+    "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron "
+    "pi rho sigma tau upsilon phi chi psi omega"
 )
 
 
@@ -68,22 +68,22 @@ def abstract_eval(*args, **kwargs):
 
     if not isinstance(qc, AbstractQuantumState):
         raise Exception(
-            f"Tried to execute OperationPrimitive.bind with the last argument of type {type(qc)} instead of AbstractQuantumState"
+            f"Tried to execute OperationPrimitive.bind with the last argument of type "
+            f"{type(qc)} instead of AbstractQuantumState"
         )
 
-    if not all([isinstance(qb, AbstractQubit) for qb in qubit_args]):
+    if not all(isinstance(qb, AbstractQubit) for qb in qubit_args):
         raise Exception(
             f"Tried to execute {gate.name} with incompatible qubit tracers {[type(qb) for qb in qubit_args]}"
         )
 
     if not all(
-        [
-            isinstance(param, jnp.number) or (isinstance(param, jax.core.ShapedArray) and len(param.shape) == 0)
-            for param in parameter_args
-        ]
+        isinstance(param, jnp.number) or (isinstance(param, jax.core.ShapedArray) and len(param.shape) == 0)
+        for param in parameter_args
     ):
         raise Exception(
-            f"Tried to execute Operation {gate.name} with incompatible parameter types {[type(param) for param in parameter_args]} (required are number types)"
+            f"Tried to execute Operation {gate.name} with incompatible parameter types "
+            f"{[type(param) for param in parameter_args]} (required are number types)"
         )
 
     return AbstractQuantumState()

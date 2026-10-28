@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Lowers a Jaxpr to MLIR (StableHLO/linalg) and converts the result into an xDSL module."""
 
 import sys
 from io import StringIO
@@ -212,8 +213,9 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     The pipeline applied:
 
     1. symbol-dce: removes unused private shadow functions that JAX emits
-    2. stablehlo-convert-to-signless: converts to signless integers
-    3. stablehlo-legalize-to-linalg: converts arithmetic/data ops to linalg
+    2. stablehlo-legalize-to-linalg: converts arithmetic/data ops to linalg
+    3. stablehlo-convert-to-signless: converts the remaining unsigned integer
+       types (e.g. in function signatures) to signless integers
 
     Parameters
     ----------
@@ -246,7 +248,13 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
         # symbol-dce removes unused private shadow functions that JAX emits.
         # stablehlo-legalize-to-linalg converts arithmetic/data ops to linalg.
         # stablehlo control-flow ops (case, while) are left untouched here.
-        pipeline = "builtin.module(symbol-dce,stablehlo-convert-to-signless,stablehlo-legalize-to-linalg)"
+        # stablehlo-convert-to-signless must run after the legalizer, which
+        # picks signed or unsigned arith ops from the element types. Run
+        # before it, the conversion erases that information and leaves
+        # constants with an unsigned value behind a signless result type.
+        # It leaves identity unrealized_conversion_casts, which jaspr_to_mlir
+        # removes.
+        pipeline = "builtin.module(symbol-dce,stablehlo-legalize-to-linalg,stablehlo-convert-to-signless)"
 
         pm = passmanager.PassManager.parse(pipeline)
         # Disable verifier: stablehlo.case carries !jasp.QuantumState which

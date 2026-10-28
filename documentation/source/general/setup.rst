@@ -3,7 +3,7 @@
 Setup
 =====
 
-Qrisp is written in pure Python implying it can be installed conveniently with `PyPi <https://pypi.org/>`_. Currently Python version 3.11 - 3.12 have been confirmed to work with Qrisp.
+Qrisp is written in pure Python implying it can be installed conveniently with `PyPi <https://pypi.org/>`_. Qrisp requires Python 3.11 or later, up to and including Python 3.13 (``>=3.11, <3.14``).
 
 Simply execute:
 
