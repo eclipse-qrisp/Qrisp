@@ -104,6 +104,13 @@ all = [
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 "Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
 
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
 [tool.setuptools.package-data]
 # PEP 561 marker telling type checkers that qrisp ships inline type annotations
 qrisp = ["py.typed"]
