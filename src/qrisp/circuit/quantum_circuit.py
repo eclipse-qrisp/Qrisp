@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import numpy as np
 import sympy
@@ -2139,20 +2139,21 @@ class QuantumCircuit:
 
         return qrisp_to_stim(self, return_measurement_map, return_detector_map, return_observable_map)
 
-    def to_pytket(self):
-        """Method to convert the given QuantumCircuit to a
-        `PyTket <https://cqcl.github.io/tket/pytket/api/#>`_ Circuit.
+    def to_pytket(self) -> NoReturn:
+        """Method to convert the given QuantumCircuit to a PyTket Circuit.
 
-        Returns
-        -------
-        pytket.Circuit
-            The converted PyTket circuit.
+        The ``to_pytket`` converter has been removed in Qrisp 0.10 and this
+        method is no longer functional.
+
+        Raises
+        ------
+        NotImplementedError
+            Always, because the converter has been removed.
 
         """
-        # NOTE: This is here to avoid circular imports
-        from qrisp.interface import pytket_converter
-
-        return pytket_converter(self)
+        raise NotImplementedError(
+            "The 'to_pytket' converter has been removed in Qrisp 0.10 and is no longer available."
+        )
 
     def to_cirq(self):
         """Method to convert the given QuantumCircuit to a Cirq Circuit.
