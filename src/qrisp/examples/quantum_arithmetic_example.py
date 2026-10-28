@@ -1,19 +1,20 @@
-"""/*********************************************************************
-* Copyright (c) 2026 the Qrisp Authors
-*
-* This program and the accompanying materials are made
-* available under the terms of the Eclipse Public License 2.0
-* which is available at https://www.eclipse.org/legal/epl-2.0/
-*
-* SPDX-License-Identifier: EPL-2.0
-**********************************************************************
-"""
+# *********************************************************************
+# * Copyright (c) 2026 the Qrisp Authors
+# *
+# * This program and the accompanying materials are made
+# * available under the terms of the Eclipse Public License 2.0
+# * which is available at https://www.eclipse.org/legal/epl-2.0/
+# *
+# * SPDX-License-Identifier: EPL-2.0
+# **********************************************************************
+
+"""Benchmarks QuantumFloat multiplication and compares Qrisp's statevector simulator against Qiskit."""
 
 import time
 
 import numpy as np
 from numpy.linalg import norm
-from qiskit import Aer, execute
+from qiskit_aer import AerSimulator
 
 from qrisp import QuantumFloat, transpile
 from qrisp.simulator import statevector_sim
@@ -48,9 +49,9 @@ qc.qubits.reverse()
 qiskit_qc = qc.to_qiskit()
 
 start_time = time.time()
-# simulator = Aer.get_backend('qasm_simulator')
-simulator = Aer.get_backend("statevector_simulator")
-result = execute(qiskit_qc, simulator).result()
+simulator = AerSimulator(method="statevector")
+qiskit_qc.save_statevector()
+result = simulator.run(qiskit_qc).result()
 qiskit_res = result.get_statevector(qiskit_qc).data
 print("Qiskit simulator time: ", time.time() - start_time)
 

@@ -22,7 +22,7 @@ uniform :ref:`Backend` interface.
 
    * - Backend
      - Description
-   * - :ref:`IQMBackend`
+   * - :doc:`IQMBackend`
      - IQM quantum computers
    * - :ref:`QiskitBackend`
      - IBM Quantum backends via Qiskit

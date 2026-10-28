@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Implements QuantumSession merging and recursive search for sessions, variables, and arrays."""
 
 import weakref
 
@@ -230,8 +231,8 @@ def resolve_naming_collisions(qs_0, qs_1):
             qv_1_index = qs_names_1.index(qv_name)
             qv_1 = (qs_1.qv_list + qs_1.deleted_qv_list)[qv_1_index]
 
-            if qv_1.user_given_name:
-                if qv_0.user_given_name:
+            if qv_1.is_fixed_name:
+                if qv_0.is_fixed_name:
                     raise Exception(
                         f"Tried to merge QuantumSession containing identically named QuantumVariables {qv_1.name}"
                     )
@@ -239,7 +240,7 @@ def resolve_naming_collisions(qs_0, qs_1):
                 qv_0, qv_1 = qv_1, qv_0
 
             elif qv_0.creation_time > qv_1.creation_time:
-                if not qv_1.user_given_name:
+                if not qv_0.is_fixed_name:
                     qv_0, qv_1 = qv_1, qv_0
 
             proposed_new_name = qv_1.name + "_1"

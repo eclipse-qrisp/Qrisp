@@ -1,3 +1,5 @@
+"""Benchmarks Qrisp's resource estimation for Hamiltonian simulation against Qiskit's."""
+
 import time
 
 import matplotlib.pyplot as plt

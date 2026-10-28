@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests decompose_composite_gates in qrisp.jasp.interpreter_tools."""
 
 import jax.numpy as jnp
 import numpy as np
@@ -22,7 +23,7 @@ import sympy
 from jax import lax
 from jax.extend.core import ClosedJaxpr
 
-from qrisp import QuantumVariable, cx, h, mcx, measure, prepare, rxx, rzz, x, xxyy
+from qrisp import QuantumVariable, cx, h, mcx, measure, prepare, rxx, ryy, rzz, x, xxyy
 from qrisp.jasp import make_jaspr, qache, quantum_kernel
 from qrisp.jasp.interpreter_tools import decompose_composite_gates
 from qrisp.jasp.primitives import quantum_gate_p
@@ -361,10 +362,10 @@ def test_decompose_constant_param_subgates():
     assert_same_unitary(jaspr_fixed, decomposed_fixed)
 
 
-@pytest.mark.parametrize("gate", [rxx, rzz])
+@pytest.mark.parametrize("gate", [rxx, ryy, rzz])
 def test_decompose_parametrized_rxx_rzz(gate):
-    """Rxx and rzz are composite gates whose sub-gates (gphase, p) carry parametrized
-    expressions (-phi/2 and phi respectively).  Before the fix, the param
+    """Rxx, ryy, and rzz are composite gates whose sub-gates (gphase, p) carry parametrized
+    expressions (-phi/2 and phi respectively). Before the fix, the param
     tracers were silently dropped during decomposition, leaving those sub-gates
     with no dynamic parameter invars.
 

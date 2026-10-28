@@ -1,19 +1,18 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
 """Tests for standard operations defined in qrisp.circuit.standard_operations."""
 
@@ -38,6 +37,7 @@ from qrisp.circuit.standard_operations import (
     RGate,
     RXGate,
     RXXGate,
+    RYYGate,
     RZZGate,
     SwapGate,
     SXDGGate,
@@ -326,6 +326,47 @@ class TestRXXGate:
     def test_rxx_is_unitary(self):
         """RXXGate unitary satisfies U @ U† = I."""
         u = RXXGate(1.3).get_unitary()
+        assert np.allclose(u @ u.conj().T, np.eye(4), atol=1e-6)
+
+
+class TestRYYGate:
+    """Tests for RYYGate (Ising YY-coupling)."""
+
+    def test_ryy_name_and_params(self):
+        """RYYGate has name 'ryy' and stores phi in params."""
+        phi = 1.2
+        gate = RYYGate(phi)
+        assert gate.name == "ryy"
+        assert gate.params == [phi]
+
+    def test_ryy_permeability_and_qfree(self):
+        """RYYGate is not permeable on either qubit and not qfree."""
+        gate = RYYGate(1.0)
+        assert gate.permeability[0] is False
+        assert gate.permeability[1] is False
+        assert gate.is_qfree is False
+
+    @pytest.mark.parametrize("phi", [0.0, np.pi / 4, np.pi / 2, np.pi, 1.5])
+    def test_ryy_unitary(self, phi):
+        """RYY(phi) = exp(-i*phi/2 * Y⊗Y) matches the analytical formula."""
+        gate = RYYGate(phi)
+        c = np.cos(phi / 2)
+        s = np.sin(phi / 2)
+        expected = np.array(
+            [
+                [c, 0, 0, 1j * s],
+                [0, c, -1j * s, 0],
+                [0, -1j * s, c, 0],
+                [1j * s, 0, 0, c],
+            ],
+            dtype=complex,
+        )
+        # Uses atol=1e-6 because the unitary is computed from a circuit decomposition.
+        assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
+
+    def test_ryy_is_unitary(self):
+        """RYYGate unitary satisfies U @ U† = I."""
+        u = RYYGate(1.3).get_unitary()
         assert np.allclose(u @ u.conj().T, np.eye(4), atol=1e-6)
 
 

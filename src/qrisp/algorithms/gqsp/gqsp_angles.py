@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Computes GQSP/QSP/QSVT phase angles from target polynomials via the non-linear Fourier transform."""
 
 from functools import partial
 from typing import TYPE_CHECKING, Literal
@@ -159,7 +160,8 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
     Parameters
     ----------
     a : ArrayLike
-        1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
+        1-D array containing the coefficients of $a^*$, the complementary polynomial of $b$
+        with $|a^*|^2+|b|^2=1$ on the unit circle, ordered from lowest order term to highest.
     b : ArrayLike
         1-D array containing the polynomial coefficients, ordered from lowest order term to highest.
 
@@ -189,7 +191,7 @@ def _inlft(a: "ArrayLike", b: "ArrayLike") -> Array:
         return (a_star_new, b_new), Fk
 
     # Initial state for the carry
-    initial_carry = (jnp.conjugate(a), b)
+    initial_carry = (a, b)
 
     # Execute the scan loop for the length of 'a'
     # jax.lax.scan returns the final state (which we ignore with '_') and the stacked outputs

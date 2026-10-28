@@ -1,13 +1,13 @@
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=61", # first version that reads [project] and [tool.setuptools] from pyproject.toml
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "qrisp"
-version = "0.9.5"
+version = "0.9.10"
 authors = [
     {name = "The Qrisp authors"},
 ]
@@ -31,7 +31,10 @@ license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
 dependencies = [
     "numpy>=2.0,<2.5",
     "sympy<=1.13",
-    "qiskit>=0.44.0",
+    # qiskit 2.6.0 takes up almost all of glibc's static TLS reserve on Linux,
+    # so libgomp (bundled by qiskit-aer, pyscf, pennylane-lightning) fails to
+    # load after `import qrisp` with "cannot allocate memory in static TLS block"
+    "qiskit>=0.44.0,<2.6",
     "matplotlib>=3.5.1",
     "scipy>=1.10.0",
     "numba",
@@ -47,47 +50,63 @@ dependencies = [
 aqt = ["qiskit-aqt-provider>=1.15.0"]
 qiskit = ["qiskit-aer", "qiskit-ibm-runtime"]
 iqm = [
-    "iqm-client[qiskit]>=33.0.3,<34.0.0",
-    "iqm-pulse<13.0",
-    "iqm-station-control-client==12.0.5",
-    "iqm-exa-common==27.5.4",
-    "opentelemetry-exporter-otlp==1.27.0",
-    "iqm-data-definitions==2.22",
+    # The qrisp extra (and iqm.qrisp_iqm) exists only from 35.0.0 on. Without
+    # this floor pip can backtrack to an older iqm-client, drop the extra with
+    # just a warning, and silently install no IQM backend.
+    "iqm-client[qrisp]>=35.0.0"
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
+cudaq = ["qrisp-cudaq"]
 docs = [
-    "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
-    "sphinx-toolbox==4.1.2",
+    "sphinx>=7,<10",
     "nbsphinx==0.9.8",
-    "ipykernel==7.2.0",
-    "myst-parser==5.0.0",
+    "ipykernel==7.4.0",
+    # texext's math_dollar converts $...$ in docstrings/RST to :math:`...`
     "texext==0.6.8",
-    "numpydoc==1.10.0",
+    "numpydoc==1.11.0",
     "sphinx-sitemap==2.9.0",
     "sphinx-copybutton==0.5.2",
     "sphinx-design==0.7.0",
     "sphinx-thebe==0.3.1",
-    "sphinx-new-tab-link==0.8.1",
-    "pydata-sphinx-theme==0.17.1",
+    "pydata-sphinx-theme==0.23.0",
 ]
 dev-code-style = [
-    "ruff",
+    "ruff==0.17.0",
 ]
 dev-testing = [
-    "pytest==9.1.0",
+    "pytest==9.1.1",
+    "pytest-cov>=6.0",
     "qiskit-aer",
     "pyscf",
     "cirq",
     "tqecd",
+    "iqm-client[qrisp]>=35.0.0",
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
+]
+# aqt is intentionally excluded from `all` because qiskit-aqt-provider ships a
+# pytest plugin (qiskit_aqt_provider.test.fixtures) that fails to load when
+# pytest-httpx is not installed, breaking any pytest invocation. 
+# aqt also requires qiskit >=1,<2 (Qiskit 1.x), which reached end of life with
+# the release of the Qiskit SDK v2.x series and no longer receives bug fixes,
+# security updates, or other patches
+# (https://www.ibm.com/quantum/blog/qiskit-2-5-release-summary).
+# cudaq is intentionally excluded from `all`: the Qrisp test suites do not
+# exercise the CUDA-Q backend, so installing CUDA-Q in every CI job only costs
+# time. The CUDA-Q tests run in eclipse-qrisp/qrisp-cudaq.
+all = [
+    "qrisp[qiskit,iqm,catalyst,xdsl,docs,dev]",
 ]
 
 [project.urls]
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 "Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
+
+[tool.setuptools.package-data]
+# PEP 561 marker telling type checkers that qrisp ships inline type annotations
+qrisp = ["py.typed"]
 
 [tool.ruff]
 exclude = ["__init__.py", "*.ipynb"]
@@ -106,15 +125,23 @@ select = ["I", "E", "W", "D", "PL", "F"]
 # F -- pyflakes
 
 
-# Rules considered over other incompatible ones
-exclude = ["*.ipynb"]
-
 ignore = [
     "D203",  # inconsistent with D211 (no-blank-line-before-class)
+    "D209",  # new-line-after-last-paragraph
+    "D212",  # inconsistent with D213 (multi-line-summary-first-line)
     "D213",  # inconsistent with D212 (multi-line-summary-first-line)
     "D400",  # first-line-should-end-with-period
+    "D401",  # first line of docstring should be in imperative mood
+    "D402",  # first-line-should-not-be-signature
+    "D404",  # docstring should start with a proper description (not 'This' or 'A')
     "D415",  # ends-in-punctuation
+    "D416",  # section-name-should-end-with-colon
+    "PLC0415",  # import not at top of file (lazy/function-level imports to avoid circular imports)
+    "E402",  # module-level import not at top of file (imports after a module docstring)
 ]
+
+[tool.coverage.run]
+omit = ["*/__init__.py"]
 
 [tool.pylint. messages_control]
 disable = ["import-error"]

@@ -1,62 +1,179 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-"""
-Utilities for modular arithmetic that work with both Python ints and BigInteger.
+"""Modular-arithmetic helpers shared across Python ints, traced JAX scalars, and BigInteger."""
 
-All functions are JAX-friendly under tracing and avoid Python-side int() casts
-and non-traceable conditionals where they could occur during tracing.
+# All functions are JAX-friendly under tracing and avoid Python-side int() casts
+# and non-traceable conditionals where they could occur during tracing.
+#
+# Notes
+# -----
+# - For BigInteger inputs, operations stay in BigInteger space.
+# - For Python ints, standard integer arithmetic is used.
+# - best_montgomery_shift implements the paper's choice using N when available,
+#   and falls back to ceil(log2(n)) when N is not provided.
 
-Notes
------
-- For BigInteger inputs, operations stay in BigInteger space.
-- For Python ints, standard integer arithmetic is used.
-- best_montgomery_shift implements the paper’s choice using N when available,
-  and falls back to ceil(log2(n)) when N is not provided.
-"""
-
-from typing import Union
+from typing import cast
 
 import jax.numpy as jnp
-from jax import jit, lax
+import numpy as np
+from jax import Array, jit, lax
 
 from qrisp import check_for_tracing_mode
 
 from .jasp_bigintiger import (
+    DTYPE,
     BigInteger,
     bi_modinv,
     bi_montgomery_decode,
     bi_montgomery_encode,
 )
 
+# Number of bits of a BigInteger limb
+_LIMB_BITS = jnp.iinfo(DTYPE).bits
+_ALL_ONES_64 = 2**64 - 1
+
+
+def _low_64_bits(value: int | BigInteger | Array) -> Array:
+    """Return ``value`` modulo ``2**64`` as an unsigned 64-bit integer.
+
+    Parameters
+    ----------
+    value : int, BigInteger or Array
+        A non-negative integer.
+
+    Returns
+    -------
+    Array
+        The low 64 bits, of dtype ``uint64``.
+
+    """
+    if isinstance(value, BigInteger):
+        digits = value.digits.astype(jnp.uint64)
+        low = digits[0]
+        if digits.shape[0] > 1:
+            low = low | (digits[1] << jnp.uint64(_LIMB_BITS))
+        return low
+    if isinstance(value, (int, np.integer)):
+        return jnp.asarray(int(value) & _ALL_ONES_64, dtype=jnp.uint64)
+    return jnp.asarray(value).astype(jnp.uint64)
+
+
+def _jax_mod(value: int | Array, modulus: int | Array) -> Array:
+    """Compute ``value % modulus`` for a JAX integer of any signedness, for 0 < modulus < 2**63.
+
+    An unsigned value is reduced in unsigned arithmetic, a signed one in int64.
+
+    Parameters
+    ----------
+    value : int or jnp scalar
+        The integer to reduce.
+    modulus : int or jnp scalar
+        Modulus.
+
+    Returns
+    -------
+    jnp scalar
+        ``value % modulus``, of dtype ``uint64``.
+
+    """
+    value = jnp.asarray(value)
+    # Casting an unsigned value of 2**63 or more to int64 would make it negative
+    if jnp.issubdtype(value.dtype, jnp.unsignedinteger):
+        return value.astype(jnp.uint64) % jnp.asarray(modulus).astype(jnp.uint64)
+    return (value.astype(jnp.int64) % jnp.asarray(modulus, dtype=jnp.int64)).astype(jnp.uint64)
+
 
 @jit
-def pow2_mod_N(m, N):
+def _jax_mulmod(a: int | Array, b: int | Array, modulus: int | Array) -> Array:
+    """Compute ``a * b % modulus`` for JAX integers without overflow, for 0 < modulus < 2**63.
+
+    The product is built bit by bit (double and add) in unsigned 64-bit
+    arithmetic, where every intermediate value stays below 2 * modulus < 2**64.
+    Computing ``a * b`` directly would overflow int64 as soon as the modulus
+    exceeds 2**31.5.
+
+    Parameters
+    ----------
+    a : int or jnp scalar
+        First factor.
+    b : int or jnp scalar
+        Second factor.
+    modulus : int or jnp scalar
+        Modulus.
+
+    Returns
+    -------
+    jnp scalar
+        ``a * b % modulus`` with the dtype of the modulus.
+
+    """
+    dtype = jnp.asarray(modulus).dtype
+    n = jnp.asarray(modulus, dtype=jnp.int64).astype(jnp.uint64)
+    a = _jax_mod(a, modulus)
+    b = _jax_mod(b, modulus)
+
+    def body_fun(i: Array, acc: Array) -> Array:
+        # Bits of b from the most significant one (b < modulus < 2**63 has 63 bits)
+        bit = (b >> (jnp.uint64(62) - i.astype(jnp.uint64))) & jnp.uint64(1)
+        acc = (acc * jnp.uint64(2)) % n
+        return jnp.where(bit == jnp.uint64(1), (acc + a) % n, acc)
+
+    return lax.fori_loop(0, 63, body_fun, jnp.zeros_like(a)).astype(dtype)
+
+
+def _mulmod(a: int | Array, b: int | Array, modulus: int | Array) -> int | Array:
+    """Compute ``a * b % modulus`` exactly, also for JAX integers whose product would overflow int64.
+
+    Parameters
+    ----------
+    a : int or jnp scalar
+        First factor.
+    b : int or jnp scalar
+        Second factor.
+    modulus : int or jnp scalar
+        Modulus.
+
+    Returns
+    -------
+    int or jnp scalar
+        ``a * b % modulus``, as a JAX scalar if any input is a JAX array.
+
+    """
+    if isinstance(a, Array) or isinstance(b, Array) or isinstance(modulus, Array):
+        return _jax_mulmod(a, b, modulus)
+    if all(isinstance(v, (int, np.integer)) for v in (a, b, modulus)):
+        return (int(a) * int(b)) % int(modulus)
+    return ((a % modulus) * (b % modulus)) % modulus
+
+
+@jit
+def pow2_mod_N(m: int | Array, N: int | Array) -> Array:
     """Compute ``2 ** m % N`` for traced scalar inputs.
 
     Uses square-and-multiply inside ``lax.while_loop`` so the computation
-    remains valid under JAX tracing.
+    remains valid under JAX tracing. The modular products are computed with
+    ``_jax_mulmod``, so moduli up to ``2 ** 63`` do not overflow.
 
     Parameters
     ----------
     m : int or jnp scalar
         Non-negative exponent, typically traced under JAX.
     N : int or jnp scalar
-        Modulus.
+        Positive modulus below ``2 ** 63``.
 
     Returns
     -------
@@ -69,22 +186,22 @@ def pow2_mod_N(m, N):
     base = jnp.asarray(2, dtype=N.dtype)
 
     # State tuple: (result, base, exponent, modulus)
-    init_state = (jnp.asarray(1, dtype=N.dtype), base % N, m, N)
+    init_state = (jnp.asarray(1, dtype=N.dtype) % N, base % N, m, N)
 
-    def cond_fun(state):
+    def cond_fun(state: tuple[Array, Array, Array, Array]) -> Array:
         _, _, exp, _ = state
         return exp > 0
 
-    def body_fun(state):
+    def body_fun(state: tuple[Array, Array, Array, Array]) -> tuple[Array, Array, Array, Array]:
         res, b, exp, mod = state
 
         # If exp is odd, update result: res = (res * b) % mod
         # jax.lax.select acts like an if-else statement without breaking traceability
         is_odd = exp % 2 == 1
-        res = lax.select(is_odd, (res * b) % mod, res)
+        res = lax.select(is_odd, _jax_mulmod(res, b, mod), res)
 
         # Square the base and halve the exponent
-        b = (b * b) % mod
+        b = _jax_mulmod(b, b, mod)
         exp = exp // 2
 
         return (res, b, exp, mod)
@@ -93,7 +210,7 @@ def pow2_mod_N(m, N):
     return result
 
 
-def bi_pow2mod(exp, mod_bi):
+def bi_pow2mod(exp: int | Array, mod_bi: BigInteger) -> BigInteger:
     """Compute ``2 ** exp % mod_bi`` as a BigInteger.
 
     Uses square-and-multiply in double-width BigInteger space so that
@@ -138,7 +255,7 @@ def bi_pow2mod(exp, mod_bi):
     return BigInteger(result.digits[:k])
 
 
-def pow2mod(exp, modulus: Union[int, BigInteger]):
+def pow2mod(exp: int | Array, modulus: int | BigInteger | Array) -> int | Array | BigInteger:
     """Compute ``2 ** exp % modulus`` across static ints, traced ints, and BigInteger.
 
     Dispatches to ``bi_pow2mod`` for BigInteger moduli, ``pow2_mod_N`` for
@@ -156,6 +273,13 @@ def pow2mod(exp, modulus: Union[int, BigInteger]):
     int, jnp scalar, or BigInteger
         ``2 ** exp % modulus`` in the representation matching ``modulus``.
 
+    Examples
+    --------
+    >>> pow2mod(10, 97)
+    54
+    >>> pow(2, 10, 97)
+    54
+
     """
     if isinstance(modulus, BigInteger):
         return bi_pow2mod(exp, modulus)
@@ -164,7 +288,89 @@ def pow2mod(exp, modulus: Union[int, BigInteger]):
     return pow(2, int(exp), int(modulus))
 
 
-def montgomery_encoder(x: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]):
+def pow2mod_signed(exp: int | Array, modulus: int | BigInteger | Array) -> int | Array | BigInteger:
+    """Compute ``2 ** exp % modulus`` for any integer exponent, including negative ones.
+
+    Negative exponents are resolved through the modular inverse of ``2 ** |exp|``,
+    so ``modulus`` must be odd. Unlike ``pow2mod``, this is correct for negative
+    traced exponents.
+
+    Parameters
+    ----------
+    exp : int or jnp scalar
+        Exponent (any sign).
+    modulus : int or BigInteger
+        Odd modulus.
+
+    Returns
+    -------
+    int, jnp scalar, or BigInteger
+        ``2 ** exp % modulus`` in the representation matching ``modulus``.
+
+    Examples
+    --------
+    >>> pow2mod_signed(-2, 13)
+    10
+    >>> pow2mod_signed(3, 13)
+    8
+
+    """
+    if check_for_tracing_mode():
+        exp = jnp.int64(exp)
+        power = pow2mod(jnp.abs(exp), modulus)
+        return lax.cond(exp < 0, lambda p: modinv(p, modulus), lambda p: p, power)
+
+    exp = int(exp)
+    power = pow2mod(abs(exp), modulus)
+    return modinv(power, modulus) if exp < 0 else power
+
+
+def _bigint_width(*values: int | BigInteger | Array) -> int:
+    """Return the limb width shared by every BigInteger among values.
+
+    Parameters
+    ----------
+    *values : int, BigInteger or Array
+        Operands, at least one of which is a BigInteger.
+
+    Returns
+    -------
+    int
+        The number of limbs of the BigInteger operands.
+
+    Raises
+    ------
+    ValueError
+        If two or more BigInteger operands have different limb widths.
+
+    """
+    widths = {v.digits.shape[0] for v in values if isinstance(v, BigInteger)}
+    if len(widths) > 1:
+        raise ValueError(f"Mixed BigInteger limb widths are not supported: {sorted(widths)}")
+    return next(iter(widths))
+
+
+def _as_common_bigints(*values: int | BigInteger | Array) -> tuple[BigInteger, ...]:
+    """Convert values to BigIntegers with the limb width of the BigInteger among them.
+
+    Parameters
+    ----------
+    *values : int, BigInteger or Array
+        Operands, at least one of which is a BigInteger.
+
+    Returns
+    -------
+    tuple[BigInteger, ...]
+        The operands as BigIntegers of the same limb width, in the same order.
+
+    """
+    width = _bigint_width(*values)
+    return tuple(BigInteger.coerce(v, width) for v in values)
+
+
+def montgomery_encoder(
+    x: int | BigInteger | Array, R: int | BigInteger | Array, N: int | BigInteger | Array
+) -> int | BigInteger | Array:
     """Montgomery-encode x as x*R mod N.
 
     Parameters
@@ -179,18 +385,31 @@ def montgomery_encoder(x: Union[int, BigInteger], R: Union[int, BigInteger], N: 
     Returns
     -------
     int or BigInteger
-        x in Montgomery form.
+        The value x in Montgomery form.
+
+    Examples
+    --------
+    All-classical inputs:
+
+    >>> montgomery_encoder(42, 1024, 97)
+    37
+
+    Mixing a ``BigInteger`` operand with plain Python ints also works; the
+    others are promoted to match its limb width:
+
+    >>> from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    >>> montgomery_encoder(BigInteger.create(42, 4), 1024, 97)()
+    37
 
     """
     if isinstance(x, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
-        xb = x if isinstance(x, BigInteger) else BigInteger.create(x, N.digits.shape[0])
-        Rb = R if isinstance(R, BigInteger) else BigInteger.create(R, N.digits.shape[0])
-        Nb = N if isinstance(N, BigInteger) else BigInteger.create(N, Rb.digits.shape[0])
-        return bi_montgomery_encode(xb, Rb, Nb)
-    return ((x % N) * (R % N)) % N
+        return bi_montgomery_encode(*_as_common_bigints(x, R, N))
+    return _mulmod(x, R, N)
 
 
-def new_montgomery_decoder(y: Union[int, BigInteger], m: Union[int, BigInteger], N: Union[int, BigInteger]):
+def new_montgomery_decoder(
+    y: int | BigInteger | Array, m: int | Array, N: int | BigInteger | Array
+) -> int | BigInteger | Array:
     """Montgomery-decode y using the shift exponent m instead of an explicit radix.
 
     The helper supports plain Python ints, traced JAX scalars, and BigInteger
@@ -215,23 +434,14 @@ def new_montgomery_decoder(y: Union[int, BigInteger], m: Union[int, BigInteger],
     """
     if check_for_tracing_mode():
         m = jnp.int64(m)
-        abs_m = jnp.abs(m)
-        power = pow2mod(abs_m, N)
-        factor = lax.cond(
-            m > 0,
-            lambda p: modinv(p, N),
-            lambda p: p,
-            power,
-        )
-    else:
-        abs_m = abs(m)
-        power = pow2mod(abs_m, N)
-        factor = modinv(power, N) if m > 0 else power
+    factor = pow2mod_signed(-m, N)
 
     return montgomery_encoder(y, factor, N)
 
 
-def montgomery_decoder(y: Union[int, BigInteger], R: Union[int, BigInteger], N: Union[int, BigInteger]):
+def montgomery_decoder(
+    y: int | BigInteger | Array, R: int | BigInteger | Array, N: int | BigInteger | Array
+) -> int | BigInteger | Array:
     """Montgomery-decode y as y*R^{-1} mod N.
 
     Parameters
@@ -250,18 +460,14 @@ def montgomery_decoder(y: Union[int, BigInteger], R: Union[int, BigInteger], N: 
 
     """
     if isinstance(y, BigInteger) or isinstance(R, BigInteger) or isinstance(N, BigInteger):
-        yb = y if isinstance(y, BigInteger) else BigInteger.create(y, N.digits.shape[0])
-        Rb = R if isinstance(R, BigInteger) else BigInteger.create(R, N.digits.shape[0])
-        Nb = N if isinstance(N, BigInteger) else BigInteger.create(N, Rb.digits.shape[0])
-        return bi_montgomery_decode(yb, Rb, Nb)
+        return bi_montgomery_decode(*_as_common_bigints(y, R, N))
     # Handle fractional R (from negative Montgomery shifts)
-    if isinstance(R, float) and 0 < R < 1:
-        R = modinv(int(R**-1), N)
-    R1 = modinv(R, N)
-    return ((y % N) * (R1 % N)) % N
+    effective_R = modinv(int(R**-1), N) if isinstance(R, float) and 0 < R < 1 else R
+    # Without BigInteger operands, modinv returns an integer
+    return _mulmod(y, cast("int | Array", modinv(effective_R, N)), N)
 
 
-def egcd(a: int, b: int):
+def egcd(a: int, b: int) -> tuple[int | Array, int | Array, int | Array]:
     """Extended Euclidean Algorithm (ints, JAX-friendly).
 
     Computes (g, x, y) such that a*x + b*y = g = gcd(a, b).
@@ -281,7 +487,7 @@ def egcd(a: int, b: int):
     """
 
     def cond_fun(state):
-        r, _, _, _ = state
+        r, _, _, _, _, _ = state
         return jnp.logical_not(r == 0)
 
     def body_fun(state):
@@ -290,11 +496,11 @@ def egcd(a: int, b: int):
         return (old_r - q * r, r, old_s - q * s, s, old_t - q * t, t)
 
     state = (b, a, 0, 1, 1, 0)
-    r, old_r, s, old_s, t, old_t = lax.while_loop(cond_fun, body_fun, state)
+    _, old_r, _, old_s, _, old_t = lax.while_loop(cond_fun, body_fun, state)
     return old_r, old_s, old_t
 
 
-def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
+def modinv(a: int | BigInteger | Array, m: int | BigInteger | Array) -> int | BigInteger | Array:
     """Modular inverse t = a^{-1} mod m.
 
     BigInteger inputs are handled via bi_modinv; ints use a JAX-compatible EEA
@@ -312,11 +518,17 @@ def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
     int or BigInteger
         Modular inverse in [0, m).
 
+    Examples
+    --------
+    >>> t = modinv(3, 11)
+    >>> t
+    4
+    >>> (3 * t) % 11
+    1
+
     """
     if isinstance(a, BigInteger) or isinstance(m, BigInteger):
-        a_bi = a if isinstance(a, BigInteger) else BigInteger.create(a, m.digits.shape[0])
-        m_bi = m if isinstance(m, BigInteger) else BigInteger.create(m, a.digits.shape[0])
-        return bi_modinv(a_bi, m_bi)
+        return bi_modinv(*_as_common_bigints(a, m))
 
     if check_for_tracing_mode():
         dtype = jnp.asarray(m).dtype
@@ -326,7 +538,7 @@ def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
         m = jnp.asarray(m, dtype=dtype)
 
         def cf(val):
-            t, nt, r, nr = val
+            _, _, _, nr = val
             return nr != 0
 
         def bf(val):
@@ -334,47 +546,73 @@ def modinv(a: Union[int, BigInteger], m: Union[int, BigInteger]):
             q = r // nr
             return (nt, t - q * nt, nr, r - q * nr)
 
-        t, nt, r, nr = lax.while_loop(cf, bf, (zero, one, m, a))
+        t, _, _, _ = lax.while_loop(cf, bf, (zero, one, m, a))
         return jnp.where(t < zero, t + m, t)
-    else:
-        t, nt, r, nr = 0, 1, m, a
-        while nr != 0:
-            q = r // nr
-            t, nt = nt, t - q * nt
-            r, nr = nr, r - q * nr
-        return t + m if t < 0 else t
+
+    t, nt, r, nr = 0, 1, m, a
+    while nr != 0:
+        q = r // nr
+        t, nt = nt, t - q * nt
+        r, nr = nr, r - q * nr
+    return t + m if t < 0 else t
 
 
-def smallest_power_of_two(n: Union[int, BigInteger]):
-    """ceil(log2(n)) computed in a JAX-safe way.
+def smallest_power_of_two(n: int | BigInteger | Array) -> int | Array:
+    """Compute ceil(log2(n)) in a JAX-safe way.
 
     Parameters
     ----------
-    n : int or BigInteger
-        Positive integer (returns 0 for n <= 1).
+    n : int, BigInteger, or Array
+        Positive integer (returns 0 for n <= 1). May be a traced JAX scalar.
 
     Returns
     -------
     int or jnp.int64
-        ceil(log2(n)) with 0 for n <= 1.
+        The value ceil(log2(n)), or 0 for n <= 1.
+
+    Examples
+    --------
+    >>> smallest_power_of_two(100)
+    7
+    >>> 2**7 >= 100 > 2**6
+    True
 
     """
     if isinstance(n, BigInteger):
-        # bit_size already yields ceil(log2(n)) with 0 for n==0
-        return n.bit_size()
+        # bit_size() is floor(log2(n)) + 1, which equals ceil(log2(n)) except
+        # at exact powers of two, where it overcounts by one; mirror the int
+        # path below (computed on n - 1) to get ceil(log2(n)) exactly, with
+        # 0 for n <= 1. jnp.where evaluates (n - one) unconditionally, which
+        # wraps to the all-ones value for n == 0, but that branch is always
+        # discarded in favor of the literal 0 below.
+        width = n.digits.shape[0]
+        one = BigInteger.create(1, width)
+        return jnp.where(n <= one, jnp.int64(0), (n - one).bit_size())
 
-    if hasattr(n, "bit_length"):
+    if isinstance(n, (int, np.integer)):
+        n = int(n)
         return (n - 1).bit_length() if n > 1 else 0
 
     if check_for_tracing_mode():
         nj = jnp.asarray(n)
-        # Avoid log2(0); define result 0 for n<=1
-        return jnp.where(nj <= 1, jnp.int64(0), jnp.ceil(jnp.log2(nj)).astype(jnp.int64))
+        # An unsigned value stays unsigned: in int64, the values from 2**63 on are negative
+        dtype = jnp.uint64 if jnp.issubdtype(nj.dtype, jnp.unsignedinteger) else jnp.int64
+        nj = nj.astype(dtype)
+        # ceil(log2(n)) is the bit length of n - 1, counted exactly: a float log2
+        # cannot tell 2**k + 1 from 2**k for large k.
+        bit_length = (jnp.iinfo(dtype).bits - lax.clz(nj - 1)).astype(jnp.int64)
+        return lax.select(nj <= 1, jnp.zeros_like(bit_length), bit_length)
+
+    if isinstance(n, Array):
+        # Concrete (non-traced) JAX scalar, e.g. from indexing a jnp.ndarray
+        # outside of tracing.
+        n = int(n)
+        return (n - 1).bit_length() if n > 1 else 0
 
     raise TypeError(f"smallest_power_of_two expects int, BigInteger, or traced JAX scalar, got {type(n).__name__}")
 
 
-def best_montgomery_shift(n: Union[int, BigInteger], N: Union[int, BigInteger] = None):
+def best_montgomery_shift(n: int | BigInteger | Array, N: int | BigInteger | Array | None = None) -> int | Array:
     """Minimal auxiliary exponent m for Montgomery reduction.
 
     If N is provided (classical integer, possibly JAX-traced), use the tighter bound
@@ -385,31 +623,35 @@ def best_montgomery_shift(n: Union[int, BigInteger], N: Union[int, BigInteger] =
 
     Parameters
     ----------
-    n : int or BigInteger
-        Number of partial products (e.g., bit-width of the quantum multiplicand).
-    N : int or BigInteger, optional
-        Odd modulus. If None, falls back to ceil(log2(n)).
+    n : int, BigInteger or Array
+        Number of partial products summed by the reduction. For the multiplication
+        of a quantum register by a classical factor, this is the number of qubits
+        of the register, not the value of the factor. May be a traced JAX scalar.
+    N : int, BigInteger or Array, optional
+        Odd modulus, possibly a traced JAX scalar. If None or a BigInteger,
+        falls back to ceil(log2(n)).
 
     Returns
     -------
     int or jnp.int64
         Exponent m such that R = 2^m.
 
+    Examples
+    --------
+    >>> best_montgomery_shift(10, 97)
+    4
+    >>> best_montgomery_shift(10)
+    4
+
     """
     # Fallback (no modulus or unsupported BigInteger modulus): ceil(log2 n)
     if (N is None) or isinstance(N, BigInteger):
         return smallest_power_of_two(n)
 
-    # Use integer-safe ceil-division with JAX or Python ints
+    # ceil(n·(N-1)/N) equals n - floor(n/N). Computing n·(N-1) instead would
+    # overflow int64 for traced moduli larger than about 2^63 / n.
     if check_for_tracing_mode():
         nj = jnp.asarray(n)
-        Nj = jnp.asarray(N)
-        num = nj * (Nj - 1)
-        den = Nj
-        # ceil(num/den) = (num + den - 1) // den
-        ceil_div = (num + den - 1) // den
-        return smallest_power_of_two(ceil_div)
-    else:
-        num = n * (N - 1)
-        ceil_div = (num + N - 1) // N
-        return smallest_power_of_two(ceil_div)
+        return smallest_power_of_two(nj - nj // jnp.asarray(N))
+
+    return smallest_power_of_two(n - n // N)

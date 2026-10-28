@@ -1,19 +1,18 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
 """
 Optimization pass for simplifying verbose boolean condition chains in MLIR/xDSL.
@@ -27,16 +26,15 @@ Specific Problem:
     Booleans (i1) are often zero-extended into wider integers (e.g., i32, i64)
     only to be immediately compared against 0 or 1 to yield another boolean.
     For example: `measure (i1) → extui (i64) → cmpi eq 0 (i1) → extui (i32) → cmpi ne 0`.
-    This whole sequence is semantically equivalent to a simple boolean NOT 
+    This whole sequence is semantically equivalent to a simple boolean NOT
     of the original measurement.
 
 Solution:
     A rewrite pattern that statically resolves comparisons of zero-extended
-    booleans against 0 or 1. It bypasses the integer extension and folds the 
-    chain directly into the original boolean condition, its logical NOT, or a 
+    booleans against 0 or 1. It bypasses the integer extension and folds the
+    chain directly into the original boolean condition, its logical NOT, or a
     constant True/False.
 """
-
 
 from enum import Enum
 

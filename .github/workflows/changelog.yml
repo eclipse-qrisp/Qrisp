@@ -1,0 +1,44 @@
+name: Changelog Check
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Check out the PR head, not the synthetic merge commit. The merge
+          # commit contains everything on main as well, so diffing it against
+          # the base would count other PRs' changelog entries as this PR's.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Check changelog-dev.rst for entries
+        id: check
+        run: |
+          if git diff --name-only ${{ github.event.pull_request.base.sha }}...HEAD | \
+             grep -q "documentation/source/general/changelog/changelog-dev.rst"; then
+            echo "modified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "modified=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fail if no changelog entry
+        if: steps.check.outputs.modified == 'false'
+        run: |
+          echo "::warning::No changelog entry found - please add an entry to documentation/source/general/changelog/changelog-dev.rst"
+          exit 1

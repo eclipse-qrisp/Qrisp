@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the QuantumArray class, a numpy-ndarray-like container for QuantumVariables."""
 
 from __future__ import annotations
 
@@ -30,6 +31,7 @@ from qrisp.circuit import transpile
 from qrisp.core import QuantumSession, QuantumVariable, merge, qompiler
 from qrisp.jasp import (
     DynamicQubitArray,
+    TracingModeError,
     TracingQuantumSession,
     check_for_tracing_mode,
     create_qubits,
@@ -354,7 +356,7 @@ class QuantumArray:
         for i in jrange(self.size):
             flat_self[i][:] = flattened_value_array[i]
 
-    def reshape(self, *args):
+    def reshape(self, *args, order="C"):
         """Adjusts the shape of the QuantumArray with similar semantics as
         `numpy.ndarray.reshape <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.reshape.html>`_.
 
@@ -412,7 +414,7 @@ class QuantumArray:
         else:
             shape = args
         res = copy.copy(self)
-        res.ind_array = self.ind_array.reshape(shape)
+        res.ind_array = self.ind_array.reshape(shape, order=order)
         return res
 
     def flatten(self):
@@ -615,8 +617,9 @@ class QuantumArray:
         circuit_preprocessor=None,
         precompiled_qc=None,
     ):
-        """Method for acquiring measurement results for the given array. The semantics are
-        similar to the :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>`
+        """Method for acquiring measurement results for the given array.
+
+        The semantics are similar to the :meth:`get_measurement <qrisp.QuantumVariable.get_measurement>`
         method of QuantumVariable. The results are returned as a dictionary of another
         numpy subtype called OutcomeArray.
 
@@ -645,6 +648,8 @@ class QuantumArray:
         ------
         Exception
             Tried to get measurement within open environment.
+        TracingModeError
+            Tried to get measurement in tracing mode.
 
         Returns
         -------
@@ -664,7 +669,7 @@ class QuantumArray:
 
         """
         if check_for_tracing_mode():
-            raise Exception("Tried to get_measurement from QuantumArray in tracing mode")
+            raise TracingModeError("Tried to get_measurement from QuantumArray in tracing mode")
 
         for qv in self.flatten():
             if qv.is_deleted():

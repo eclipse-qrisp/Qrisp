@@ -1,19 +1,22 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Implements automatic uncomputation of QuantumVariables via the auto_uncompute decorator."""
+
+import functools
 
 import numpy as np
 
@@ -37,6 +40,7 @@ def auto_uncompute(*args, recompute=False):
 # Decorator for auto uncomputed function
 def auto_uncompute_inner(function):
     # Create auto uncomputed function
+    @functools.wraps(function)
     def auto_uncomputed_function(*args, **kwargs):
         from qrisp.core import (
             QuantumVariable,
@@ -75,8 +79,8 @@ def auto_uncompute_inner(function):
 
         return result
 
+    # functools.wraps already copied __doc__; keep the distinguishing name suffix.
     auto_uncomputed_function.__name__ = function.__name__ + "_auto_uncomputed"
-    auto_uncomputed_function.__doc__ = function.__doc__
     # Return result
     return auto_uncomputed_function
 
