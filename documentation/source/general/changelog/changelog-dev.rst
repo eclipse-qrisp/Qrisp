@@ -608,7 +608,8 @@ New Tutorials/ Updated Documentation
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
-
+* Added a light/dark theme switcher to the documentation and fixed
+  light-only colors on the front page for dark mode.
 
 .. Add new tutorials above this line
 
@@ -879,3 +880,4 @@ First Time Contributors 🎉
 * `micpap25 <https://github.com/micpap25>`_
 * `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_
 * `Joswin-10 <https://github.com/Joswin-10>`_
+* `Mittalnew <https://github.com/Mittalnew>`_

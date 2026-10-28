@@ -38,6 +38,10 @@ h1:not(.sd-d-none) {
     letter-spacing: -0.02em;
 }
 
+html[data-theme="dark"] h1:not(.sd-d-none) {
+    color: var(--pst-color-primary);
+}
+
 h3:not(#hero h3) {
     font-weight: bold;
     text-align: center;
@@ -321,6 +325,16 @@ h3:not(#hero h3) {
     padding: 3rem 2rem !important;
 }
 
+html[data-theme="dark"] #dive-into-qrisp-code {
+    background: var(--pst-color-surface);
+}
+
+/* The theme dims every content image in dark mode and puts a white tile behind
+   it, which turns the front page artwork grey. Keep the original colours. */
+html[data-theme="dark"] .bd-content img:not(.only-dark, .dark-light) {
+    filter: none;
+}
+
 /* ===== PARTNER LOGOS ===== */
 #who-is-behind-qrisp .sd-card {
     transition: all 0.3s ease;
@@ -329,6 +343,22 @@ h3:not(#hero h3) {
 
 #who-is-behind-qrisp .sd-card:hover {
     transform: translateY(-3px);
+}
+
+html[data-theme="dark"] #who-is-behind-qrisp .sd-card img {
+    filter: none;
+    opacity: 1;
+}
+
+/* Dark theme: show logos and artwork on a white tile slightly larger than the
+   image, so logos with dark text stay readable. */
+html[data-theme="dark"] #who-is-behind-qrisp .sd-card img,
+html[data-theme="dark"] .slide img,
+html[data-theme="dark"] #key-features .sd-card img {
+    background-color: #fff;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    box-sizing: border-box;
 }
 
 #who-is-behind-qrisp .sd-card img {
