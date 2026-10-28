@@ -761,6 +761,71 @@ def test_shift_part_of_qache_key():
     assert tuple(int(x) for x in main()) == (3, 4, 3, 4)
 
 
+def test_shift_part_of_qache_key_quantum_array():
+    """The shift of a QuantumArray's qtype is part of the qache key as well."""
+
+    @qache
+    def measure_inside(qa):
+        return measure(qa)
+
+    @jaspify
+    def main():
+        a = QuantumArray(QuantumModulus(SHIFT_N), shape=(1,))
+        a[0] += 3
+        qtype = QuantumModulus(SHIFT_N)
+        qtype.m = 2
+        b = QuantumArray(qtype, shape=(1,))
+        b[0] += 3
+        return measure_inside(a), measure_inside(b)
+
+    assert [list(x) for x in main()] == [[3], [3]]
+
+
+def test_shift_static_across_qache():
+    """A static shift stays static inside a qached function."""
+    seen = []
+
+    @qache
+    def kernel(a, b):
+        seen.append((a.m, b.m))
+        a += b
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a.m = 2
+        a[:] = 9
+        b = QuantumModulus(SHIFT_N)
+        b.m = 2
+        b[:] = 7
+        kernel(a, b)
+        return measure(a)
+
+    assert int(main()) == (9 + 7) % SHIFT_N
+    assert seen
+    for shifts in seen:
+        assert all(type(m) is int for m in shifts)
+        assert shifts == (2, 2)
+
+
+def test_shift_inplace_modification_inside_qache_raises():
+    """Changing the shift of a qached function's argument would not reach the caller."""
+
+    @qache
+    def kernel(a):
+        a.m = 3
+
+    @jaspify
+    def main():
+        a = QuantumModulus(SHIFT_N)
+        a[:] = 9
+        kernel(a)
+        return measure(a)
+
+    with pytest.raises(Exception, match="in-place parameter modification"):
+        main()
+
+
 def test_shift_inplace_addition_after_multiplication():
     """In-place addition of operands with differing shifts (product has a negative shift)."""
 
@@ -814,7 +879,26 @@ def test_shift_aware_arithmetic_static_shift(op, am, bm):
 @pytest.mark.parametrize("am, bm", SHIFT_PAIRS)
 @pytest.mark.parametrize("op", list(SHIFT_OPS))
 def test_shift_aware_arithmetic_traced_shift(op, am, bm):
-    """Addition/subtraction with mixed shifts that are traced (crossing a qache boundary)."""
+    """Addition/subtraction with mixed shifts that are only known at runtime."""
+
+    @jaspify
+    def main(am, bm):
+        a = QuantumModulus(SHIFT_N)
+        a.m = am
+        a[:] = 9
+        b = QuantumModulus(SHIFT_N)
+        b.m = bm
+        b[:] = 7
+        return measure(_apply_shift_op(op, a, b))
+
+    assert int(main(am, bm)) == SHIFT_OPS[op](9, 7)
+
+
+@pytest.mark.parametrize("traced", [False, True])
+@pytest.mark.parametrize("am, bm", SHIFT_PAIRS)
+@pytest.mark.parametrize("op", list(SHIFT_OPS))
+def test_shift_aware_arithmetic_qache(op, am, bm, traced):
+    """Addition/subtraction with mixed static or traced shifts crossing a qache boundary."""
 
     @qache
     def kernel(a, b):
@@ -823,8 +907,7 @@ def test_shift_aware_arithmetic_traced_shift(op, am, bm):
             return
         return _apply_shift_op(op, a, b)
 
-    @jaspify
-    def main():
+    def main(am, bm):
         a = QuantumModulus(SHIFT_N)
         a.m = am
         a[:] = 9
@@ -834,7 +917,11 @@ def test_shift_aware_arithmetic_traced_shift(op, am, bm):
         res = kernel(a, b)
         return measure(a if res is None else res)
 
-    assert int(main()) == SHIFT_OPS[op](9, 7)
+    if traced:
+        result = jaspify(main)(am, bm)
+    else:
+        result = jaspify(lambda: main(am, bm))()
+    assert int(result) == SHIFT_OPS[op](9, 7)
 
 
 @pytest.mark.parametrize("am, bm", SHIFT_PAIRS)
