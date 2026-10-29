@@ -27,6 +27,8 @@ from qrisp.circuit import PGate
 from qrisp.core import QuantumVariable, xxyy
 
 
+rng = random.Random(42)
+
 def test_abstract_parameters():
     n = 3
     ctrl_qv = QuantumVariable(n)
@@ -85,7 +87,7 @@ def test_abstract_parameters():
 
     start_time = time.time()
     for i in range(int(m)):
-        param_values = [random.randint(0, 100) / 100 * 2 * np.pi for j in range(len(parameter_list))]
+        param_values = [rng.randint(0, 100) / 100 * 2 * np.pi for j in range(len(parameter_list))]
         qc.bind_parameters({parameter_list[j]: param_values[j] for j in range(len(parameter_list))})
 
     duration = time.time() - start_time
