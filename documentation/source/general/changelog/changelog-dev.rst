@@ -827,6 +827,13 @@ Development
   version badge linked to the PyPI project page
   (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
 
+* Added a nightly workflow that runs the
+  `qrisp-cudaq <https://github.com/eclipse-qrisp/qrisp-cudaq>`_ test suite
+  against Qrisp ``main``, and its status badge to the README, so that changes
+  that break the CUDA-Q interface show up before the next release. It tests
+  the latest qrisp-cudaq release, the same one the docs build installs
+  (`PR #1009 <https://github.com/eclipse-qrisp/Qrisp/pull/1009>`_).
+
 Dependency Upgrades
 -------------------
 

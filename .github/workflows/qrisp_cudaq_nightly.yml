@@ -1,0 +1,59 @@
+name: qrisp-cudaq nightly
+
+# Runs the qrisp-cudaq test suite against Qrisp main, so that Qrisp changes
+# that break the CUDA-Q interface show up before the next Qrisp release.
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+  # Tests changes to this workflow before they are merged.
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/qrisp_cudaq_nightly.yml
+
+permissions:
+  contents: read
+
+jobs:
+  qrisp-cudaq:
+    name: qrisp-cudaq tests against Qrisp main
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      # The docs build installs the latest qrisp-cudaq release from the
+      # docs-cudaq dependency group, so this test uses that release too.
+      - name: Install Qrisp and the latest qrisp-cudaq
+        id: install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[xdsl]"
+          pip install "qrisp-cudaq[dev]"
+          echo "version=$(python -c 'import importlib.metadata as md; print(md.version("qrisp-cudaq"))')" >> "$GITHUB_OUTPUT"
+
+      - name: Check that the Qrisp under test is this checkout
+        run: |
+          python -c "import os, qrisp; assert qrisp.__file__.startswith(os.path.join(os.environ['GITHUB_WORKSPACE'], 'src')), qrisp.__file__"
+
+      # The qrisp-cudaq wheel ships without tests, so take them from the
+      # release tag.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: eclipse-qrisp/qrisp-cudaq
+          ref: v${{ steps.install.outputs.version }}
+          path: qrisp-cudaq
+          persist-credentials: false
+
+      - name: Test with pytest
+        run: pytest qrisp-cudaq/tests
