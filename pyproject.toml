@@ -110,6 +110,13 @@ Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 # way, since --no-deps also skips the packages it lists.
 docs-cudaq = ["qrisp-cudaq"]
 
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
 [tool.setuptools.package-data]
 # PEP 561 marker telling type checkers that qrisp ships inline type annotations
 qrisp = ["py.typed"]
