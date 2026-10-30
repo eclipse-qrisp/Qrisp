@@ -514,14 +514,19 @@ class QiskitRuntimeBackend(QiskitBackend):
 
     Parameters
     ----------
-    api_token : str
+    api_token : str or None, optional
         IBM Cloud API token used to authenticate with the Qiskit Runtime service.
-    backend : str or None, optional
-        Name of the IBM Quantum backend. If ``None``, the least-busy available
-        backend is selected automatically.
+        Required unless *backend* is an ``IBMBackend`` instance.
+    backend : str, IBMBackend or None, optional
+        Name of the IBM Quantum backend, or an ``IBMBackend`` instance. An
+        instance is used as-is: it is already bound to the runtime service that
+        authenticated it, so *api_token* and *instance* must not be passed
+        alongside it. If ``None``, the least-busy available backend is selected
+        automatically.
     channel : str, optional
         Channel type for the Runtime service. Available: ``"ibm_cloud"`` or
-        ``"ibm_quantum_platform"``. Defaults to ``"ibm_cloud"``.
+        ``"ibm_quantum_platform"``. Defaults to ``"ibm_cloud"``. Ignored when
+        *backend* is an ``IBMBackend`` instance.
     mode : str, optional
         Execution mode. ``"job"`` submits each circuit batch as an independent
         job; ``"session"`` opens a persistent session for lower latency across
@@ -564,21 +569,38 @@ class QiskitRuntimeBackend(QiskitBackend):
     11: 0.0035,
     15: 0.0014}
 
+    A backend retrieved from an already authenticated runtime service can be
+    passed directly, without a token:
+
+    >>> from qiskit_ibm_runtime import QiskitRuntimeService
+    >>> service = QiskitRuntimeService(channel="ibm_cloud", token="YOUR_IBM_CLOUD_TOKEN")
+    >>> example_backend = QiskitRuntimeBackend(backend=service.backend("ibm_fez"))
+
     """
 
     _job_class = QiskitRuntimeJob
     _supports_ibm_runtime = True
 
-    def __init__(self, api_token, backend=None, channel="ibm_cloud", mode="job", instance=None):
+    def __init__(self, api_token=None, backend=None, channel="ibm_cloud", mode="job", instance=None):
         try:
-            from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2, Session
+            from qiskit_ibm_runtime import IBMBackend, QiskitRuntimeService, SamplerV2, Session
         except ImportError as exc:
             raise ImportError(
                 "Please install qiskit-ibm-runtime to use QiskitRuntimeBackend: pip install qiskit-ibm-runtime"
             ) from exc
 
-        service = QiskitRuntimeService(channel=channel, token=api_token, instance=instance)
-        ibm_backend = service.least_busy() if backend is None else service.backend(backend)
+        if isinstance(backend, IBMBackend):
+            if api_token is not None or instance is not None:
+                raise TypeError(
+                    "Pass either an IBMBackend instance or api_token/instance to look one up, not both. "
+                    "An IBMBackend instance is already bound to its authenticated service."
+                )
+            ibm_backend = backend
+        else:
+            if api_token is None:
+                raise TypeError("api_token is required unless backend is an IBMBackend instance.")
+            service = QiskitRuntimeService(channel=channel, token=api_token, instance=instance)
+            ibm_backend = service.least_busy() if backend is None else service.backend(backend)
 
         # Delegate common setup (self.backend, name, options) to QiskitBackend.
         # Pass _default_options() explicitly so the IBM hardware backend's internal

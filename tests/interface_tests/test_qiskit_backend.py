@@ -829,6 +829,7 @@ def runtime_mocks(monkeypatch):
     mock_service_cls = MagicMock(return_value=mock_service)
 
     mock_module = MagicMock()
+    mock_module.IBMBackend = qiskit_ibm_runtime.IBMBackend
     mock_module.QiskitRuntimeService = mock_service_cls
     mock_module.SamplerV2 = mock_sampler_cls
     mock_module.Session = mock_session_cls
@@ -865,6 +866,30 @@ class TestQiskitRuntimeBackendConstruction:
         QiskitRuntimeBackend(api_token="token", backend="ibm_brisbane")
         runtime_mocks["service"].backend.assert_called_once_with("ibm_brisbane")
         runtime_mocks["service"].least_busy.assert_not_called()
+
+    def test_ibm_backend_instance_used_without_token(self, runtime_mocks):
+        """An IBMBackend instance is used as-is, without building a QiskitRuntimeService."""
+        ibm_backend = MagicMock(spec=qiskit_ibm_runtime.IBMBackend)
+        ibm_backend.name = "ibm_fez"
+        ibm_backend.options = None
+        backend = QiskitRuntimeBackend(backend=ibm_backend)
+        assert backend.backend is ibm_backend
+        runtime_mocks["service_cls"].assert_not_called()
+        runtime_mocks["sampler_cls"].assert_called_once_with(ibm_backend)
+
+    @pytest.mark.parametrize("backend_name", [None, "ibm_brisbane"])
+    def test_missing_token_raises_type_error(self, runtime_mocks, backend_name):
+        """Without an IBMBackend instance, api_token is required to authenticate."""
+        with pytest.raises(TypeError, match="api_token"):
+            QiskitRuntimeBackend(backend=backend_name)
+        runtime_mocks["service_cls"].assert_not_called()
+
+    @pytest.mark.parametrize("credentials", [{"api_token": "token"}, {"instance": "crn:v1:example"}])
+    def test_ibm_backend_instance_with_credentials_raises_type_error(self, runtime_mocks, credentials):
+        """Credentials alongside an IBMBackend instance would be ignored, so they are rejected."""
+        ibm_backend = MagicMock(spec=qiskit_ibm_runtime.IBMBackend)
+        with pytest.raises(TypeError, match="IBMBackend instance"):
+            QiskitRuntimeBackend(backend=ibm_backend, **credentials)
 
     def test_is_instance_of_qiskit_backend(self, runtime_mocks):
         """QiskitRuntimeBackend is a subclass of QiskitBackend."""
@@ -964,13 +989,14 @@ class TestQiskitRuntimeBackendIntegration:
     @pytest.fixture()
     def backend(self, monkeypatch):
         """QiskitRuntimeBackend backed by a real AerSimulator and real SamplerV2."""
-        from qiskit_ibm_runtime import SamplerV2
+        from qiskit_ibm_runtime import IBMBackend, SamplerV2
 
         aer = AerSimulator()
         mock_service = MagicMock()
         mock_service.least_busy.return_value = aer
 
         mock_module = MagicMock()
+        mock_module.IBMBackend = IBMBackend
         mock_module.QiskitRuntimeService = MagicMock(return_value=mock_service)
         mock_module.SamplerV2 = SamplerV2
         mock_module.Session = MagicMock()
