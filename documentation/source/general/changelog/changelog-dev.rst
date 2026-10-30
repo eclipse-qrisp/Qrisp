@@ -208,6 +208,17 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed the lowering of unsigned integers by
+  :meth:`Jaspr.to_mlir <qrisp.jasp.Jaspr.to_mlir>` with
+  ``lower_stablehlo=True``. An unsigned constant kept its unsigned value behind
+  a signless result type, so the module failed verification and MLIR parsers
+  rejected it. Since :class:`~qrisp.QuantumModulus` computes with ``uint64``
+  in Jasp mode (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_),
+  this broke ``QuantumModulus`` arithmetic in the CUDA-Q interface. Unsigned
+  remainders, comparisons and widening conversions were also lowered to their
+  signed ``arith`` counterparts, which gives wrong results for values with the
+  top bit set (`Issue #1008 <https://github.com/eclipse-qrisp/Qrisp/issues/1008>`_).
+
 * Fixed the handling of the Montgomery shift ``m`` of
   :class:`~qrisp.QuantumModulus` in Jasp mode
   (`Issue #925 <https://github.com/eclipse-qrisp/Qrisp/issues/925>`_).
