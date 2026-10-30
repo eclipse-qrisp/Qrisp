@@ -189,3 +189,132 @@ def test_evaluate():
     assert out["best"] == (opt[0], c_min)
     feas_opt, feas_worst = feasible_fn(np.array([[int(c) for c in label] for label in (opt[0], worst)]))
     assert np.isclose(out["p_feasible"], 0.25 * feas_opt + 0.75 * feas_worst)
+
+
+# ----- control pulse (COLD), local AGP and the numpy model -----
+
+
+def _dense_ops(n):
+    idx = np.arange(1 << n)
+    B = (idx[:, None] >> np.arange(n)) & 1
+    Zs = 1 - 2 * B
+    Xs = []
+    for i in range(n):
+        Xi = np.zeros((1 << n, 1 << n))
+        Xi[idx ^ (1 << i), idx] = 1
+        Xs.append(Xi)
+    Ys = [1j * Xs[i] @ np.diag(Zs[:, i]) for i in range(n)]
+    return Xs, Ys, np.diag(Zs.sum(axis=1)).astype(float)
+
+
+def _dense_action_minimum(ops, H, dH, uniform):
+    """Coefficients of A = sum_k c_k ops[k] (or c sum_k ops[k]) minimizing Tr[(dH + i[A, H])^2]."""
+    if uniform:
+        ops = [sum(ops)]
+    Cs = [1j * (o @ H - H @ o) for o in ops]
+    M = np.array([[np.real(np.trace(a @ b)) for b in Cs] for a in Cs])
+    g = np.array([-np.real(np.trace(dH @ a)) for a in Cs])
+    c = np.linalg.solve(M, g)
+    return c[0] if uniform else c
+
+
+@pytest.mark.parametrize("agp_type", ["nc", "local"])
+@pytest.mark.parametrize("uniform", [True, False])
+@pytest.mark.parametrize(
+    ("lam", "s_mix", "f", "fp"), [(0.3, 1.0, 0.0, 0.0), (0.6, 0.7, 0.4, -1.1), (0.2, 1.3, -0.8, 2.0)]
+)
+def test_agp_coeff_with_control_matches_dense_action_minimum(agp_type, uniform, lam, s_mix, f, fp):  # noqa: PLR0913, PLR0917
+    """Coefficients with a control pulse f sum Z minimize the action for both ansatz types."""
+    problem = OracleDCQOProblem(cost_fn, None, N, mixer_strength=s_mix, uniform=uniform, agp_type=agp_type)
+    _, HX, C = _dense(N, cost_fn)
+    Xs, Ys, HZ = _dense_ops(N)
+    H = (1 - lam) * s_mix * HX + lam * np.diag(C) + f * HZ
+    dH = -s_mix * HX + np.diag(C) + fp * HZ
+    if agp_type == "local":
+        ops = Ys
+    else:
+        Cm = np.diag(C) + (f + (1 - lam) * fp) * HZ
+        ops = [1j * s_mix * (Xi @ Cm - Cm @ Xi) for Xi in Xs]
+    assert np.allclose(problem.agp_coeff(lam, f, fp), _dense_action_minimum(ops, H, dH, uniform))
+
+
+def test_agp_coeffs_match_qubo_formulas():
+    """For a QUBO, the local coefficients equal create_COLD_instance, the uniform nc ones up to the template sign."""
+    from qrisp.algorithms.cold.problems.QUBO import _local_agp_coeffs, _nc_uniform_agp_coeffs
+
+    Q = np.array([[-1.2, 0.4, 0.0, 0.0], [0.4, 0.3, 0.2, 0.0], [0.0, 0.2, -1.1, 0.3], [0.0, 0.0, 0.3, -0.8]])
+    h, J = -0.5 * Q.sum(axis=1), 0.5 * Q
+
+    def qubo(B):
+        B = np.asarray(B, dtype=float)
+        return np.einsum("mi,ij,mj->m", B, Q, B)
+
+    local = OracleDCQOProblem(qubo, None, 4, uniform=False, agp_type="local")
+    nc = OracleDCQOProblem(qubo, None, 4)
+    nc_qubo = _nc_uniform_agp_coeffs(h, J)
+    for lam, f, fp in ((0.3, 0.0, 0.0), (0.6, 0.4, -1.1)):
+        assert np.allclose(local.agp_coeff(lam, f, fp), _local_agp_coeffs(h, J, lam, f, fp, uniform=False))
+        # Qrisp's nested-commutator template is -i[H_X, C]; with f = 0 both apply the same operator
+        assert np.isclose(nc.agp_coeff(lam), -nc_qubo(lam)[0])
+
+
+@pytest.mark.parametrize(
+    ("agp_type", "uniform", "beta", "CRAB"),
+    [
+        ("nc", True, None, False),
+        ("local", False, None, False),
+        ("nc", False, [0.3, -0.5], False),
+        ("nc", True, [0.4, 0.2], True),
+        ("local", True, [0.3, -0.5], False),
+    ],
+)
+def test_model_matches_circuit(agp_type, uniform, beta, CRAB):
+    """model_state reproduces the distribution of the Qrisp circuit, for LCD and COLD."""
+    N_steps, T = 3, 1.0
+    problem = OracleDCQOProblem(
+        cost_fn, make_oracle(cost_fn), N, mixer_strength=0.8, uniform=uniform, agp_type=agp_type, seed=3
+    )
+    qarg = QuantumVariable(N)
+    if beta is None:
+        problem.apply_lcd_hamiltonian(qarg, N_steps, T, alternate=True)
+        psi = problem.model_state(N_steps, T, alternate=True)
+    else:
+        problem.apply_cold_hamiltonian(qarg, N_steps, T, beta, CRAB=CRAB)
+        psi = problem.model_state(N_steps, T, beta, CRAB=CRAB)
+    meas = qarg.get_measurement()
+    p_circuit = np.zeros(1 << N)
+    for label, prob in meas.items():
+        p_circuit[sum(int(c) << i for i, c in enumerate(label))] = prob
+    assert np.allclose(p_circuit, np.abs(psi) ** 2, atol=1e-4)
+
+
+def test_local_agp_needs_no_oracle_calls():
+    """The local AGP calls the oracle once per step, the nested commutator 1 + 2n times."""
+    calls = []
+    oracle = make_oracle(cost_fn)
+
+    def counting_oracle(qarg, gamma):
+        calls.append(gamma)
+        oracle(qarg, gamma)
+
+    for agp_type, expected in (("local", 3), ("nc", 3 * (1 + 2 * N))):
+        calls.clear()
+        problem = OracleDCQOProblem(cost_fn, counting_oracle, N, agp_type=agp_type)
+        problem.apply_cold_hamiltonian(QuantumVariable(N), 3, 1.0, [0.2])
+        assert len(calls) == expected
+
+
+@pytest.mark.parametrize("agp_type", ["nc", "local"])
+def test_cold_lowers_expected_cost(agp_type):
+    """The optimized pulse lowers the expected cost below LCD (beta = 0), and run() applies it."""
+    problem = OracleDCQOProblem(cost_fn, make_oracle(cost_fn), N, agp_type=agp_type, seed=0)
+    lcd = problem.model_expectation(5, 1.0)
+    res = problem.run(QuantumVariable(N), 5, 1.0, method="COLD", N_opt=2, n_restarts=2)
+    assert problem.opt_value < lcd
+    assert np.isclose(problem.evaluate(res)["expected_cost"], problem.opt_value, atol=1e-3)
+
+
+def test_invalid_agp_type():
+    """Unknown agp_type values are rejected."""
+    with pytest.raises(ValueError, match="agp_type"):
+        OracleDCQOProblem(cost_fn, None, N, agp_type="order2")
