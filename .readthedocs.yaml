@@ -10,12 +10,12 @@ build:
   apt_packages:
     - pandoc
   jobs:
-    # The CUDA-Q Interface page documents qrisp-cudaq. Install the version
-    # pinned in requirements-cudaq.txt (bumped by Dependabot) without CUDA-Q
-    # and its NVIDIA libraries; conf.py mocks cudaq for autodoc, and its xdsl
+    # The CUDA-Q Interface page documents qrisp-cudaq. Install its latest
+    # release from the docs-cudaq dependency group without CUDA-Q and its
+    # NVIDIA libraries; conf.py mocks cudaq for autodoc, and its xdsl
     # dependency comes from the xdsl extra below.
     post_install:
-      - python -m pip install --no-deps -r documentation/requirements-cudaq.txt
+      - python -m pip install --no-deps --group docs-cudaq
 
 sphinx:
   configuration: documentation/source/conf.py

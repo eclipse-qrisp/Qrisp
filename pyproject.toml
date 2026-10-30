@@ -104,6 +104,12 @@ all = [
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 "Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
 
+[dependency-groups]
+# The docs install qrisp-cudaq with `pip install --no-deps --group docs-cudaq`,
+# without CUDA-Q and its NVIDIA libraries. An extra cannot be installed this
+# way, since --no-deps also skips the packages it lists.
+docs-cudaq = ["qrisp-cudaq"]
+
 [tool.setuptools.package-data]
 # PEP 561 marker telling type checkers that qrisp ships inline type annotations
 qrisp = ["py.typed"]
