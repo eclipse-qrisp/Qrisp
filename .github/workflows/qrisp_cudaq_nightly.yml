@@ -7,12 +7,11 @@ on:
   schedule:
     - cron: "0 3 * * *"
   workflow_dispatch:
-  # Tests Dependabot's qrisp-cudaq bump before it is merged.
+  # Tests changes to this workflow before they are merged.
   pull_request:
     branches:
       - main
     paths:
-      - documentation/requirements-cudaq.txt
       - .github/workflows/qrisp_cudaq_nightly.yml
 
 permissions:
@@ -33,14 +32,14 @@ jobs:
           python-version: "3.12"
           cache: 'pip'
 
-      # The qrisp-cudaq version comes from the pin that Dependabot bumps for
-      # the docs build, so the docs and this test use the same release.
-      - name: Install Qrisp and the pinned qrisp-cudaq
+      # The docs build installs the latest qrisp-cudaq release from the
+      # docs-cudaq dependency group, so this test uses that release too.
+      - name: Install Qrisp and the latest qrisp-cudaq
         id: install
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[xdsl]"
-          pip install "qrisp-cudaq[dev]" -c documentation/requirements-cudaq.txt
+          pip install "qrisp-cudaq[dev]"
           echo "version=$(python -c 'import importlib.metadata as md; print(md.version("qrisp-cudaq"))')" >> "$GITHUB_OUTPUT"
 
       - name: Check that the Qrisp under test is this checkout
