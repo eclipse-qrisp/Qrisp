@@ -573,7 +573,7 @@ class QiskitRuntimeBackend(QiskitBackend):
     passed directly, without a token:
 
     >>> from qiskit_ibm_runtime import QiskitRuntimeService
-    >>> service = QiskitRuntimeService(channel="ibm_cloud", token="YOUR_IBM_CLOUD_TOKEN")
+    >>> service = QiskitRuntimeService(token="YOUR_IBM_CLOUD_TOKEN", instance="YOUR_INSTANCE_CRN")
     >>> example_backend = QiskitRuntimeBackend(backend=service.backend("ibm_fez"))
 
     """
