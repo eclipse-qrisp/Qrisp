@@ -76,7 +76,6 @@ def save_model(filename, **parts):
 
     Examples
     --------
-
     ::
 
         import numpy as np
@@ -130,7 +129,6 @@ def load_model(filename):
 
     Examples
     --------
-
     We save a small model and load it again, similar to a new session. The
     parts come back by name, and the encoding still holds its scaling range, which
     means it takes measurements in their original units.

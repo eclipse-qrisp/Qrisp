@@ -312,9 +312,7 @@ def _amplitude_encoding(qv, x, pad=True):
 
 
 def _next_power_of_two(n):
-    """
-    Returns the smallest power of two that is at least ``n``.
-    """
+    """Returns the smallest power of two that is at least ``n``."""
     if n <= 1:
         return 1
 
@@ -427,8 +425,7 @@ def _basis_encoding(qv, x):
 
 def _derive_range(data, data_range, feature_range, periodic=True):
     """
-    Computes the min-max scaling parameters for mapping features onto
-    ``feature_range``.
+    Computes the min-max scaling parameters for mapping features onto ``feature_range``.
 
     Returns ``(scale, minimum)``, which scale each feature into the range.
 
@@ -460,7 +457,7 @@ def _derive_range(data, data_range, feature_range, periodic=True):
     if data is not None:
         data = _as_real(data, "scale")
 
-        if data.ndim != 2:
+        if data.ndim != 2:  # noqa: PLR2004
             raise ValueError(
                 f"Tried to derive a scaling range from data shaped {data.shape}. "
                 "The range is taken across samples, which means the data must be a "
@@ -590,6 +587,7 @@ class Encoding:
     _from_zero_state = False
 
     def __init__(self, n_features, scaling=None):
+        """Checks the feature count and the scaling range before storing them."""
         if not isinstance(n_features, (int, np.integer)) or isinstance(n_features, bool):
             raise ValueError(f"Tried to configure an encoder for {n_features!r} features, which is not an integer.")
 
@@ -609,7 +607,7 @@ class Encoding:
         self.scaling = scaling
 
     @classmethod
-    def angle(
+    def angle(  # noqa: PLR0913, PLR0917
         cls, n_features, data=None, data_range=None, feature_range=(0.0, np.pi), axis="y", prepare_basis=_UNSPECIFIED
     ):
         r"""
@@ -651,7 +649,6 @@ class Encoding:
 
         Examples
         --------
-
         ::
 
             import numpy as np
@@ -776,7 +773,6 @@ class Encoding:
 
         Examples
         --------
-
         ::
 
             import numpy as np
@@ -854,7 +850,6 @@ class Encoding:
 
         Examples
         --------
-
         ::
 
             import numpy as np
@@ -907,7 +902,6 @@ class Encoding:
 
         Examples
         --------
-
         ::
 
             from qrisp import QuantumFloat
@@ -1005,9 +999,7 @@ class Encoding:
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        """
-        PyTree unflatten for JAX.
-        """
+        """PyTree unflatten for JAX."""
         n_features, feature_range, options = aux_data
 
         # Built without __init__, whose signature a subclass may change. The
@@ -1022,6 +1014,7 @@ class Encoding:
         return encoding
 
     def __setstate__(self, state):
+        """Restores a loaded encoding and registers its class as a PyTree when needed."""
         # A subclass defined in a script is rebuilt from its code when loaded
         # in another process, without running the decorator that registered it
         # as a PyTree. Unregistered, it is its own single leaf, which
@@ -1063,15 +1056,11 @@ class Encoding:
         )
 
     def _options(self):
-        """
-        Returns the per-encoding settings, which subclasses set after building.
-        """
+        """Returns the per-encoding settings, which subclasses set after building."""
         return {}
 
     def _prepare(self, x):
-        """
-        Applies the configured scaling, or returns the features untouched.
-        """
+        """Applies the configured scaling, or returns the features untouched."""
         if self.scaling is None:
             return x
 
@@ -1095,10 +1084,7 @@ class Encoding:
 
 
 def _scaling(data, data_range, feature_range, periodic=True):
-    """
-    Returns the affine map onto ``feature_range``, or None if no scaling was
-    requested.
-    """
+    """Returns the affine map onto ``feature_range``, or None if no scaling was requested."""
     if data is None and data_range is None:
         return None
 

@@ -146,7 +146,6 @@ def minmax_scale(X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True
 
     Examples
     --------
-
     We scale a training and a test set together.
 
     ::
@@ -200,7 +199,7 @@ def minmax_scale(X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True
 
     X_train = _as_real(X_train, "scale")
 
-    if X_train.ndim != 2:
+    if X_train.ndim != 2:  # noqa: PLR2004
         raise ValueError(
             f"Tried to scale features shaped {X_train.shape}. minmax_scale "
             "derives its range across samples. It requires a two-dimensional "
@@ -283,7 +282,6 @@ def normalize(X):
 
     Examples
     --------
-
     ::
 
         import numpy as np
@@ -364,7 +362,6 @@ def binarize(X, threshold=0.0):
 
     Examples
     --------
-
     ::
 
         import numpy as np

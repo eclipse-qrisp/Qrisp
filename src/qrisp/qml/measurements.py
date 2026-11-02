@@ -70,7 +70,6 @@ def expectation(state_prep, observables, precision=0.01):
 
     Examples
     --------
-
     We estimate a single observable for an encoded feature vector.
 
     ::
@@ -171,8 +170,7 @@ def expectation(state_prep, observables, precision=0.01):
 
 def parameter_shift(state_prep, observables, precision=0.01, argnums=0):
     r"""
-    Estimates expectation values together with their derivatives, using the
-    parameter shift rule.
+    Estimates expectation values together with their derivatives, using the parameter shift rule.
 
     Let an argument $\theta_k$ enter the circuit as the angle of a single
     rotation. Every expectation value is then a function of the form
@@ -242,7 +240,6 @@ def parameter_shift(state_prep, observables, precision=0.01, argnums=0):
 
     Examples
     --------
-
     One feature and one parameter, each the angle of an $R_Y$ rotation,
     together give $\braket{Z} = \cos(x_0 + w_0)$.
 

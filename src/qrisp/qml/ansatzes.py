@@ -273,7 +273,6 @@ def real_amplitudes_size(num_qubits, layers=1):
 
     Examples
     --------
-
     ::
 
         import numpy as np
@@ -285,7 +284,7 @@ def real_amplitudes_size(num_qubits, layers=1):
     return (layers + 1) * num_qubits
 
 
-def _data_reuploading(qv, x, w, ansatz_size, encoding, ansatz, layers=2):
+def _data_reuploading(qv, x, w, ansatz_size, encoding, ansatz, layers=2):  # noqa: PLR0913, PLR0917
     r"""
     Applies alternating encoding and ansatz layers to a QuantumVariable.
 
@@ -414,7 +413,6 @@ def hardware_efficient_size(num_qubits, layers=1, rotations=("y",)):
 
     Examples
     --------
-
     ::
 
         import numpy as np
@@ -529,6 +527,7 @@ class Ansatz:
     """
 
     def __init__(self, num_qubits, num_parameters=None):
+        """Checks the register width and stores it together with the parameter count."""
         if not isinstance(num_qubits, (int, np.integer)) or isinstance(num_qubits, bool):
             raise ValueError(f"Tried to configure an ansatz for {num_qubits!r} qubits, which is not an integer.")
 
@@ -576,7 +575,6 @@ class Ansatz:
 
         Examples
         --------
-
         ::
 
             import numpy as np
@@ -648,7 +646,6 @@ class Ansatz:
 
         Examples
         --------
-
         ::
 
             import numpy as np
@@ -735,7 +732,6 @@ class Ansatz:
 
         Examples
         --------
-
         ::
 
             import numpy as np
@@ -896,9 +892,7 @@ class Ansatz:
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        """
-        PyTree unflatten for JAX.
-        """
+        """PyTree unflatten for JAX."""
         num_qubits, num_parameters, options = aux_data
 
         # Built without __init__, whose signature a subclass may change. The
@@ -913,6 +907,7 @@ class Ansatz:
         return ansatz
 
     def __setstate__(self, state):
+        """Restores a loaded ansatz and registers its class as a PyTree when needed."""
         # A subclass defined in a script is rebuilt from its code when loaded
         # in another process, without running the decorator that registered it
         # as a PyTree. Unregistered, it is its own single leaf, which
@@ -925,9 +920,7 @@ class Ansatz:
             register_pytree_node_class(type(self))
 
     def _options(self):
-        """
-        Returns the per-ansatz settings, which subclasses set after building.
-        """
+        """Returns the per-ansatz settings, which subclasses set after building."""
         return {}
 
 
@@ -982,9 +975,7 @@ class _DataReuploading(Ansatz):
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
-        """
-        PyTree unflatten for JAX.
-        """
+        """PyTree unflatten for JAX."""
         reuploading = cls.__new__(cls)
         reuploading.num_qubits, reuploading.num_parameters, reuploading.layers = aux_data
         reuploading.encoding, reuploading.ansatz = children
