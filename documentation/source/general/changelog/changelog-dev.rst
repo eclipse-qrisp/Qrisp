@@ -70,19 +70,19 @@ New Features
   * Raises ``ValueError`` for a non-positive shot count — including a
     dynamic one, which only becomes concrete once the backend runs.
 
-- **Quantum machine learning module** ``qrisp.qml``
+- **Quantum machine learning module** :ref:`qrisp.qml <qml_reference>`
   The new module provides the building blocks of a quantum machine learning
   model, and each part can be swapped without touching the others.
 
-  * ``Encoding`` writes classical features into a register, with angle, dense
+  * :ref:`Encoding` writes classical features into a register, with angle, dense
     angle, amplitude and basis encodings.
-  * ``Ansatz`` holds the trainable circuit, with hardware efficient, real
+  * :ref:`Ansatz` holds the trainable circuit, with hardware efficient, real
     amplitudes and data re-uploading ansatzes.
-  * ``expectation`` reads out one or more observables, and ``parameter_shift``
+  * :ref:`expectation` reads out one or more observables, and :ref:`parameter_shift`
     gives their derivatives with the parameter shift rule.
-  * ``minmax_scale``, ``normalize`` and ``binarize`` prepare features for the
+  * :ref:`minmax_scale`, :ref:`normalize` and :ref:`binarize` prepare features for the
     encodings.
-  * ``save_model`` and ``load_model`` store the parts of a model in a file and
+  * :ref:`save_model` and :ref:`load_model` store the parts of a model in a file and
     load them again.
 
   Encodings and ansatzes work under Jasp tracing and can be passed into traced
