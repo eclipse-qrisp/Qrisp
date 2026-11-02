@@ -73,7 +73,9 @@ def _hardware_efficient(qv, w, layers=1, rotations=("y",), entangler="cx"):
         is ``1``.
     rotations : tuple[str], optional
         The rotation axes applied to each qubit in a rotation layer. The
-        default is ``("y",)``, which keeps the amplitudes real.
+        default is ``("y",)``, which keeps the amplitudes real. A string is read
+        per character, which means ``"yz"`` is the same as ``("y", "z")``. The
+        sequence must hold at least one axis.
     entangler : {'cx', 'cz'}, optional
         The two-qubit gate of the entangling layer. The default is ``'cx'``.
 
@@ -82,7 +84,7 @@ def _hardware_efficient(qv, w, layers=1, rotations=("y",), entangler="cx"):
     ValueError
         If the number of parameters does not match the ansatz.
     ValueError
-        If ``rotations`` holds an axis other than ``'x'``, ``'y'`` or ``'z'``.
+        If ``rotations`` is empty or holds an axis other than ``'x'``, ``'y'`` or ``'z'``.
     ValueError
         If ``entangler`` is not ``'cx'`` or ``'cz'``.
 
@@ -94,6 +96,12 @@ def _hardware_efficient(qv, w, layers=1, rotations=("y",), entangler="cx"):
        Nature 549, 242-246 (2017). arXiv:1704.05018
 
     """
+    if len(rotations) == 0:
+        raise ValueError(
+            "Tried to configure a hardware efficient ansatz without rotation axes. "
+            "An ansatz needs at least one axis, such as rotations=('y',), to have parameters to train."
+        )
+
     for axis in rotations:
         if axis not in _ROTATION_GATES:
             raise ValueError(
@@ -298,12 +306,14 @@ def _data_reuploading(qv, x, w, ansatz_size, encoding, ansatz, layers=2):  # noq
     Here $S$ is the encoding and $W$ the parameterized ansatz, and the
     operators act from right to left.
 
-    Re-encoding the same features between parameterized layers raises the
-    frequency spectrum that the circuit can represent. A single encoding layer
-    followed by an ansatz produces a function of the features whose Fourier
-    spectrum is limited by the encoding alone, and no amount of added
-    parameters widens it. With $L$ encoding layers the accessible spectrum
-    grows with $L$, which lets a circuit on few qubits fit a rich function.
+    Re-encoding the same features between parameterized layers can widen the
+    frequency spectrum that the circuit represents. This holds for an encoding
+    that applies each feature as the angle of a Pauli rotation, as angle and
+    dense angle encoding do. The output of the circuit is then a Fourier series
+    in each feature, and every rotation by that feature adds one to the highest
+    frequency the series can hold [2]. A single encoding layer therefore limits
+    the spectrum, however many parameters follow it, while $L$ layers allow
+    frequencies up to $L$. For other encodings the spectrum need not grow.
 
     Parameters
     ----------
@@ -318,13 +328,13 @@ def _data_reuploading(qv, x, w, ansatz_size, encoding, ansatz, layers=2):  # noq
         The number of parameters that ``ansatz`` uses on ``qv``, as returned by
         the size function that accompanies the ansatz. It splits ``w`` into one
         block per layer.
-    layers : int, optional
-        The number of encoding and ansatz layer repetitions. The default is
-        ``2``, the smallest number that re-uploads the features at all.
     encoding : Encoding
         Applied as ``encoding.apply(qv, x)`` at the start of each layer.
     ansatz : Ansatz
         Applied as ``ansatz.apply(qv, w_layer)`` after each encoding.
+    layers : int, optional
+        The number of encoding and ansatz layer repetitions. The default is
+        ``2``, the smallest number that re-uploads the features at all.
 
     Raises
     ------
@@ -336,6 +346,9 @@ def _data_reuploading(qv, x, w, ansatz_size, encoding, ansatz, layers=2):  # noq
     .. [1] A. Pérez-Salinas, A. Cervera-Lierta, E. Gil-Fuster, and
        J. I. Latorre, "Data re-uploading for a universal quantum
        classifier", Quantum 4, 226 (2020). arXiv:1907.02085
+    .. [2] M. Schuld, R. Sweke, and J. J. Meyer, "Effect of data encoding on
+       the expressive power of variational quantum-machine-learning models",
+       Phys. Rev. A 103, 032430 (2021). arXiv:2008.08605
 
     """
     if np.size(w) != layers * ansatz_size:
@@ -404,12 +417,21 @@ def hardware_efficient_size(num_qubits, layers=1, rotations=("y",)):
         is ``1``.
     rotations : tuple[str], optional
         The rotation axes applied to each qubit in a rotation layer. The
-        default is ``("y",)``.
+        default is ``("y",)``. A string is read per character, which means
+        ``"yz"`` is the same as ``("y", "z")``. The sequence must hold at least
+        one axis.
 
     Returns
     -------
     int
         The number of parameters.
+
+    Raises
+    ------
+    ValueError
+        If ``rotations`` is empty.
+    ValueError
+        If an axis follows itself in ``rotations``.
 
     Examples
     --------
@@ -420,12 +442,13 @@ def hardware_efficient_size(num_qubits, layers=1, rotations=("y",)):
 
         w = np.random.uniform(0, 2 * np.pi, hardware_efficient_size(3, layers=2))
 
-    Raises
-    ------
-    ValueError
-        If an axis follows itself in ``rotations``.
-
     """
+    if len(rotations) == 0:
+        raise ValueError(
+            "Tried to configure a hardware efficient ansatz without rotation axes. "
+            "An ansatz needs at least one axis, such as rotations=('y',), to have parameters to train."
+        )
+
     for axis, next_axis in zip(rotations, rotations[1:]):
         if axis == next_axis:
             raise ValueError(
@@ -563,7 +586,8 @@ class Ansatz:
             order. The default is ``("y",)``. An axis may recur when another
             axis separates the repeats, as in ``("z", "y", "z")``, which
             parameterizes an arbitrary single qubit rotation up to a global
-            phase.
+            phase. A string is read per character, which means ``"yz"`` is the
+            same as ``("y", "z")``. The sequence must hold at least one axis.
         entangler : {'cx', 'cz'}, optional
             The two qubit gate of the entangling layers. The default is
             ``'cx'``.
@@ -692,13 +716,13 @@ class Ansatz:
         Here $S$ is the encoding and $W$ the parameterized ansatz, and the
         operators act from right to left.
 
-        Re-encoding the same features between parameterized layers raises the
-        frequency spectrum that the circuit can represent. A single encoding
-        layer followed by an ansatz produces a function of the features whose
-        Fourier spectrum is limited by the encoding alone, and no amount of
-        added parameters widens it. With $L$ encoding layers the accessible
-        spectrum grows with $L$, which lets a circuit on few qubits fit a rich
-        function.
+        Re-encoding the same features between parameterized layers can widen
+        the frequency spectrum that the circuit represents. This holds for an
+        encoding that applies each feature as the angle of a Pauli rotation, as
+        angle and dense angle encoding do. A single encoding layer then limits
+        the spectrum, however many parameters follow it, while $L$ layers allow
+        frequencies up to $L$ in each feature. For other encodings the spectrum
+        need not grow.
 
         The growth requires encoding and ansatz layers that do not commute. A
         basis encoding applies $X$ gates, which commute with $R_X$ rotations,

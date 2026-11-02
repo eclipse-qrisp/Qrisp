@@ -1,20 +1,20 @@
-"""
-********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests the qml ansatzes, their parameter counts, subclassing and tracing."""
 
 from functools import partial
 
@@ -32,6 +32,7 @@ from qrisp.qml import (
     hardware_efficient_size,
     real_amplitudes_size,
 )
+from qrisp.qml.ansatzes import _hardware_efficient
 
 
 def statevector_array(qv):
@@ -143,6 +144,43 @@ def test_hardware_efficient_rejects_invalid_arguments(kwargs, match):
     """The rotation axes and entanglers are restricted to the supported gates."""
     with pytest.raises(ValueError, match=match):
         Ansatz.hardware_efficient(num_qubits=3, **kwargs)
+
+
+@pytest.mark.parametrize("rotations", [(), [], ""])
+def test_hardware_efficient_rejects_an_empty_set_of_rotations(rotations):
+    """
+    Without a rotation axis the ansatz has no parameters, and training it would
+    change nothing. The size function, the constructor and the gate sequence
+    under tracing all reject it.
+    """
+    with pytest.raises(ValueError, match="without rotation axes"):
+        hardware_efficient_size(3, rotations=rotations)
+
+    with pytest.raises(ValueError, match="without rotation axes"):
+        Ansatz.hardware_efficient(num_qubits=3, rotations=rotations)
+
+    @jaspify
+    def main():
+        qf = QuantumFloat(3)
+        _hardware_efficient(qf, jnp.zeros(0), rotations=rotations)
+        return measure(qf)
+
+    with pytest.raises(ValueError, match="without rotation axes"):
+        main()
+
+
+def test_hardware_efficient_reads_a_string_of_axes_per_character():
+    """A string of axes is the documented shorthand for the tuple of its characters."""
+    w = np.linspace(0.3, 2.9, hardware_efficient_size(2, rotations=("y", "z")))
+
+    qf_string = QuantumFloat(2)
+    Ansatz.hardware_efficient(num_qubits=2, rotations="yz").apply(qf_string, w)
+
+    qf_tuple = QuantumFloat(2)
+    Ansatz.hardware_efficient(num_qubits=2, rotations=("y", "z")).apply(qf_tuple, w)
+
+    assert hardware_efficient_size(2, rotations="yz") == len(w)
+    assert np.allclose(statevector_array(qf_string), statevector_array(qf_tuple))
 
 
 def test_hardware_efficient_rejects_the_wrong_parameter_count():

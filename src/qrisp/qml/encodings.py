@@ -212,6 +212,14 @@ def _amplitude_encoding(qv, x, pad=True):
 
     Pass ``pad=False`` to require an exactly matching feature vector instead.
 
+    **How the circuit is built**
+
+    The circuit comes from :func:`~qrisp.prepare`, and its construction depends
+    on the path. Under tracing it is a binary tree of uniformly controlled
+    rotations, which follows the scheme of Möttönen et al. [1]. Without tracing
+    Qiskit's ``StatePreparation`` synthesizes it with the isometry
+    decomposition of Iten et al. [2]. Both circuits prepare the same state.
+
     Parameters
     ----------
     qv : QuantumVariable
@@ -237,6 +245,9 @@ def _amplitude_encoding(qv, x, pad=True):
        "Transformation of quantum states using uniformly controlled
        rotations", Quantum Inf. Comput. 5, 467 (2005).
        arXiv:quant-ph/0407010
+    .. [2] R. Iten, R. Colbeck, I. Kukuljan, J. Home, and M. Christandl,
+       "Quantum circuits for isometries", Phys. Rev. A 93, 032318 (2016).
+       arXiv:1501.06911
 
     """
     tracing = check_for_tracing_mode()
@@ -909,10 +920,12 @@ class Encoding:
 
             qf = QuantumFloat(3)
             encoding = Encoding.basis(n_features=3)
-            encoding.apply(qf, [1, 0, 1])
+            encoding.apply(qf, [1, 1, 0])
+
+        Bit $i$ sets qubit $i$, the least significant bit first.
 
         >>> qf.qs.statevector()
-        |5>
+        |3>
 
         """
         encoding = _BasisEncoding(n_features)
