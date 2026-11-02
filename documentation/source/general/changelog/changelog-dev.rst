@@ -222,8 +222,10 @@ Bug Fixes
 * Fixed the handling of the Montgomery shift ``m`` of
   :class:`~qrisp.QuantumModulus` in Jasp mode
   (`Issue #925 <https://github.com/eclipse-qrisp/Qrisp/issues/925>`_).
-  ``m`` is now a traced attribute. Previously it was stored as static data that
-  :func:`qache <qrisp.jasp.qache>` ignored, which caused three failures:
+  ``m`` is now part of the :func:`qache <qrisp.jasp.qache>` key, and it is
+  traced only if it is computed from traced values (e.g. a traced modulus).
+  Previously it was stored as static data that ``qache`` ignored, which caused
+  three failures:
 
   * A ``qache``\ d function multiplying two ``QuantumModulus`` raised
     ``UnexpectedTracerError``.
