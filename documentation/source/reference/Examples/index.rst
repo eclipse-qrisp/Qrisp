@@ -37,11 +37,9 @@ In this section, we provide a glimpse into the diverse range of applications tha
      - Calculating ground state energies with quantum phase estimation.                    
    * - :ref:`IsingModel` 
      - Hamiltonian simulation of a transverse field Ising model. 
-   * - :ref:`MaxCutQITE`
+   * - :ref:`MaxCutQITE` 
      - Solving MaxCut with :ref:`QITE`
-   * - :ref:`HybridQMLModel`
-     - Composing classical layers around a quantum block, and training them together.
-
+     
 .. toctree::
    :hidden:
    :maxdepth: 2
@@ -61,4 +59,3 @@ In this section, we provide a glimpse into the diverse range of applications tha
    GroundStateEnergyQPE
    IsingModel
    MaxCutQITE
-   HybridQMLModel
