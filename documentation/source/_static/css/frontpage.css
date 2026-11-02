@@ -353,11 +353,23 @@ html[data-theme="dark"] #who-is-behind-qrisp .sd-card img {
 /* Dark theme: show logos and artwork on a white tile slightly larger than the
    image, so logos with dark text stay readable. */
 html[data-theme="dark"] #who-is-behind-qrisp .sd-card img,
-html[data-theme="dark"] .slide img,
 html[data-theme="dark"] #key-features .sd-card img {
     background-color: #fff;
     padding: 0.5rem;
     border-radius: 0.5rem;
+    box-sizing: border-box;
+}
+
+/* Give every partner logo the same square tile. The DLR logo is the only one
+   that is not square and has no white margin, so its tile came out smaller. */
+#who-is-behind-qrisp .sd-card img {
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+}
+
+#who-is-behind-qrisp .sd-card img[src*="dlr_logo"],
+html[data-theme="dark"] #who-is-behind-qrisp .sd-card img[src*="dlr_logo"] {
+    padding: 1.25rem;
     box-sizing: border-box;
 }
 
