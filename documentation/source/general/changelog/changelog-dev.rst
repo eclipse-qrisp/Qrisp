@@ -585,7 +585,8 @@ New Tutorials/ Updated Documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
 * Added a light/dark theme switcher to the documentation and fixed
-  light-only colors on the front page for dark mode.
+  light-only colors on the front page for dark mode
+  (`PR #1003 <https://github.com/eclipse-qrisp/Qrisp/pull/1003>`_).
 
 .. Add new tutorials above this line
 
