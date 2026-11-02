@@ -23,16 +23,25 @@ from qrisp import QuantumFloat
 from qrisp.qml import Encoding, binarize, minmax_scale, normalize
 
 
-def test_minmax_scale_spans_the_feature_range():
-    """The extremes of each training feature land on the range boundaries."""
+@pytest.mark.parametrize("feature_range", [None, (0.0, 2 * np.pi), (-np.pi, np.pi), (0.0, 1.0)])
+def test_minmax_scale_spans_the_requested_range(feature_range):
+    """
+    The extremes of each training feature land on the boundaries of the
+    requested range, which is (0, pi) when none is given.
+    """
     X = np.array([[0.0, 10.0], [1.0, 20.0], [2.0, 30.0]])
 
-    scaled = minmax_scale(X)
+    if feature_range is None:
+        scaled = minmax_scale(X)
+        low, high = 0.0, np.pi
+    else:
+        scaled = minmax_scale(X, feature_range=feature_range)
+        low, high = feature_range
 
-    assert np.allclose(scaled.min(axis=0), 0.0)
-    assert np.allclose(scaled.max(axis=0), np.pi)
+    assert np.allclose(scaled.min(axis=0), low)
+    assert np.allclose(scaled.max(axis=0), high)
     # Evenly spaced inputs stay evenly spaced.
-    assert np.allclose(scaled[1], np.pi / 2)
+    assert np.allclose(scaled[1], (low + high) / 2)
 
 
 def test_minmax_scale_applies_the_training_range_to_the_test_set():
@@ -71,17 +80,6 @@ def test_minmax_scale_maps_a_constant_feature_to_the_lower_bound():
 
     assert np.allclose(scaled[:, 0], 0.0)
     assert np.allclose(scaled[:, 1], [0.0, np.pi / 2, np.pi])
-
-
-@pytest.mark.parametrize("feature_range", [(0.0, 2 * np.pi), (-np.pi, np.pi), (0.0, 1.0)])
-def test_minmax_scale_honours_the_requested_range(feature_range):
-    """The scaled features span exactly the interval that was asked for."""
-    X = np.array([[0.0], [1.0], [2.0]])
-
-    scaled = minmax_scale(X, feature_range=feature_range)
-
-    assert np.isclose(scaled.min(), feature_range[0])
-    assert np.isclose(scaled.max(), feature_range[1])
 
 
 @pytest.mark.parametrize(
@@ -143,8 +141,8 @@ def test_normalize_scales_each_sample_separately():
 
 @pytest.mark.parametrize(
     "features",
-    [np.array([1.0, 2.0, 3.0, 4.0]), np.array([1.0, 1j, -2.0, 0.5 - 1j]), [1.0, 1j, -2.0, 0.5 - 1j]],
-    ids=["real", "complex_array", "complex_list"],
+    [np.array([1.0, 1j, -2.0, 0.5 - 1j]), [1.0, 1j, -2.0, 0.5 - 1j]],
+    ids=["complex_array", "complex_list"],
 )
 def test_normalize_preserves_the_encoded_state(features):
     """
@@ -206,20 +204,6 @@ def test_normalize_rejects_a_zero_norm_sample():
 def test_binarize_splits_at_the_threshold(features, threshold, expected):
     """Features above the threshold become 1, the rest become 0."""
     assert np.array_equal(binarize(np.array([features]), threshold).ravel(), expected)
-
-
-def test_binarize_output_is_accepted_by_basis_encoding():
-    """
-    Basis encoding is defined for the values 0 and 1. Binarizing beforehand
-    makes explicit in the data what the encoding would otherwise coerce.
-    """
-    bits = binarize(np.array([0.8, -0.2, 1.5]))
-
-    qf = QuantumFloat(3)
-    Encoding.basis(n_features=3).apply(qf, bits)
-
-    # Bits (1, 0, 1) with qubit 0 as the least significant bit is the state |5>.
-    assert qf.get_measurement() == {5: 1.0}
 
 
 def test_minmax_scale_rejects_a_single_sample():

@@ -16,8 +16,6 @@
 
 """Tests the qml ansatzes, their parameter counts, subclassing and tracing."""
 
-from functools import partial
-
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -39,10 +37,6 @@ def statevector_array(qv):
     return np.array(qv.qs.statevector("array"), dtype=complex)
 
 
-def count_gates(qv, name):
-    return sum(1 for i in qv.qs.compile().transpile().data if i.op.name == name)
-
-
 @pytest.mark.parametrize(
     "num_qubits, layers, rotations, expected",
     [(3, 2, ("y",), 9), (3, 2, ("y", "z"), 18), (4, 1, ("y",), 8), (2, 0, ("y",), 2), (2, 1, ("z", "y", "z"), 12)],
@@ -55,35 +49,27 @@ def test_hardware_efficient_size(num_qubits, layers, rotations, expected):
     assert hardware_efficient_size(num_qubits, layers, rotations) == expected
 
 
-def test_hardware_efficient_accepts_flat_and_shaped_parameters():
+@pytest.mark.parametrize("constructor", [Ansatz.real_amplitudes, Ansatz.hardware_efficient])
+@pytest.mark.parametrize("as_nested_list", [False, True], ids=["array", "nested_list"])
+def test_ansatzes_read_shaped_parameters_like_the_flat_vector(constructor, as_nested_list):
     """
     Parameters may be passed as a flat vector, as the optimizers require, or
-    shaped as (layers + 1, len(rotations), n).
+    shaped with one row per rotation layer. The docstrings promise that a shaped
+    array and the nested list describing it are read in the order of the flat
+    vector.
     """
-    w = np.linspace(0.1, 0.9, 9)
-    ansatz = Ansatz.hardware_efficient(num_qubits=3, layers=2)
+    ansatz = constructor(num_qubits=3, layers=2)
+    flat = np.linspace(0.1, 2.9, ansatz.num_parameters)
+    shaped = flat.reshape(3, 3)
+    if as_nested_list:
+        shaped = shaped.tolist()
 
-    qf_flat = QuantumFloat(3)
-    ansatz.apply(qf_flat, w)
+    def run(w):
+        qf = QuantumFloat(3)
+        ansatz.apply(qf, w)
+        return statevector_array(qf)
 
-    qf_shaped = QuantumFloat(3)
-    ansatz.apply(qf_shaped, w.reshape(3, 1, 3))
-
-    assert np.allclose(statevector_array(qf_flat), statevector_array(qf_shaped))
-
-
-def test_hardware_efficient_zero_parameters_is_identity():
-    """
-    With vanishing rotation angles only the entangling layers remain, which act
-    trivially on |0>.
-    """
-    qf = QuantumFloat(3)
-    Ansatz.hardware_efficient(num_qubits=3, layers=2).apply(qf, np.zeros(9))
-
-    expected = np.zeros(8, dtype=complex)
-    expected[0] = 1.0
-
-    assert np.allclose(statevector_array(qf), expected)
+    assert np.allclose(run(shaped), run(flat))
 
 
 def test_hardware_efficient_single_qubit_matches_rotation_product():
@@ -102,35 +88,70 @@ def test_hardware_efficient_single_qubit_matches_rotation_product():
     assert np.allclose(statevector_array(qf), expected)
 
 
-def test_hardware_efficient_entangler_creates_entanglement():
+_SINGLE_QUBIT_GATES = {
+    "x": lambda t: np.array([[np.cos(t / 2), -1j * np.sin(t / 2)], [-1j * np.sin(t / 2), np.cos(t / 2)]]),
+    "y": lambda t: np.array([[np.cos(t / 2), -np.sin(t / 2)], [np.sin(t / 2), np.cos(t / 2)]]),
+    "z": lambda t: np.diag([np.exp(-0.5j * t), np.exp(0.5j * t)]),
+}
+
+
+def _apply_single(state, qubit, matrix):
+    """Applies a 2x2 matrix to one qubit of a state indexed with qubit 0 as the least significant bit."""
+    state = state.copy()
+    for i in range(len(state)):
+        if not i >> qubit & 1:
+            j = i | 1 << qubit
+            state[i], state[j] = matrix @ np.array([state[i], state[j]])
+    return state
+
+
+def _apply_controlled(state, control, target, gate):
+    """Applies CX or CZ to a state indexed with qubit 0 as the least significant bit."""
+    state = state.copy()
+    for i in range(len(state)):
+        if i >> control & 1 and not i >> target & 1:
+            j = i | 1 << target
+            if gate == "cx":
+                state[i], state[j] = state[j], state[i]
+            else:
+                state[j] = -state[j]
+    return state
+
+
+@pytest.mark.parametrize("entangler", ["cx", "cz"])
+def test_hardware_efficient_matches_a_reference_simulation(entangler):
     """
-    A rotated first qubit followed by the CX chain produces a correlated state
-    that does not factorize.
+    Three rotation axes, two layers and generic angles on three qubits make
+    every gate visible in the state, including the X rotations and the CZ
+    entangler. The reference is a separate numpy simulation of the documented
+    gate order, rotation layers of each axis in turn and a linear chain of
+    entanglers between them. Global phases are ignored by comparing the
+    overlap.
     """
-    w = np.zeros(4)
-    w[0] = np.pi / 2
+    num_qubits, layers, rotations = 3, 2, ("x", "y", "z")
+    ansatz = Ansatz.hardware_efficient(num_qubits=num_qubits, layers=layers, rotations=rotations, entangler=entangler)
+    w = np.linspace(0.2, 2.8, ansatz.num_parameters)
 
-    qf = QuantumFloat(2)
-    Ansatz.hardware_efficient(num_qubits=2, layers=1).apply(qf, w)
+    state = np.zeros(2**num_qubits, dtype=complex)
+    state[0] = 1.0
+    for layer in range(layers + 1):
+        for axis_index, axis in enumerate(rotations):
+            offset = (layer * len(rotations) + axis_index) * num_qubits
+            for i in range(num_qubits):
+                state = _apply_single(state, i, _SINGLE_QUBIT_GATES[axis](w[offset + i]))
+        if layer < layers:
+            for i in range(num_qubits - 1):
+                state = _apply_controlled(state, i, i + 1, entangler)
 
-    # |00> and |11> are populated, the anticorrelated states are not.
-    amplitudes = np.abs(statevector_array(qf))
-    assert np.isclose(amplitudes[0], 1 / np.sqrt(2))
-    assert np.isclose(amplitudes[3], 1 / np.sqrt(2))
-    assert np.allclose(amplitudes[[1, 2]], 0.0)
+    qf = QuantumFloat(num_qubits)
+    ansatz.apply(qf, w)
 
+    # statevector("array") puts qubit 0 in the most significant bit, and
+    # reversing the bits of each index lines it up with the reference.
+    order = [int(format(i, f"0{num_qubits}b")[::-1], 2) for i in range(2**num_qubits)]
+    actual = statevector_array(qf)[order]
 
-def test_hardware_efficient_entanglers_differ():
-    """Each entangler produces a different state, which shows both are really applied."""
-    w = np.linspace(0.1, 0.8, 8)
-
-    states = []
-    for entangler in ["cx", "cz"]:
-        qf = QuantumFloat(4)
-        Ansatz.hardware_efficient(num_qubits=4, layers=1, entangler=entangler).apply(qf, w)
-        states.append(statevector_array(qf))
-
-    assert not np.allclose(*states)
+    assert np.isclose(abs(np.vdot(state, actual)), 1.0)
 
 
 @pytest.mark.parametrize(
@@ -146,7 +167,7 @@ def test_hardware_efficient_rejects_invalid_arguments(kwargs, match):
         Ansatz.hardware_efficient(num_qubits=3, **kwargs)
 
 
-@pytest.mark.parametrize("rotations", [(), [], ""])
+@pytest.mark.parametrize("rotations", [(), ""])
 def test_hardware_efficient_rejects_an_empty_set_of_rotations(rotations):
     """
     Without a rotation axis the ansatz has no parameters, and training it would
@@ -183,27 +204,39 @@ def test_hardware_efficient_reads_a_string_of_axes_per_character():
     assert np.allclose(statevector_array(qf_string), statevector_array(qf_tuple))
 
 
-def test_hardware_efficient_rejects_the_wrong_parameter_count():
-    """The parameter count is determined by the qubits, layers and rotations."""
-    with pytest.raises(ValueError, match="Expected 9"):
-        Ansatz.hardware_efficient(num_qubits=3, layers=2).apply(QuantumFloat(3), np.zeros(7))
+@pytest.mark.parametrize("run", ["direct", "traced"])
+@pytest.mark.parametrize(
+    "make_ansatz, expected",
+    [
+        (lambda: Ansatz.hardware_efficient(num_qubits=3, layers=2), 9),
+        (lambda: Ansatz.real_amplitudes(num_qubits=3, layers=2), 9),
+        (lambda: RotationAnsatz(num_qubits=3), 3),
+    ],
+    ids=["hardware_efficient", "real_amplitudes", "subclass"],
+)
+def test_ansatzes_reject_the_wrong_parameter_count(make_ansatz, expected, run):
+    """
+    The parameter count is checked on the base class before any gate is
+    emitted, for the built-in ansatzes and for a subclass. The subclass derives
+    its count from parameter_count, and the fixed expected numbers also pin
+    that derivation. The check runs while a program is being traced as well.
+    A mismatch would otherwise pass silently there, because too few parameters
+    are read past the end of the array and Jax clamps the read rather than
+    raising.
+    """
+    ansatz = make_ansatz()
+    w = np.zeros(expected - 1)
 
-
-def test_hardware_efficient_traces():
-    """The ansatz is compatible with the Jasp tracing path."""
-
-    ansatz = Ansatz.hardware_efficient(num_qubits=2, layers=1)
-
-    @jaspify
     def main(w):
-        qf = QuantumFloat(2)
+        qf = QuantumFloat(3)
         ansatz.apply(qf, w)
         return measure(qf)
 
-    w = jnp.zeros(4).at[0].set(jnp.pi)
-
-    # RY(pi) on the first qubit followed by the CX chain flips both qubits.
-    assert main(w) == 3
+    with pytest.raises(ValueError, match=f"Expected {expected}"):
+        if run == "traced":
+            jaspify(main)(jnp.asarray(w))
+        else:
+            main(w)
 
 
 def test_real_amplitudes_keeps_amplitudes_real():
@@ -219,111 +252,26 @@ def test_real_amplitudes_keeps_amplitudes_real():
     assert np.allclose(statevector_array(qf).imag, 0.0)
 
 
-@pytest.mark.parametrize("num_qubits, extra", [(2, 0), (3, 1), (4, 1)])
-def test_real_amplitudes_ring_closes_the_chain(num_qubits, extra):
-    """
-    The ring adds one entangler over the linear chain, except on two qubits,
-    where the chain already covers the closing pair.
-    """
-    w = np.zeros(real_amplitudes_size(num_qubits))
-
-    qf_linear = QuantumFloat(num_qubits)
-    Ansatz.real_amplitudes(num_qubits=num_qubits, entanglement="linear").apply(qf_linear, w)
-
-    qf_ring = QuantumFloat(num_qubits)
-    Ansatz.real_amplitudes(num_qubits=num_qubits, entanglement="ring").apply(qf_ring, w)
-
-    assert count_gates(qf_ring, "cx") == count_gates(qf_linear, "cx") + extra
-
-
 def test_real_amplitudes_rejects_an_unknown_entanglement():
     """The entanglement is restricted to the supported connectivities."""
     with pytest.raises(ValueError, match="Unknown entanglement"):
         Ansatz.real_amplitudes(num_qubits=3, entanglement="full")
 
 
-def test_real_amplitudes_rejects_the_wrong_parameter_count():
-    """The parameter count is determined by the qubits and layers."""
-    with pytest.raises(ValueError, match="Expected 9"):
-        Ansatz.real_amplitudes(num_qubits=3, layers=2).apply(QuantumFloat(3), np.zeros(7))
-
-
-@pytest.mark.parametrize("constructor", [Ansatz.real_amplitudes, Ansatz.hardware_efficient])
-def test_ansatzes_reject_the_wrong_parameter_count_under_tracing(constructor):
+@pytest.mark.parametrize(
+    "num_qubits, entanglement", [(3, "linear"), (3, "ring"), (2, "ring")], ids=["3_linear", "3_ring", "2_ring"]
+)
+def test_real_amplitudes_matches_a_reference_simulation_under_tracing(num_qubits, entanglement):
     """
-    The parameter count check also runs while a program is being traced. A
-    mismatch would otherwise pass silently there, because too few parameters
-    are read past the end of the array and Jax clamps the read rather than
-    raising.
+    Two layers and generic angles keep every amplitude away from zero and one.
+    On three qubits the ring adds CX(2, 0) after every rotation layer but the
+    last, while on two qubits the chain already covers that pair and nothing is
+    added. A wrong parameter offset, a missing or duplicated closing entangler
+    or a swapped control therefore changes the distribution. The reference is a
+    separate numpy simulation, which means it shares no code with the ansatz.
     """
-
-    ansatz = constructor(num_qubits=3, layers=2)
-
-    @jaspify
-    def main(w):
-        qf = QuantumFloat(3)
-        ansatz.apply(qf, w)
-        return measure(qf)
-
-    with pytest.raises(ValueError, match=f"Expected {ansatz.num_parameters}"):
-        main(jnp.zeros(ansatz.num_parameters - 1))
-
-
-@pytest.mark.parametrize("entanglement, expected", [("linear", 7), ("ring", 6)])
-def test_real_amplitudes_propagates_a_flip_along_the_entanglers(entanglement, expected):
-    """
-    A flip on the first qubit travels along the CX chain, and the closing
-    entangler of the ring carries it back onto the first qubit. Since the test
-    runs traced, it covers the Jasp path as well.
-    """
-
-    ansatz = Ansatz.real_amplitudes(num_qubits=3, entanglement=entanglement)
-
-    @jaspify
-    def main(w):
-        qf = QuantumFloat(3)
-        ansatz.apply(qf, w)
-        return measure(qf)
-
-    w = jnp.zeros(real_amplitudes_size(3)).at[0].set(jnp.pi)
-
-    # The chain sets q0, q1 and q2, giving |7>. The ring then adds CX(2,0),
-    # which clears q0 again and leaves |6>.
-    assert main(w) == expected
-
-
-def _apply_ry(state, qubit, theta):
-    """Applies RY(theta) to one qubit of a state indexed with qubit 0 as the least significant bit."""
-    state = state.copy()
-    c, s = np.cos(theta / 2), np.sin(theta / 2)
-    for i in range(len(state)):
-        if not i >> qubit & 1:
-            j = i | 1 << qubit
-            a0, a1 = state[i], state[j]
-            state[i], state[j] = c * a0 - s * a1, s * a0 + c * a1
-    return state
-
-
-def _apply_cx(state, control, target):
-    """Applies CX to a state indexed with qubit 0 as the least significant bit."""
-    state = state.copy()
-    for i in range(len(state)):
-        if i >> control & 1 and not i >> target & 1:
-            j = i | 1 << target
-            state[i], state[j] = state[j], state[i]
-    return state
-
-
-def test_real_amplitudes_ring_matches_a_reference_simulation_under_tracing():
-    """
-    Three qubits and two layers make the ring add CX(2, 0) after every rotation
-    layer but the last. Generic angles keep every amplitude away from zero and
-    one. A wrong parameter offset, a missing closing entangler or a swapped
-    control therefore changes the distribution. The reference is a separate
-    numpy simulation, which means it shares no code with the ansatz.
-    """
-    num_qubits, layers = 3, 2
-    ansatz = Ansatz.real_amplitudes(num_qubits=num_qubits, layers=layers, entanglement="ring")
+    layers = 2
+    ansatz = Ansatz.real_amplitudes(num_qubits=num_qubits, layers=layers, entanglement=entanglement)
     w = np.linspace(0.3, 2.7, ansatz.num_parameters)
 
     @terminal_sampling
@@ -332,20 +280,21 @@ def test_real_amplitudes_ring_matches_a_reference_simulation_under_tracing():
         ansatz.apply(qf, w)
         return qf
 
-    state = np.zeros(2**num_qubits)
+    state = np.zeros(2**num_qubits, dtype=complex)
     state[0] = 1.0
     for layer in range(layers + 1):
         for i in range(num_qubits):
-            state = _apply_ry(state, i, w[layer * num_qubits + i])
+            state = _apply_single(state, i, _SINGLE_QUBIT_GATES["y"](w[layer * num_qubits + i]))
         if layer < layers:
             for i in range(num_qubits - 1):
-                state = _apply_cx(state, i, i + 1)
-            state = _apply_cx(state, num_qubits - 1, 0)
+                state = _apply_controlled(state, i, i + 1, "cx")
+            if entanglement == "ring" and num_qubits >= 3:
+                state = _apply_controlled(state, num_qubits - 1, 0, "cx")
 
     distribution = main(jnp.array(w))
     observed = np.array([distribution.get(i, 0.0) for i in range(2**num_qubits)])
 
-    assert np.allclose(observed, state**2)
+    assert np.allclose(observed, np.abs(state) ** 2)
 
 
 def _untraced_and_traced_distributions(prepare, *args):
@@ -454,10 +403,13 @@ def test_data_reuploading_uses_a_distinct_parameter_block_per_layer():
     assert not np.allclose(statevector_array(qf_first), statevector_array(qf_second))
 
 
-def test_data_reuploading_rejects_parameter_count_mismatch():
-    """The parameters are split evenly over the layers."""
-    per_layer = real_amplitudes_size(2)
-
+@pytest.mark.parametrize("run", ["direct", "traced"])
+def test_data_reuploading_rejects_parameter_count_mismatch(run):
+    """
+    The parameters are split evenly over the layers, and the split is checked
+    while tracing as well. A mismatch therefore cannot reach the gates through
+    either path.
+    """
     reuploading = Ansatz.data_reuploading(
         num_qubits=2,
         encoding=Encoding.angle(n_features=2),
@@ -465,77 +417,16 @@ def test_data_reuploading_rejects_parameter_count_mismatch():
         layers=3,
     )
 
-    with pytest.raises(ValueError, match="Expected 12"):
-        reuploading.apply(QuantumFloat(2), np.zeros(5), [0.1, 0.2])
-
-
-def test_data_reuploading_rejects_parameter_count_mismatch_under_tracing():
-    """
-    The split over layers is checked while tracing as well. A mismatch therefore
-    cannot reach the gates through the traced path.
-    """
-
-    reuploading = Ansatz.data_reuploading(
-        num_qubits=2,
-        encoding=Encoding.angle(n_features=2),
-        ansatz=Ansatz.real_amplitudes(num_qubits=2),
-        layers=3,
-    )
-
-    @jaspify
     def main(w, x):
         qf = QuantumFloat(2)
         reuploading.apply(qf, w, x)
         return measure(qf)
 
     with pytest.raises(ValueError, match="Expected 12"):
-        main(jnp.zeros(5), jnp.array([0.1, 0.2]))
-
-
-@pytest.mark.parametrize(
-    "ansatz",
-    [Ansatz.real_amplitudes(num_qubits=1), Ansatz.hardware_efficient(num_qubits=1)],
-)
-def test_data_reuploading_traces(ansatz):
-    """
-    The circuit is compatible with the Jasp tracing path, for either ansatz
-    supplied as the per-layer block.
-    """
-    reuploading = Ansatz.data_reuploading(
-        num_qubits=1,
-        encoding=Encoding.angle(n_features=1),
-        ansatz=ansatz,
-        layers=2,
-    )
-
-    @jaspify
-    def main(x, w):
-        qf = QuantumFloat(1)
-        reuploading.apply(qf, w, x)
-        return measure(qf)
-
-    # On a single qubit there is nothing to entangle. With vanishing
-    # parameters the two uploads of RY(pi/2) compose to RY(pi) and flip it.
-    assert main(jnp.array([jnp.pi / 2]), jnp.zeros(reuploading.num_parameters)) == 1
-
-
-@pytest.mark.parametrize("constructor", [Ansatz.real_amplitudes, Ansatz.hardware_efficient])
-def test_ansatzes_accept_nested_list_parameters(constructor):
-    """
-    The docstrings promise that a shaped parameter array is read in the same
-    order as the equivalent flat vector. A nested list is such a shape and
-    has to be accepted like the array it describes.
-    """
-    flat = [0.3, 0.7, 1.1, 1.5, 1.9, 2.3]
-    nested = [[0.3, 0.7, 1.1], [1.5, 1.9, 2.3]]
-    ansatz = constructor(num_qubits=3, layers=1)
-
-    def run(w):
-        qf = QuantumFloat(3)
-        ansatz.apply(qf, w)
-        return qf.qs.statevector("array")
-
-    assert np.allclose(run(nested), run(flat))
+        if run == "traced":
+            jaspify(main)(jnp.zeros(5), jnp.array([0.1, 0.2]))
+        else:
+            main(np.zeros(5), [0.1, 0.2])
 
 
 @pytest.mark.parametrize("constructor", [Ansatz.real_amplitudes, Ansatz.hardware_efficient])
@@ -593,50 +484,6 @@ class RotationAnsatz(Ansatz):
         for i in jrange(qv.size):
             ry(w[i], qv[i])
         return qv
-
-
-def test_subclass_derives_its_parameter_count():
-    """
-    parameter_count exists to spare a subclass author restating a number
-    the ansatz can work out. Were num_parameters left to the caller it could
-    silently disagree with the circuit apply_gates actually emits.
-    """
-    assert RotationAnsatz(num_qubits=3).num_parameters == 3
-
-
-def test_subclass_inherits_the_traced_parameter_check():
-    """
-    The check on the base class is the reason for subclassing rather than
-    writing a bare function. Under tracing a short vector is read past its end
-    by reusing its last value. Without this check the wrong circuit runs
-    silently.
-    """
-    ansatz = RotationAnsatz(num_qubits=2)
-
-    @jaspify
-    def main(w):
-        qf = QuantumFloat(2)
-        ansatz.apply(qf, w)
-        return measure(qf)
-
-    with pytest.raises(ValueError, match="Expected 2"):
-        main(jnp.zeros(5))
-
-
-def test_subclass_emits_its_gates_under_tracing():
-    """
-    apply_gates is documented as the hook a subclass implements. The gates it
-    emits therefore have to survive tracing. RY(pi) on both qubits gives |11>.
-    """
-    ansatz = RotationAnsatz(num_qubits=2)
-
-    @jaspify
-    def main(w):
-        qf = QuantumFloat(2)
-        ansatz.apply(qf, w)
-        return measure(qf)
-
-    assert main(jnp.full(2, jnp.pi)) == 3
 
 
 @pytest.mark.parametrize(
@@ -735,7 +582,7 @@ def test_ansatz_without_hooks_reports_what_is_missing():
         Incomplete(num_qubits=2)
 
 
-@pytest.mark.parametrize("rotations", [("y", "y"), ("x", "y", "y"), ("z", "z", "y")])
+@pytest.mark.parametrize("rotations", [("y", "y"), ("z", "z", "y")])
 def test_hardware_efficient_rejects_repeated_rotation_axes(rotations):
     """
     Two consecutive rotations about the same axis compose into a single

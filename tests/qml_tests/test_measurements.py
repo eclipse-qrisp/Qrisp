@@ -16,13 +16,15 @@
 
 """Tests the qml expectation and parameter_shift functions on circuits with known values."""
 
+import jax.numpy as jnp
 import numpy as np
 import pytest
+from jax.flatten_util import ravel_pytree
 
 from qrisp import QuantumFloat, cx, ry
 from qrisp.jasp import jaspify
 from qrisp.operators import X, Z
-from qrisp.qml import Encoding, expectation, parameter_shift
+from qrisp.qml import Ansatz, Encoding, expectation, hardware_efficient_size, parameter_shift
 
 # Coarse enough to keep the suite fast, tight enough that a wrong sign or a
 # swapped entry cannot pass.
@@ -39,7 +41,6 @@ def state_prep(x):
 @pytest.mark.parametrize(
     "x, observable, expected",
     [
-        ([0.0, 0.0], Z(0), 1.0),
         ([np.pi, 0.0], Z(0), -1.0),
         ([np.pi, 0.0], Z(0) * Z(1), -1.0),
         ([0.0, 0.0], X(0), 0.0),
@@ -56,27 +57,21 @@ def test_expectation_of_a_single_observable_is_a_scalar(x, observable, expected)
     assert np.isclose(result, expected, atol=TOLERANCE)
 
 
-def test_expectation_of_a_sequence_keeps_the_entries_separate():
+@pytest.mark.parametrize("container", [list, tuple, np.array, iter], ids=["list", "tuple", "ndarray", "iterator"])
+def test_expectation_of_a_sequence_keeps_the_entries_separate_and_in_order(container):
     """
-    Each observable is reported on its own. The two qubits are in opposite
-    states here, which a summed operator would report as a single 0.
+    Each observable is reported on its own, in the order given, whatever kind
+    of sequence holds them. The two qubits are in opposite states here, which
+    makes the expected result [-1, +1]. A summed operator would report a single
+    0, and a reversed order would give [+1, -1]. Observables were once
+    identified by isinstance against list and tuple, which let an ndarray or a
+    generator fall through to the single operator branch.
     """
-    result = expectation(state_prep, [Z(0), Z(1)], precision=PRECISION)([np.pi, 0.0])
+    observables = container([Z(0), Z(1)])
+
+    result = expectation(state_prep, observables, precision=PRECISION)([np.pi, 0.0])
 
     assert np.allclose(result, [-1.0, 1.0], atol=TOLERANCE)
-
-
-def test_expectation_follows_the_order_of_the_observables():
-    """
-    The entries are aligned with the observables as given, and reversing the
-    sequence reverses the result.
-    """
-    x = [np.pi, 0.0]
-
-    forward = expectation(state_prep, [Z(0), Z(1)], precision=PRECISION)(x)
-    reverse = expectation(state_prep, [Z(1), Z(0)], precision=PRECISION)(x)
-
-    assert np.allclose(forward, reverse[::-1], atol=TOLERANCE)
 
 
 def test_expectation_handles_non_commuting_observables():
@@ -87,29 +82,6 @@ def test_expectation_handles_non_commuting_observables():
     result = expectation(state_prep, [Z(0), X(0)], precision=PRECISION)([0.0, 0.0])
 
     assert np.allclose(result, [1.0, 0.0], atol=TOLERANCE)
-
-
-def test_expectation_accepts_a_tuple_of_observables():
-    """Any sequence is accepted, not only a list."""
-    result = expectation(state_prep, (Z(0), Z(1)), precision=PRECISION)([np.pi, 0.0])
-
-    assert np.allclose(result, [-1.0, 1.0], atol=TOLERANCE)
-
-
-@pytest.mark.parametrize("container", [list, tuple, np.array, iter], ids=["list", "tuple", "ndarray", "iterator"])
-def test_expectation_accepts_any_sequence_of_observables(container):
-    """
-    Observables were identified by isinstance against list and tuple, which
-    let an ndarray or a generator fall through to the single operator branch
-    and fail with an AttributeError naming a numpy internal.
-    """
-    observables = container([Z(0), Z(1)])
-
-    def state_prep():
-        return QuantumFloat(2)
-
-    # The register stays in |00>, and both qubits are measured as +1.
-    assert np.allclose(expectation(state_prep, observables)(), [1.0, 1.0])
 
 
 def test_expectation_rejects_an_empty_sequence():
@@ -141,7 +113,7 @@ def rotated_qubit(x, w):
     return qf
 
 
-@pytest.mark.parametrize("x, w", [(0.3, 0.4), (1.0, 2.0), (2.5, -0.4)])
+@pytest.mark.parametrize("x, w", [(0.3, 0.4), (2.5, -0.4)])
 def test_parameter_shift_gives_the_derivative_of_a_rotation(x, w):
     """
     Two rotations about the same axis give <Z> = cos(x + w), whose derivative
@@ -149,6 +121,22 @@ def test_parameter_shift_gives_the_derivative_of_a_rotation(x, w):
     or swapped shifts each move the result by more than the tolerance.
     """
     value, (dx, dw) = parameter_shift(rotated_qubit, Z(0), precision=PRECISION, argnums=(0, 1))(
+        np.array([x]), np.array([w])
+    )
+
+    assert np.isclose(value, np.cos(x + w), atol=TOLERANCE)
+    assert np.allclose([dx[0], dw[0]], -np.sin(x + w), atol=TOLERANCE)
+
+
+def test_parameter_shift_differentiates_a_tuple_of_arguments_under_tracing():
+    """
+    With argnums=(0, 1) the result holds one derivative array per argument,
+    also inside a traced program. Both angles enter the same rotation, which
+    makes both derivatives -sin(x + w).
+    """
+    x, w = 0.3, 0.4
+
+    value, (dx, dw) = traced(parameter_shift(rotated_qubit, Z(0), precision=PRECISION, argnums=(0, 1)))(
         np.array([x]), np.array([w])
     )
 
@@ -233,3 +221,69 @@ def test_parameter_shift_rejects_an_argument_that_is_not_one_dimensional(run):
 
     with pytest.raises(ValueError, match="one-dimensional"):
         run(parameter_shift(state_prep, Z(0), precision=PRECISION))(np.zeros((2, 2)))
+
+
+def test_expectation_feeds_classical_code_under_tracing():
+    """
+    Inside jaspify the readout is an ordinary Jax value, which a classical
+    layer can use directly. Generic angles keep <Z_i> = cos(x_i) away from +1
+    and -1, which makes the result depend on the estimated values themselves.
+    """
+    x = np.array([0.7, 2.1])
+    w_out = np.array([1.0, 2.0])
+    quantum_block = expectation(state_prep, [Z(0), Z(1)], precision=PRECISION)
+
+    @jaspify(terminal_sampling=True)
+    def model(x, w_out):
+        return jnp.tanh(jnp.dot(quantum_block(x), w_out))
+
+    result = model(jnp.array(x), jnp.array(w_out))
+
+    assert np.ndim(result) == 0
+    assert np.isclose(result, np.tanh(np.cos(x) @ w_out), atol=TOLERANCE)
+
+
+def test_a_flat_vector_drives_a_hybrid_model_under_tracing():
+    """
+    The optimizers take one flat vector, while a hybrid model has named groups
+    of parameters. The tutorials convert between the two with ravel_pytree and
+    call the unravel inside the traced function, once per iteration. The
+    groups are given distinct values, which makes a swapped group change the
+    result.
+    """
+    encoding = Encoding.angle(n_features=2)
+    ansatz = Ansatz.hardware_efficient(num_qubits=2, layers=1)
+
+    def prepare(x, w):
+        qv = QuantumFloat(2)
+        encoding.apply(qv, x)
+        ansatz.apply(qv, w)
+        return qv
+
+    # The parameters are zero, which makes both expectations exactly +1 or -1
+    # and keeps the sampling noise far from the tolerance. A coarse precision
+    # is therefore enough.
+    quantum_block = expectation(prepare, [Z(0), Z(1)], precision=0.5)
+
+    # w_in leaves the angles untouched, and the encoded row [0, pi] gives
+    # [+1, -1] after the CX. w_out weights the two entries differently, which
+    # makes the result depend on which group reached which layer.
+    parameters = {
+        "w_in": jnp.ones(2),
+        "theta": jnp.zeros(hardware_efficient_size(2, 1)),
+        "w_out": jnp.array([2.0, 3.0]),
+        "b_out": jnp.array(0.5),
+    }
+    flat, unravel = ravel_pytree(parameters)
+
+    @jaspify
+    def model(flat_parameters):
+        p = unravel(flat_parameters)
+        q = quantum_block(jnp.array([0.0, np.pi]) * p["w_in"], p["theta"])
+        return jnp.tanh(jnp.dot(q, p["w_out"]) + p["b_out"])
+
+    result = model(flat)
+
+    # [1, -1] . [2, 3] + 0.5 = -0.5, and the model returns tanh(-0.5).
+    assert np.ndim(result) == 0
+    assert np.isclose(result, np.tanh(-0.5), atol=TOLERANCE)

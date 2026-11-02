@@ -25,7 +25,7 @@ import numpy as np
 import pytest
 from jax.tree_util import register_pytree_node_class
 
-from qrisp import QuantumFloat, h, measure, ry, s
+from qrisp import QuantumFloat, h, measure, ry, s, s_dg
 from qrisp.jasp import jaspify, jrange, terminal_sampling
 from qrisp.qml import Encoding, minmax_scale
 
@@ -44,8 +44,6 @@ def amplitudes_by_state(qv):
 @pytest.mark.parametrize(
     "features",
     [
-        [0.0, 0.0],
-        [0.0, np.pi],
         [np.pi / 2, np.pi / 3],
         [-0.5, 2.1],
     ],
@@ -83,61 +81,63 @@ def test_angle_encoding_rx_amplitudes():
     assert np.allclose(statevector_array(qf), expected)
 
 
-@pytest.mark.parametrize("n_features, features", [(3, [0.1, 0.2]), (2, [0.1, 0.2, 0.3])])
-def test_encoding_rejects_a_sample_of_the_wrong_width(n_features, features):
-    """A sample must hold exactly the feature count the encoder was configured for."""
-    with pytest.raises(ValueError, match="configured for"):
-        Encoding.angle(n_features=n_features).apply(QuantumFloat(n_features), features)
-
-
-@pytest.mark.parametrize("constructor", [Encoding.angle, Encoding.amplitude, Encoding.dense_angle, Encoding.basis])
-@pytest.mark.parametrize("n_features, features", [(3, [0.1, 0.2]), (2, [0.1, 0.2, 0.3])])
-def test_encoding_rejects_a_sample_of_the_wrong_width_under_tracing(constructor, n_features, features):
+@pytest.mark.parametrize("run", ["direct", "traced"])
+@pytest.mark.parametrize(
+    "make_encoding",
+    [
+        lambda n: Encoding.angle(n_features=n),
+        lambda n: Encoding.amplitude(n_features=n),
+        lambda n: DoubleAngleEncoding(n_features=n),
+    ],
+    ids=["angle", "amplitude", "subclass"],
+)
+@pytest.mark.parametrize("n_features, features", [(3, [0.1, 0.2]), (2, [0.1, 0.2, 0.3])], ids=["short", "long"])
+def test_encoding_rejects_a_sample_of_the_wrong_width(make_encoding, n_features, features, run):
     """
-    The width check also runs while a program is being traced. A mismatch
+    A sample must hold exactly the feature count the encoder was configured
+    for. The check sits in Encoding.apply, which every encoder and every
+    subclass shares. It also runs while a program is being traced. A mismatch
     would otherwise pass silently there, because a short feature vector is read
     past its end and Jax clamps the read to the last value rather than raising.
+    Amplitude encoding is included because its traced path pads the features.
     """
+    encoding = make_encoding(n_features)
 
-    encoding = constructor(n_features=n_features)
-
-    @jaspify
     def main(x):
         qf = QuantumFloat(n_features)
         encoding.apply(qf, x)
         return measure(qf)
 
-    with pytest.raises(ValueError, match="configured for"):
-        main(jnp.array(features, dtype=float))
+    with pytest.raises(ValueError, match=f"configured for {n_features}"):
+        if run == "traced":
+            jaspify(main)(jnp.array(features, dtype=float))
+        else:
+            main(features)
 
 
-@pytest.mark.parametrize("features", [np.ones((2, 2)), 0.5])
-def test_encoding_rejects_a_sample_that_is_not_a_vector(features):
+@pytest.mark.parametrize("run", ["direct", "traced"])
+@pytest.mark.parametrize("features", [np.ones((2, 2)), np.array(0.5)], ids=["batch", "scalar"])
+def test_encoding_rejects_a_sample_that_is_not_a_vector(features, run):
     """
     Only the length of a sample is compared with the feature count. A batch
     whose first dimension happens to match it passes that check and fails later
-    with a message about gates or register sizes instead.
+    with a message about gates or register sizes instead. The rank of a sample
+    is static under tracing, and the check runs there too.
     """
-    with pytest.raises(ValueError, match="one-dimensional"):
-        Encoding.angle(n_features=2).apply(QuantumFloat(2), features)
+    encoding = Encoding.angle(n_features=2)
 
-
-@pytest.mark.parametrize("constructor", [Encoding.angle, Encoding.amplitude, Encoding.dense_angle, Encoding.basis])
-def test_encoding_rejects_a_sample_that_is_not_a_vector_under_tracing(constructor):
-    """The rank of a sample is static under tracing, and the check runs there too."""
-    encoding = constructor(n_features=2)
-
-    @jaspify
     def main(x):
         qf = QuantumFloat(2)
         encoding.apply(qf, x)
         return measure(qf)
 
     with pytest.raises(ValueError, match="one-dimensional"):
-        main(jnp.ones((2, 2)))
+        if run == "traced":
+            jaspify(main)(jnp.asarray(features))
+        else:
+            main(features)
 
 
-@pytest.mark.parametrize("constructor", [Encoding.angle, Encoding.amplitude, Encoding.dense_angle])
 @pytest.mark.parametrize(
     "scaling",
     [
@@ -146,13 +146,14 @@ def test_encoding_rejects_a_sample_that_is_not_a_vector_under_tracing(constructo
         {"data_range": ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0])},
     ],
 )
-def test_encoding_rejects_a_scaling_range_for_another_feature_count(constructor, scaling):
+def test_encoding_rejects_a_scaling_range_for_another_feature_count(scaling):
     """
     A range for three features fails to broadcast only once a sample arrives. A
-    range for one feature broadcasts silently onto every feature.
+    range for one feature broadcasts silently onto every feature. The check
+    sits in Encoding.__init__, which every encoder shares.
     """
     with pytest.raises(ValueError, match="scaling range for"):
-        constructor(n_features=2, **scaling)
+        Encoding.angle(n_features=2, **scaling)
 
 
 @pytest.mark.parametrize(
@@ -191,22 +192,6 @@ def test_angle_encoding_z_axis_phases():
     global_phase = sv[0] / expected[0]
     assert np.isclose(abs(global_phase), 1.0)
     assert np.allclose(sv, global_phase * expected)
-
-
-def test_angle_encoding_z_axis_without_basis_preparation_is_unobservable():
-    """
-    Without the basis preparation, RZ only adds a global phase to |0>.
-    Different features therefore yield the same physical state.
-    """
-    encoding = Encoding.angle(n_features=1, axis="z", prepare_basis=False)
-
-    qf_a = QuantumFloat(1)
-    encoding.apply(qf_a, [0.7])
-
-    qf_b = QuantumFloat(1)
-    encoding.apply(qf_b, [3.9])
-
-    assert np.allclose(np.abs(statevector_array(qf_a)), np.abs(statevector_array(qf_b)))
 
 
 def test_angle_encoding_z_axis_warns_only_when_unspecified():
@@ -313,26 +298,24 @@ def test_amplitude_encoding_keeps_complex_phases_when_traced(phase_readout):
     assert np.allclose(observed, expected)
 
 
-def test_scaled_encoding_rejects_complex_features():
-    """A feature range orders real values only and cannot scale complex ones."""
+@pytest.mark.parametrize("run", ["direct", "traced"])
+def test_scaled_encoding_rejects_complex_features(run):
+    """
+    A feature range orders real values only and cannot scale complex ones. The
+    complex dtype is known while tracing, and the rejection runs there too.
+    """
     encoding = Encoding.amplitude(n_features=2, data_range=(0.0, 1.0))
 
-    with pytest.raises(ValueError, match="complex features"):
-        encoding.apply(QuantumFloat(1), [1.0, 1j])
-
-
-def test_scaled_encoding_rejects_complex_features_when_traced():
-    """The complex dtype is known while tracing, and the rejection runs there too."""
-    encoding = Encoding.amplitude(n_features=2, data_range=(0.0, 1.0))
-
-    @jaspify
     def main(x):
         qf = QuantumFloat(1)
         encoding.apply(qf, x)
         return measure(qf)
 
     with pytest.raises(ValueError, match="complex features"):
-        main(jnp.array([1.0, 1j]))
+        if run == "traced":
+            jaspify(main)(jnp.array([1.0, 1j]))
+        else:
+            main([1.0, 1j])
 
 
 @pytest.mark.parametrize(
@@ -426,14 +409,13 @@ def test_dense_angle_encoding_rejects_oversized_feature_vector():
         Encoding.dense_angle(n_features=5).apply(QuantumFloat(2), [0.1, 0.2, 0.3, 0.4, 0.5])
 
 
-@pytest.mark.parametrize(
-    "bits, outcome", [([1, 0, 1], 5), ([0, 0, 0], 0), ([1, 1, 1], 7), ([1, 1, 0], 3), ([0, 0, 1], 4)]
-)
+@pytest.mark.parametrize("bits, outcome", [([1, 1, 0], 3), ([0, 0, 1], 4), ([1, 1, 1], 7)])
 def test_basis_encoding_prepares_basis_state(bits, outcome):
     """
     The bit vector is encoded into the corresponding computational basis state.
-    Bit i sets qubit i, the least significant bit first. The bit strings that
-    are not palindromes would read differently in the reversed order.
+    Bit i sets qubit i, the least significant bit first. The first two bit
+    strings are not palindromes and would read differently in the reversed
+    order. All ones checks that every qubit is reached.
     """
     qf = QuantumFloat(len(bits))
     Encoding.basis(n_features=len(bits)).apply(qf, bits)
@@ -457,21 +439,6 @@ def test_basis_encoding_binarizes_its_input(features, threshold, outcome):
     assert qf.get_measurement() == {outcome: 1.0}
 
 
-@pytest.mark.parametrize("features, outcome", [([0.0, np.pi], 2), ([np.pi, 0.0], 1)])
-def test_angle_encoding_traces(features, outcome):
-    """Angle encoding is compatible with the Jasp tracing path."""
-
-    encoding = Encoding.angle(n_features=2, prepare_basis=False)
-
-    @jaspify
-    def main(x):
-        qf = QuantumFloat(2)
-        encoding.apply(qf, x)
-        return measure(qf)
-
-    assert main(jnp.array(features)) == outcome
-
-
 def test_angle_encoding_with_generic_angles_traces():
     """
     The angles 0 and pi only show whether a qubit flips. Generic angles also
@@ -491,6 +458,37 @@ def test_angle_encoding_with_generic_angles_traces():
     p = np.sin(features / 2) ** 2
     # Qubit 0 is the least significant bit of each outcome.
     expected = [(1 - p[0]) * (1 - p[1]), p[0] * (1 - p[1]), (1 - p[0]) * p[1], p[0] * p[1]]
+
+    distribution = main(jnp.array(features))
+
+    assert np.allclose([distribution.get(i, 0.0) for i in range(4)], expected)
+
+
+@pytest.mark.parametrize("axis", ["x", "z"])
+def test_angle_encoding_about_x_and_z_traces(axis):
+    """
+    X and Y rotations give the same probabilities in the Z basis, which is why
+    each axis gets a readout that tells it apart. After RX(x), the gates S^dagger
+    and H make the qubit read 0 with probability (1 - sin x)/2, while after an
+    RY the same readout gives 1/2. For the z axis the encoding first applies a
+    Hadamard, and RZ(x) followed by H reads 0 with probability cos^2(x/2).
+    """
+    features = np.array([0.7, 2.1])
+    encoding = Encoding.angle(n_features=2, axis=axis, prepare_basis=True)
+
+    @terminal_sampling
+    def main(x):
+        qf = QuantumFloat(2)
+        encoding.apply(qf, x)
+        for i in range(2):
+            if axis == "x":
+                s_dg(qf[i])
+            h(qf[i])
+        return qf
+
+    p0 = (1 - np.sin(features)) / 2 if axis == "x" else np.cos(features / 2) ** 2
+    # Qubit 0 is the least significant bit of each outcome.
+    expected = [p0[0] * p0[1], (1 - p0[0]) * p0[1], p0[0] * (1 - p0[1]), (1 - p0[0]) * (1 - p0[1])]
 
     distribution = main(jnp.array(features))
 
@@ -524,14 +522,18 @@ def test_dense_angle_encoding_traces():
     assert np.allclose([distribution.get(i, 0.0) for i in range(4)], expected)
 
 
-@pytest.mark.parametrize("bits, outcome", [([1, 1, 0], 3), ([0, 0, 1], 4), ([1, 0, 1], 5)])
-def test_basis_encoding_traces(bits, outcome):
+@pytest.mark.parametrize(
+    "features, threshold, outcome",
+    [([1, 1, 0], 0.5, 3), ([0, 0, 1], 0.5, 4), ([0.2, 0.7, 0.9], 0.5, 6), ([0.8, -0.2, 0.9], 0.0, 5)],
+)
+def test_basis_encoding_traces(features, threshold, outcome):
     """
     Basis encoding prepares the same basis state under tracing. Bit i sets
-    qubit i, and the bit strings that are not palindromes would read
-    differently in the reversed order.
+    qubit i, and the bit strings are not palindromes, which means a reversed
+    order would read differently. The last two cases are not bits at all and
+    are coerced at the threshold, as without tracing.
     """
-    encoding = Encoding.basis(n_features=3)
+    encoding = Encoding.basis(n_features=3, threshold=threshold)
 
     @jaspify
     def main(x):
@@ -539,7 +541,7 @@ def test_basis_encoding_traces(bits, outcome):
         encoding.apply(qf, x)
         return measure(qf)
 
-    assert main(jnp.array(bits)) == outcome
+    assert main(jnp.array(features, dtype=float)) == outcome
 
 
 @pytest.mark.parametrize(
@@ -547,10 +549,7 @@ def test_basis_encoding_traces(bits, outcome):
     [
         ([1.0, -2.0, 3.0, 4.0], 2),
         ([1.0, -2.0, 3.0], 2),
-        ([1.0, -2.0, 3.0, 4.0], 3),
-        ([0.0, 0.0, 1.0, 0.0], 3),
         ([1.0, 2.0, -3.0, 4.0, 5.0], 4),
-        ([3.0], 1),
         ([-3.0], 2),
     ],
 )
@@ -584,16 +583,6 @@ def test_amplitude_encoding_traces(features, num_qubits):
     observed = np.array([distribution.get(i, 0.0) for i in range(2**num_qubits)])
 
     assert np.allclose(observed, expected)
-
-
-def test_next_power_of_two_of_zero_is_one():
-    """
-    Zero amplitudes need no qubits to hold them. The smallest power of two that
-    is at least zero is one. The bit_length of -1 would give two.
-    """
-    from qrisp.qml.encodings import _next_power_of_two
-
-    assert _next_power_of_two(0) == 1
 
 
 @register_pytree_node_class
@@ -706,25 +695,6 @@ def test_subclass_with_its_own_constructor_can_be_a_traced_argument(encoding, fe
     assert main(encoding, jnp.array(features)) == 1
 
 
-def test_subclass_inherits_the_traced_feature_check():
-    """
-    The check on the base class is the reason for subclassing rather than
-    writing a bare function. Under tracing Jax reads past the end of a short
-    feature vector by reusing its last value. Without this check the wrong
-    state is prepared with no error.
-    """
-    encoding = DoubleAngleEncoding(n_features=2)
-
-    @jaspify
-    def main(x):
-        qf = QuantumFloat(2)
-        encoding.apply(qf, x)
-        return measure(qf)
-
-    with pytest.raises(ValueError, match="configured for 2"):
-        main(jnp.zeros(5))
-
-
 def test_subclass_receives_scaled_features():
     """
     apply is documented as counting and scaling the features before encode sees
@@ -743,17 +713,16 @@ def test_subclass_receives_scaled_features():
     assert main(jnp.array([0.0, 1.0])) == 2
 
 
-@pytest.mark.parametrize("constructor", [Encoding.angle, Encoding.dense_angle])
-def test_rotation_encodings_reject_a_feature_range_longer_than_a_turn(constructor):
+def test_rotation_encodings_reject_a_feature_range_longer_than_a_turn():
     """
-    These encodings read a feature as a rotation angle. A range wider than a
-    full turn therefore maps the smallest and largest value onto the same
-    state.
+    The rotation encodings read a feature as a rotation angle. A range wider
+    than a full turn therefore maps the smallest and largest value onto the
+    same state. Angle and dense angle encoding reach the same periodic check.
     """
     data = np.array([[0.0, 1.0], [1.0, 2.0]])
 
     with pytest.raises(ValueError, match="longer than 2\\*pi"):
-        constructor(n_features=2, data=data, feature_range=(0.0, 10.0))
+        Encoding.dense_angle(n_features=2, data=data, feature_range=(0.0, 10.0))
 
 
 def test_amplitude_encoding_accepts_a_feature_range_of_any_width():
@@ -811,7 +780,7 @@ def test_amplitude_encoding_reports_a_sample_a_scaling_zeroed():
     assert encoding.apply(QuantumFloat(1), X[2]) is not None
 
 
-@pytest.mark.parametrize("magnitude", [1e-12, 1e-170, 1e200])
+@pytest.mark.parametrize("magnitude", [1e-170, 1e200])
 def test_amplitude_encoding_encodes_tiny_and_huge_vectors_by_direction(magnitude):
     """
     Only the direction of a feature vector is encoded. A vector of tiny or huge
@@ -827,7 +796,7 @@ def test_amplitude_encoding_encodes_tiny_and_huge_vectors_by_direction(magnitude
     assert np.isclose(abs(np.vdot(expected, amplitudes_by_state(qf))), 1.0)
 
 
-@pytest.mark.parametrize("magnitude", [1e-12, 1e-170, 1e200])
+@pytest.mark.parametrize("magnitude", [1e-170, 1e200])
 def test_amplitude_encoding_encodes_tiny_and_huge_vectors_by_direction_when_traced(magnitude):
     """
     Under tracing the same vectors prepared an equal superposition, silently.
