@@ -22,7 +22,7 @@ import pytest
 from qrisp.grover import diffuser
 from sympy import symbols
 
-from qrisp import QuantumFloat, QuantumVariable, auto_uncompute, h, z
+from qrisp import QuantumCircuit, QuantumFloat, QuantumVariable, auto_uncompute, h, z
 from qrisp.circuit.standard_operations import (  # Barrier,
     CPGate,
     CXGate,
@@ -67,6 +67,7 @@ SINGLE_GATE_MAP = [
     (u3Gate, qml.U3, [np.pi / 2, np.pi / 4, np.pi / 8]),
     (IDGate, qml.Identity, []),
     (U1Gate, qml.RZ, [np.pi / 6]),
+    (SXGate, qml.SX, []),
 ]
 
 # These are gates that map to the same PennyLane gate but with different parameters
@@ -75,9 +76,8 @@ SINGLE_GATE_MAP_DIFF_PARAMS = [
         RGate,
         qml.Rot,
         [np.pi / 2, np.pi / 3],
-        [-np.pi / 3, -np.pi / 2, np.pi / 3],
-    ),  # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
-    (SXGate, qml.RX, [], [np.pi / 2]),  # SXGate() -> qml.RX(pi/2)
+        [np.pi / 2 - np.pi / 3, np.pi / 2, np.pi / 3 - np.pi / 2],
+    ),  # RGate(theta, phi) -> qml.Rot(pi/2 - phi, theta, phi - pi/2)
     (
         GPhaseGate,
         qml.GlobalPhase,
@@ -180,7 +180,7 @@ def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-5):
     [
         (
             RGate,
-            lambda t, p: qml.Rot(-p, -t, p, wires=0),
+            lambda t, p: qml.Rot(np.pi / 2 - p, t, p - np.pi / 2, wires=0),
             [(np.pi / 3, np.pi / 4), (1.2, 2.3), (0.0, 0.0)],
         ),
         (PGate, lambda p: qml.PhaseShift(p, wires=0), [(np.pi / 6,), (1.5,), (0.0,)]),
@@ -212,8 +212,8 @@ def check_probs_measurement_equivalence(qrisp_qv, qml_res, atol=1e-5):
         ),
         (
             SXGate,
-            lambda: qml.RX(np.pi / 2, wires=0),
-            [],
+            lambda: qml.SX(wires=0),
+            [()],
         ),
     ],
 )
@@ -264,6 +264,15 @@ class TestSingleGateConversion:
         check_qml_operations(qml_circ, expected_ops)
 
         check_statevector_equivalence(qv, qml_res)
+
+    @pytest.mark.parametrize("theta,phi", [(0.3, 0.5), (np.pi / 3, -1.2), (np.pi, 2.0)])
+    def test_inverse_r_gate_unitary(self, theta, phi):
+        """The inverse R gate converts to the conjugate transpose of R(theta, phi)."""
+        qc = QuantumCircuit(1)
+        qc.r(theta, phi, 0)
+        tape = qml.tape.make_qscript(qml_converter(qc.inverse()))()
+        expected = RGate(theta, phi).get_unitary().conj().T
+        assert np.allclose(qml.matrix(tape, wire_order=tape.wires), expected)
 
     def test_inner_wires(self):
         """Test conversion of a circuit with inner wires provided to the converter."""
@@ -360,6 +369,7 @@ class TestSingleGateConversion:
         qrisp_qs.append(RZGate(abstract_parameters[0]), qrisp_qv[0])
         qrisp_qs.append(PGate(1), qrisp_qv[0])
         qrisp_qs.append(RYGate(abstract_parameters[1] + abstract_parameters[2]), qrisp_qv[0])
+        qrisp_qs.append(RGate(abstract_parameters[2], abstract_parameters[0]), qrisp_qv[0])
 
         subs_dic = {
             abstract_parameters[0]: np.pi / 4,
@@ -375,6 +385,7 @@ class TestSingleGateConversion:
             qml.RZ(np.pi / 4, wires=qrisp_qv[0].identifier),
             qml.PhaseShift(1, wires=qrisp_qv[0].identifier),
             qml.RY(np.pi / 2 + np.pi / 3, wires=qrisp_qv[0].identifier),
+            qml.Rot(np.pi / 2 - np.pi / 4, np.pi / 3, np.pi / 4 - np.pi / 2, wires=qrisp_qv[0].identifier),
         ]
 
         check_qml_operations(qml_converted_circuit, expected_ops)
@@ -508,10 +519,10 @@ class TestSingleGateConversion:
 
         expected_ops = [
             qml.Hadamard(wires=qrisp_qv[0].identifier),
-            qml.RX(np.pi / 2, wires=qrisp_qv[0].identifier),
-            qml.RX(np.pi / 2, wires=qrisp_qv[1].identifier),
+            qml.SX(wires=qrisp_qv[0].identifier),
+            qml.SX(wires=qrisp_qv[1].identifier),
             qml.Hadamard(wires=qrisp_qv[1].identifier),
-            qml.RX(np.pi / 2, wires=qrisp_qv[1].identifier),
+            qml.SX(wires=qrisp_qv[1].identifier),
             qml.Hadamard(wires=qrisp_qv[0].identifier),
             qml.Hadamard(wires=qrisp_qv[1].identifier),
         ]
@@ -528,15 +539,17 @@ class TestSingleGateConversion:
         qrisp_qs.append(SXGate().inverse(), qrisp_qv[0])
         qrisp_qs.append(TGate().inverse(), qrisp_qv[0])
         qrisp_qs.append(RXGate(0.5).inverse(), qrisp_qv[0])
+        qrisp_qs.append(RGate(0.3, 0.5).inverse(), qrisp_qv[0])
 
         qml_converted_circuit = _create_qml_circuit(qrisp_qv)
         qml_res = qml_converted_circuit()
 
         expected_ops = [
             qml.adjoint(qml.S)(wires=qrisp_qv[0].identifier),
-            qml.adjoint(qml.RX(np.pi / 2, wires=qrisp_qv[0].identifier)),
+            qml.adjoint(qml.SX(wires=qrisp_qv[0].identifier)),
             qml.adjoint(qml.T)(wires=qrisp_qv[0].identifier),
             qml.RX(-0.5, wires=qrisp_qv[0].identifier),
+            qml.Rot(np.pi / 2 - 0.5, -0.3, 0.5 - np.pi / 2, wires=qrisp_qv[0].identifier),
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)
 
@@ -740,7 +753,7 @@ class TestControlledGateConversion:
 
         expected_ops = [
             qml.ctrl(
-                op=qml.adjoint(qml.RX(np.pi / 2, wires=qrisp_qv[2].identifier)),
+                op=qml.adjoint(qml.SX(wires=qrisp_qv[2].identifier)),
                 control=[
                     qrisp_qv[3].identifier,
                     qrisp_qv[0].identifier,
@@ -749,7 +762,7 @@ class TestControlledGateConversion:
                 control_values=[0, 1, 0],
             ),
             qml.ctrl(
-                op=qml.adjoint(qml.RX(np.pi / 2, wires=qrisp_qv[2].identifier)),
+                op=qml.adjoint(qml.SX(wires=qrisp_qv[2].identifier)),
                 control=[
                     qrisp_qv[3].identifier,
                     qrisp_qv[0].identifier,
@@ -828,7 +841,7 @@ def test_mixed_circuit():
         qml.Y(qrisp_qv[1].identifier),
         qml.Z(qrisp_qv[2].identifier),
         qml.H(qrisp_qv[3].identifier),
-        qml.RX(np.pi / 2, wires=qrisp_qv[4].identifier),
+        qml.SX(wires=qrisp_qv[4].identifier),
         qml.S(qrisp_qv[5].identifier),
         qml.RX(0.5, wires=qrisp_qv[1].identifier),
         qml.RY(0.5, wires=qrisp_qv[2].identifier),

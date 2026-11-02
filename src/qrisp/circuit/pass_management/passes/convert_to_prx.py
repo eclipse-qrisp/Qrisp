@@ -57,6 +57,12 @@ class PRXGate(U3Gate):
         """
         return PRXGate(-self.alpha, self.beta)
 
+    def bind_parameters(self, subs_dic: dict) -> PRXGate:
+        """Return the PRX gate with the abstract parameters in ``subs_dic`` bound to their values."""
+        # U3Gate.bind_parameters would return a plain U3Gate named "prx"
+        bound = U3Gate.bind_parameters(self, subs_dic)
+        return PRXGate(bound.theta, bound.phi + np.pi / 2)
+
 
 def _get_phase_diff(U_a: np.ndarray, U_b: np.ndarray) -> float:
     r"""Return the global phase :math:`\gamma` such that :math:`U_a = e^{i\gamma} \, U_b`.
