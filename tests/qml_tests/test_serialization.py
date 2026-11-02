@@ -26,7 +26,7 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from qrisp import BasisPreparationWarning, QuantumFloat, measure
+from qrisp import QuantumFloat, measure
 from qrisp.jasp import jaspify
 from qrisp.operators import X, Z
 from qrisp.qml import Ansatz, Encoding, load_model, save_model
@@ -136,7 +136,7 @@ def test_all_parts_come_back_under_their_names(tmp_path):
 
 def test_loaded_encoding_scales_raw_features_under_tracing(tmp_path):
     # The upper end of the saved data range must land on pi, which flips both
-    # qubits, so the traced measurement is deterministic.
+    # qubits and makes the traced measurement deterministic.
     original = Encoding.angle(n_features=2, data_range=([3.0, 1.0], [6.9, 2.5]))
     encoding = round_trip(tmp_path, encoding=original)["encoding"]
 
@@ -152,7 +152,7 @@ def test_loaded_encoding_scales_raw_features_under_tracing(tmp_path):
 def test_loaded_z_axis_encoding_still_warns(tmp_path):
     encoding = round_trip(tmp_path, encoding=Encoding.angle(n_features=2, axis="z"))["encoding"]
 
-    with pytest.warns(BasisPreparationWarning):
+    with pytest.warns(UserWarning, match="applies a Hadamard gate"):
         encoding.apply(QuantumFloat(2), [0.3, 0.4])
 
 
@@ -160,7 +160,7 @@ def test_loaded_z_axis_encoding_without_basis_preparation_stays_silent(tmp_path)
     encoding = round_trip(tmp_path, encoding=Encoding.angle(n_features=2, axis="z", prepare_basis=False))["encoding"]
 
     with warnings.catch_warnings():
-        warnings.simplefilter("error", BasisPreparationWarning)
+        warnings.filterwarnings("error", message=".*applies a Hadamard gate")
         encoding.apply(QuantumFloat(2), [0.3, 0.4])
 
 
@@ -195,17 +195,17 @@ def test_custom_encoding_defined_in_a_script_loads_in_a_new_process(tmp_path):
     subprocess.run([sys.executable, "-c", save_script], check=True, capture_output=True)
     result = subprocess.run([sys.executable, "-c", load_script], check=True, capture_output=True, text=True)
 
-    # rx(pi) on qubit 0 alone; statevector("array") puts qubit 0 in the most
-    # significant bit, so the populated index is 2.
+    # rx(pi) acts on qubit 0 alone, and statevector("array") puts qubit 0 in
+    # the most significant bit, which makes the populated index 2.
     assert result.stdout.split()[-2:] == ["FlipEncoding", "2"]
 
 
 def test_registered_custom_classes_load_as_pytrees_in_a_new_process(tmp_path):
     """
     A class defined in a script is rebuilt from its code when loaded in another
-    process, and the decorator that registered it as a PyTree does not run
-    again. Unregistered, the loaded object is a single opaque leaf and cannot
-    be passed into a traced function. Loading the file a second time finds the
+    process. The decorator that registered it as a PyTree does not run again.
+    Unregistered, the loaded object is a single opaque leaf and cannot be
+    passed into a traced function. Loading the file a second time finds the
     class already registered.
     """
     filename = tmp_path / "custom.pkl"
@@ -267,7 +267,7 @@ def test_registered_custom_classes_load_as_pytrees_in_a_new_process(tmp_path):
     subprocess.run([sys.executable, "-c", save_script], check=True, capture_output=True)
     result = subprocess.run([sys.executable, "-c", load_script], check=True, capture_output=True, text=True)
 
-    # The simulator's progress bar shares stdout, so only the marked lines are read.
+    # The simulator's progress bar shares stdout, and only the marked lines are read.
     lines = [line.split()[1:] for line in result.stdout.splitlines() if line.startswith("RESULT")]
 
     # ry(2 * pi/2) flips qubit 0 and ry(pi) flips qubit 1, giving |3>.

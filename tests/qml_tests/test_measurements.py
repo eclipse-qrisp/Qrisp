@@ -68,7 +68,7 @@ def test_expectation_of_a_sequence_keeps_the_entries_separate():
 
 def test_expectation_follows_the_order_of_the_observables():
     """
-    The entries are aligned with the observables as given, so reversing the
+    The entries are aligned with the observables as given, and reversing the
     sequence reverses the result.
     """
     x = [np.pi, 0.0]
@@ -82,7 +82,7 @@ def test_expectation_follows_the_order_of_the_observables():
 def test_expectation_handles_non_commuting_observables():
     """
     Observables that cannot be measured in one circuit are estimated
-    separately, so they may be combined freely.
+    separately, which means they may be combined freely.
     """
     result = expectation(state_prep, [Z(0), X(0)], precision=PRECISION)([0.0, 0.0])
 
@@ -99,16 +99,16 @@ def test_expectation_accepts_a_tuple_of_observables():
 @pytest.mark.parametrize("container", [list, tuple, np.array, iter], ids=["list", "tuple", "ndarray", "iterator"])
 def test_expectation_accepts_any_sequence_of_observables(container):
     """
-    Observables were identified by isinstance against list and tuple, so an
-    ndarray or a generator fell through to the single operator branch and
-    failed with an AttributeError naming a numpy internal.
+    Observables were identified by isinstance against list and tuple, which
+    let an ndarray or a generator fall through to the single operator branch
+    and fail with an AttributeError naming a numpy internal.
     """
     observables = container([Z(0), Z(1)])
 
     def state_prep():
         return QuantumFloat(2)
 
-    # The register stays in |00>, so both qubits are measured as +1.
+    # The register stays in |00>, and both qubits are measured as +1.
     assert np.allclose(expectation(state_prep, observables)(), [1.0, 1.0])
 
 
@@ -160,7 +160,8 @@ def test_parameter_shift_accepts_an_integer_argument():
     """
     An integer argument shifted in place keeps its dtype, which truncates the
     shift of pi/2 to 1. At x + w = 2 that gives -sin(2) sin(1), about -0.765,
-    instead of -sin(2), about -0.909, a gap the tighter precision resolves.
+    instead of -sin(2), about -0.909, a gap that the tighter precision
+    resolves.
     """
     _, (dx, dw) = parameter_shift(rotated_qubit, Z(0), precision=0.005, argnums=(0, 1))(np.array([2]), np.array([0]))
 
@@ -179,8 +180,8 @@ def entangled_pair(x):
 def test_parameter_shift_puts_entries_in_rows_and_observables_in_columns(run):
     """
     After the CX, <Z0> = cos x0 and <Z1> = cos x0 cos x1. Every entry of the
-    derivative array differs from its transposed partner, so a transposed
-    result fails, on the traced path as well as without tracing.
+    derivative array differs from its transposed partner. A transposed result
+    therefore fails, on the traced path as well as without tracing.
     """
     x = np.array([0.6, 1.2])
 
@@ -205,8 +206,8 @@ def separate_qubits(x, w):
 @pytest.mark.parametrize("argnums, expected", [(0, 0.0), (1, -np.sin(0.8))])
 def test_parameter_shift_differentiates_the_argument_at_argnums(argnums, expected):
     """
-    The observable depends on w alone, so its derivative is zero in x and
-    -sin w in w. Differentiating the wrong argument swaps the two. A single
+    The observable depends on w alone. Its derivative is therefore zero in x
+    and -sin w in w. Differentiating the wrong argument swaps the two. A single
     position returns one array rather than a tuple of them.
     """
     _, derivatives = parameter_shift(separate_qubits, Z(1), precision=PRECISION, argnums=argnums)(
@@ -221,7 +222,7 @@ def test_parameter_shift_differentiates_the_argument_at_argnums(argnums, expecte
 def test_parameter_shift_rejects_an_argument_that_is_not_one_dimensional(run):
     """
     A matrix of angles has no single entry to shift per row of the result.
-    The shape is static under tracing, so the check also runs there.
+    The shape is static under tracing, and the check also runs there.
     """
 
     def state_prep(x):

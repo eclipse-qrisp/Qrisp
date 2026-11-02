@@ -53,7 +53,7 @@ def test_minmax_scale_applies_the_training_range_to_the_test_set():
 def test_minmax_scale_clips_test_features_outside_the_training_range():
     """
     A test feature beyond the training range would leave the interval the
-    encodings expect, so it is clipped to the boundary.
+    encodings expect. It is therefore clipped to the boundary.
     """
     X_train = np.array([[0.0], [1.0]])
     X_test = np.array([[-5.0], [7.0]])
@@ -96,7 +96,7 @@ def test_minmax_scale_honours_the_requested_range(feature_range):
 )
 def test_minmax_scale_rejects_an_unusable_range(feature_range, periodic, message):
     """
-    A range needs a positive, finite width to scale onto, and one longer than
+    A range needs a positive, finite width to scale onto. A range longer than
     2*pi is not injective when the features are read as rotation angles.
     """
     with pytest.raises(ValueError, match=message):
@@ -106,8 +106,8 @@ def test_minmax_scale_rejects_an_unusable_range(feature_range, periodic, message
 def test_minmax_scale_matches_the_scaling_of_amplitude_encoding():
     """
     Without the period limit, minmax_scale reproduces the default scaling of
-    amplitude encoding, so scaling in advance and encoding without a scaling
-    prepares the same state as letting the encoder scale.
+    amplitude encoding. Scaling in advance and encoding without a scaling
+    therefore prepares the same state as letting the encoder scale.
     """
     rng = np.random.default_rng(7)
     X = rng.normal(size=(5, 3))
@@ -131,8 +131,8 @@ def test_minmax_scale_rejects_a_test_set_with_a_different_feature_count():
 
 def test_normalize_scales_each_sample_separately():
     """
-    Each row is divided by its own norm, not by a norm over the whole array,
-    since each sample becomes its own quantum state. The 3-4-5 triangle gives
+    Each sample becomes its own quantum state. Each row is therefore divided by
+    its own norm, not by a norm over the whole array. The 3-4-5 triangle gives
     hand-derived values.
     """
     normalized = normalize(np.array([[3.0, 4.0], [1.0, 1.0]]))
@@ -148,10 +148,10 @@ def test_normalize_scales_each_sample_separately():
 )
 def test_normalize_preserves_the_encoded_state(features):
     """
-    Amplitude encoding normalizes internally, so encoding the normalized
-    features prepares the same state as encoding the raw ones. This is the
+    Amplitude encoding normalizes internally. Encoding the normalized features
+    therefore prepares the same state as encoding the raw ones. This is the
     property that makes the magnitude unrecoverable from the circuit. Complex
-    features keep their phases on both paths; a float conversion in normalize
+    features keep their phases on both paths. A float conversion in normalize
     dropped them.
     """
     encoding = Encoding.amplitude(n_features=4)
@@ -189,7 +189,7 @@ def test_real_valued_preprocessing_rejects_complex_features(operation):
 
 
 def test_normalize_rejects_a_zero_norm_sample():
-    """A sample of zero norm has no direction, so no state to prepare."""
+    """A sample of zero norm has no direction and no state to prepare."""
     with pytest.raises(ValueError, match="zero norm"):
         normalize(np.array([[1.0, 2.0], [0.0, 0.0]]))
 
@@ -199,7 +199,7 @@ def test_normalize_rejects_a_zero_norm_sample():
     [
         ([0.8, -0.2], 0.0, [1, 0]),
         ([0.2, 0.7], 0.5, [0, 1]),
-        # The threshold itself is not exceeded, so it maps to 0.
+        # The threshold itself is not exceeded, and it maps to 0.
         ([0.5, 0.5001], 0.5, [0, 1]),
     ],
 )
@@ -210,7 +210,7 @@ def test_binarize_splits_at_the_threshold(features, threshold, expected):
 
 def test_binarize_output_is_accepted_by_basis_encoding():
     """
-    Basis encoding is defined for the values 0 and 1, so binarizing beforehand
+    Basis encoding is defined for the values 0 and 1. Binarizing beforehand
     makes explicit in the data what the encoding would otherwise coerce.
     """
     bits = binarize(np.array([0.8, -0.2, 1.5]))
@@ -225,9 +225,9 @@ def test_binarize_output_is_accepted_by_basis_encoding():
 def test_minmax_scale_rejects_a_single_sample():
     """
     normalize and binarize both document that a single sample shaped
-    (n_features,) is accepted. minmax_scale derives its range along axis 0, so
-    a 1-D input is read as N samples of one feature instead — the opposite
-    convention, silently producing plausible-looking output.
+    (n_features,) is accepted. minmax_scale derives its range along axis 0,
+    which means a 1-D input is read as N samples of one feature instead, the
+    opposite convention, silently producing plausible-looking output.
     """
     with pytest.raises(ValueError, match="two-dimensional"):
         minmax_scale([1.0, 2.0, 3.0])
@@ -236,8 +236,8 @@ def test_minmax_scale_rejects_a_single_sample():
 def test_normalize_handles_a_vector_whose_norm_underflows():
     """
     A vector of tiny components has a well defined direction, but its norm
-    underflows to exactly zero in double precision. Rescaling before taking the
-    norm recovers the direction instead of reporting a zero-norm sample.
+    underflows to exactly zero in double precision. Rescaling before
+    taking the norm recovers the direction instead of reporting a zero-norm sample.
     """
     normalized = normalize(np.array([1e-300, 1e-300]))
 
@@ -255,8 +255,9 @@ def test_normalize_handles_a_vector_whose_norm_underflows():
 def test_preprocessing_rejects_non_finite_values(function, X):
     """
     A NaN propagates through the scalers into every encoded angle, and binarize
-    maps it to 0 because a NaN comparison is False. Neither is recoverable
-    downstream, so the input is rejected where it can still be diagnosed.
+    maps it to 0 because a NaN comparison is False. Neither problem is
+    recoverable downstream, which is why the input is rejected where it can
+    still be diagnosed.
     """
     with pytest.raises(ValueError, match="finite"):
         function(X)

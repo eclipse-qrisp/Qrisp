@@ -56,8 +56,8 @@ def test_hardware_efficient_size(num_qubits, layers, rotations, expected):
 
 def test_hardware_efficient_accepts_flat_and_shaped_parameters():
     """
-    Parameters may be passed as a flat vector, as required by the optimizers,
-    or shaped as (layers + 1, len(rotations), n).
+    Parameters may be passed as a flat vector, as the optimizers require, or
+    shaped as (layers + 1, len(rotations), n).
     """
     w = np.linspace(0.1, 0.9, 9)
     ansatz = Ansatz.hardware_efficient(num_qubits=3, layers=2)
@@ -87,8 +87,8 @@ def test_hardware_efficient_zero_parameters_is_identity():
 
 def test_hardware_efficient_single_qubit_matches_rotation_product():
     """
-    On one qubit there is nothing to entangle, so the layers reduce to a single
-    RY rotation by the sum of the parameters.
+    On one qubit there is nothing to entangle. The layers therefore reduce to a
+    single RY rotation by the sum of the parameters.
     """
     w = np.array([0.3, 0.7, 1.1])
 
@@ -120,7 +120,7 @@ def test_hardware_efficient_entangler_creates_entanglement():
 
 
 def test_hardware_efficient_entanglers_differ():
-    """Each entangler produces a different state, so both are really applied."""
+    """Each entangler produces a different state, which shows both are really applied."""
     w = np.linspace(0.1, 0.8, 8)
 
     states = []
@@ -170,7 +170,7 @@ def test_hardware_efficient_traces():
 
 def test_real_amplitudes_keeps_amplitudes_real():
     """
-    RY and CX have real matrix representations, so the prepared state stays in
+    RY and CX have real matrix representations, and the prepared state stays in
     the real subspace. This is the property the ansatz is named for.
     """
     w = np.linspace(0.1, 2.9, real_amplitudes_size(3, layers=2))
@@ -184,8 +184,8 @@ def test_real_amplitudes_keeps_amplitudes_real():
 @pytest.mark.parametrize("num_qubits, extra", [(2, 0), (3, 1), (4, 1)])
 def test_real_amplitudes_ring_closes_the_chain(num_qubits, extra):
     """
-    The ring adds one entangler over the linear chain, except on two qubits
-    where the closing pair is the one the chain already covers.
+    The ring adds one entangler over the linear chain, except on two qubits,
+    where the chain already covers the closing pair.
     """
     w = np.zeros(real_amplitudes_size(num_qubits))
 
@@ -213,9 +213,10 @@ def test_real_amplitudes_rejects_the_wrong_parameter_count():
 @pytest.mark.parametrize("constructor", [Ansatz.real_amplitudes, Ansatz.hardware_efficient])
 def test_ansatzes_reject_the_wrong_parameter_count_under_tracing(constructor):
     """
-    The parameter count check also runs while a program is being traced, which
-    is where a mismatch would otherwise pass silently: too few parameters are
-    read past the end of the array and Jax clamps the read rather than raising.
+    The parameter count check also runs while a program is being traced. A
+    mismatch would otherwise pass silently there, because too few parameters
+    are read past the end of the array and Jax clamps the read rather than
+    raising.
     """
 
     ansatz = constructor(num_qubits=3, layers=2)
@@ -233,9 +234,9 @@ def test_ansatzes_reject_the_wrong_parameter_count_under_tracing(constructor):
 @pytest.mark.parametrize("entanglement, expected", [("linear", 7), ("ring", 6)])
 def test_real_amplitudes_propagates_a_flip_along_the_entanglers(entanglement, expected):
     """
-    A flip on the first qubit travels along the CX chain, and the ring's closing
-    entangler carries it back onto the first qubit. Run traced, so this covers
-    the Jasp path as well.
+    A flip on the first qubit travels along the CX chain, and the closing
+    entangler of the ring carries it back onto the first qubit. Since the test
+    runs traced, it covers the Jasp path as well.
     """
 
     ansatz = Ansatz.real_amplitudes(num_qubits=3, entanglement=entanglement)
@@ -255,8 +256,8 @@ def test_real_amplitudes_propagates_a_flip_along_the_entanglers(entanglement, ex
 
 def test_data_reuploading_encodes_once_per_layer():
     """
-    The features are re-encoded in every layer, so three layers of RY(x/3)
-    accumulate to a single RY(x) on an ansatz that applies no rotation.
+    The features are re-encoded in every layer. On an ansatz that applies no
+    rotation, three layers of RY(x/3) therefore add up to a single RY(x).
     """
     reuploading = Ansatz.data_reuploading(
         num_qubits=1,
@@ -274,7 +275,7 @@ def test_data_reuploading_encodes_once_per_layer():
 
 def test_data_reuploading_uses_a_distinct_parameter_block_per_layer():
     """
-    Each layer consumes its own block of w, so permuting the blocks changes the
+    Each layer consumes its own block of w, and permuting the blocks changes the
     circuit. A shared block would make the two states identical.
     """
     per_layer = real_amplitudes_size(2)
@@ -313,8 +314,8 @@ def test_data_reuploading_rejects_parameter_count_mismatch():
 
 def test_data_reuploading_rejects_parameter_count_mismatch_under_tracing():
     """
-    The split over layers is checked while tracing as well, so a mismatch cannot
-    reach the gates through the traced path.
+    The split over layers is checked while tracing as well. A mismatch therefore
+    cannot reach the gates through the traced path.
     """
 
     reuploading = Ansatz.data_reuploading(
@@ -356,7 +357,7 @@ def test_data_reuploading_traces(ansatz):
         reuploading.apply(qf, w, x)
         return measure(qf)
 
-    # On a single qubit there is nothing to entangle, so with vanishing
+    # On a single qubit there is nothing to entangle. With vanishing
     # parameters the two uploads of RY(pi/2) compose to RY(pi) and flip it.
     assert main(jnp.array([jnp.pi / 2]), jnp.zeros(reuploading.num_parameters)) == 1
 
@@ -365,7 +366,7 @@ def test_data_reuploading_traces(ansatz):
 def test_ansatzes_accept_nested_list_parameters(constructor):
     """
     The docstrings promise that a shaped parameter array is read in the same
-    order as the equivalent flat vector. A nested list is such a shape, so it
+    order as the equivalent flat vector. A nested list is such a shape and
     has to be accepted like the array it describes.
     """
     flat = [0.3, 0.7, 1.1, 1.5, 1.9, 2.3]
@@ -385,9 +386,9 @@ def test_ansatzes_accept_nested_list_parameters(constructor):
 def test_ansatzes_reject_a_layer_count_that_is_not_a_non_negative_integer(constructor, layers, match):
     """
     A negative layer count leaves the rotation loop empty, applying no gates at
-    all and silently returning an untouched QuantumVariable. The parameter count
-    check does not catch it, because a negative count expects no parameters and
-    an empty vector satisfies that. A fractional count yields a fractional
+    all and silently returning an untouched QuantumVariable. The parameter
+    count check does not catch it, because a negative count expects no
+    parameters and an empty vector satisfies that. A fractional count yields a fractional
     parameter count, which construction truncates.
     """
     with pytest.raises(ValueError, match=match):
@@ -396,10 +397,10 @@ def test_ansatzes_reject_a_layer_count_that_is_not_a_non_negative_integer(constr
 
 def test_data_reuploading_rejects_an_encoding_defined_only_from_zero():
     """
-    Amplitude encoding prepares a state from |0>, which the register holds only
-    before the first layer. Applied to the state later layers leave, its result
-    is not the encoded vector, and differs between the traced and the untraced
-    path.
+    Amplitude encoding prepares a state from |0>, which the register holds
+    only before the first layer. Applied to the state that later layers leave,
+    its result is not the encoded vector and differs between the traced and the
+    untraced path.
     """
     with pytest.raises(ValueError, match="prepares a state from"):
         Ansatz.data_reuploading(
@@ -411,8 +412,8 @@ def test_data_reuploading_rejects_an_encoding_defined_only_from_zero():
 
 def test_data_reuploading_rejects_an_inner_ansatz_of_another_size():
     """
-    The inner ansatz acts on the register the reuploading ansatz is applied to,
-    so an inner ansatz configured for another size cannot fit it.
+    The inner ansatz acts on the register the reuploading ansatz is applied to.
+    An inner ansatz configured for another size therefore cannot fit it.
     """
     with pytest.raises(ValueError, match="same size"):
         Ansatz.data_reuploading(
@@ -439,7 +440,7 @@ class RotationAnsatz(Ansatz):
 
 def test_subclass_derives_its_parameter_count():
     """
-    parameter_count exists so that a subclass author does not restate a number
+    parameter_count exists to spare a subclass author restating a number
     the ansatz can work out. Were num_parameters left to the caller it could
     silently disagree with the circuit apply_gates actually emits.
     """
@@ -450,7 +451,8 @@ def test_subclass_inherits_the_traced_parameter_check():
     """
     The check on the base class is the reason for subclassing rather than
     writing a bare function. Under tracing a short vector is read past its end
-    by reusing its last value, so without this the wrong circuit runs silently.
+    by reusing its last value. Without this check the wrong circuit runs
+    silently.
     """
     ansatz = RotationAnsatz(num_qubits=2)
 
@@ -466,8 +468,8 @@ def test_subclass_inherits_the_traced_parameter_check():
 
 def test_subclass_emits_its_gates_under_tracing():
     """
-    apply_gates is documented as the hook a subclass implements, so the gates it
-    emits have to survive tracing. RY(pi) on both qubits gives |11>.
+    apply_gates is documented as the hook a subclass implements. The gates it
+    emits therefore have to survive tracing. RY(pi) on both qubits gives |11>.
     """
     ansatz = RotationAnsatz(num_qubits=2)
 
@@ -492,8 +494,8 @@ def test_ansatzes_can_be_passed_as_traced_arguments(ansatz):
     """
     An unregistered object cannot cross into a traced function as an argument at
     all, only as a closure. Registering the PyTree keeps num_qubits and
-    num_parameters plain integers, so the trace time check still has something
-    to compare against.
+    num_parameters plain integers. The trace time check then still has
+    something to compare against.
     """
 
     @jaspify
@@ -549,8 +551,8 @@ class FactorFirstAnsatz(Ansatz):
 def test_subclass_with_its_own_constructor_can_be_a_traced_argument(ansatz, parameters):
     """
     Jax rebuilds an argument from its flattened form. Rebuilding through the
-    constructor passed it the base class arguments, which a subclass with a
-    signature of its own rejects or misreads.
+    constructor passed it the base class arguments. A subclass with a signature
+    of its own rejects or misreads them.
     """
 
     @jaspify
@@ -565,8 +567,8 @@ def test_subclass_with_its_own_constructor_can_be_a_traced_argument(ansatz, para
 def test_ansatz_without_hooks_reports_what_is_missing():
     """
     A subclass missing both parameter_count and num_parameters cannot know what
-    to check against. Failing at construction names the hook, where falling
-    through to a default count would accept any parameter vector.
+    to check against. A default count would accept any parameter vector.
+    Failing at construction names the missing hook instead.
     """
 
     class Incomplete(Ansatz):
@@ -580,8 +582,8 @@ def test_ansatz_without_hooks_reports_what_is_missing():
 def test_hardware_efficient_rejects_repeated_rotation_axes(rotations):
     """
     Two consecutive rotations about the same axis compose into a single
-    rotation with the summed angle, so the repetition inflates the parameter
-    count with parameters the circuit cannot use independently.
+    rotation with the summed angle. The repetition therefore inflates the
+    parameter count with parameters the circuit cannot use independently.
     """
     with pytest.raises(ValueError, match="Repeated rotation axis"):
         Ansatz.hardware_efficient(num_qubits=3, rotations=rotations)
@@ -593,10 +595,10 @@ def test_hardware_efficient_rejects_repeated_rotation_axes(rotations):
 def test_hardware_efficient_applies_an_axis_separated_by_another():
     """
     A rotation about another axis in between keeps two rotations about the same
-    axis from composing, so Z-Y-Z is a full single qubit rotation with three
-    independent angles. The register starts in |+>, where the first Z rotation
-    is observable, and each angle differs, so a dropped or reordered gate
-    changes the state.
+    axis from composing, which makes Z-Y-Z a full single qubit rotation with
+    three independent angles. The register starts in |+>, where the first Z
+    rotation is observable, and each angle differs, which means a dropped or
+    reordered gate changes the state.
     """
     a, b, c = 0.3, 1.1, 2.0
 
@@ -619,8 +621,8 @@ def test_data_reuploading_rejects_a_reuploading_inner_ansatz():
     """
     The inner ansatz is applied as apply(qv, w_layer), without the features a
     reuploading ansatz needs. Nesting one inside another would otherwise build
-    a configuration reporting a parameter count it can never be applied with,
-    failing with a TypeError at the first evaluation rather than here.
+    a configuration with a parameter count it can never be applied with. It
+    would fail with a TypeError at the first evaluation rather than here.
     """
     inner = Ansatz.data_reuploading(
         num_qubits=2,
@@ -666,9 +668,9 @@ def test_data_reuploading_exposes_the_scaling_of_its_encoding():
 def test_data_reuploading_scaling_is_an_input_of_a_compiled_function():
     """
     Two ansatzes differing only in the scaling of their encoding share one
-    compiled function and each gets its own scaling. As auxiliary data the
-    scaling was compiled in, so each ansatz retraced, and a scaling changed in
-    place after compilation was not seen.
+    compiled function, and each gets its own scaling. As auxiliary data the
+    scaling was compiled in, which made each ansatz retrace and hid a scaling
+    changed in place after compilation.
     """
     traces = []
 

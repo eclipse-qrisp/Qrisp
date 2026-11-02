@@ -20,7 +20,3 @@
 
 class QrispDeprecationWarning(UserWarning):
     """Warning for deprecated features in Qrisp."""
-
-
-class BasisPreparationWarning(UserWarning):
-    """Warning raised when an encoding inserts a basis change automatically."""

@@ -25,7 +25,7 @@ import numpy as np
 import pytest
 from jax.tree_util import register_pytree_node_class
 
-from qrisp import BasisPreparationWarning, QuantumFloat, h, measure, ry, s
+from qrisp import QuantumFloat, h, measure, ry, s
 from qrisp.jasp import jaspify, jrange, terminal_sampling
 from qrisp.qml import Encoding, minmax_scale
 
@@ -35,7 +35,7 @@ def statevector_array(qv):
 
 
 def amplitudes_by_state(qv):
-    """The statevector reindexed so that entry i is the amplitude of |i>."""
+    """The statevector reindexed for entry i to be the amplitude of |i>."""
     amplitudes = statevector_array(qv)
     num_qubits = len(qv)
     return amplitudes.reshape((2,) * num_qubits).transpose().reshape(-1)
@@ -58,7 +58,7 @@ def test_angle_encoding_ry_amplitudes(features):
     qf = QuantumFloat(len(features))
     Encoding.angle(n_features=len(features)).apply(qf, features)
 
-    # statevector("array") is indexed in reverse bit order, so there the first
+    # statevector("array") is indexed in reverse bit order. There the first
     # feature is the most significant bit and the Kronecker product follows the
     # feature order. In the |i> labelling it is the other way round, which is
     # what amplitudes_by_state corrects for.
@@ -94,9 +94,9 @@ def test_encoding_rejects_a_sample_of_the_wrong_width(n_features, features):
 @pytest.mark.parametrize("n_features, features", [(3, [0.1, 0.2]), (2, [0.1, 0.2, 0.3])])
 def test_encoding_rejects_a_sample_of_the_wrong_width_under_tracing(constructor, n_features, features):
     """
-    The width check also runs while a program is being traced, which is where a
-    mismatch would otherwise pass silently: a short feature vector is read past
-    its end and Jax clamps the read to the last value rather than raising.
+    The width check also runs while a program is being traced. A mismatch
+    would otherwise pass silently there, because a short feature vector is read
+    past its end and Jax clamps the read to the last value rather than raising.
     """
 
     encoding = constructor(n_features=n_features)
@@ -114,7 +114,7 @@ def test_encoding_rejects_a_sample_of_the_wrong_width_under_tracing(constructor,
 @pytest.mark.parametrize("features", [np.ones((2, 2)), 0.5])
 def test_encoding_rejects_a_sample_that_is_not_a_vector(features):
     """
-    Only the length of a sample is compared with the feature count, so a batch
+    Only the length of a sample is compared with the feature count. A batch
     whose first dimension happens to match it passes that check and fails later
     with a message about gates or register sizes instead.
     """
@@ -124,7 +124,7 @@ def test_encoding_rejects_a_sample_that_is_not_a_vector(features):
 
 @pytest.mark.parametrize("constructor", [Encoding.angle, Encoding.amplitude, Encoding.dense_angle, Encoding.basis])
 def test_encoding_rejects_a_sample_that_is_not_a_vector_under_tracing(constructor):
-    """The rank of a sample is static under tracing, so the check runs there too."""
+    """The rank of a sample is static under tracing, and the check runs there too."""
     encoding = constructor(n_features=2)
 
     @jaspify
@@ -148,8 +148,8 @@ def test_encoding_rejects_a_sample_that_is_not_a_vector_under_tracing(constructo
 )
 def test_encoding_rejects_a_scaling_range_for_another_feature_count(constructor, scaling):
     """
-    A range for three features fails to broadcast only once a sample arrives,
-    and a range for one feature broadcasts silently onto every feature.
+    A range for three features fails to broadcast only once a sample arrives. A
+    range for one feature broadcasts silently onto every feature.
     """
     with pytest.raises(ValueError, match="scaling range for"):
         constructor(n_features=2, **scaling)
@@ -167,7 +167,7 @@ def test_encoding_rejects_a_scaling_range_for_another_feature_count(constructor,
 def test_encoding_rejects_a_range_that_is_not_finite(constructor, scaling):
     """
     An infinite data range scales its feature onto the lower bound for every
-    sample, and a NaN bound was reported as an empty range.
+    sample. A NaN bound was reported as an empty range.
     """
     with pytest.raises(ValueError, match="not finite"):
         constructor(n_features=2, **scaling)
@@ -195,8 +195,8 @@ def test_angle_encoding_z_axis_phases():
 
 def test_angle_encoding_z_axis_without_basis_preparation_is_unobservable():
     """
-    Without the basis preparation, RZ only adds a global phase to |0>, so
-    different features yield the same physical state.
+    Without the basis preparation, RZ only adds a global phase to |0>.
+    Different features therefore yield the same physical state.
     """
     encoding = Encoding.angle(n_features=1, axis="z", prepare_basis=False)
 
@@ -211,11 +211,11 @@ def test_angle_encoding_z_axis_without_basis_preparation_is_unobservable():
 
 def test_angle_encoding_z_axis_warns_only_when_unspecified():
     """The implicit basis preparation is announced, an explicit choice is not."""
-    with pytest.warns(BasisPreparationWarning):
+    with pytest.warns(UserWarning, match="applies a Hadamard gate"):
         Encoding.angle(n_features=2, axis="z").apply(QuantumFloat(2), [0.1, 0.2])
 
     with warnings.catch_warnings():
-        warnings.simplefilter("error", BasisPreparationWarning)
+        warnings.filterwarnings("error", message=".*applies a Hadamard gate")
         Encoding.angle(n_features=2, axis="z", prepare_basis=True).apply(QuantumFloat(2), [0.1, 0.2])
         Encoding.angle(n_features=2, axis="z", prepare_basis=False).apply(QuantumFloat(2), [0.1, 0.2])
 
@@ -236,7 +236,7 @@ def test_amplitude_encoding_normalizes_and_pads(features, num_qubits):
     expected[: len(features)] = features
     expected /= np.linalg.norm(expected)
 
-    # statevector("array") is indexed in reverse bit order, so index i of the
+    # statevector("array") is indexed in reverse bit order. Index i of the
     # feature vector is the amplitude of |i>, not of array entry i.
     assert np.allclose(amplitudes_by_state(qf), expected)
 
@@ -248,7 +248,7 @@ def test_amplitude_encoding_rejects_oversized_feature_vector():
 
 
 def test_amplitude_encoding_without_padding_requires_exact_length():
-    """pad=False opts out of zero-padding, so the length must match exactly."""
+    """pad=False opts out of zero-padding, and the length must match exactly."""
     with pytest.raises(ValueError, match="pad=True"):
         Encoding.amplitude(n_features=4, pad=False).apply(QuantumFloat(3), [1.0, 2.0, 3.0, 4.0])
 
@@ -283,7 +283,8 @@ def test_amplitude_encoding_keeps_complex_phases_when_traced(phase_readout):
     """
     The traced path keeps complex phases on a register wider than the features
     need. A Hadamard on the first qubit turns the real part of each relative
-    phase into a probability, and an S gate before it the imaginary part.
+    phase into a probability. An S gate before the Hadamard does the same for
+    the imaginary part.
     """
     features = np.array([1.0, 1j, -1.0, -1j, 2j])
     encoding = Encoding.amplitude(n_features=len(features))
@@ -313,7 +314,7 @@ def test_amplitude_encoding_keeps_complex_phases_when_traced(phase_readout):
 
 
 def test_scaled_encoding_rejects_complex_features():
-    """A feature range orders real values only, so it cannot scale complex ones."""
+    """A feature range orders real values only and cannot scale complex ones."""
     encoding = Encoding.amplitude(n_features=2, data_range=(0.0, 1.0))
 
     with pytest.raises(ValueError, match="complex features"):
@@ -321,7 +322,7 @@ def test_scaled_encoding_rejects_complex_features():
 
 
 def test_scaled_encoding_rejects_complex_features_when_traced():
-    """The complex dtype is known while tracing, so the rejection runs there too."""
+    """The complex dtype is known while tracing, and the rejection runs there too."""
     encoding = Encoding.amplitude(n_features=2, data_range=(0.0, 1.0))
 
     @jaspify
@@ -347,8 +348,9 @@ def test_scaled_encoding_rejects_complex_features_when_traced():
 )
 def test_encoders_reject_non_finite_features(encoding, num_qubits, x):
     """
-    Basis encoding turned a NaN into a zero bit, as a comparison with NaN is
-    False, and a scaling clipped an infinity onto a bound of the feature range.
+    Since a comparison with NaN is False, basis encoding turned a NaN into a
+    zero bit, while a scaling clipped an infinity onto a bound of the feature
+    range.
     The other encoders failed deep inside the simulation, naming neither the
     feature nor its value.
     """
@@ -358,9 +360,9 @@ def test_encoders_reject_non_finite_features(encoding, num_qubits, x):
 
 def test_amplitude_encoding_without_padding_rejects_a_feature_count_no_register_holds():
     """
-    A register holds a power of two amplitudes, so without padding any other
+    A register holds a power of two amplitudes. Without padding any other
     feature count fails for every register. It is rejected on construction,
-    where the traced path, which cannot see the register width, is covered too.
+    which also covers the traced path that cannot see the register width.
     """
     with pytest.raises(ValueError, match="power of two"):
         Encoding.amplitude(n_features=3, pad=False)
@@ -384,8 +386,8 @@ def test_dense_angle_encoding_amplitudes(features, num_qubits):
         phase = features[2 * i + 1] if 2 * i + 1 < len(features) else 0.0
         single_qubit_states.append(np.array([np.cos(theta / 2), np.exp(1j * phase) * np.sin(theta / 2)]))
 
-    # Qubit 0 is the least significant bit, so the product runs from the last
-    # qubit down to the first.
+    # Qubit 0 is the least significant bit. The product therefore runs from the
+    # last qubit down to the first.
     expected = np.array([1.0], dtype=complex)
     for state in reversed(single_qubit_states):
         expected = np.kron(expected, state)
@@ -397,9 +399,9 @@ def test_dense_angle_encoding_loses_the_phase_feature_at_the_poles():
     """
     The default range scales the minimum of a rotation feature to the angle 0,
     where the qubit stays in |0> and the paired phase feature is a global
-    phase: samples differing only in that feature encode to the same state. A
-    range well inside (0, pi) keeps them apart; at (pi/4, 3pi/4) the two states
-    have fidelity cos^4(pi/8) + sin^4(pi/8) = 0.75.
+    phase. Samples differing only in that feature therefore encode to the same
+    state, while a range well inside (0, pi) keeps them apart. At (pi/4, 3pi/4)
+    the two states have fidelity cos^4(pi/8) + sin^4(pi/8) = 0.75.
     """
     X = np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0]])
     samples = np.array([[0.0, 0.0], [0.0, 2.0]])
@@ -439,8 +441,9 @@ def test_basis_encoding_prepares_basis_state(bits, outcome):
 )
 def test_basis_encoding_binarizes_its_input(features, threshold, outcome):
     """
-    Basis encoding coerces its input to bits rather than rejecting it, so a
-    value above the threshold sets its qubit instead of being read as a zero.
+    Basis encoding coerces its input to bits rather than rejecting it. A value
+    above the threshold therefore sets its qubit instead of being read as a
+    zero.
     """
     qf = QuantumFloat(len(features))
     Encoding.basis(n_features=len(features), threshold=threshold).apply(qf, features)
@@ -480,7 +483,7 @@ def test_amplitude_encoding_traces(features, num_qubits):
     Under tracing, feature x_i becomes the amplitude of |i> with its sign, also
     on a register wider than the features need. A Hadamard on the first qubit
     turns the relative sign of each neighbouring pair of amplitudes into a
-    probability, so a sign error changes the distribution as well.
+    probability. A sign error therefore changes the distribution as well.
     """
     encoding = Encoding.amplitude(n_features=len(features))
 
@@ -495,8 +498,8 @@ def test_amplitude_encoding_traces(features, num_qubits):
     amplitudes[: len(features)] = features
     amplitudes /= np.linalg.norm(amplitudes)
 
-    # The first qubit is the least significant bit, so |2j> and |2j+1> are the
-    # pairs the Hadamard mixes.
+    # The first qubit is the least significant bit. The Hadamard therefore mixes
+    # the pairs |2j> and |2j+1>.
     pairs = amplitudes.reshape(-1, 2)
     mixed = np.stack([pairs[:, 0] + pairs[:, 1], pairs[:, 0] - pairs[:, 1]], axis=1) / np.sqrt(2)
     expected = mixed.ravel() ** 2
@@ -509,8 +512,8 @@ def test_amplitude_encoding_traces(features, num_qubits):
 
 def test_next_power_of_two_of_zero_is_one():
     """
-    Zero amplitudes need no qubits to hold them, so the smallest power of two
-    that is at least zero is one. The bit_length of -1 would give two.
+    Zero amplitudes need no qubits to hold them. The smallest power of two that
+    is at least zero is one. The bit_length of -1 would give two.
     """
     from qrisp.qml.encodings import _next_power_of_two
 
@@ -542,8 +545,8 @@ def test_encoder_scaling_matches_minmax_scale(X):
     """
     An encoder configured with data scales its samples as minmax_scale does,
     also under jit. Computed as scale * x + offset, features with a large
-    offset and a small spread lost their precision: the upper endpoint of the
-    second dataset became 2.0 instead of pi, and 2.72 under jit.
+    offset and a small spread lost their precision, and the upper endpoint of
+    the second dataset became 2.0 instead of pi, or 2.72 under jit.
     """
     encoding = Encoding.angle(n_features=2, data=X)
     compiled = jax.jit(lambda e, x: e._prepare(x))
@@ -557,8 +560,9 @@ def test_encoder_scaling_matches_minmax_scale(X):
 def test_scaled_encodings_can_be_passed_as_traced_arguments():
     """
     Jax compares the configuration of every PyTree passed into a traced function
-    with those it has seen before, which arrays do not support. A second scaled
-    encoder, including a pickled copy of the first, then raised rather than
+    with those it has seen before, which arrays do not support. A second
+    scaled encoder, including a pickled copy of the first, then raised
+    rather than
     encoding. Each call has to apply its own encoder's scaling.
     """
     X = np.array([[0.0, 1.0], [2.0, 3.0]])
@@ -613,8 +617,8 @@ class FactorFirstEncoding(Encoding):
 def test_subclass_with_its_own_constructor_can_be_a_traced_argument(encoding, features):
     """
     Jax rebuilds an argument from its flattened form. Rebuilding through the
-    constructor passed it the base class arguments, which a subclass with a
-    signature of its own rejects or misreads.
+    constructor passed it the base class arguments. A subclass with a signature
+    of its own rejects or misreads them.
     """
 
     @jaspify
@@ -630,8 +634,8 @@ def test_subclass_inherits_the_traced_feature_check():
     """
     The check on the base class is the reason for subclassing rather than
     writing a bare function. Under tracing Jax reads past the end of a short
-    feature vector by reusing its last value, so without this the wrong state is
-    prepared with no error.
+    feature vector by reusing its last value. Without this check the wrong
+    state is prepared with no error.
     """
     encoding = DoubleAngleEncoding(n_features=2)
 
@@ -648,9 +652,9 @@ def test_subclass_inherits_the_traced_feature_check():
 def test_subclass_receives_scaled_features():
     """
     apply is documented as counting and scaling the features before encode sees
-    them, so a subclass inherits the scaling without implementing it. Scaling
-    [0, 1] onto [0, pi/2] and doubling inside encode gives RY(pi) on the second
-    qubit, leaving |10> with qubit 0 as the least significant bit.
+    them, which means a subclass inherits the scaling without implementing it.
+    Scaling [0, 1] onto [0, pi/2] and doubling inside encode gives RY(pi) on the
+    second qubit, which leaves |10> with qubit 0 as the least significant bit.
     """
     encoding = DoubleAngleEncoding(n_features=2, scaling=(jnp.pi / 2, 0.0, (0.0, jnp.pi / 2)))
 
@@ -666,8 +670,9 @@ def test_subclass_receives_scaled_features():
 @pytest.mark.parametrize("constructor", [Encoding.angle, Encoding.dense_angle])
 def test_rotation_encodings_reject_a_feature_range_longer_than_a_turn(constructor):
     """
-    These encodings read a feature as a rotation angle, so a range wider than a
-    full turn maps the smallest and largest value onto the same state.
+    These encodings read a feature as a rotation angle. A range wider than a
+    full turn therefore maps the smallest and largest value onto the same
+    state.
     """
     data = np.array([[0.0, 1.0], [1.0, 2.0]])
 
@@ -677,18 +682,18 @@ def test_rotation_encodings_reject_a_feature_range_longer_than_a_turn(constructo
 
 def test_amplitude_encoding_accepts_a_feature_range_of_any_width():
     """
-    Amplitude encoding normalizes the features, so the rotation periodicity
-    limit does not apply, and two ranges that are multiples of each other
-    encode every sample to the same state. The range is rejected only when it
-    is empty, which no scaling can use.
+    Amplitude encoding normalizes the features, which means the rotation
+    periodicity limit does not apply and two ranges that are multiples of each
+    other encode every sample to the same state. The range is rejected only
+    when it is empty, which no scaling can use.
     """
     data = np.array([[1.0, 2.0], [3.0, 4.0]])
 
     wide = Encoding.amplitude(n_features=2, data=data, feature_range=(0.0, 10.0))
     narrow = Encoding.amplitude(n_features=2, data=data, feature_range=(0.0, np.pi))
 
-    # Not data[0], which is the minimum of every column and therefore scales to
-    # the lower bound of the range, leaving a zero vector to normalize.
+    # Not data[0], which is the minimum of every column and scales to the
+    # lower bound of the range, leaving a zero vector to normalize.
     sample = data[1]
 
     qf_wide = QuantumFloat(1)
@@ -696,7 +701,7 @@ def test_amplitude_encoding_accepts_a_feature_range_of_any_width():
     wide.apply(qf_wide, sample)
     narrow.apply(qf_narrow, sample)
 
-    # The two ranges differ by more than a factor of three, and normalization
+    # The two ranges differ by more than a factor of three. Normalization
     # removes the difference entirely.
     assert np.allclose(statevector_array(qf_wide), statevector_array(qf_narrow))
 
@@ -706,8 +711,8 @@ def test_amplitude_encoding_accepts_a_feature_range_of_any_width():
 
 def test_amplitude_encoding_reports_a_sample_a_scaling_zeroed():
     """
-    A scaling maps the sample sitting at the minimum of every feature onto the
-    lower bound of the feature range, so a range starting at 0 turns an
+    A scaling maps the sample at the minimum of every feature onto the lower
+    bound of the feature range. A range starting at 0 therefore turns an
     ordinary row of a training set into a zero vector. Without a check here it
     reaches the state preparation, which reports a statevector of zero norm and
     names neither the sample nor the scaling that produced it.
@@ -733,9 +738,9 @@ def test_amplitude_encoding_reports_a_sample_a_scaling_zeroed():
 @pytest.mark.parametrize("magnitude", [1e-12, 1e-170, 1e200])
 def test_amplitude_encoding_encodes_tiny_and_huge_vectors_by_direction(magnitude):
     """
-    Only the direction of a feature vector is encoded, so a vector of tiny or
-    huge entries prepares the same state as a proportional one of ordinary
-    size. Tiny entries fell below the tolerances of the state preparation and
+    Only the direction of a feature vector is encoded. A vector of tiny or huge
+    entries therefore prepares the same state as a proportional one of ordinary
+    size. Tiny entries fell below the tolerances of the state preparation, and
     huge ones overflowed its norm.
     """
     qf = QuantumFloat(1)
@@ -772,8 +777,8 @@ def test_amplitude_encoding_keeps_samples_near_the_minimum_close():
     """
     Two samples differing only slightly near the minimum of every feature
     encode to nearly the same state under the default range. A range starting
-    at 0 scales them onto tiny vectors whose directions differ widely, so the
-    same two samples encode to clearly different states.
+    at 0 scales them onto tiny vectors whose directions differ widely. The same
+    two samples then encode to clearly different states.
     """
     X = np.array([[0.0, 0.0], [1.0, 2.0], [2.0, 5.0]])
     near_minimum = X.min(axis=0) + 1e-3 * np.array([[1.0, 2.0], [2.0, 1.0]]) * np.ptp(X, axis=0)
@@ -792,7 +797,7 @@ def test_amplitude_encoding_keeps_samples_near_the_minimum_close():
 
 def test_amplitude_encoding_encodes_the_minimum_sample_when_traced():
     """
-    Under tracing a zero vector cannot be reported, and it reached the state
+    Under tracing a zero vector cannot be reported. It reached the state
     preparation as an undefined state. The default range maps the sample at the
     minimum of every feature onto equal positive amplitudes instead.
     """
@@ -813,8 +818,9 @@ def test_amplitude_encoding_encodes_the_minimum_sample_when_traced():
 
 def test_encoding_without_its_hook_reports_what_is_missing():
     """
-    A subclass that implements nothing would otherwise apply no gates and return
-    an untouched QuantumVariable, which looks like a working encoding of zeros.
+    A subclass that implements nothing would otherwise apply no gates and
+    return an untouched QuantumVariable, which looks like a working encoding of
+    zeros.
     """
 
     class Incomplete(Encoding):

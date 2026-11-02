@@ -35,10 +35,10 @@ TOLERANCE = 0.1
 NUM_QUBITS = 2
 LAYERS = 1
 
-# The parameters are held at zero throughout, which makes every rotation layer
-# the identity and every expectation value exactly +1 or -1. The entangling
-# CX is still applied, so the quantum block is not the identity: it maps the
-# encoded basis state |q0 q1> to |q0, q0 XOR q1>.
+# The parameters are held at zero throughout, which makes every rotation
+# layer the identity and every expectation value exactly +1 or -1. The
+# entangling CX is still applied, which means the quantum block is not the
+# identity. It maps the encoded basis state |q0 q1> to |q0, q0 XOR q1>.
 #
 #   encoded angles     state       after CX     <Z0>  <Z1>
 #   [0,  0]            |00>        |00>          +1    +1
@@ -46,7 +46,7 @@ LAYERS = 1
 #   [0,  pi]           |01>        |01>          +1    -1
 #   [pi, pi]           |11>        |10>          -1    +1
 #
-# These were derived by running the block, not by inspection: the CX makes the
+# These were derived by running the block, not by inspection. The CX makes the
 # naive guess ([pi,0] -> [-1,+1]) wrong.
 QUANTUM_TRUTH_TABLE = [
     ([0.0, 0.0], [1.0, 1.0]),
@@ -88,9 +88,9 @@ def test_quantum_block_returns_one_entry_per_observable(x, expected):
 
 def test_classical_layer_before_the_quantum_block():
     """
-    A classical layer feeding the encoding is what lets a wide feature vector
-    reach a narrow register, so the scaling it applies has to survive into the
-    encoded angles.
+    A classical layer feeding the encoding lets a wide feature vector reach a
+    narrow register. The scaling it applies has to survive into the encoded
+    angles.
     """
     quantum_block = _quantum_block()
 
@@ -105,15 +105,15 @@ def test_classical_layer_before_the_quantum_block():
 
 def test_classical_layer_after_the_quantum_block():
     """
-    The vector readout feeds an ordinary jnp expression, so a model can put a
-    trainable head on top of the quantum block.
+    The vector readout feeds an ordinary jnp expression. A model can therefore
+    put a trainable head on top of the quantum block.
     """
     quantum_block = _quantum_block()
 
     def model(x, w, w_out, b_out):
         return jnp.tanh(jnp.dot(quantum_block(x, w), w_out) + b_out)
 
-    # The [0, 0] row gives [+1, +1], so the head computes tanh(1 + 1 + 0).
+    # The [0, 0] row gives [+1, +1], and the head computes tanh(1 + 1 + 0).
     result = model(
         jnp.array([0.0, 0.0]),
         _zero_parameters(),
@@ -127,7 +127,7 @@ def test_classical_layer_after_the_quantum_block():
 def test_classical_quantum_classical_composes_end_to_end():
     """
     The full sandwich, which is the composition a hybrid model is built from.
-    Each stage is checked above on its own; this pins that they chain.
+    Each stage is checked above on its own. This pins that they chain.
     """
     quantum_block = _quantum_block()
 
@@ -162,9 +162,9 @@ def test_quantum_block_output_is_a_jax_array():
 
 def test_hybrid_composition_traces():
     """
-    Composition has to survive tracing, since that is the mode a training run
-    uses. The classical parts are jnp expressions either side of the quantum
-    block, so the whole model goes through one ``jaspify``.
+    Composition has to survive tracing, because a training run uses it. The
+    classical parts are jnp expressions either side of the quantum block, and
+    the whole model goes through one ``jaspify``.
     """
     quantum_block = _quantum_block()
 
@@ -186,9 +186,9 @@ def test_hybrid_composition_traces():
 
 def _hybrid_parameters():
     """
-    A hybrid model's parameters in named groups: a classical layer either side
-    of the quantum block. ``b_out`` is a scalar, so the roundtrip has to carry
-    a 0-d entry as well as vectors.
+    The parameters of a hybrid model in named groups, with a classical layer
+    either side of the quantum block. Since ``b_out`` is a scalar, the
+    roundtrip has to carry a 0-d entry as well as vectors.
     """
     ansatz = Ansatz.hardware_efficient(num_qubits=NUM_QUBITS, layers=LAYERS)
     return {
@@ -202,10 +202,11 @@ def _hybrid_parameters():
 def test_named_parameter_groups_survive_the_flat_roundtrip():
     """
     The optimizers take one flat vector while a hybrid model has named groups
-    of parameters, so something has to convert between the two. Jax already
+    of parameters, and something has to convert between the two. Jax already
     does it, and slicing the flat vector by hand instead is the mistake this
-    pins against: an off-by-one there trains the model on the wrong numbers
-    and raises nothing.
+    pins against.
+    An off-by-one there trains the model on the wrong numbers and raises
+    nothing.
     """
     parameters = _hybrid_parameters()
     ansatz = Ansatz.hardware_efficient(num_qubits=NUM_QUBITS, layers=LAYERS)
@@ -225,13 +226,13 @@ def test_named_parameter_groups_survive_the_flat_roundtrip():
 
 def test_a_flat_vector_drives_a_hybrid_model_under_tracing():
     """
-    The unravel has to work inside the traced function, because that is where
-    the optimizer calls it — once per iteration, on the vector it is varying.
+    The optimizer calls the unravel inside the traced function, once per
+    iteration, which is why the unravel has to work there.
 
-    The groups are given distinct values rather than all-ones, so that a
-    swapped group changes the result. With every group set to ones the model
-    returns the same number whichever way two of them are exchanged, and the
-    test would pass against exactly the mistake it is meant to catch.
+    With every group set to ones, the model returns the same number whichever
+    way two groups are exchanged, and the test would pass against the very
+    mistake it is meant to catch. The groups are therefore given distinct
+    values, which makes a swapped group change the result.
     """
     encoding = Encoding.angle(n_features=NUM_QUBITS)
     ansatz = Ansatz.hardware_efficient(num_qubits=NUM_QUBITS, layers=LAYERS)
@@ -242,14 +243,14 @@ def test_a_flat_vector_drives_a_hybrid_model_under_tracing():
         ansatz.apply(qv, w)
         return qv
 
-    # A coarse precision is enough: the parameters are zero, so both
-    # expectations are exactly +-1 and the sampling noise stays far away from
-    # the tolerance. Tightening it only makes the suite slower.
+    # The parameters are zero, which makes both expectations exactly +-1 and
+    # keeps the sampling noise far away from the tolerance. A coarse precision
+    # is enough, and tightening it only makes the suite slower.
     quantum_block = expectation(state_prep, [Z(0), Z(1)], precision=0.5)
 
-    # w_in leaves the angles untouched, so the encoded row is [0, pi] -> [1, -1].
-    # w_out weights those two entries differently, which is what makes the
-    # result depend on which group reached which layer.
+    # w_in leaves the angles untouched, and the encoded row is [0, pi] -> [1, -1].
+    # w_out weights those two entries differently, which makes the result
+    # depend on which group reached which layer.
     parameters = {
         "w_in": jnp.ones(NUM_QUBITS),
         "theta": jnp.zeros(hardware_efficient_size(NUM_QUBITS, LAYERS)),
@@ -266,7 +267,7 @@ def test_a_flat_vector_drives_a_hybrid_model_under_tracing():
 
     result = model(flat)
 
-    # [1, -1] . [2, 3] + 0.5 = -0.5, so the model returns tanh(-0.5). Exchanging
+    # [1, -1] . [2, 3] + 0.5 = -0.5, and the model returns tanh(-0.5). Exchanging
     # any two groups moves this number, which an all-ones fixture would not.
     assert np.ndim(result) == 0
     assert np.isclose(result, np.tanh(-0.5), atol=TOLERANCE)

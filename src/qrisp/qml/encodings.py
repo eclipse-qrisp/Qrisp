@@ -1,20 +1,20 @@
-"""
-********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the Encoding class, which writes classical features into the qubits of a register."""
 
 import warnings
 
@@ -27,7 +27,6 @@ from qrisp.core.gate_application_functions import h, p, rx, ry, rz
 from qrisp.core.gate_application_functions import x as x_gate
 from qrisp.environments import control
 from qrisp.jasp import check_for_tracing_mode, jlen, jrange
-from qrisp.misc.exceptions import BasisPreparationWarning
 from qrisp.qml.preprocessing import _as_real, _check_finite
 
 __all__ = ["Encoding"]
@@ -38,14 +37,14 @@ _AXES_REQUIRING_BASIS_PREPARATION = {"z"}
 
 
 class _Unspecified:
-    # Pickles as a reference to the module-level instance below, so that an
-    # encoding saved and loaded again still recognises it by identity.
+    # Pickles as a reference to the module-level instance below, which lets an
+    # encoding saved and loaded again still recognise it by identity.
     def __reduce__(self):
         return "_UNSPECIFIED"
 
 
-# Marks that the caller did not specify ``prepare_basis``, so that only the
-# implicit default emits a warning.
+# Marks that the caller did not specify ``prepare_basis``, which is the only
+# case that emits a warning.
 _UNSPECIFIED = _Unspecified()
 
 
@@ -53,8 +52,8 @@ def _angle_encoding(qv, x, axis="y", prepare_basis=_UNSPECIFIED):
     r"""
     Encodes a feature vector into the rotation angles of a QuantumVariable.
 
-    Each feature is encoded as the rotation angle of a single qubit, i.e. the
-    $i$-th feature $x_i$ is applied as a rotation on the $i$-th qubit:
+    Each feature becomes the rotation angle of a single qubit, with the $i$-th
+    feature $x_i$ applied as a rotation on the $i$-th qubit
 
     .. math::
 
@@ -67,39 +66,38 @@ def _angle_encoding(qv, x, axis="y", prepare_basis=_UNSPECIFIED):
         \bigotimes_{i=0}^{n-1}
         \left( \cos(x_i/2)\ket{0} + \sin(x_i/2)\ket{1} \right).
 
-    Angle encoding requires one qubit per feature. In contrast to amplitude
-    encoding (see :ref:`prepare`), the feature vector is **not** normalized:
-    the raw values are used as angles. Since rotation angles are
-    $2\pi$-periodic, features are typically rescaled to an interval of length
-    $2\pi$ (e.g. $[0,\pi]$) before encoding. This rescaling is left to the
-    caller.
+    Angle encoding requires one qubit per feature. The feature vector is
+    **not** normalized, and the raw values are used as angles. Since rotation
+    angles are $2\pi$-periodic, features are usually rescaled before encoding
+    to an interval no longer than $2\pi$, such as $[0,\pi]$. This rescaling is
+    left to the caller.
 
     **Encoding around the Z axis**
 
     A rotation only changes a state that does not already lie on the rotation
-    axis. As $\ket{0}$ lies on the Z axis, $R_Z$ leaves it invariant up to a
-    global phase,
+    axis. Since $\ket{0}$ lies on the Z axis, $R_Z$ leaves it invariant up to
+    a global phase
 
     .. math::
 
         R_Z(x)\ket{0} = e^{-ix/2}\ket{0},
 
-    which is not observable. Encoding features into $R_Z$ rotations of a
-    register in $\ket{0}$ would therefore discard them: every value of $x$
-    yields the same physical state.
+    A global phase is not observable, which means every value of $x$ yields
+    the same physical state. Encoding features into $R_Z$ rotations of a
+    register in $\ket{0}$ would therefore discard them.
 
-    For ``axis="z"`` a Hadamard gate is thus applied to each qubit first,
-    moving the state off the rotation axis so that the features take effect:
+    For ``axis="z"`` a Hadamard gate is applied to each qubit first, which
+    moves the state off the rotation axis and lets the features take effect
 
     .. math::
 
         \ket{0} \xrightarrow{H} \frac{\ket{0}+\ket{1}}{\sqrt 2}
         \xrightarrow{R_Z(x)} \frac{\ket{0}+e^{ix}\ket{1}}{\sqrt 2}.
 
-    Pass ``prepare_basis=False`` to omit the Hadamard. This is appropriate
-    whenever the register is not in $\ket{0}$, for instance when chaining
-    encodings, when re-uploading data onto an already rotated register, or when
-    a Hadamard layer has been applied separately.
+    Pass ``prepare_basis=False`` to omit the Hadamard whenever the register is
+    not in $\ket{0}$, for instance when chaining encodings, when re-uploading
+    data onto an already rotated register, or after a separate Hadamard
+    layer.
 
     Parameters
     ----------
@@ -113,11 +111,11 @@ def _angle_encoding(qv, x, axis="y", prepare_basis=_UNSPECIFIED):
         features to real-valued amplitudes.
     prepare_basis : bool, optional
         Whether to apply a Hadamard gate to each qubit before the rotation.
-        This is only relevant for ``axis="z"``: :math:`R_Z` acts trivially on
-        :math:`\ket{0}` up to a global phase, so without a basis change the
-        encoded features would have no observable effect. The default is to
-        apply the basis change and emit a :class:`BasisPreparationWarning`.
-        Pass ``prepare_basis=False`` to suppress both, e.g. when encoding into
+        This is only relevant for ``axis="z"``. :math:`R_Z` acts trivially on
+        :math:`\ket{0}` up to a global phase. Without a basis change the
+        encoded features would have no observable effect. The default applies
+        the basis change and emits a ``UserWarning``. Pass
+        ``prepare_basis=False`` to suppress both, for example when encoding into
         a register that is not in the :math:`\ket{0}` state.
 
     Raises
@@ -129,9 +127,15 @@ def _angle_encoding(qv, x, axis="y", prepare_basis=_UNSPECIFIED):
 
     Warns
     -----
-    BasisPreparationWarning
+    UserWarning
         If ``axis="z"`` and ``prepare_basis`` was not specified explicitly,
-        indicating that a Hadamard gate was inserted automatically.
+        to say that a Hadamard gate was inserted automatically.
+
+    References
+    ----------
+    .. [1] M. Schuld and F. Petruccione, "Machine Learning with Quantum
+       Computers", 2nd ed., Springer (2021), Chapter 4.
+       doi:10.1007/978-3-030-83098-4
 
     """
     if axis not in _ROTATION_GATES:
@@ -156,7 +160,6 @@ def _angle_encoding(qv, x, axis="y", prepare_basis=_UNSPECIFIED):
             "would have no observable effect. Pass prepare_basis=False to skip "
             "the basis change, for example when encoding into a register that is "
             "not in the |0> state.",
-            category=BasisPreparationWarning,
             stacklevel=2,
         )
 
@@ -175,37 +178,37 @@ def _amplitude_encoding(qv, x, pad=True):
     r"""
     Encodes a feature vector into the amplitudes of a QuantumVariable.
 
-    The feature vector $x$ is encoded as the amplitudes of the computational
-    basis states, i.e. the $i$-th feature is the amplitude of $\ket{i}$:
+    The feature vector $x$ becomes the amplitudes of the computational basis
+    states, with the $i$-th feature as the amplitude of $\ket{i}$
 
     .. math::
 
         \ket{0}^{\otimes n} \mapsto
         \sum_{i} \frac{x_i}{\lVert x \rVert} \ket{i}
 
-    A register of $n$ qubits holds $2^n$ amplitudes, so amplitude encoding
-    represents $2^n$ features in $n$ qubits. This exponential density is its
-    main advantage over angle encoding, which requires one qubit per
+    A register of $n$ qubits holds $2^n$ amplitudes, which lets amplitude
+    encoding represent $2^n$ features in $n$ qubits. This exponential density
+    is its main advantage over angle encoding, which requires one qubit per
     feature.
 
-    The feature vector is normalized internally, as a quantum state must have
-    unit norm. Only the direction of $x$ is therefore encoded; its length is
-    not recoverable from the resulting state.
+    A quantum state must have unit norm, and the feature vector is therefore
+    normalized internally. Only the direction of $x$ is encoded, while its
+    length cannot be recovered from the resulting state.
 
     Complex features are encoded with their phases. A phase shared by every
-    feature is a global phase of the state and is not observable, so $x$ and
-    $e^{i\varphi}x$ encode the same state, as do $x$ and $-x$.
+    feature is a global phase of the state, which is not observable, and $x$
+    and $e^{i\varphi}x$ encode the same state, as do $x$ and $-x$.
 
     **Feature vectors that are not a power of two**
 
     A register of $n$ qubits holds exactly $2^n$ amplitudes, while feature
     vectors are rarely a power of two in length. By default the vector is
-    zero-padded up to the size of ``qv``, so the trailing basis states carry
-    zero amplitude. Padding does not change the relative amplitudes of the
-    features, since normalization happens after it.
+    zero-padded up to the size of ``qv``, which leaves zero amplitude on the
+    trailing basis states. Since normalization happens after padding, padding
+    does not change the relative amplitudes of the features.
 
     A register larger than the features require is padded out in the same way,
-    leaving the surplus basis states empty.
+    and its surplus basis states stay empty.
 
     Pass ``pad=False`` to require an exactly matching feature vector instead.
 
@@ -215,7 +218,8 @@ def _amplitude_encoding(qv, x, pad=True):
         The QuantumVariable to encode the features into, in $\ket{0}$. Holds
         $2^n$ features for $n$ qubits.
     x : list[float] or list[complex] or numpy.ndarray
-        The feature vector. Must not have zero norm, as it is normalized.
+        The feature vector. It is normalized and must therefore not have zero
+        norm.
     pad : bool, optional
         Whether to zero-pad the feature vector up to $2^n$ entries. The default
         is ``True``. If ``False``, the length of ``x`` must be exactly $2^n$.
@@ -226,6 +230,13 @@ def _amplitude_encoding(qv, x, pad=True):
         If ``x`` holds more features than ``qv`` can represent.
     ValueError
         If ``pad`` is ``False`` and the length of ``x`` is not exactly $2^n$.
+
+    References
+    ----------
+    .. [1] M. Möttönen, J. J. Vartiainen, V. Bergholm, and M. M. Salomaa,
+       "Transformation of quantum states using uniformly controlled
+       rotations", Quantum Inf. Comput. 5, 467 (2005).
+       arXiv:quant-ph/0407010
 
     """
     tracing = check_for_tracing_mode()
@@ -252,7 +263,7 @@ def _amplitude_encoding(qv, x, pad=True):
     if not tracing:
         # prepare() reports a vector it cannot normalize as a statevector of
         # zero norm, which names neither the features nor the scaling that
-        # produced them. A scaled encoder reaches it for the sample sitting at
+        # produced them. A scaled encoder reaches this case for the sample at
         # the minimum of every feature, which is an ordinary row of a training
         # set rather than a degenerate input.
         if not np.any(np.asarray(x)):
@@ -260,15 +271,15 @@ def _amplitude_encoding(qv, x, pad=True):
                 "Tried to amplitude encode a feature vector of vanishing norm, "
                 "which has no direction to encode. A scaling maps the sample at "
                 "the minimum of every feature onto the lower bound of the feature "
-                "range, so a feature_range starting at 0 turns that sample into "
+                "range, and a feature_range starting at 0 turns that sample into "
                 "such a vector. Pass a feature_range with a positive lower bound, "
                 "such as the default (1, 10), to keep it encodable."
             )
 
-    # The state encodes only the direction of x, which dividing by its largest
+    # The state encodes only the direction of x, which dividing by the largest
     # magnitude keeps. Without it, a vector of tiny entries falls below the
-    # tolerances of the state preparation, and one of huge entries overflows
-    # its norm, both of which encode a wrong state.
+    # tolerances of the state preparation, while one of huge entries overflows
+    # its norm, and both encode a wrong state.
     largest = jnp.max(jnp.abs(x))
     x = x / jnp.where(largest > 0, largest, 1.0)
 
@@ -276,8 +287,9 @@ def _amplitude_encoding(qv, x, pad=True):
         num_features = jnp.shape(x)[0]
 
         if tracing:
-            # qv.size is a tracer and cannot size an allocation, so the target
-            # comes from the feature count, which is known while tracing.
+            # qv.size is a tracer and cannot size an allocation, which is why
+            # the target comes from the feature count that is known while
+            # tracing.
             num_amplitudes = _next_power_of_two(num_features)
 
         x = jnp.pad(x, (0, num_amplitudes - num_features))
@@ -286,10 +298,10 @@ def _amplitude_encoding(qv, x, pad=True):
         prepare(qv, x)
         return qv
 
-    # prepare() reads the register width from qv.size, which under tracing does
-    # not match a vector sized from the features. Preparing only the qubits the
-    # vector fills leaves the remaining qubits in |0>, which in little endian
-    # order is the zero padding up to the full register.
+    # prepare() reads the register width from qv.size, which under tracing
+    # does not match a vector sized from the features. Only the qubits that the
+    # vector fills are therefore prepared, and the remaining qubits stay in |0>,
+    # which in little endian order is the zero padding up to the full register.
     num_qubits = jnp.shape(x)[0].bit_length() - 1
 
     # A single amplitude is the |0> state up to a global phase.
@@ -313,20 +325,20 @@ def _dense_angle_encoding(qv, x):
     r"""
     Encodes two features per qubit into a rotation angle and a relative phase.
 
-    Consecutive pairs of features are encoded into one qubit each: the feature
-    $x_{2i}$ as a $Y$ rotation and the feature $x_{2i+1}$ as a relative phase,
+    Each consecutive pair of features goes into one qubit, with the feature
+    $x_{2i}$ as a $Y$ rotation and the feature $x_{2i+1}$ as a relative phase
 
     .. math::
 
         \ket{0} \mapsto
         \cos(x_{2i}/2)\ket{0} + e^{ix_{2i+1}}\sin(x_{2i}/2)\ket{1}.
 
-    This halves the number of qubits required compared to
-    angle encoding, which places one feature per qubit. A register of
-    $n$ qubits therefore holds $2n$ features.
+    This halves the number of qubits compared to angle encoding, which places
+    one feature per qubit, and a register of $n$ qubits therefore holds $2n$
+    features.
 
     A feature vector of odd length leaves the last qubit without a phase
-    feature, so only its rotation is applied.
+    feature, and only its rotation is applied.
 
     Parameters
     ----------
@@ -340,6 +352,11 @@ def _dense_angle_encoding(qv, x):
     ------
     ValueError
         If ``x`` holds more than two features per qubit of ``qv``.
+
+    References
+    ----------
+    .. [1] R. LaRose and B. Coyle, "Robust data encodings for quantum
+       classifiers", Phys. Rev. A 102, 032420 (2020). arXiv:2003.01695
 
     """
     if not check_for_tracing_mode() and jlen(x) > 2 * qv.size:
@@ -371,9 +388,8 @@ def _basis_encoding(qv, x):
         \ket{x_0 x_1 \dotsm x_{n-1}}.
 
     Basis encoding requires one qubit per bit and represents the feature vector
-    exactly, without normalization or rescaling. In contrast to
-    angle and amplitude encoding, the features must be
-    binary.
+    exactly, without normalization or rescaling. Unlike in angle and amplitude
+    encoding, the features must be binary.
 
     Parameters
     ----------
@@ -381,8 +397,8 @@ def _basis_encoding(qv, x):
         The QuantumVariable to encode the bits into. Must contain exactly one
         qubit per bit.
     x : list[int] or numpy.ndarray
-        The bit vector. Must have length equal to the size of ``qv`` and hold
-        only the values 0 and 1.
+        The bit vector. Its length must equal the size of ``qv``, and it must
+        hold only the values 0 and 1.
 
     Raises
     ------
@@ -411,15 +427,13 @@ def _basis_encoding(qv, x):
 
 def _derive_range(data, data_range, feature_range, periodic=True):
     """
-    Returns the affine map onto ``feature_range`` as a (scale, minimum) pair.
+    Computes the min-max scaling parameters for mapping features onto
+    ``feature_range``.
 
-    Runs outside the traced region, where every value is concrete, so the pair
-    it returns are plain floats that the encoder carries into the trace.
+    Returns ``(scale, minimum)``, which scale each feature into the range.
 
-    ``periodic`` marks the encodings that read a feature as a rotation angle,
-    which are the ones a range longer than a full turn would wrap. Amplitude
-    encoding normalizes its features instead, so the width of the range makes
-    no difference to the state it prepares and is not restricted.
+    If ``periodic`` is True, the width of the target range must not exceed
+    ``2*pi``.
     """
     if data is not None and data_range is not None:
         raise ValueError(
@@ -439,7 +453,7 @@ def _derive_range(data, data_range, feature_range, periodic=True):
     if periodic and high - low > 2 * np.pi:
         raise ValueError(
             f"Tried to scale into the feature range ({low}, {high}), which is "
-            "longer than 2*pi. Rotation angles are 2*pi-periodic, so its "
+            "longer than 2*pi. Rotation angles are 2*pi-periodic, which means its "
             "endpoints would encode to the same state."
         )
 
@@ -449,7 +463,7 @@ def _derive_range(data, data_range, feature_range, periodic=True):
         if data.ndim != 2:
             raise ValueError(
                 f"Tried to derive a scaling range from data shaped {data.shape}. "
-                "The range is taken across samples, so the data must be a "
+                "The range is taken across samples, which means the data must be a "
                 "two-dimensional array shaped (n_samples, n_features)."
             )
 
@@ -469,8 +483,8 @@ def _derive_range(data, data_range, feature_range, periodic=True):
 
     spread = maximum - minimum
 
-    # A constant feature spans nothing to scale onto the range, so it is mapped
-    # to the lower bound instead of dividing by zero.
+    # A constant feature spans nothing to scale onto the range, and dividing
+    # by its zero spread would fail. It is mapped to the lower bound instead.
     constant = spread == 0
     spread = np.where(constant, 1.0, spread)
 
@@ -485,7 +499,8 @@ class Encoding:
 
     An encoder is built once per dataset and called once per sample. The
     classmethods :meth:`angle`, :meth:`amplitude`, :meth:`dense_angle` and
-    :meth:`basis` each return one, configured for a given number of features:
+    :meth:`basis` each return a configured encoder for a given number of
+    features.
 
     ::
 
@@ -501,52 +516,49 @@ class Encoding:
             encoding.apply(qf, x)
             return qf
 
-    **Why the feature count is configured up front**
+    **The feature count is fixed at construction**
 
-    Under :ref:`Jasp <jasp>` tracing a QuantumVariable's size is a tracer rather
-    than a number, so an encoding cannot compare it against the features it was
-    handed. Without a check, Jax reads past the end of a short feature vector by
-    reusing its last value, which produces a plausible looking state rather than
-    an error.
-
-    Recording ``n_features`` while it is still an ordinary integer closes that
-    gap: the number crosses into the traced region intact, and the length of
-    each sample is available there as a static shape. The comparison therefore
-    happens at trace time, before a single gate is emitted, and costs nothing
-    while the program runs.
+    An encoder is configured for ``n_features`` features and checks each sample
+    against that number. Under :ref:`Jasp <jasp>` tracing a QuantumVariable's
+    size is a tracer rather than a number, which means the count cannot be
+    checked against the register instead. Without this check a short feature
+    vector would be read past its end by reusing its last value, producing a
+    plausible looking state rather than an error.
 
     **Register width is the caller's responsibility**
 
-    The encoder validates the features it is given. It cannot validate the
-    register, whose size is the tracer described above. A register wider than
-    ``n_features`` silently reuses the last feature on the surplus qubits, and
-    no error is raised. Keeping ``n_features`` and the register in step is left
-    to the caller.
+    The encoder validates the features that it is given, but under tracing it
+    cannot validate the register, whose size is the tracer described above.
+    Given a register wider than ``n_features``, angle and basis encoding raise
+    an error outside of tracing, while under tracing they silently reuse the
+    last feature on the surplus qubits. Dense angle and amplitude encoding
+    leave the surplus qubits in $\ket{0}$ in both cases, which for amplitude
+    encoding is the zero padding. Keeping ``n_features`` and the register in
+    step is left to the caller.
 
     **Optional preprocessing**
 
-    Passing ``data`` or ``data_range`` bundles the scaling each encoding expects
-    into the call, so that features are scaled and encoded in one step. Passing
-    neither encodes the features exactly as given, for callers whose data is
-    already scaled. The feature count is checked either way.
+    Passing ``data`` or ``data_range`` bundles the scaling that each encoding
+    expects into the call, which scales and encodes features in one step.
+    Callers whose data is already scaled pass neither, and the features are
+    encoded exactly as given. The feature count is checked either way.
 
     The scaling is derived once, from the dataset rather than from each sample,
-    so training and test data are placed on the same scale. Only the derived
-    range is retained; ``data`` itself is not.
+    which places training and test data on the same scale. Only the derived
+    range is kept, not ``data`` itself.
 
-    Scale the features once. An encoder given ``data`` or ``data_range``
-    expects raw features, so features already passed through
-    :func:`minmax_scale` are scaled a second time, and arrive at the gates in
-    different units without an error. The same holds for thresholds:
-    :func:`binarize` followed by :meth:`basis` with a threshold other than its
-    default compares bits against a threshold meant for raw values.
+    An encoder given ``data`` or ``data_range`` expects raw features, which
+    means features already passed through :func:`minmax_scale` are scaled a
+    second time and arrive at the gates in different units, without an error.
+    The same holds for thresholds, since :func:`binarize` followed by
+    :meth:`basis` with a threshold other than its default compares bits against
+    a threshold meant for raw values. Scale the features only once.
 
     **Writing an encoding**
 
-    Subclassing this class gives an encoding of your own the same feature count
-    check, scaling and error messages as the built-in ones. Implement
-    :meth:`encode`, which receives features that have already been counted and
-    scaled:
+    A subclass of this class gets the same feature count check, scaling and
+    error messages as the built-in encodings. Implement :meth:`encode`, which
+    receives features that have already been counted and scaled.
 
     ::
 
@@ -565,15 +577,16 @@ class Encoding:
         encoding = DoubleAngleEncoding(n_features=2)
 
     Registering the class as a PyTree lets it be passed as an argument to a
-    traced function rather than only captured from the enclosing scope. Settings
-    of your own are kept across that roundtrip by returning them from
-    ``_options``; the rebuilt encoding does not pass through ``__init__``, so a
-    subclass may give it any signature.
+    traced function, rather than only captured from the enclosing scope.
+    Return your own settings from ``_options`` to keep them across that
+    roundtrip. Since the rebuilt encoding does not pass through ``__init__``, a
+    subclass may give ``__init__`` any signature.
 
     """
 
     # Whether the encoding is defined only on a register in |0>, as a state
-    # preparation is, rather than as gates that act on any state.
+    # preparation is, rather than as gates that act on any state. Helps deal
+    # with data-reuploading amplitude encoding combination.
     _from_zero_state = False
 
     def __init__(self, n_features, scaling=None):
@@ -613,7 +626,7 @@ class Encoding:
         data : numpy.ndarray, optional
             Features shaped ``(n_samples, n_features)`` to derive the scaling
             range from. Mutually exclusive with ``data_range``. The default is
-            ``None``, in which case no scaling is applied.
+            ``None``, which applies no scaling.
         data_range : tuple, optional
             The ``(minimum, maximum)`` of the features, stated directly instead
             of derived from data. Either bound may be a scalar or one value per
@@ -626,11 +639,10 @@ class Encoding:
             features to real-valued amplitudes.
         prepare_basis : bool, optional
             Whether to apply a Hadamard gate to each qubit before the rotation.
-            This is only relevant for ``axis="z"``: :math:`R_Z` acts trivially
-            on :math:`\ket{0}` up to a global phase, so without a basis change
-            the encoded features would have no observable effect. The default is
-            to apply the basis change and emit a
-            :class:`BasisPreparationWarning`.
+            This is only relevant for ``axis="z"``. :math:`R_Z` acts trivially
+            on :math:`\ket{0}` up to a global phase. Without a basis change
+            the encoded features would have no observable effect. The default
+            applies the basis change and emits a ``UserWarning``.
 
         Returns
         -------
@@ -650,8 +662,8 @@ class Encoding:
             encoding = Encoding.angle(n_features=2)
             encoding.apply(qf, [0, np.pi])
 
-        The first feature is $0$, leaving the first qubit in $\ket{0}$. The
-        second is $\pi$, flipping the second qubit to $\ket{1}$:
+        The first feature is $0$, which leaves the first qubit in $\ket{0}$,
+        and the second is $\pi$, which flips the second qubit to $\ket{1}$.
 
         >>> qf.qs.statevector()
         |2>
@@ -673,63 +685,66 @@ class Encoding:
         r"""
         Returns an encoder placing the features in a register's amplitudes.
 
-        A register of $n$ qubits holds $2^n$ amplitudes, so this encoding
-        represents $2^n$ features in $n$ qubits. The features are normalized
-        internally, as a quantum state has unit norm, so only their direction is
-        encoded. Complex features are encoded with their phases, provided no
-        scaling is configured.
+        A register of $n$ qubits holds $2^n$ amplitudes, which lets this
+        encoding represent $2^n$ features in $n$ qubits. Since a quantum state
+        has unit norm, the features are normalized internally and only their
+        direction is encoded. Complex features are encoded with their phases,
+        provided no scaling is configured.
 
         **What normalization keeps**
 
-        Normalization discards the magnitude of a feature vector: $x$ and $cx$
-        encode the same state for every $c \neq 0$. Two samples whose features
-        are proportional are therefore indistinguishable after encoding.
+        Normalization discards the magnitude of a feature vector, which means
+        $x$ and $cx$ encode the same state for every $c \neq 0$. Two samples
+        whose features are proportional therefore look the same after
+        encoding.
 
-        Appending the norm as a further feature does not keep the magnitude, as
-        $[cx, \lVert cx \rVert] = c\,[x, \lVert x \rVert]$ is again
-        proportional. A constant feature does: $[x, 1]$ and $[cx, 1]$ are not
-        proportional, and the magnitude $r = \lVert x \rVert$ is encoded as the
-        angle $\arctan(r)$ between the two parts. The angle is most sensitive
-        for magnitudes near the constant, so choose it on the order of the
-        typical norm. The constant takes one amplitude, which may need a further
-        qubit.
+        Appending the norm as a further feature does not keep the magnitude,
+        because $[cx, \lVert cx \rVert] = c\,[x, \lVert x \rVert]$ is again
+        proportional. A constant feature does keep it, since $[x, 1]$ and
+        $[cx, 1]$ are not proportional, and the magnitude $r = \lVert x \rVert$
+        is encoded as the angle $\arctan(r)$ between the two parts. The angle is
+        most sensitive for magnitudes near the constant, which should therefore
+        be on the order of the typical norm. The constant takes one amplitude,
+        which may need a further qubit.
 
-        The equivalence holds for the vector the state is prepared from. A
-        configured scaling adds an offset, so raw samples that are proportional
-        generally scale to vectors that are not, and encode to different states.
+        The equivalence holds for the vector that the state is prepared from. A
+        configured scaling adds an offset, which means raw samples that are
+        proportional generally scale to vectors that are not and encode to
+        different states.
 
         **The default feature range**
 
         A scaling maps the sample at the minimum of every feature onto the
         lower bound of ``feature_range``. A lower bound of $0$ turns that sample
         into the zero vector, which has no direction to encode, and makes the
-        samples near it unstable: two samples differing only slightly near the
-        minimum can encode to clearly different states. The default range
-        therefore starts above zero, so every scaled sample has a direction and
-        nearby samples encode to nearby states.
+        samples near it unstable, because two samples differing only slightly
+        near the minimum can encode to clearly different states. The default
+        range therefore starts above zero, which gives every scaled sample a
+        direction and lets nearby samples encode to nearby states.
 
         Since only the direction is encoded, the ratio of the upper to the lower
         bound sets the contrast between samples, not the bounds themselves. A
-        larger ratio separates the states of dissimilar samples further, but
-        lets the largest features dominate the state, so that a feature at its
-        minimum contributes little. The default ratio of $10$ keeps every
-        feature at least a tenth of the largest.
+        larger ratio separates the states of dissimilar samples further, while
+        it lets the largest features dominate the state and a feature at its
+        minimum contribute little. The default ratio of $10$ keeps every feature
+        at least a tenth of the largest.
 
         **The register must be in** $\ket{0}$
 
-        The encoding prepares a state rather than rotating one, so it is defined
-        only on a register in $\ket{0}^{\otimes n}$. Applied to any other state
-        its result is not the encoded vector. For the same reason it cannot be
-        the encoding of :meth:`Ansatz.data_reuploading`, whose later layers act
-        on a register the earlier ones have changed.
+        The encoding prepares a state rather than rotating one, which means it
+        is defined only on a register in $\ket{0}^{\otimes n}$. Applied to any
+        other state, its result is not the encoded vector. For the same reason
+        it cannot be the encoding of :meth:`Ansatz.data_reuploading`, whose
+        later layers act on a register that the earlier ones have changed.
 
         **Cost under tracing**
 
         Amplitude encoding builds an arbitrary state rather than one rotation
         per qubit, and the traced path falls back to a general state
         preparation. It is roughly two orders of magnitude slower per call than
-        angle encoding, which dominates a training run: an optimization that
-        takes seconds with angle encoding takes tens of minutes with this one.
+        angle encoding, a cost that dominates a training run. An optimization
+        that takes seconds with angle encoding takes tens of minutes with this
+        one.
 
         Parameters
         ----------
@@ -738,17 +753,17 @@ class Encoding:
         data : numpy.ndarray, optional
             Features shaped ``(n_samples, n_features)`` to derive the scaling
             range from. Mutually exclusive with ``data_range``. The default is
-            ``None``, in which case no scaling is applied.
+            ``None``, which applies no scaling.
         data_range : tuple, optional
             The ``(minimum, maximum)`` of the features, stated directly instead
             of derived from data. Mutually exclusive with ``data``.
         feature_range : tuple[float, float], optional
             The interval to scale into, if a scaling was requested. The default
-            is ``(1, 10)``. Unlike the rotation based encodings this one accepts
-            a range of any width, since the features are normalized rather than
-            read as angles. A range containing zero can produce the zero
-            vector, which is rejected when not tracing. Under tracing it cannot
-            be reported and yields an undefined state.
+            is ``(1, 10)``. Since the features are normalized rather than read
+            as angles, this encoding accepts a range of any width, unlike the
+            rotation based encodings. A range containing zero can produce the
+            zero vector, which is rejected when not tracing, while under
+            tracing it cannot be reported and yields an undefined state.
         pad : bool, optional
             Whether to zero-pad the feature vector up to $2^n$ entries. The
             default is ``True``. If ``False``, ``n_features`` must be exactly
@@ -772,8 +787,8 @@ class Encoding:
             encoding = Encoding.amplitude(n_features=3)
             encoding.apply(qf, [1, 2, 3])
 
-        Two qubits hold four amplitudes, so the vector is padded to $(1,2,3,0)$
-        and normalized by $\sqrt{14}$:
+        Two qubits hold four amplitudes, and the vector is padded to $(1,2,3,0)$
+        and normalized by $\sqrt{14}$.
 
         >>> np.round(qf.qs.statevector("array"), 4)
         array([0.2673, 0.8018, 0.5345, 0.])
@@ -784,8 +799,8 @@ class Encoding:
         if not pad and _next_power_of_two(n_features) != n_features:
             raise ValueError(
                 f"Tried to configure an amplitude encoder for {n_features} features "
-                "with pad=False. A register holds a power of two amplitudes, so "
-                "without padding the feature count must be one. Pass pad=True to "
+                "with pad=False. Without padding, the feature count must be a power of two, "
+                "since a register holds a power of two amplitudes. Pass pad=True to "
                 "zero-pad the feature vector."
             )
 
@@ -798,22 +813,24 @@ class Encoding:
         r"""
         Returns an encoder placing two features in each qubit.
 
-        Consecutive pairs of features are encoded into one qubit each, as a $Y$
-        rotation and a relative phase, so a register of $n$ qubits holds $2n$
-        features. An odd feature count leaves the last qubit without a phase.
+        Each consecutive pair of features goes into one qubit, as a $Y$
+        rotation and a relative phase, which means a register of $n$ qubits
+        holds $2n$ features. An odd feature count leaves the last qubit without
+        a phase.
 
         **Features at the poles**
 
         A rotation angle of $0$ or $\pi$ leaves the qubit in $\ket{0}$ or
-        $\ket{1}$, where a relative phase is a global one and has no effect, so
-        the phase feature of that qubit is lost. A scaling into the default
+        $\ket{1}$, where a relative phase is a global one and has no effect,
+        and the phase feature of that qubit is lost. A scaling into the default
         range places the minimum and maximum of every rotation feature exactly
-        there: a sample at either extreme of feature $x_{2i}$ loses feature
-        $x_{2i+1}$. Near the poles the phase is only weakly visible, as its
-        effect scales with the sine of the rotation angle. A ``feature_range``
-        well inside $(0, \pi)$, such as ``(numpy.pi / 4, 3 * numpy.pi / 4)``,
-        keeps every phase clearly observable, at the cost of a narrower range
-        for the rotation features.
+        there, which means a sample at either extreme of feature $x_{2i}$ loses
+        feature $x_{2i+1}$. Near the poles the phase is only weakly visible,
+        because its effect scales with the sine of the rotation angle. A
+        ``feature_range`` well inside $(0, \pi)$, such as
+        ``(numpy.pi / 4, 3 * numpy.pi / 4)``, keeps every phase clearly
+        observable, at the cost of a narrower range for the rotation
+        features.
 
         Parameters
         ----------
@@ -822,7 +839,7 @@ class Encoding:
         data : numpy.ndarray, optional
             Features shaped ``(n_samples, n_features)`` to derive the scaling
             range from. Mutually exclusive with ``data_range``. The default is
-            ``None``, in which case no scaling is applied.
+            ``None``, which applies no scaling.
         data_range : tuple, optional
             The ``(minimum, maximum)`` of the features, stated directly instead
             of derived from data. Mutually exclusive with ``data``.
@@ -857,23 +874,23 @@ class Encoding:
         Returns an encoder placing one bit in each qubit.
 
         The $i$-th bit is encoded into the $i$-th qubit, preparing the basis
-        state $\ket{x_0 x_1 \dotsm x_{n-1}}$, so encoding requires one qubit per
+        state $\ket{x_0 x_1 \dotsm x_{n-1}}$. Encoding requires one qubit per
         bit.
 
         **Features are binarized**
 
-        Basis encoding is defined for the values 0 and 1 alone. Rather than
-        rejecting anything else, this encoder binarizes what it is given: a
-        feature above ``threshold`` becomes ``1`` and a feature at or below it
-        becomes ``0``. Continuous features are therefore accepted, and reach the
+        Basis encoding is defined for the values 0 and 1 alone, and this
+        encoder binarizes what it is given instead of rejecting other values. A
+        feature above ``threshold`` becomes ``1``, and a feature at or below it
+        becomes ``0``. Continuous features are therefore accepted and reach the
         qubits reduced to bits rather than unchanged. The default threshold of
-        $0$ suits features centred on zero; for features scaled into an
+        $0$ suits features centred on zero. For features scaled into an
         interval, such as the output of :func:`minmax_scale
         <qrisp.qml.minmax_scale>`, choose the middle of that interval.
 
-        Bits are left unchanged by any threshold in $[0, 1)$, the default
-        included. Features binarized beforehand are therefore encoded with the
-        default, not with the threshold already used to binarize them.
+        Any threshold in $[0, 1)$ leaves bits unchanged, the default included,
+        which means features binarized beforehand are encoded with the default
+        rather than with the threshold already used to binarize them.
 
         Parameters
         ----------
@@ -917,7 +934,7 @@ class Encoding:
         ----------
         qv : QuantumVariable
             The QuantumVariable to encode the features into. Its size is not
-            validated; see the note on register width in the class docstring.
+            validated. See the note on register width in the class docstring.
         x : list[float] or numpy.ndarray
             The feature vector, holding ``n_features`` features.
 
@@ -936,16 +953,17 @@ class Encoding:
             If ``x`` is complex and the encoder was configured with a scaling.
         ValueError
             If ``x`` holds a NaN or an infinity. Features are only checked
-            outside of tracing, where their values are known; under tracing
-            they are encoded without a check.
+            outside of tracing, where their values are known, while under
+            tracing they are encoded without a check.
 
         """
-        # jnp.shape is static under tracing, so unlike qv.size these comparisons
-        # also run inside a traced program, where the bugs they catch live.
+        # Unlike qv.size, jnp.shape is static under tracing, which means these
+        # comparisons also run inside a traced program, where the bugs they
+        # catch live.
         if jnp.ndim(jnp.asarray(x)) != 1:
             raise ValueError(
                 f"Tried to encode a sample shaped {jnp.shape(x)}. A sample is a "
-                "one-dimensional vector of features, so a batch is encoded one "
+                "one-dimensional vector of features, and a batch is encoded one "
                 "sample at a time."
             )
 
@@ -956,13 +974,16 @@ class Encoding:
                 f"Tried to encode {num_features} features with an encoder configured for {self.n_features}."
             )
 
-        # Under tracing the values are not known while the circuit is built,
-        # so only concrete features can be checked. A NaN would otherwise be
-        # encoded as whatever its gates make of it: basis encoding turns it
-        # into a zero bit, as a comparison with NaN is False. A scaling clips
-        # an infinity onto a bound of the feature range, hiding it as well.
+        # Under tracing the values are not known while the circuit is built.
+        # Only concrete features can be checked. A NaN would otherwise be
+        # encoded as whatever its gates make of it. Since a comparison with NaN
+        # is False, basis encoding turns a NaN into a zero bit, while a scaling
+        # clips an infinity onto a bound of the feature range and hides it as
+        # well.
         if not check_for_tracing_mode() and not np.all(np.isfinite(np.asarray(x))):
-            raise ValueError("Tried to encode features that are not all finite, i.e. that hold a NaN or an infinity.")
+            raise ValueError(
+                "Tried to encode features that are not all finite, meaning a feature holds a NaN or an infinity."
+            )
 
         return self.encode(qv, self._prepare(x))
 
@@ -970,9 +991,9 @@ class Encoding:
         """
         PyTree flatten for JAX.
 
-        The configuration is auxiliary data rather than a child, so that
-        ``n_features`` stays a plain integer that the trace time check can
-        compare against. The scale and minimum of a scaling are children: Jax
+        The configuration is auxiliary data rather than a child, which keeps
+        ``n_features`` the plain integer that the trace time check compares
+        against. The scale and minimum of a scaling are children, because Jax
         compares auxiliary data for equality, which arrays do not support.
         """
         if self.scaling is None:
@@ -1003,8 +1024,9 @@ class Encoding:
     def __setstate__(self, state):
         # A subclass defined in a script is rebuilt from its code when loaded
         # in another process, without running the decorator that registered it
-        # as a PyTree. Unregistered, it is its own single leaf. treedef_is_leaf
-        # cannot tell, as it also holds for a registered node without children.
+        # as a PyTree. Unregistered, it is its own single leaf, which
+        # treedef_is_leaf cannot tell, because it also holds for a registered
+        # node without children.
         self.__dict__.update(state)
         leaves = tree_leaves(self)
 
@@ -1017,15 +1039,15 @@ class Encoding:
 
         Subclasses implement this to define their encoding. It is called by
         :meth:`apply`, which has already rejected a feature vector of the wrong
-        length and applied any configured scaling, so an implementation can
+        length and applied any configured scaling, and an implementation can
         rely on ``x`` holding exactly ``n_features`` scaled features.
 
         Parameters
         ----------
         qv : QuantumVariable
             The QuantumVariable to encode the features into. Under tracing its
-            size is a tracer, so it cannot be compared against ``n_features``
-            or used to size an allocation. Loop over it with
+            size is a tracer, which can neither be compared against
+            ``n_features`` nor size an allocation. Loop over it with
             :ref:`jrange <jrange>` rather than ``range(len(qv))``.
         x : list[float] or numpy.ndarray
             The feature vector, holding ``n_features`` features.
@@ -1056,25 +1078,26 @@ class Encoding:
         if jnp.iscomplexobj(jnp.asarray(x)):
             raise ValueError(
                 "Tried to scale complex features into a feature range. A range "
-                "orders real values only, so complex features are encoded without "
-                "a scaling: pass neither data nor data_range."
+                "orders real values only, and complex features are encoded without "
+                "a scaling. Pass neither data nor data_range."
             )
 
         scale, minimum, (low, high) = self.scaling
 
         # Subtracting the minimum first keeps the precision of features with a
         # large offset and a small spread. The equivalent scale * x + offset
-        # cancels two large numbers, and loses it.
+        # cancels two large numbers and loses it.
         scaled = low + scale * (jnp.asarray(x, dtype=float) - minimum)
 
-        # Clipping matches minmax_scale: a sample outside the configured range
+        # Clipping matches minmax_scale. A sample outside the configured range
         # would otherwise leave the interval the encoding expects.
         return jnp.clip(scaled, low, high)
 
 
 def _scaling(data, data_range, feature_range, periodic=True):
     """
-    Returns the affine map onto ``feature_range``, or None if none was requested.
+    Returns the affine map onto ``feature_range``, or None if no scaling was
+    requested.
     """
     if data is None and data_range is None:
         return None
