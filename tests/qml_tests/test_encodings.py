@@ -426,9 +426,15 @@ def test_dense_angle_encoding_rejects_oversized_feature_vector():
         Encoding.dense_angle(n_features=5).apply(QuantumFloat(2), [0.1, 0.2, 0.3, 0.4, 0.5])
 
 
-@pytest.mark.parametrize("bits, outcome", [([1, 0, 1], 5), ([0, 0, 0], 0), ([1, 1, 1], 7)])
+@pytest.mark.parametrize(
+    "bits, outcome", [([1, 0, 1], 5), ([0, 0, 0], 0), ([1, 1, 1], 7), ([1, 1, 0], 3), ([0, 0, 1], 4)]
+)
 def test_basis_encoding_prepares_basis_state(bits, outcome):
-    """The bit vector is encoded into the corresponding computational basis state."""
+    """
+    The bit vector is encoded into the corresponding computational basis state.
+    Bit i sets qubit i, the least significant bit first. The bit strings that
+    are not palindromes would read differently in the reversed order.
+    """
     qf = QuantumFloat(len(bits))
     Encoding.basis(n_features=len(bits)).apply(qf, bits)
 
@@ -464,6 +470,76 @@ def test_angle_encoding_traces(features, outcome):
         return measure(qf)
 
     assert main(jnp.array(features)) == outcome
+
+
+def test_angle_encoding_with_generic_angles_traces():
+    """
+    The angles 0 and pi only show whether a qubit flips. Generic angles also
+    pin the size of each rotation and which feature reaches which qubit. With
+    RY(x_i) on qubit i, the qubit reads 1 with probability sin^2(x_i/2), and the
+    qubits are independent.
+    """
+    features = np.array([0.7, 2.1])
+    encoding = Encoding.angle(n_features=2)
+
+    @terminal_sampling
+    def main(x):
+        qf = QuantumFloat(2)
+        encoding.apply(qf, x)
+        return qf
+
+    p = np.sin(features / 2) ** 2
+    # Qubit 0 is the least significant bit of each outcome.
+    expected = [(1 - p[0]) * (1 - p[1]), p[0] * (1 - p[1]), (1 - p[0]) * p[1], p[0] * p[1]]
+
+    distribution = main(jnp.array(features))
+
+    assert np.allclose([distribution.get(i, 0.0) for i in range(4)], expected)
+
+
+def test_dense_angle_encoding_traces():
+    """
+    Each qubit holds cos(t/2)|0> + e^(i phi) sin(t/2)|1>. A Hadamard on every
+    qubit turns the phase into a probability, and the qubit reads 0 with
+    probability (1 + sin(t) cos(phi))/2. A swapped pair of features or a lost
+    phase therefore changes the distribution.
+    """
+    features = np.array([1.1, 0.4, 2.3, 2.9])
+    encoding = Encoding.dense_angle(n_features=4)
+
+    @terminal_sampling
+    def main(x):
+        qf = QuantumFloat(2)
+        encoding.apply(qf, x)
+        h(qf[0])
+        h(qf[1])
+        return qf
+
+    p0 = [(1 + np.sin(features[2 * i]) * np.cos(features[2 * i + 1])) / 2 for i in range(2)]
+    # Qubit 0 is the least significant bit of each outcome.
+    expected = [p0[0] * p0[1], (1 - p0[0]) * p0[1], p0[0] * (1 - p0[1]), (1 - p0[0]) * (1 - p0[1])]
+
+    distribution = main(jnp.array(features))
+
+    assert np.allclose([distribution.get(i, 0.0) for i in range(4)], expected)
+
+
+@pytest.mark.parametrize("bits, outcome", [([1, 1, 0], 3), ([0, 0, 1], 4), ([1, 0, 1], 5)])
+def test_basis_encoding_traces(bits, outcome):
+    """
+    Basis encoding prepares the same basis state under tracing. Bit i sets
+    qubit i, and the bit strings that are not palindromes would read
+    differently in the reversed order.
+    """
+    encoding = Encoding.basis(n_features=3)
+
+    @jaspify
+    def main(x):
+        qf = QuantumFloat(3)
+        encoding.apply(qf, x)
+        return measure(qf)
+
+    assert main(jnp.array(bits)) == outcome
 
 
 @pytest.mark.parametrize(

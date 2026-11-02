@@ -25,7 +25,7 @@ import pytest
 from jax.tree_util import register_pytree_node_class, tree_flatten, tree_leaves, tree_unflatten
 
 from qrisp import QuantumFloat, h, measure, ry
-from qrisp.jasp import jaspify, jrange
+from qrisp.jasp import jaspify, jrange, terminal_sampling
 from qrisp.qml import (
     Ansatz,
     Encoding,
@@ -252,6 +252,125 @@ def test_real_amplitudes_propagates_a_flip_along_the_entanglers(entanglement, ex
     # The chain sets q0, q1 and q2, giving |7>. The ring then adds CX(2,0),
     # which clears q0 again and leaves |6>.
     assert main(w) == expected
+
+
+def _apply_ry(state, qubit, theta):
+    """Applies RY(theta) to one qubit of a state indexed with qubit 0 as the least significant bit."""
+    state = state.copy()
+    c, s = np.cos(theta / 2), np.sin(theta / 2)
+    for i in range(len(state)):
+        if not i >> qubit & 1:
+            j = i | 1 << qubit
+            a0, a1 = state[i], state[j]
+            state[i], state[j] = c * a0 - s * a1, s * a0 + c * a1
+    return state
+
+
+def _apply_cx(state, control, target):
+    """Applies CX to a state indexed with qubit 0 as the least significant bit."""
+    state = state.copy()
+    for i in range(len(state)):
+        if i >> control & 1 and not i >> target & 1:
+            j = i | 1 << target
+            state[i], state[j] = state[j], state[i]
+    return state
+
+
+def test_real_amplitudes_ring_matches_a_reference_simulation_under_tracing():
+    """
+    Three qubits and two layers make the ring add CX(2, 0) after every rotation
+    layer but the last. Generic angles keep every amplitude away from zero and
+    one. A wrong parameter offset, a missing closing entangler or a swapped
+    control therefore changes the distribution. The reference is a separate
+    numpy simulation, which means it shares no code with the ansatz.
+    """
+    num_qubits, layers = 3, 2
+    ansatz = Ansatz.real_amplitudes(num_qubits=num_qubits, layers=layers, entanglement="ring")
+    w = np.linspace(0.3, 2.7, ansatz.num_parameters)
+
+    @terminal_sampling
+    def main(w):
+        qf = QuantumFloat(num_qubits)
+        ansatz.apply(qf, w)
+        return qf
+
+    state = np.zeros(2**num_qubits)
+    state[0] = 1.0
+    for layer in range(layers + 1):
+        for i in range(num_qubits):
+            state = _apply_ry(state, i, w[layer * num_qubits + i])
+        if layer < layers:
+            for i in range(num_qubits - 1):
+                state = _apply_cx(state, i, i + 1)
+            state = _apply_cx(state, num_qubits - 1, 0)
+
+    distribution = main(jnp.array(w))
+    observed = np.array([distribution.get(i, 0.0) for i in range(2**num_qubits)])
+
+    assert np.allclose(observed, state**2)
+
+
+def _untraced_and_traced_distributions(prepare, *args):
+    """Returns the outcome probabilities of a preparation run directly and run traced."""
+
+    def direct(*args):
+        qf = prepare(*args)
+        return np.abs(statevector_array(qf)) ** 2
+
+    traced = terminal_sampling(prepare)(*[jnp.array(a) for a in args])
+    num_states = len(direct(*args))
+    observed = np.array([traced.get(i, 0.0) for i in range(num_states)])
+
+    # statevector("array") puts qubit 0 in the most significant bit, while the
+    # traced outcomes put it in the least significant bit. Reversing the bits
+    # of each index lines the two up.
+    num_qubits = num_states.bit_length() - 1
+    order = [int(format(i, f"0{num_qubits}b")[::-1], 2) for i in range(num_states)]
+    return direct(*args)[order], observed
+
+
+def test_hardware_efficient_with_generic_parameters_traces_to_the_untraced_state():
+    """
+    Generic angles over three rotation axes and two layers leave no outcome
+    with probability zero or one. The traced and the untraced circuit therefore
+    agree only if every parameter reaches the same gate on both paths.
+    """
+    ansatz = Ansatz.hardware_efficient(num_qubits=3, layers=2, rotations=("x", "y", "z"))
+    w = np.linspace(0.2, 2.8, ansatz.num_parameters)
+
+    def prepare(w):
+        qf = QuantumFloat(3)
+        ansatz.apply(qf, w)
+        return qf
+
+    expected, observed = _untraced_and_traced_distributions(prepare, w)
+
+    assert np.allclose(observed, expected)
+
+
+def test_data_reuploading_with_generic_inputs_traces_to_the_untraced_state():
+    """
+    Generic features and parameters on two qubits and two layers make every
+    upload and every parameter block visible in the distribution. A block read
+    from the wrong offset under tracing changes it.
+    """
+    reuploading = Ansatz.data_reuploading(
+        num_qubits=2,
+        encoding=Encoding.angle(n_features=2),
+        ansatz=Ansatz.real_amplitudes(num_qubits=2, layers=1),
+        layers=2,
+    )
+    x = np.array([0.7, 2.1])
+    w = np.linspace(0.4, 2.6, reuploading.num_parameters)
+
+    def prepare(x, w):
+        qf = QuantumFloat(2)
+        reuploading.apply(qf, w, x)
+        return qf
+
+    expected, observed = _untraced_and_traced_distributions(prepare, x, w)
+
+    assert np.allclose(observed, expected)
 
 
 def test_data_reuploading_encodes_once_per_layer():
