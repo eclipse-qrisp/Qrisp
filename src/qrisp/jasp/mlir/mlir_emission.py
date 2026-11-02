@@ -1,21 +1,21 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-"""
+"""Lowers a JAXPR produced by Qrisp to MLIR using the JASP dialect.
+
 Utilities to lower a JAXPR produced by Qrisp to MLIR using the JASP dialect
 and convert it into an xDSL module for downstream transformations.
 
@@ -26,6 +26,7 @@ Three key steps happen here:
 """
 
 from xdsl.dialects import builtin
+from xdsl.transforms.reconcile_unrealized_casts import reconcile_unrealized_casts
 
 from qrisp.jasp.interpreter_tools.interpreters.composite_gate_interpreter import decompose_composite_gates
 from qrisp.jasp.jasp_expression import Jaspr
@@ -66,9 +67,11 @@ def jaspr_to_mlir(jaspr: Jaspr, lower_stableHLO=False) -> builtin.ModuleOp:
     fix_quantum_control_flow(xdsl_module)
 
     # Run xDSL optimization passes to clean up lowering artifacts
-    # (e.g., verbose scalar ``linalg.generic`` chains produced by
-    # ``stablehlo-legalize-to-linalg``).
+    # (e.g., identity ``unrealized_conversion_cast`` ops left by
+    # ``stablehlo-convert-to-signless`` and verbose scalar ``linalg.generic``
+    # chains produced by ``stablehlo-legalize-to-linalg``).
     if lower_stableHLO:
+        reconcile_unrealized_casts(xdsl_module)
         scalar_linalg_folding(xdsl_ctx, xdsl_module)
         scalar_tensor_folding(xdsl_ctx, xdsl_module)
         cmpi_extui_folding(xdsl_ctx, xdsl_module)

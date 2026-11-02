@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests GQSP Hamiltonian simulation via qubitization and the JAX Bessel function jv."""
 
 import jax.numpy as jnp
 import numpy as np
@@ -48,7 +49,6 @@ def test_gqsp_hamiltonian_simulation_nested_block_encoding():
     Compares the amplitudes obtained form Hamiltonian simulation applied to BE_poly with those obtained from the direct Hamiltonian simulation applied to BE2.
     Ensures that the amplitudes are consistent and the success probability is high.
     """
-
     L = 4
     H = create_ising_hamiltonian(L, 0.25, 0.5)
     H2 = 0.9 * H + 0.8 * H * H * H
@@ -82,8 +82,9 @@ def test_gqsp_hamiltonian_simulation_nested_block_encoding():
 
 def test_gqsp_hamiltonian_simulation_long_time():
     """Test the GQSP Hamiltonian simulation via qubitization with long time evolution.
-    Ensures that calculation of coefficients for Jacobi-Anger expansion remains numerically stable."""
 
+    Ensures that calculation of coefficients for Jacobi-Anger expansion remains numerically stable.
+    """
     L = 4
     H = create_ising_hamiltonian(L, 0.25, 0.5)
     BE = BlockEncoding.from_operator(H)
@@ -118,7 +119,6 @@ def test_gqsp_hamiltonian_simulation_long_time():
 @pytest.mark.parametrize("t", [1.0, 5.0, 10.0])
 def test_jax_jv(N_terms, t):
     """Test the JAX implementation of the Bessel function of the first kind (jv) against SciPy's implementation."""
-
     m_array = jnp.arange(0, N_terms + 1)
 
     # Run the pure JAX version

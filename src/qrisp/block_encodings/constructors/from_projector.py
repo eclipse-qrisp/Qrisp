@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Builds a BlockEncoding of a projector or its kernel projector between two states."""
 
 from typing import Callable, Optional, Tuple, Union
 
@@ -24,7 +25,7 @@ from qrisp.qtypes import QuantumBool
 
 
 def build_from_projector(
-    cls: BlockEncoding,
+    cls: type[BlockEncoding],
     left: Union[int, Tuple[int, ...], Callable],
     right: Optional[Union[int, Tuple[int, ...], Callable]] = None,
     kernel: bool = False,
@@ -34,6 +35,8 @@ def build_from_projector(
 
     Parameters
     ----------
+    cls : type[BlockEncoding]
+        The class on which this constructor is invoked.
     left : int | tuple of int | Callable
         An integer or a tuple of integers representing a computational basis state $\ket{\phi}$,
         or a function ``left(*operands)`` preparing a state $\ket{\phi}$ from $\ket{0}$.
@@ -112,7 +115,7 @@ def build_from_projector(
         # {0.0: 0.25, 1.0: 0.25, 2.0: 0.25, 3.0: 0.25}
 
     """
-    if kernel or (right == None):
+    if kernel or (right is None):
         right = left
 
     # left

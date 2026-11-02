@@ -1,38 +1,33 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-"""
-This file implements the tools to perform quantum resource estimation using Jasp
-infrastructure. The idea here is to transform the quantum instructions within a
-given Jaspr into "counting instructions". That means instead of performing some
-quantum gate, we increment an index in an array, which keeps track of how many
-instructions of each type have been performed.
+"""User-facing decorators for quantum resource estimation of Jasp functions."""
 
-To do this, we implement the 
+# Resource estimation transforms the quantum instructions of a Jaspr into
+# classical "counting instructions": instead of performing a quantum gate, a
+# metric updates classical data, for example by incrementing a gate counter.
+# The transformation itself is implemented in
+# qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter, while this
+# module implements the decorators (count_ops, depth, num_qubits) that
+# evaluate the transformed Jaspr.
 
-qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter.py
-
-Which handles the transformation logic of the Jaspr.
-This file implements the interfaces to evaluating the transformed Jaspr.
-
-"""
-
+import warnings
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, NamedTuple, Tuple
+from typing import Any, NamedTuple
 
 from jax.tree_util import tree_flatten
 
@@ -51,20 +46,36 @@ from qrisp.jasp.interpreter_tools.interpreters.num_qubits_metric import (
     get_num_qubits_profiler,
     simulate_num_qubits,
 )
+from qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter import (
+    get_cached_jaspr,
+)
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
     simulation,
 )
 from qrisp.jasp.jasp_expression import Jaspr
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class MetricSpec(NamedTuple):
-    """Specification of a metric to be computed via profiling."""
+    """Specification of a metric to be computed via profiling.
 
-    build_profiler: Callable[[Jaspr, Callable], Tuple[Callable, Any]]
-    extract_metric: Callable[[Tuple, Jaspr, Any], Any]
-    simulate_fallback: Callable[[Jaspr, Any], Any]
+    Attributes
+    ----------
+    build_profiler : Callable[..., tuple[Callable, Any]]
+        Builds the profiler of a Jaspr from a measurement behavior and the metric's
+        keyword arguments, and returns it with auxiliary data for the extraction.
+    extract_metric : Callable[[tuple, Jaspr, Any], Any]
+        Turns the profiler output into the user-facing result.
+    simulate_fallback : Callable[..., Any]
+        Computes the metric by simulation, used for ``meas_behavior="sim"``.
+
+    """
+
+    build_profiler: Callable[..., tuple[Callable, Any]]
+    extract_metric: Callable[[tuple, Jaspr, Any], Any]
+    simulate_fallback: Callable[..., Any]
 
 
 METRIC_DISPATCH = {
@@ -87,7 +98,26 @@ METRIC_DISPATCH = {
 
 
 def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
-    """Normalize the measurement behavior into a callable."""
+    """Normalize the measurement behavior into a callable.
+
+    Parameters
+    ----------
+    meas_behavior : str or Callable
+        ``"0"``, ``"1"``, ``"sim"``, or a callable taking a JAX PRNG key.
+
+    Returns
+    -------
+    Callable
+        The measurement behavior as a callable.
+
+    Raises
+    ------
+    ValueError
+        If ``meas_behavior`` is an unknown string.
+    TypeError
+        If ``meas_behavior`` is neither a string nor a callable.
+
+    """
     if isinstance(meas_behavior, str):
         if meas_behavior == "0":
             return always_zero
@@ -109,6 +139,7 @@ def _normalize_meas_behavior(meas_behavior: str | Callable) -> Callable:
 
 def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = None) -> Callable:
     """Decorator to determine resources of large scale quantum computations.
+
     This decorator compiles the given Jasp-compatible function into a classical
     function computing the amount of each gates required. The decorated function
     will return a dictionary containing the operation counts.
@@ -154,8 +185,8 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
 
     Returns
     -------
-    resource_estimation decorator : Callable
-        A decorator, producing a function to computed the required resources.
+    Callable
+        A decorator, producing a function that computes the required resources.
 
     Examples
     --------
@@ -176,12 +207,13 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
             return measure(c)
 
         print(main(5))
-        # {'s': 45, 'x': 22, 't_dg': 98, 'cx': 510, 't': 96, 'h': 139, 'measure': 55}
+        # {'t': 100, 's': 50, 't_dg': 100, 'h': 139, 'x': 22, 'cx': 577, 'measure': 49}
         print(main(5000))
-        # {'t': 751506, 'h': 1127254, 'x': 2002, 's': 375750, 't_dg': 751508, 'cx': 4629255, 'measure': 752500}
+        # {'t': 75025000, 's': 37512500, 't_dg': 75025000, 'h': 112527499,
+        #  'x': 20002, 'cx': 500089987, 'measure': 37512499}
 
     Note that even though the second computation contains more than 800 million gates,
-    determining the resources takes less than 200ms, highlighting the scalability
+    determining the resources takes well under a second, highlighting the scalability
     features of the Jasp infrastructure.
 
     **Modifying the measurement behavior via a random number generator**
@@ -235,7 +267,7 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
     measurements.
 
     For some algorithms (such as :ref:`RUS`) sampling the measurement result
-    from a simple distribution won't cut it because the required ressource can
+    from a simple distribution won't cut it because the required resources can
     be heavily influenced by measurement outcomes. For this matter it is also
     possible to perform a full simulation. Note that this simulation is no
     longer deterministic.
@@ -255,30 +287,19 @@ def count_ops(meas_behavior: str | Callable, callback_threshold: int | None = No
             return measure(qv)
 
         print(main(0))
-        {'measure': 4, 'x': 2}
+        # {'measure': 4, 'x': 2}
         print(main(1))
-        {'measure': 4}
+        # {'measure': 4}
 
     """
 
     def count_ops_decorator(function):
+        """Turn ``function`` into a function returning its operation counts."""
 
         def ops_counter(*args):
-            from qrisp.jasp import make_jaspr
-
-            if not hasattr(function, "jaspr_dict"):
-                function.jaspr_dict = {}
-
-            signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
-            hash_key = (signature, shape_signature, hash(meas_behavior))
-
-            if hash_key not in function.jaspr_dict:
-                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
-
-            return function.jaspr_dict[hash_key].count_ops(
-                *args, meas_behavior=meas_behavior, callback_threshold=callback_threshold
-            )
+            """Return the operation counts of ``function`` called with ``args``."""
+            jaspr = get_cached_jaspr(function, args, meas_behavior)
+            return jaspr.count_ops(*args, meas_behavior=meas_behavior, callback_threshold=callback_threshold)
 
         return ops_counter
 
@@ -321,7 +342,7 @@ def depth(
 
     Returns
     -------
-    depth decorator : Callable
+    Callable
         A decorator producing a function that computes the depth required.
 
     Examples
@@ -398,7 +419,7 @@ def depth(
 
     .. warning::
 
-        The depth metric an experimental feature and may not behave as expected in certain edge cases.
+        The depth metric is an experimental feature and may not behave as expected in certain edge cases.
 
         -   The memory management operations ``reset`` and ``delete`` are currently ignored.
             Qubits freed by these calls still count toward the ``max_qubits`` limit.
@@ -410,21 +431,12 @@ def depth(
     """
 
     def depth_decorator(function):
+        """Turn ``function`` into a function returning its circuit depth."""
 
         def depth_counter(*args):
-            from qrisp.jasp import make_jaspr
-
-            if not hasattr(function, "jaspr_dict"):
-                function.jaspr_dict = {}
-
-            signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
-            hash_key = (signature, shape_signature, hash(meas_behavior))
-
-            if hash_key not in function.jaspr_dict:
-                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
-
-            return function.jaspr_dict[hash_key].depth(
+            """Return the circuit depth of ``function`` called with ``args``."""
+            jaspr = get_cached_jaspr(function, args, meas_behavior)
+            return jaspr.depth(
                 *args, meas_behavior=meas_behavior, max_qubits=max_qubits, callback_threshold=callback_threshold
             )
 
@@ -433,9 +445,19 @@ def depth(
     return depth_decorator
 
 
+def _warn_max_allocations_deprecated() -> None:
+    """Warn that the ``max_allocations`` argument of ``num_qubits`` has no effect anymore."""
+    warnings.warn(
+        "The ``max_allocations`` argument of ``num_qubits`` is deprecated and has no effect: "
+        "the number of allocations is no longer bounded. It will be removed in a future release.",
+        QrispDeprecationWarning,
+        stacklevel=3,
+    )
+
+
 def num_qubits(
     meas_behavior: str | Callable,
-    max_allocations: int = 1000,
+    max_allocations: int | None = None,
     callback_threshold: int | None = None,
 ) -> Callable:
     """Decorator to track qubit allocation and deallocation events during a quantum computation.
@@ -447,6 +469,9 @@ def num_qubits(
 
     - increased whenever qubits are allocated (e.g., via ``QuantumVariable`` creation),
     - decreased whenever qubits are explicitly deleted (e.g., via ``qv.delete()``),
+
+    Only a fixed number of running counters is tracked, so there is no limit on the
+    number of allocation and deallocation events.
 
     The decorated function returns a dictionary containing information about
     all allocation and deallocation events.
@@ -468,8 +493,8 @@ def num_qubits(
         A callable must take a JAX PRNG key as input and return a boolean.
 
     max_allocations : int, optional
-        The maximum number of allocation/deallocation events supported for tracking.
-        Default is 1000. This is necessary as JAX requires static shapes for JIT compilation.
+        Deprecated and ignored. The number of allocation/deallocation events is no longer
+        bounded. Passing a value emits a ``QrispDeprecationWarning``.
 
     callback_threshold : int or None, optional
         For very large algorithms, compile time can blow up due to aggressively
@@ -583,27 +608,18 @@ def num_qubits(
         cannot currently be analyzed.
 
     """
+    if max_allocations is not None:
+        _warn_max_allocations_deprecated()
 
     def num_qubits_decorator(function):
+        """Turn ``function`` into a function returning its qubit allocation statistics."""
 
         def qubits_counter(*args):
-
-            from qrisp.jasp import make_jaspr
-
-            if not hasattr(function, "jaspr_dict"):
-                function.jaspr_dict = {}
-
-            signature = tuple(type(arg) for arg in args)
-            shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
-            hash_key = (signature, shape_signature, hash(meas_behavior))
-
-            if hash_key not in function.jaspr_dict:
-                function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
-
-            return function.jaspr_dict[hash_key].num_qubits(
+            """Return the qubit allocation statistics of ``function`` called with ``args``."""
+            jaspr = get_cached_jaspr(function, args, meas_behavior)
+            return jaspr.num_qubits(
                 *args,
                 meas_behavior=meas_behavior,
-                max_allocations=max_allocations,
                 callback_threshold=callback_threshold,
             )
 
@@ -629,8 +645,7 @@ def profile_jaspr(jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", 
 
     **kwargs : Any
         Additional keyword arguments to be passed to the profiler builder.
-        For example, `max_qubits` for depth profiling,
-        or `max_allocations` for num_qubits profiling.
+        For example, `max_qubits` for depth profiling.
 
     Returns
     -------
@@ -657,6 +672,7 @@ def profile_jaspr(jaspr: Jaspr, mode: str, meas_behavior: str | Callable = "0", 
 
     @wraps(profiler)
     def profiler_wrapper(*args):
+        """Profile the Jaspr on ``args`` and return the extracted metric."""
         args = tree_flatten(args)[0]
         res = profiler(*args)
         return metric_spec.extract_metric(res, jaspr, aux)

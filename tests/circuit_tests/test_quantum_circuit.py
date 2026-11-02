@@ -1,19 +1,18 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
 """Tests for the QuantumCircuit class in qrisp.circuit.quantum_circuit."""
 
@@ -26,9 +25,10 @@ import sympy
 from qiskit import QuantumCircuit as QiskitQuantumCircuit
 from sympy import symbols
 
-from qrisp.circuit import Clbit, Instruction, Qubit
+import qrisp.simulator.unitary_management as um
+from qrisp.circuit import Clbit, Instruction, Operation, Qubit
 from qrisp.circuit.quantum_circuit import QuantumCircuit
-from qrisp.circuit.standard_operations import CXGate, Measurement, XGate
+from qrisp.circuit.standard_operations import CXGate, Measurement, RXGate, XGate
 from qrisp.permeability import PermeabilityGraph
 
 
@@ -620,6 +620,22 @@ class TestQuantumCircuitMethods:
         qc.h(0)
         u = qc.get_unitary()
         assert np.allclose(u, u.conj().T)
+
+    def test_get_unitary_controlled_gate_precision(self):
+        """Regression test: phase-tolerant controlled gates have vanishing
+        off-diagonal entries.
+
+        The unitary used to be computed in ``complex64``, leaving spurious
+        ~1e-7 entries where the matrix must vanish exactly. With
+        ``complex128`` these sit at float64 round-off level (~1e-16).
+        """
+        qc = QuantumCircuit(4)
+        qc.append(RXGate(0.7).control(3, method="gray_pt"), [0, 1, 2, 3])
+
+        u = qc.get_unitary()
+        assert u.dtype == np.complex128
+        spurious = np.abs(u)[np.abs(u) < 0.1]
+        assert spurious.max() < 1e-12
 
     # ------------------------------------------------------------------ #
     # get_unitary — docstring examples                                   #
@@ -1880,6 +1896,291 @@ class TestQuantumCircuitRunAndStatevector:
         sv = qc.statevector_array()
         assert np.isclose(np.linalg.norm(sv), 1.0, atol=1e-5)
 
+    def test_statevector_array_dtype_is_complex64(self):
+        """The simulator statevector stays in complex64 precision.
+
+        ``get_unitary`` now computes in ``complex128``, but the simulator
+        keeps its state in ``complex64`` (the gate matrix is cast to the
+        state's dtype in ``apply_matrix``), so the statevector dtype is
+        unchanged.
+        """
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+        sv = qc.statevector_array()
+        assert sv.dtype == np.complex64
+
+    def test_statevector_array_composite_gate_does_not_request_wide_unitary(self):
+        """statevector_array dissolves composite gates without requesting wide unitaries."""
+        sub = QuantumCircuit(16)
+        for qubit in sub.qubits:
+            sub.x(qubit)
+
+        qc = QuantumCircuit(16)
+        qc.append(sub.to_gate(), qc.qubits)
+
+        original = Operation.get_unitary
+
+        def guard(op_self, *args, **kwargs):
+            """Prevent wide unitary matrices from being allocated during simulation."""
+            if op_self.num_qubits > 8:
+                raise RuntimeError(f"unitary requested for {op_self.num_qubits} qubits")
+            return original(op_self, *args, **kwargs)
+
+        Operation.get_unitary = guard
+        try:
+            state = qc.statevector_array()
+            assert np.isclose(abs(state[-1]), 1.0)
+            assert np.isclose(np.linalg.norm(state), 1.0)
+        finally:
+            Operation.get_unitary = original
+
+    def test_statevector_array_explicit_unitary_preserved(self):
+        """Custom operations without definitions still have get_unitary() called."""
+        u = np.array([[0, 1], [1, 0]], dtype=complex)
+        custom_op = Operation(name="custom_x", num_qubits=1)
+        custom_op.get_unitary = lambda: u
+
+        qc = QuantumCircuit(1)
+        qc.append(custom_op, [0])
+        sv = qc.statevector_array()
+        assert np.isclose(abs(sv[1]), 1.0)
+
+    def test_statevector_array_zero_qubits_with_clbits(self):
+        """statevector_array handles circuits with classical bits but zero qubits."""
+        qc = QuantumCircuit(0, 1)
+        sv = qc.statevector_array()
+        assert sv.shape == (1,)
+        assert np.isclose(sv[0], 1.0)
+
+    def test_statevector_array_wide_mcx_does_not_request_wide_unitary(self):
+        """statevector_array dissolves wide controlled operations instead of building their unitary."""
+        qc = QuantumCircuit(14)
+        for i in range(13):
+            qc.h(i)
+        qc.mcx(list(range(13)), 13)
+
+        original = um.controlled_unitary
+
+        def guard(gate):
+            """Prevent wide controlled unitaries from being allocated during simulation."""
+            if gate.num_qubits > 8:
+                raise RuntimeError(f"unitary requested for {gate.num_qubits} qubits")
+            return original(gate)
+
+        um.controlled_unitary = guard
+        try:
+            sv = qc.statevector_array()
+        finally:
+            um.controlled_unitary = original
+        assert np.isclose(np.linalg.norm(sv), 1.0)
+        assert np.count_nonzero(np.abs(sv) > 1e-6) == 2**13
+
+    def test_statevector_array_keeps_narrow_controlled_operations(self):
+        """Toffolis are simulated via the closed-form controlled unitary, not their synthesized definition."""
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.h(1)
+        qc.ccx(0, 1, 2)
+
+        calls = []
+        original = um.controlled_unitary
+
+        def spy(gate):
+            calls.append(gate.name)
+            return original(gate)
+
+        um.controlled_unitary = spy
+        try:
+            qc.statevector_array()
+        finally:
+            um.controlled_unitary = original
+        assert "2cx" in calls
+
+    def test_run_keeps_narrow_controlled_operations(self):
+        """run() simulates Toffolis via the closed-form controlled unitary, not their synthesized definition."""
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.h(1)
+        qc.ccx(0, 1, 2)
+        qc.measure(qc.qubits)
+
+        calls = []
+        original = um.controlled_unitary
+
+        def spy(gate):
+            calls.append(gate.name)
+            return original(gate)
+
+        um.controlled_unitary = spy
+        try:
+            result = qc.run()
+        finally:
+            um.controlled_unitary = original
+        assert "2cx" in calls
+        assert set(result.keys()) == {"000", "001", "010", "111"}
+
+    def test_run_dissolves_measurements_inside_composite_operations(self):
+        """run() still performs measurements contained in the definition of a (narrow) composite operation."""
+        sub = QuantumCircuit(2)
+        sub.h(0)
+        sub.cx(0, 1)
+        sub.measure([0, 1])
+
+        qc = QuantumCircuit(2, 2)
+        qc.append(sub.to_op(), qc.qubits, qc.clbits)
+        result = qc.run()
+        assert set(result.keys()) == {"00", "11"}
+        assert np.isclose(result["00"], 0.5, atol=1e-5)
+        assert np.isclose(result["11"], 0.5, atol=1e-5)
+
+
+class TestQuantumCircuitSymbolicSimulation:
+    """Tests for simulating circuits that carry unbound SymPy parameters.
+
+    The simulator keeps its state in ``complex64`` while ``get_unitary``
+    produces ``complex128``, so ``TensorFactor.apply_matrix`` casts the gate
+    matrix to the state dtype. Symbolic gates produce ``object`` matrices that
+    have no numeric value yet and must be excluded from that cast, in both
+    directions: an object matrix meeting a numeric state, and a numeric matrix
+    meeting an object state.
+    """
+
+    @staticmethod
+    def _bind(statevector, subs_dic):
+        """Substitute ``subs_dic`` into a symbolic statevector.
+
+        Entries are a mix of Python ``complex``, ``sympy.Float`` and
+        ``sympy.Zero``, so each one is sympified before substituting.
+        """
+        return np.array([complex(sympy.sympify(entry).subs(subs_dic)) for entry in statevector])
+
+    def test_statevector_array_symbolic_keeps_object_dtype(self):
+        """A circuit with an unbound parameter yields an object-dtype statevector."""
+        phi = symbols("phi")
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.h(1)
+        qc.cp(phi, 0, 1)
+        sv = qc.statevector_array()
+        assert sv.dtype == np.dtype("O")
+
+    def test_statevector_array_symbolic_retains_free_symbol(self):
+        """The unbound parameter survives into the amplitudes."""
+        phi = symbols("phi")
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.h(1)
+        qc.cp(phi, 0, 1)
+        sv = qc.statevector_array()
+        free_symbols = set().union(*[sympy.sympify(entry).free_symbols for entry in sv])
+        assert free_symbols == {phi}
+
+    def test_statevector_array_numeric_gate_before_symbolic_gate(self):
+        """A numeric gate followed by a symbolic one does not raise.
+
+        Regression test: the numeric ``h`` leaves the state in ``complex64``,
+        and the symbolic ``cp`` then hands ``apply_matrix`` an ``object``
+        matrix. Casting that matrix to ``complex64`` raises
+        ``TypeError: Cannot convert expression to float``.
+        """
+        phi = symbols("phi")
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.h(1)
+        qc.cp(phi, 0, 1)
+        sv = qc.statevector_array()
+        assert sv.dtype == np.dtype("O")
+        assert np.isclose(complex(sympy.sympify(sv[0])), 0.5, atol=1e-5)
+
+    def test_statevector_array_symbolic_gate_before_numeric_gate(self):
+        """A symbolic gate followed by a numeric one does not raise.
+
+        The reverse ordering: the symbolic ``p`` turns the state into an
+        ``object`` array, and the numeric ``h``/``cx`` then hand
+        ``apply_matrix`` a ``complex128`` matrix, which must not be cast to
+        ``object`` either.
+        """
+        phi = symbols("phi")
+        qc = QuantumCircuit(2)
+        qc.p(phi, 0)
+        qc.h(0)
+        qc.cx(0, 1)
+        sv = qc.statevector_array()
+        assert sv.dtype == np.dtype("O")
+        assert np.isclose(np.linalg.norm(self._bind(sv, {phi: 0.4})), 1.0, atol=1e-5)
+
+    def test_statevector_array_symbolic_matches_numeric_after_substitution(self):
+        """Binding the symbol reproduces the statevector of the numeric circuit."""
+        phi = symbols("phi")
+        value = 0.7
+
+        symbolic_qc = QuantumCircuit(2)
+        symbolic_qc.h(0)
+        symbolic_qc.h(1)
+        symbolic_qc.cp(phi, 0, 1)
+        bound = self._bind(symbolic_qc.statevector_array(), {phi: value})
+
+        numeric_qc = QuantumCircuit(2)
+        numeric_qc.h(0)
+        numeric_qc.h(1)
+        numeric_qc.cp(value, 0, 1)
+        reference = np.asarray(numeric_qc.statevector_array())
+
+        assert np.allclose(bound, reference, atol=1e-5)
+
+    def test_statevector_array_multiple_symbols(self):
+        """Several independent parameters are all retained."""
+        phi, theta = symbols("phi theta")
+        qc = QuantumCircuit(2)
+        qc.rx(phi, 0)
+        qc.rx(theta, 1)
+        sv = qc.statevector_array()
+        free_symbols = set().union(*[sympy.sympify(entry).free_symbols for entry in sv])
+        assert free_symbols == {phi, theta}
+        bound = self._bind(sv, {phi: 0.3, theta: 1.1})
+        assert np.isclose(np.linalg.norm(bound), 1.0, atol=1e-5)
+
+    def test_statevector_array_symbolic_controlled_gate(self):
+        """The documented abstract-parameter example still simulates.
+
+        Mirrors ``documentation/source/reference/Examples/AbstractParameter.rst``:
+        a phase gate with a SymPy symbol, controlled on ``ctrl_state="00"``.
+        """
+        from qrisp.circuit import PGate
+
+        phi = symbols("phi")
+        qc = QuantumCircuit(3)
+        qc.h(-1)
+        qc.append(PGate(phi).control(2, ctrl_state="00"), qc.qubits)
+
+        sv = qc.statevector_array()
+        assert sv.dtype == np.dtype("O")
+
+        bound = self._bind(sv, {phi: np.pi / 2})
+        expected = np.zeros(8, dtype=np.complex128)
+        expected[0] = 1 / np.sqrt(2)
+        expected[1] = np.exp(1j * np.pi / 2) / np.sqrt(2)
+        assert np.allclose(bound, expected, atol=1e-5)
+
+    def test_get_unitary_symbolic_keeps_object_dtype(self):
+        """``get_unitary`` of a symbolic circuit stays an object array."""
+        phi = symbols("phi")
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cp(phi, 0, 1)
+        unitary = qc.get_unitary()
+        assert unitary.dtype == np.dtype("O")
+
+    def test_bind_parameters_then_run_symbolic_circuit(self):
+        """A bound symbolic circuit simulates back to a numeric result."""
+        phi = symbols("phi")
+        qc = QuantumCircuit(1, 1)
+        qc.rx(phi, 0)
+        qc.measure(0, 0)
+        result = qc.bind_parameters({phi: np.pi}).run()
+        assert np.isclose(result.get("1", 0.0), 1.0, atol=1e-5)
+
 
 class TestQuantumCircuitFromQasmFile:
     """Tests for QuantumCircuit.from_qasm_file."""
@@ -1965,6 +2266,7 @@ class TestQuantumCircuitGateMethods:
         [
             lambda qc: qc.cp(0, 0, 1),
             lambda qc: qc.rxx(0, 0, 1),
+            lambda qc: qc.ryy(0, 0, 1),
             lambda qc: qc.rzz(0, 0, 1),
         ],
     )
@@ -1981,7 +2283,7 @@ class TestQuantumCircuitGateMethods:
         assert len(qc.data) == 0
 
     # ------------------------------------------------------------------ #
-    # cp / rxx / rzz / xxyy                                              #
+    # cp / rxx / ryy / rzz / xxyy                                        #
     # ------------------------------------------------------------------ #
 
     def test_cp_appends_correct_instruction(self):
@@ -1997,6 +2299,13 @@ class TestQuantumCircuitGateMethods:
         qc.rxx(np.pi / 4, 0, 1)
         assert len(qc.data) == 1
         assert qc.data[0].op.name == "rxx"
+
+    def test_ryy_appends_correct_instruction(self):
+        """Ryy appends exactly one instruction named 'ryy'."""
+        qc = QuantumCircuit(2)
+        qc.ryy(np.pi / 4, 0, 1)
+        assert len(qc.data) == 1
+        assert qc.data[0].op.name == "ryy"
 
     def test_rzz_appends_correct_instruction(self):
         """Rzz appends exactly one instruction named 'rzz'."""
@@ -2323,6 +2632,15 @@ class TestQuantumCircuitGateMethodUnitaries:
         qc = QuantumCircuit(2)
         qc.rxx(phi, 0, 1)
         assert np.allclose(qc.get_unitary(), RXXGate(phi).get_unitary(), atol=1e-6)
+
+    @pytest.mark.parametrize("phi", [np.pi / 4, np.pi / 2, 1.5])
+    def test_ryy_unitary(self, phi):
+        """qc.ryy(phi) produces the RYY(phi) unitary."""
+        from qrisp.circuit.standard_operations import RYYGate
+
+        qc = QuantumCircuit(2)
+        qc.ryy(phi, 0, 1)
+        assert np.allclose(qc.get_unitary(), RYYGate(phi).get_unitary(), atol=1e-6)
 
     @pytest.mark.parametrize("phi", [np.pi / 4, np.pi / 2, 1.5])
     def test_rzz_unitary(self, phi):

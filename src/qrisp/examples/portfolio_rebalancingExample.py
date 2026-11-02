@@ -1,3 +1,5 @@
+"""Example solving a portfolio rebalancing problem with QAOA using historical return/covariance data."""
+
 # table below alternates between avg return and covar
 
 # create data --

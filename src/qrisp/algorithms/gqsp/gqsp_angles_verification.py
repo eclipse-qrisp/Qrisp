@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Classical utilities to verify and plot GQSP/QSP/QSVT angle computations against target polynomials."""
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -185,10 +186,8 @@ def evaluate_nlft_sequence(
         L[:, 1, 0] = -np.conj(F_k) * norm
         L[:, 1, 1] = norm
 
-        # Apply layer: U = L @ Z @ U
-        # Note: Depending on the array endianness from the generator, you might
-        # need to reverse the sequence of F_k.
-        U = np.matmul(L, np.matmul(Z, U))
+        # Apply layer in sequence order: U = L_0 Z L_1 Z ... L_d Z
+        U = np.matmul(U, np.matmul(L, Z))
 
     return U[:, 0, 1]
 

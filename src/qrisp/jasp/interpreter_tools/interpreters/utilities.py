@@ -1,21 +1,22 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-from typing import List
+"""Shared helper functions (measurement behaviors, gate counting) used by the profiling interpreters."""
+
+from typing import Dict, List
 
 import jax
 from jax.extend.core import ClosedJaxpr
@@ -65,6 +66,29 @@ def is_abstract(tensor: ArrayLike) -> bool:
     return False
 
 
+def get_op_counts(gate) -> Dict[str, int]:
+    """Get a name -> count breakdown of a gate's constituent operations.
+
+    Composite gates (those with a ``.definition``) are transpiled and their
+    constituent operations counted; primitive gates contribute a single count of
+    1 under their own name.
+
+    Parameters
+    ----------
+    gate : Operation
+        The gate to count operations for.
+
+    Returns
+    -------
+    Dict[str, int]
+        A dictionary mapping operation names to their counts.
+
+    """
+    if gate.definition:
+        return gate.definition.transpile().count_ops()
+    return {gate.name: 1}
+
+
 def get_quantum_operations(jaspr: Jaspr) -> List[str]:
     """Get the list of quantum operations used in a Jaspr expression.
 
@@ -83,11 +107,7 @@ def get_quantum_operations(jaspr: Jaspr) -> List[str]:
 
     for eqn in jaspr.eqns:
         if eqn.primitive.name == "jasp.quantum_gate":
-            if eqn.params["gate"].definition:
-                for op_name in eqn.params["gate"].definition.transpile().count_ops().keys():
-                    quantum_operations.add(op_name)
-            else:
-                quantum_operations.add(eqn.params["gate"].name)
+            quantum_operations.update(get_op_counts(eqn.params["gate"]).keys())
 
         if eqn.primitive.name == "cond":
             quantum_operations.update(get_quantum_operations(eqn.params["branches"][0].jaxpr))

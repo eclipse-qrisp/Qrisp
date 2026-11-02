@@ -80,10 +80,10 @@ This enables expressions like:
 
 .. code-block:: python
 
-    a = BigInteger.create(42)
-    b = BigInteger.create(100)
+    a = BigInteger.create(42, size=2)
+    b = BigInteger.create(100, size=2)
 
-    print((a + b)())     # 142.0
-    print((b - a)())     # 58.0
-    print((a < b))       # True   
-    print((a << 2)())    # 168.0
+    print((a + b)())     # 142
+    print((b - a)())     # 58
+    print((a < b))       # True
+    print((a << 2)())    # 168

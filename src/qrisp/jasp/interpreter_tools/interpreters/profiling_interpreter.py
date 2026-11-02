@@ -1,55 +1,61 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
-"""
-This file implements the tools to perform quantum resource estimation using Jasp
-infrastructure. The idea here is to transform the quantum instructions within a
-given Jaspr into "counting instructions". That means instead of performing some
-quantum gate, we increment an index in an array, which keeps track of how many
-instructions of each type have been performed.
+"""Interpreter that turns a Jaspr into a classical computation of a resource metric."""
 
-To do this, we implement the 
+# Instead of performing quantum operations, the profiling interpreter lets a
+# metric (a subclass of BaseMetric) update classical metric data for every
+# quantum primitive, for example by incrementing a gate counter. The metrics
+# themselves live in the *_metric.py modules next to this one, and the
+# user-facing decorators in qrisp.jasp.evaluation_tools.profiler.
 
-qrisp.jasp.interpreter_tools.interpreters.profiling_interpreter.py
-
-Which handles the transformation logic of the Jaspr.
-This file implements the interfaces to evaluating the transformed Jaspr.
-
-"""
-
-
+import types
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Sequence, Tuple
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any
 
 import jax
+import jax.numpy as jnp
 from jax import pure_callback
 from jax._src.core import ClosedJaxpr, Jaxpr, JaxprEqn
+from jax.tree_util import tree_flatten
 from jax.typing import ArrayLike
 
 from qrisp.jasp.interpreter_tools.abstract_interpreter import (
     ContextDict,
     eval_jaxpr,
     extract_invalues,
+    insert_call_outvalues,
     insert_outvalues,
 )
+from qrisp.jasp.interpreter_tools.call_graph_analysis import analyze_call_graph
+from qrisp.jasp.interpreter_tools.interpreters.traced_control_flow_interpretation import (
+    evaluate_cond_under_trace,
+    evaluate_scan_under_trace,
+    evaluate_while_loop_under_trace,
+)
 from qrisp.jasp.primitives import (
+    AbstractQubit,
+    AbstractQubitArray,
     QuantumPrimitive,
 )
+
+if TYPE_CHECKING:
+    from qrisp.jasp.jasp_expression import Jaspr
 
 
 class BaseMetric(ABC):
@@ -77,7 +83,19 @@ class BaseMetric(ABC):
         return self._meas_behavior
 
     def _validate_measurement_result(self, meas_res: bool | jax.Array) -> None:
-        """Validate that measurement result is a boolean."""
+        """Validate that measurement result is a boolean.
+
+        Parameters
+        ----------
+        meas_res : bool or jax.Array
+            The value returned by the measurement behavior.
+
+        Raises
+        ------
+        ValueError
+            If ``meas_res`` is not a boolean.
+
+        """
         if isinstance(meas_res, bool):
             return
         if hasattr(meas_res, "dtype") and meas_res.dtype == jax.numpy.bool_:
@@ -85,31 +103,107 @@ class BaseMetric(ABC):
         raise ValueError(f"Measurement behavior must return a boolean, got {meas_res} of type {type(meas_res)}.")
 
     def _measurement_body_fun(self, meas_number: ArrayLike, i: ArrayLike, acc: ArrayLike) -> ArrayLike:
-        """Helper function for measuring qubit arrays."""
+        """Sample the i-th qubit of a measured QubitArray and add it to the integer result.
+
+        Parameters
+        ----------
+        meas_number : ArrayLike
+            The number of qubits measured before the QubitArray.
+        i : ArrayLike
+            The position of the qubit in the QubitArray.
+        acc : ArrayLike
+            The integer result accumulated from the previous qubits.
+
+        Returns
+        -------
+        ArrayLike
+            ``acc`` with bit ``i`` set to the sampled outcome.
+
+        """
         meas_key = jax.random.key(meas_number + i)
         meas_res = self.meas_behavior(meas_key)
         self._validate_measurement_result(meas_res)
         return acc + jax.numpy.left_shift(1, i) * meas_res
 
+    def _sample_measurement(self, eqn: JaxprEqn, num_measured: ArrayLike, meas_count: ArrayLike) -> ArrayLike:
+        """Sample the outcome of a ``jasp.measure`` primitive.
+
+        The k-th qubit measured in the program is sampled with the key
+        ``jax.random.key(k)``. Metrics must therefore carry ``meas_count`` in their
+        metric data, so that it keeps increasing across loop iterations, branches
+        and subroutine calls, and all metrics see the same outcomes for the same program.
+
+        Parameters
+        ----------
+        eqn : JaxprEqn
+            The ``jasp.measure`` equation.
+        num_measured : ArrayLike
+            The number of measured qubits: the size of the QubitArray, or 1 for a single Qubit.
+        meas_count : ArrayLike
+            The number of qubits measured before this measurement.
+
+        Returns
+        -------
+        ArrayLike
+            The measurement outcome: an integer for a QubitArray, a boolean for a single Qubit.
+
+        """
+        if isinstance(eqn.invars[0].aval, AbstractQubitArray):
+
+            def body_fun(i, acc):
+                return self._measurement_body_fun(meas_count, i, acc)
+
+            return jax.lax.fori_loop(0, num_measured, body_fun, jnp.int64(0))
+
+        meas_res = self.meas_behavior(jax.random.key(meas_count))
+        self._validate_measurement_result(meas_res)
+        return meas_res
+
     @classmethod
     @abstractmethod
-    def from_cache_key(cls, cache_key: Tuple) -> "BaseMetric":
-        """Reconstruct a metric instance from a hashable cache key."""
+    def from_cache_key(cls, cache_key: tuple) -> "BaseMetric":
+        """Reconstruct a metric instance from a hashable cache key.
+
+        Parameters
+        ----------
+        cache_key : tuple
+            The key returned by :meth:`cache_key`.
+
+        Returns
+        -------
+        BaseMetric
+            A metric with the configuration encoded in ``cache_key``.
+
+        """
 
     @abstractmethod
     def initial_metric(self) -> Sequence:
-        """Return the initial value of the metric before any primitives are executed."""
+        """Return the initial value of the metric before any primitives are executed.
+
+        Returns
+        -------
+        Sequence
+            The metric data that represents the initial QuantumState.
+
+        """
 
     @abstractmethod
-    def cache_key(self) -> Tuple:
-        """Return a hashable representation of this metric's configuration."""
+    def cache_key(self) -> tuple:
+        """Return a hashable representation of this metric's configuration.
+
+        Returns
+        -------
+        tuple
+            A hashable key from which :meth:`from_cache_key` rebuilds the metric.
+
+        """
 
     ##############################################################
     ### Quantum primitive handlers
     ##############################################################
 
     @abstractmethod
-    def handle_create_qubits(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    def handle_create_qubits(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Any:
         """Handle the `jasp.create_qubits` primitive.
 
         The `create_qubits_p` primitive has the following semantics:
@@ -117,10 +211,26 @@ class BaseMetric(ABC):
         - Invars: (size, QuantumState)
 
         - Outvars: (QubitArray, QuantumState)
+
+        Parameters
+        ----------
+        invalues : Sequence
+            The metric representations of the equation's invars.
+        eqn : JaxprEqn
+            The equation to evaluate.
+        context_dic : ContextDict
+            The values of the variables in the current evaluation.
+
+        Returns
+        -------
+        Any
+            The metric representations of the equation's outvars: a single value
+            for one outvar, a tuple for several.
+
         """
 
     @abstractmethod
-    def handle_get_qubit(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    def handle_get_qubit(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Any:
         """Handle the `jasp.get_qubit` primitive.
 
         The `get_qubit_p` primitive has the following semantics:
@@ -128,10 +238,26 @@ class BaseMetric(ABC):
         - Invars: (QubitArray, index)
 
         - Outvars: (Qubit)
+
+        Parameters
+        ----------
+        invalues : Sequence
+            The metric representations of the equation's invars.
+        eqn : JaxprEqn
+            The equation to evaluate.
+        context_dic : ContextDict
+            The values of the variables in the current evaluation.
+
+        Returns
+        -------
+        Any
+            The metric representations of the equation's outvars: a single value
+            for one outvar, a tuple for several.
+
         """
 
     @abstractmethod
-    def handle_get_size(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    def handle_get_size(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Any:
         """Handle the `jasp.get_size` primitive.
 
         The `get_size_p` primitive has the following semantics:
@@ -139,10 +265,26 @@ class BaseMetric(ABC):
         - Invars: (QubitArray)
 
         - Outvars: (size)
+
+        Parameters
+        ----------
+        invalues : Sequence
+            The metric representations of the equation's invars.
+        eqn : JaxprEqn
+            The equation to evaluate.
+        context_dic : ContextDict
+            The values of the variables in the current evaluation.
+
+        Returns
+        -------
+        Any
+            The metric representations of the equation's outvars: a single value
+            for one outvar, a tuple for several.
+
         """
 
     @abstractmethod
-    def handle_fuse(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    def handle_fuse(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Any:
         """Handle the `jasp.fuse` primitive.
 
         The `fuse_p` primitive has the following semantics:
@@ -150,10 +292,26 @@ class BaseMetric(ABC):
         - Invars: (Qubit | QubitArray, Qubit | QubitArray)
 
         - Outvars: (QubitArray)
+
+        Parameters
+        ----------
+        invalues : Sequence
+            The metric representations of the equation's invars.
+        eqn : JaxprEqn
+            The equation to evaluate.
+        context_dic : ContextDict
+            The values of the variables in the current evaluation.
+
+        Returns
+        -------
+        Any
+            The metric representations of the equation's outvars: a single value
+            for one outvar, a tuple for several.
+
         """
 
     @abstractmethod
-    def handle_slice(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    def handle_slice(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Any:
         """Handle the `jasp.slice` primitive.
 
         The `slice_p` primitive has the following semantics:
@@ -161,10 +319,26 @@ class BaseMetric(ABC):
         - Invars: (QubitArray, start, stop)
 
         - Outvars: (QubitArray)
+
+        Parameters
+        ----------
+        invalues : Sequence
+            The metric representations of the equation's invars.
+        eqn : JaxprEqn
+            The equation to evaluate.
+        context_dic : ContextDict
+            The values of the variables in the current evaluation.
+
+        Returns
+        -------
+        Any
+            The metric representations of the equation's outvars: a single value
+            for one outvar, a tuple for several.
+
         """
 
     @abstractmethod
-    def handle_quantum_gate(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    def handle_quantum_gate(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Any:
         """Handle the `jasp.quantum_gate` primitive.
 
         The `quantum_gate_p` primitive has the following semantics:
@@ -172,10 +346,26 @@ class BaseMetric(ABC):
         - Invars: (Qubit 0, Qubit 1,  ...  , Param 0, Param 1 ... , QuantumState)
 
         - Outvars: (QuantumState)
+
+        Parameters
+        ----------
+        invalues : Sequence
+            The metric representations of the equation's invars.
+        eqn : JaxprEqn
+            The equation to evaluate.
+        context_dic : ContextDict
+            The values of the variables in the current evaluation.
+
+        Returns
+        -------
+        Any
+            The metric representations of the equation's outvars: a single value
+            for one outvar, a tuple for several.
+
         """
 
     @abstractmethod
-    def handle_measure(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    def handle_measure(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Any:
         """Handle the `jasp.measure` primitive.
 
         The `measure_p` primitive has the following semantics:
@@ -183,10 +373,26 @@ class BaseMetric(ABC):
         - Invars: (Qubit | QubitArray, QuantumState)
 
         - Outvars: (meas_result, QuantumState)
+
+        Parameters
+        ----------
+        invalues : Sequence
+            The metric representations of the equation's invars.
+        eqn : JaxprEqn
+            The equation to evaluate.
+        context_dic : ContextDict
+            The values of the variables in the current evaluation.
+
+        Returns
+        -------
+        Any
+            The metric representations of the equation's outvars: a single value
+            for one outvar, a tuple for several.
+
         """
 
     @abstractmethod
-    def handle_reset(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    def handle_reset(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Any:
         """Handle the `jasp.reset` primitive.
 
         The `reset_p` primitive has the following semantics:
@@ -194,10 +400,26 @@ class BaseMetric(ABC):
         - Invars: (QubitArray, QuantumState)
 
         - Outvars: (QuantumState)
+
+        Parameters
+        ----------
+        invalues : Sequence
+            The metric representations of the equation's invars.
+        eqn : JaxprEqn
+            The equation to evaluate.
+        context_dic : ContextDict
+            The values of the variables in the current evaluation.
+
+        Returns
+        -------
+        Any
+            The metric representations of the equation's outvars: a single value
+            for one outvar, a tuple for several.
+
         """
 
     @abstractmethod
-    def handle_delete_qubits(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    def handle_delete_qubits(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Any:
         """Handle the `jasp.delete_qubits` primitive.
 
         The `delete_qubits_p` primitive has the following semantics:
@@ -205,21 +427,84 @@ class BaseMetric(ABC):
         - Invars: (QubitArray, QuantumState)
 
         - Outvars: (QuantumState)
+
+        Parameters
+        ----------
+        invalues : Sequence
+            The metric representations of the equation's invars.
+        eqn : JaxprEqn
+            The equation to evaluate.
+        context_dic : ContextDict
+            The values of the variables in the current evaluation.
+
+        Returns
+        -------
+        Any
+            The metric representations of the equation's outvars: a single value
+            for one outvar, a tuple for several.
+
         """
 
-    @abstractmethod
-    def handle_parity(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> Sequence:
+    def handle_parity(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> ArrayLike:
         """Handle the `jasp.parity` primitive.
 
-        TODO: add semantics here.
+        The `parity_p` primitive has the following semantics:
+
+        - Invars: (meas_result 0, meas_result 1, ...)
+
+        - Outvars: (parity)
+
+        The parity is the XOR of the measurement results, flipped if the ``expectation``
+        parameter is 1. It is a classical operation, so all metrics share this implementation.
+
+        Parameters
+        ----------
+        invalues : Sequence
+            The measurement results.
+        eqn : JaxprEqn
+            The ``jasp.parity`` equation.
+        context_dic : ContextDict
+            The values of the variables in the current evaluation (unused).
+
+        Returns
+        -------
+        ArrayLike
+            The parity as a boolean.
+
         """
+        del context_dic  # part of the handler interface, not needed here
+        expectation = eqn.params.get("expectation", 0)
+        result = jnp.bitwise_xor(sum(invalues) % 2, expectation)
+
+        return jnp.array(result, dtype=bool)
 
     def handle_create_quantum_kernel(self, *_args, **_kwargs):
-        """Handle the `jasp.create_quantum_kernel` primitive."""
+        """Handle the `jasp.create_quantum_kernel` primitive.
+
+        Parameters
+        ----------
+        *_args : Any
+            The handler arguments (unused).
+        **_kwargs : Any
+            The handler keyword arguments (unused).
+
+        Raises
+        ------
+        NotImplementedError
+            Always, since quantum kernels cannot be profiled yet.
+
+        """
         raise NotImplementedError("Quantum kernel creation not yet supported in profiling interpreter.")
 
-    def get_handlers(self) -> Dict[str, Callable[..., Any]]:
-        """Return a mapping from primitive names to handler methods."""
+    def get_handlers(self) -> dict[str, Callable[..., Any]]:
+        """Return a mapping from primitive names to handler methods.
+
+        Returns
+        -------
+        dict[str, Callable[..., Any]]
+            The handler of each quantum primitive, keyed by the primitive name.
+
+        """
         return {
             "jasp.create_qubits": self.handle_create_qubits,
             "jasp.get_qubit": self.handle_get_qubit,
@@ -233,6 +518,75 @@ class BaseMetric(ABC):
             "jasp.create_quantum_kernel": self.handle_create_quantum_kernel,
             "jasp.parity": self.handle_parity,
         }
+
+
+def normalize_slice_bounds(
+    size: jax.Array | int, start: jax.Array | int, stop: jax.Array | int
+) -> tuple[jax.Array, jax.Array]:
+    """Normalize the bounds of a ``jasp.slice`` following Python slicing semantics.
+
+    Negative bounds count from the end of the qubit array, bounds outside the array
+    are clamped to it, and a slice whose stop lies before its start is empty.
+    Only unit steps exist, since ``DynamicQubitArray`` only supports them.
+
+    Parameters
+    ----------
+    size : jax.Array or int
+        The size of the sliced qubit array.
+    start : jax.Array or int
+        The start index passed to ``jasp.slice``.
+    stop : jax.Array or int
+        The stop index passed to ``jasp.slice``.
+
+    Returns
+    -------
+    start : jax.Array
+        The normalized start index, between 0 and ``size``.
+    stop : jax.Array
+        The normalized stop index, between ``start`` and ``size``.
+
+    """
+    start = start + (start < 0) * size
+    stop = stop + (stop < 0) * size
+    start = jnp.minimum(jnp.maximum(start, 0), size)
+    stop = jnp.minimum(jnp.maximum(stop, start), size)
+    return start, stop
+
+
+class SizeBasedMetric(BaseMetric):
+    """Base class for metrics that only need the size of each qubit array.
+
+    Such metrics never need to know which qubits an operation acts on, so they
+    represent a ``QubitArray`` by its size and a ``Qubit`` by ``None``. This class
+    implements the register handlers once for all of them. The constructor is the
+    one of :class:`BaseMetric`.
+
+    """
+
+    def handle_get_qubit(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> None:
+        """Handle the `jasp.get_qubit` primitive by representing the Qubit as ``None``."""
+        return None
+
+    def handle_get_size(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> ArrayLike:
+        """Handle the `jasp.get_size` primitive by returning the size representing the QubitArray."""
+        return invalues[0]
+
+    def handle_fuse(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> ArrayLike:
+        """Handle the `jasp.fuse` primitive.
+
+        A QubitArray operand contributes its size, a single Qubit operand (represented
+        by ``None``) contributes one qubit.
+        """
+        size_1, size_2 = (
+            1 if isinstance(invar.aval, AbstractQubit) else value for invar, value in zip(eqn.invars, invalues)
+        )
+        return size_1 + size_2
+
+    def handle_slice(self, invalues: Sequence, eqn: JaxprEqn, context_dic: ContextDict) -> jax.Array:
+        """Handle the `jasp.slice` primitive by returning the size of the slice."""
+        size, start, stop = invalues
+        start, stop = normalize_slice_bounds(size, start, stop)
+        return stop - start
 
 
 # ---------------------------------------------------------------------------
@@ -267,6 +621,7 @@ def _should_use_profiling_callback(
     Returns
     -------
     bool
+        Whether to call the sub-jaxpr through ``jax.pure_callback``.
 
     """
     if call_graph_stats is None:
@@ -302,6 +657,19 @@ def _get_result_shapes(jaxpr_evaluator, invalues):
 
     The result is cached per evaluator identity so the (potentially
     expensive) tracing is performed at most once.
+
+    Parameters
+    ----------
+    jaxpr_evaluator : Callable
+        The profiling-transformed evaluator of the sub-jaxpr.
+    invalues : Sequence
+        The metric values the sub-jaxpr is called with.
+
+    Returns
+    -------
+    Any
+        A pytree of ``ShapeDtypeStruct`` describing the outputs of ``jaxpr_evaluator``.
+
     """
     key = id(jaxpr_evaluator)
     if key in _result_shapes_cache:
@@ -325,10 +693,10 @@ _profiler_cache: OrderedDict[tuple, tuple] = OrderedDict()
 def get_compiled_profiler(
     jaxpr: Jaxpr,
     metric_cls: type[BaseMetric],
-    cache_key: Tuple,
+    cache_key: tuple,
     call_graph_stats=None,
     callback_threshold=None,
-) -> Tuple[Callable, Callable]:
+) -> tuple[Callable, Callable]:
     """Get a compiled profiler for a given Jaxpr and metric configuration.
 
     Parameters
@@ -409,7 +777,7 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
     prim_handlers = metric.get_handlers()
 
     def profiling_eqn_evaluator(eqn: JaxprEqn, context_dic: ContextDict) -> None | bool:
-
+        """Evaluate ``eqn`` with the metric, returning True to let eval_jaxpr evaluate classical primitives."""
         invalues = extract_invalues(eqn, context_dic)
         prim = eqn.primitive
 
@@ -424,108 +792,13 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             insert_outvalues(eqn, context_dic, outvalues)
 
         elif eqn.primitive.name == "cond":
-            branch_fns = [
-                eval_jaxpr(branch_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
-                for branch_jaxpr in eqn.params["branches"]
-            ]
-
-            # invalues[0] is the branch index/predicate encoding
-            # remaining invalues are operands/carries passed to the branches
-            outvalues = jax.lax.switch(invalues[0], branch_fns, *invalues[1:])
-            outvalues = (outvalues,) if len(eqn.outvars) == 1 else outvalues
-            insert_outvalues(eqn, context_dic, outvalues)
+            evaluate_cond_under_trace(eqn, context_dic, eqn_evaluator=profiling_eqn_evaluator)
 
         elif eqn.primitive.name == "while":
-            body_jaxpr = eqn.params["body_jaxpr"]
-            cond_jaxpr = eqn.params["cond_jaxpr"]
-            body_nconsts = eqn.params["body_nconsts"]
-            cond_nconsts = eqn.params["cond_nconsts"]
-
-            overall_constant_amount = body_nconsts + cond_nconsts
-
-            body_eval = eval_jaxpr(body_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
-            cond_eval = eval_jaxpr(cond_jaxpr, eqn_evaluator=profiling_eqn_evaluator)
-
-            def body_fun(val):
-                constants = val[cond_nconsts:overall_constant_amount]
-                carries = val[overall_constant_amount:]
-                body_res = body_eval(*(constants + carries))
-                body_res = body_res if isinstance(body_res, tuple) else (body_res,)
-                return val[:overall_constant_amount] + body_res
-
-            def cond_fun(val):
-                constants = val[:cond_nconsts]
-                carries = val[overall_constant_amount:]
-                return cond_eval(*(constants + carries))
-
-            outvalues = jax.lax.while_loop(cond_fun, body_fun, tuple(invalues))[overall_constant_amount:]
-
-            insert_outvalues(eqn, context_dic, outvalues)
+            evaluate_while_loop_under_trace(eqn, context_dic, eqn_evaluator=profiling_eqn_evaluator)
 
         elif eqn.primitive.name == "scan":
-            # Reinterpret the scan body function
-            scan_body = eval_jaxpr(eqn.params["jaxpr"], eqn_evaluator=profiling_eqn_evaluator)
-
-            # Extract scan parameters
-            num_consts = eqn.params["num_consts"]
-            num_carry = eqn.params["num_carry"]
-            length = eqn.params["length"]
-            reverse = eqn.params.get("reverse", False)
-            unroll = eqn.params.get("unroll", 1)
-
-            # Separate inputs
-            consts = invalues[:num_consts]
-            init = invalues[num_consts : num_consts + num_carry]
-            xs = invalues[num_consts + num_carry :]
-
-            # Create a wrapper function that includes constants
-            if num_consts > 0:
-
-                def wrapped_body(carry, x):
-                    args = consts + list(carry) + list(x) if isinstance(x, tuple) else consts + list(carry) + [x]
-                    result = scan_body(*args)
-                    if not isinstance(result, tuple):
-                        result = (result,)
-                    return result[:num_carry], result[num_carry:]
-
-            else:
-
-                def wrapped_body(carry, x):
-                    args = list(carry) + (list(x) if isinstance(x, tuple) else [x])
-                    result = scan_body(*args)
-                    if not isinstance(result, tuple):
-                        result = (result,)
-                    return result[:num_carry], result[num_carry:]
-
-            # Call JAX scan with the reinterpreted body
-            if len(xs) == 1:
-                xs_arg = xs[0]
-            else:
-                xs_arg = tuple(xs)
-
-            if len(init) == 1:
-                init_arg = init[0]
-            else:
-                init_arg = tuple(init)
-
-            final_carry, ys = jax.lax.scan(
-                wrapped_body,
-                init_arg,
-                xs_arg,
-                length=length,
-                reverse=reverse,
-                unroll=unroll,
-            )
-
-            # Prepare output
-            if not isinstance(final_carry, tuple):
-                final_carry = (final_carry,)
-            if not isinstance(ys, tuple):
-                ys = (ys,)
-
-            outvalues = final_carry + ys
-
-            insert_outvalues(eqn, context_dic, outvalues)
+            evaluate_scan_under_trace(eqn, context_dic, eqn_evaluator=profiling_eqn_evaluator)
 
         elif eqn.primitive.name == "jit":
             # For qached functions, we want to make sure, the compiled function
@@ -572,12 +845,108 @@ def make_profiling_eqn_evaluator(metric: BaseMetric, call_graph_stats=None, call
             else:
                 outvalues = profiler(*invalues)
 
-            if len(eqn.outvars) == 1:
-                outvalues = (outvalues,)
-
-            insert_outvalues(eqn, context_dic, outvalues)
+            insert_call_outvalues(eqn, context_dic, outvalues, len(eqn.outvars))
 
         else:
+            # Classical primitive: let eval_jaxpr evaluate it
             return True
 
+        return None
+
     return profiling_eqn_evaluator
+
+
+def build_metric_profiler(jaspr: "Jaspr", metric: BaseMetric, callback_threshold: int | None = None) -> Callable:
+    """Build a profiler function for an arbitrary metric over a Jaspr.
+
+    Centralizes the call-graph-analysis + jit + STATIC_TYPES-argument-filtering
+    boilerplate shared by get_count_ops_profiler/get_depth_profiler/
+    get_num_qubits_profiler -- the only thing that varies between those three is
+    which BaseMetric subclass is used and what (if any) auxiliary data (e.g. a
+    profiling_dic) they return alongside the profiler.
+
+    Parameters
+    ----------
+    jaspr : Jaspr
+        The Jaspr expression to profile.
+
+    metric : BaseMetric
+        The metric instance to profile with (e.g. a CountOpsMetric, DepthMetric,
+        or NumQubitsMetric).
+
+    callback_threshold : int | None, optional
+        Minimum value of ``call_count * inlined_eqn_count`` required to trigger
+        ``jax.pure_callback`` wrapping.  ``None`` (default) disables callbacks
+        entirely (fastest execution).  ``0`` wraps every reused sub-jaxpr
+        (fastest compilation).
+
+    Returns
+    -------
+    Callable
+        A profiler function taking the same *args the Jaspr itself takes.
+
+    """
+    _, call_graph_stats = analyze_call_graph(jaspr)
+    profiling_eqn_evaluator = make_profiling_eqn_evaluator(metric, call_graph_stats, callback_threshold)
+    jitted_evaluator = jax.jit(eval_jaxpr(jaspr, eqn_evaluator=profiling_eqn_evaluator))
+
+    def profiler(*args):
+        """Run the jitted evaluator on ``args`` and the initial metric data."""
+        # Filter out types that are known to be static (https://github.com/eclipse-qrisp/Qrisp/issues/258)
+        # Import here to avoid circular import issues
+        from qrisp.operators import FermionicOperator, QubitOperator
+
+        static_types = (str, QubitOperator, FermionicOperator, types.FunctionType)
+
+        initial_metric = metric.initial_metric()
+
+        filtered_args = [x for x in args + (initial_metric,) if type(x) not in static_types]
+        return jitted_evaluator(*filtered_args)
+
+    return profiler
+
+
+def get_cached_jaspr(function: Any, args: tuple[Any, ...], meas_behavior: Any) -> "Jaspr":
+    """Return the cached Jaspr trace of ``function`` called with ``args``.
+
+    Centralizes the ``jaspr_dict`` cache-key construction (argument-type signature +
+    shape signature + ``hash(meas_behavior)``) and miss-fill via ``make_jaspr``
+    shared by the count_ops/depth/num_qubits profiler decorators in
+    ``evaluation_tools/profiler.py``. The cache is stored as a ``jaspr_dict``
+    attribute on ``function`` itself, so repeated calls with the same function and
+    a matching cache key reuse the same trace.
+
+    Parameters
+    ----------
+    function : Any
+        The Jasp-traceable function being profiled. Typed ``Any`` rather than
+        ``Callable`` because this function monkey-patches a ``jaspr_dict`` cache
+        attribute directly onto it, which the ``Callable`` protocol doesn't declare.
+
+    args : tuple
+        The arguments ``function`` is being called with.
+
+    meas_behavior : str | Callable
+        The measurement behavior, included in the cache key since it can affect
+        the resulting trace.
+
+    Returns
+    -------
+    Jaspr
+        The (possibly cached) Jaspr trace of ``function(*args)``.
+
+    """
+    # Import here to avoid circular import issues
+    from qrisp.jasp import make_jaspr
+
+    if not hasattr(function, "jaspr_dict"):
+        function.jaspr_dict = {}
+
+    signature = tuple(type(arg) for arg in args)
+    shape_signature = tuple(arg.shape for arg in tree_flatten(args)[0] if hasattr(arg, "shape"))
+    hash_key = (signature, shape_signature, hash(meas_behavior))
+
+    if hash_key not in function.jaspr_dict:
+        function.jaspr_dict[hash_key] = make_jaspr(function)(*args)
+
+    return function.jaspr_dict[hash_key]

@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Implements Generalized Quantum Signal Processing (GQSP) for applying polynomials to a unitary."""
 
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Optional
@@ -219,19 +220,16 @@ def GQSP(
         rz(-2 * theta, qubit)
         rx(-2 * phi, qubit)
 
-    theta = theta[::-1]
-    phi = phi[::-1]
-
     for i in jrange(d - k):
-        R(theta[i], phi[i], anc)
+        R(theta[d - i], phi[d - i], anc)
         with control(anc, ctrl_state=0):
             unitary(*qargs, **kwargs)
 
     for i in jrange(k):
-        R(theta[d - k + i], phi[d - k + i], anc)
+        R(theta[k - i], phi[k - i], anc)
         with control(anc, ctrl_state=1):
             with invert():
                 unitary(*qargs, **kwargs)
 
-    R(theta[d], phi[d], anc)
+    R(theta[0], phi[0], anc)
     rz(-2 * lambda_, anc)
