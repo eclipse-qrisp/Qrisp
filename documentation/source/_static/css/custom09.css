@@ -471,3 +471,13 @@ html[data-theme="dark"] .highlight .go {
 html[data-theme="dark"] {
   --pst-color-link-higher-contrast: var(--pst-color-link);
 }
+
+/* Notebook cells: nbsphinx stacks a code cell and its output with no margin,
+   so a plot sits directly under the code block. This is easy to miss in light
+   mode, but the dark theme puts a white tile behind images, which makes the
+   missing gap obvious. Add space above images in an output that follows a
+   code cell or another output. */
+div.nbinput.container + div.nboutput.container div.output_area > img,
+div.nboutput.container + div.nboutput.container div.output_area > img {
+  margin-top: 1rem;
+}
