@@ -101,6 +101,43 @@ def test_loaded_ansatz_prepares_the_same_state(tmp_path, make_ansatz, uses_featu
     assert np.allclose(prepared(loaded), prepared(original))
 
 
+@pytest.mark.parametrize(
+    "make_ansatz",
+    [
+        lambda: Ansatz.hardware_efficient(num_qubits=2, layers=1, rotations=("y", "z")),
+        lambda: Ansatz.real_amplitudes(num_qubits=2, layers=2),
+    ],
+    ids=["hardware_efficient", "real_amplitudes"],
+)
+def test_loaded_ansatz_is_a_traced_argument(tmp_path, make_ansatz):
+    """
+    A loaded built-in ansatz can be passed into a traced function as an
+    argument and gives the same distribution as the original in static mode.
+    Generic weights give a distribution with no zero entries, which makes it
+    depend on every gate of the ansatz.
+    """
+    original = make_ansatz()
+    ansatz = round_trip(tmp_path, ansatz=original)["ansatz"]
+    weights = np.linspace(0.3, 2.9, original.num_parameters)
+
+    @terminal_sampling
+    def run(a, w):
+        qf = QuantumFloat(2)
+        a.apply(qf, w)
+        return qf
+
+    expected = QuantumFloat(2)
+    original.apply(expected, weights)
+    # get_measurement rounds each probability to five decimals.
+    expected = expected.get_measurement()
+
+    distribution = run(ansatz, jnp.array(weights))
+
+    assert np.allclose(
+        [distribution.get(i, 0.0) for i in range(4)], [expected.get(i, 0.0) for i in range(4)], atol=1e-4
+    )
+
+
 @pytest.mark.parametrize("observable", [Z(0), Z(0) * Z(1) + 0.5 * X(1), [Z(0), X(1)]])
 def test_observables_keep_their_terms(tmp_path, observable):
     loaded = round_trip(tmp_path, observable=observable)["observable"]
