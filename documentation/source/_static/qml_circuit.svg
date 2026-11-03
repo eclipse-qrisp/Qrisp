@@ -15,7 +15,7 @@
   <rect x="30" y="0" width="560" height="285" rx="10" fill="#ffffff"/>
 
   <!-- input data -->
-  <text x="190" y="30" class="math" font-size="16"><tspan font-family="Helvetica, Arial, sans-serif" font-style="normal" font-size="14" fill="#57606a">one input sample: </tspan><tspan text-decoration="underline">x</tspan><tspan class="up"> = (</tspan>x<tspan font-size="11" dy="4" class="up">0</tspan><tspan dy="-4">, x</tspan><tspan font-size="11" dy="4" class="up">1</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <text x="190" y="30" class="math" font-size="16"><tspan font-family="Helvetica, Arial, sans-serif" font-style="normal" font-size="14" fill="#57606a">one input sample:</tspan><tspan dx="4" text-decoration="underline">x</tspan><tspan class="up" dx="4">= (</tspan>x<tspan font-size="11" dy="4" class="up">0</tspan><tspan dy="-4">, x</tspan><tspan font-size="11" dy="4" class="up">1</tspan><tspan dy="-4" class="up">)</tspan></text>
   <line x1="190" y1="38" x2="190" y2="88" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
   <!-- block backgrounds, then wires, then gates -->
   <rect x="120" y="90" width="140" height="150" rx="8" fill="#e6f4ea" stroke="#2da44e" stroke-width="1.4"/>

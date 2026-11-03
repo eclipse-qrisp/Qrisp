@@ -19,7 +19,7 @@
   <text x="20" y="34" text-anchor="start" class="caption">forward: one prediction</text>
   <rect x="110" y="60" width="120" height="60" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
   <text x="170.0" y="86" font-weight="bold" font-size="13">linear layer</text>
-  <text x="170.0" y="110" class="math" font-size="15">M<tspan class="up">, </tspan><tspan text-decoration="underline">b</tspan></text>
+  <text x="170.0" y="110" class="math" font-size="15">πσ(<tspan text-decoration="underline">f</tspan>M + <tspan text-decoration="underline">b</tspan>)</text>
   <text x="170.0" class="caption"></text>
   <rect x="330" y="60" width="120" height="60" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
   <text x="390.0" y="86" font-weight="bold" font-size="13">circuit</text>
@@ -27,7 +27,7 @@
   <text x="390.0" class="caption"></text>
   <rect x="550" y="60" width="110" height="60" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
   <text x="605.0" y="86" font-weight="bold" font-size="13">head</text>
-  <text x="605.0" y="110" class="math" font-size="15"><tspan text-decoration="underline">v</tspan><tspan class="up">, </tspan>c</text>
+  <text x="605.0" y="110" class="math" font-size="14">tanh(<tspan text-decoration="underline">v</tspan>·<tspan text-decoration="underline">q</tspan> + c)</text>
   <text x="605.0" class="caption"></text>
   <rect x="760" y="60" width="120" height="60" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.4"/>
   <text x="820.0" y="86" font-weight="bold" font-size="13">loss</text>
@@ -55,6 +55,7 @@
   <text x="390" y="216" class="caption" style="fill:#9a6700">parameter-shift rule</text>
   <text x="390" y="234" class="caption" style="fill:#9a6700">gradient for <tspan class="math"><tspan text-decoration="underline">w</tspan></tspan> and for <tspan class="math"><tspan text-decoration="underline">x</tspan></tspan></text>
   <text x="390" y="252" class="caption" style="fill:#9a6700">1 + 2 × 5 + 2 × 10 = 31 runs</text>
+  <text x="390" y="270" class="caption" style="fill:#9a6700">each run estimates the five ⟨Z⟩ values</text>
   <text x="170" y="216" class="caption" style="fill:#57606a">automatic differentiation</text>
   <text x="170" y="234" class="caption" style="fill:#57606a">gradient for <tspan class="math">M, <tspan text-decoration="underline">b</tspan></tspan></text>
   <text x="170" y="252" class="caption" style="fill:#57606a">no runs of the circuit</text>

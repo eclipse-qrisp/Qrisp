@@ -30,7 +30,7 @@
   <text x="277.0" y="96.0" class="math" font-size="14"><tspan text-decoration="underline">f</tspan><tspan class="up">, 512</tspan></text>
   <rect x="318" y="70" width="124" height="72" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
   <text x="380.0" y="96" font-weight="bold" font-size="13">linear layer</text>
-  <text x="380.0" y="120" class="math" font-size="15">M<tspan class="up">, </tspan><tspan text-decoration="underline">b</tspan></text>
+  <text x="380.0" y="120" class="math" font-size="15">πσ(<tspan text-decoration="underline">f</tspan>M + <tspan text-decoration="underline">b</tspan>)</text>
   <text x="380.0" y="160" class="caption">trained, 2565</text>
   <line x1="442" y1="106.0" x2="512" y2="106.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
   <text x="477.0" y="96.0" class="math" font-size="14"><tspan text-decoration="underline">x</tspan><tspan class="up">, 5</tspan></text>
@@ -42,7 +42,7 @@
   <text x="673.0" y="96.0" class="math" font-size="14"><tspan text-decoration="underline">q</tspan><tspan class="up">, 5</tspan></text>
   <rect x="710" y="70" width="110" height="72" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
   <text x="765.0" y="96" font-weight="bold" font-size="13">head</text>
-  <text x="765.0" y="120" class="math" font-size="15"><tspan text-decoration="underline">v</tspan><tspan class="up">, </tspan>c</text>
+  <text x="765.0" y="120" class="math" font-size="14">tanh(<tspan text-decoration="underline">v</tspan>·<tspan text-decoration="underline">q</tspan> + c)</text>
   <text x="765.0" y="160" class="caption">trained, 6</text>
   <line x1="820" y1="106.0" x2="862" y2="106.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
   <text x="841.0" y="96.0" class="math" font-size="14"></text>

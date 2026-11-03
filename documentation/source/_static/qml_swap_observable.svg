@@ -49,9 +49,9 @@
   <path d="M 498 183 A 14 14 0 0 1 526 183" fill="none" stroke="#24292f" stroke-width="1.4"/>
   <line x1="512" y1="183" x2="523" y2="166" stroke="#24292f" stroke-width="1.4"/>
   <text x="548" y="100" text-anchor="start" class="math" font-size="14">Z<tspan font-size="10" dy="4" class="up">0</tspan></text>
-  <text x="548" y="118" text-anchor="start" class="caption">+1: virginica (as trained)</text>
+  <text x="548" y="118" text-anchor="start" class="caption">target +1: virginica</text>
   <text x="548" y="170" text-anchor="start" class="math" font-size="14">Z<tspan font-size="10" dy="4" class="up">1</tspan></text>
-  <text x="548" y="188" text-anchor="start" class="caption">+1: versicolor (new)</text>
+  <text x="548" y="188" text-anchor="start" class="caption">target +1: versicolor</text>
   <rect x="40" y="277" width="14" height="14" rx="3" fill="#f6f8fa" stroke="#8c959f"/>
   <text x="62" y="288" class="caption" text-anchor="start">kept from the saved model</text>
   <rect x="260" y="277" width="14" height="14" rx="3" fill="#fff1e5" stroke="#bc4c00"/>

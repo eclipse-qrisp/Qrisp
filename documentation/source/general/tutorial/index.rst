@@ -395,7 +395,7 @@ You will then place a quantum model inside a larger classical network and train 
             </div>
             </a>
 
-        .. image:: ../../_static/qml_pipeline.svg
+        .. image:: ../../_static/qml_thumbnail.svg
             :alt: Quantum Machine Learning Tutorial
 
         +++
@@ -413,7 +413,7 @@ You will then place a quantum model inside a larger classical network and train 
             </div>
             </a>
 
-        .. image:: ../../_static/qml_tl_pipeline.svg
+        .. image:: ../../_static/qml_tl_thumbnail.svg
             :alt: Quantum Machine Learning Transfer Learning Tutorial
 
         +++

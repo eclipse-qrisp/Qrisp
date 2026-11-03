@@ -41,5 +41,5 @@
   <line x1="134.4" y1="117.9" x2="487.6" y2="117.9" stroke="#bf8700" stroke-width="1" stroke-dasharray="2 3"/>
   <line x1="481.6" y1="119.9" x2="481.6" y2="188.1" stroke="#bf8700" stroke-width="1.4" marker-start="url(#arrow-shift)" marker-end="url(#arrow-shift)"/>
   <text x="491.6" y="159.0" text-anchor="start" class="caption" style="fill:#9a6700">difference</text>
-  <text x="300" y="332" class="caption">derivative at <tspan class="math" fill="#24292f">w<tspan font-size="10" dy="4">k</tspan><tspan dy="-4"></tspan></tspan> = difference / 2, from two extra runs of the circuit</text>
+  <text x="300" y="332" class="caption">derivative at <tspan class="math" fill="#24292f">w<tspan font-size="10" dy="4">k</tspan><tspan dy="-4"></tspan></tspan> = (right value − left value) / 2, negative here, from two extra runs of the circuit</text>
 </svg>
