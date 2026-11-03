@@ -494,4 +494,10 @@ html[data-theme="dark"] #who-is-behind-qrisp .sd-card img[src*="dlr_logo"] {
         border-radius: 12px;
         padding: 2rem 1rem !important;
     }
+
+    /* The partner logo grid has no row gutter, so the stacked cards touch
+       each other once they wrap into a single column. */
+    #who-is-behind-qrisp .sd-row {
+        --sd-gutter-y: 1rem;
+    }
 }
