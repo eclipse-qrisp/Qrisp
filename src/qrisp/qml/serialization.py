@@ -51,10 +51,12 @@ def save_model(filename, **parts):
     keep depends on the step.
 
     * Steps derived from the training data, such as :func:`minmax_scale`, need
-      the statistics that they were derived from. :func:`minmax_scale` returns the
-      scaled arrays but not the range, while an encoder configured with
-      ``data`` or ``data_range`` stores the range itself. You can also save the
-      training range as a part of its own and scale with it after loading.
+      the statistics that they were derived from. Save the training range as
+      parts, for example ``data_min`` and ``data_max``, and pass the loaded
+      values to :func:`minmax_scale` to scale new data the same way. An encoder
+      configured with ``data`` or ``data_range`` stores the range itself
+      instead. A fitted object from another library, such as a scikit-learn
+      scaler, can be saved as a part as well.
     * Steps with a fixed setting, such as the threshold of :func:`binarize`,
       need that setting applied again. Save it as a part if the code that uses
       the model does not fix it.

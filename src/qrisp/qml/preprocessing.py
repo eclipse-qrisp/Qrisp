@@ -54,7 +54,9 @@ def _as_real(X, name):
     return X.astype(float)
 
 
-def minmax_scale(X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True):
+def minmax_scale(  # noqa: PLR0913
+    X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True, *, data_min=None, data_max=None
+):
     r"""
     Scales features into an interval suitable for an encoding.
 
@@ -75,11 +77,16 @@ def minmax_scale(X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True
     to its bounds, which keeps every encoded angle inside the interval that
     the encoding expects.
 
-    The function returns only the scaled arrays, not the range that they were
-    scaled with. A model trained on them needs that range again for new raw
-    data, also after :func:`save_model`. An encoder configured with ``data``
-    scales with the same range and stores it, which makes it the simpler choice
-    for a model that will be saved.
+    **Reusing the range after saving a model**
+
+    A model trained on scaled features needs the same scaling for every new
+    sample, also after :func:`load_model`. Pass ``data_min`` and ``data_max``
+    to scale with a known range instead of deriving it. Compute them once from
+    the training data, save them as parts of the model, and pass the loaded
+    values to scale new data. The training data itself is then no longer
+    needed. With a known range, a single sample shaped ``(n_features,)`` can
+    be scaled too. An encoder configured with ``data`` stores the range itself
+    and is an alternative to saving it separately.
 
     **Why the interval matters**
 
@@ -114,7 +121,9 @@ def minmax_scale(X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True
     ----------
     X_train : numpy.ndarray
         The training features, shaped ``(N, n_features)``. The scaling is
-        derived from this array.
+        derived from this array. If ``data_min`` and ``data_max`` are given,
+        this is simply the data to scale, and a single sample shaped
+        ``(n_features,)`` is accepted as well.
     X_test : numpy.ndarray, optional
         Further features to scale with the training range, shaped
         ``(M, n_features)``. The default is ``None``, which returns only the
@@ -128,6 +137,13 @@ def minmax_scale(X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True
         Whether the features will be read as rotation angles, which limits
         ``feature_range`` to a width of $2\pi$. The default is ``True``. Pass
         ``False`` for amplitude encoding.
+    data_min : float or numpy.ndarray, optional
+        The smallest value of each feature in the training data, as a scalar
+        or one value per feature. Must be given together with ``data_max``.
+        The default is ``None``, which derives the range from ``X_train``.
+    data_max : float or numpy.ndarray, optional
+        The largest value of each feature in the training data, as a scalar
+        or one value per feature. Must be given together with ``data_min``.
 
     Returns
     -------
@@ -143,6 +159,10 @@ def minmax_scale(X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True
     ValueError
         If ``X_test`` does not have the same number of features as
         ``X_train``.
+    ValueError
+        If only one of ``data_min`` and ``data_max`` is given, if they are not
+        finite, if ``data_max`` is smaller than ``data_min``, or if they do not
+        hold one value per feature.
 
     Examples
     --------
@@ -180,6 +200,26 @@ def minmax_scale(X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True
         qf = QuantumFloat(2)
         Encoding.angle(n_features=2).apply(qf, X_train_scaled[0])
 
+    For a model that will be saved, we keep the training range and scale with
+    it. After loading, the saved values scale a new sample in the same way.
+
+    ::
+
+        from qrisp.qml import load_model, save_model
+
+        data_min, data_max = X_train.min(axis=0), X_train.max(axis=0)
+        save_model("model.pkl", data_min=data_min, data_max=data_max)
+
+        saved = load_model("model.pkl")
+        x_new = minmax_scale(
+            np.array([0.5, 15.0]), data_min=saved["data_min"], data_max=saved["data_max"]
+        )
+
+    The new sample lands where the test sample above did.
+
+    >>> np.round(x_new, 4)
+    array([0.7854, 0.7854])
+
     """
     low, high = feature_range
 
@@ -197,20 +237,48 @@ def minmax_scale(X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True
             "the features are amplitude encoded."
         )
 
-    X_train = _as_real(X_train, "scale")
-
-    if X_train.ndim != 2:  # noqa: PLR2004
+    if (data_min is None) != (data_max is None):
         raise ValueError(
-            f"Tried to scale features shaped {X_train.shape}. minmax_scale "
-            "derives its range across samples. It requires a two-dimensional "
-            "array shaped (n_samples, n_features). A single sample has no range "
-            "to scale onto the feature range."
+            "Tried to scale with only one of data_min and data_max. A known range "
+            "needs both bounds. Pass neither to derive the range from X_train."
         )
 
+    X_train = _as_real(X_train, "scale")
     _check_finite(X_train, "scale")
 
-    minimum = X_train.min(axis=0)
-    maximum = X_train.max(axis=0)
+    if data_min is None:
+        if X_train.ndim != 2:  # noqa: PLR2004
+            raise ValueError(
+                f"Tried to scale features shaped {X_train.shape}. minmax_scale "
+                "derives its range across samples. It requires a two-dimensional "
+                "array shaped (n_samples, n_features). A single sample has no range "
+                "to scale onto the feature range. Pass data_min and data_max to "
+                "scale it with a known range."
+            )
+
+        minimum = X_train.min(axis=0)
+        maximum = X_train.max(axis=0)
+    else:
+        minimum = _as_real(data_min, "scale with")
+        maximum = _as_real(data_max, "scale with")
+
+        if not (np.all(np.isfinite(minimum)) and np.all(np.isfinite(maximum))):
+            raise ValueError(f"Tried to scale with the data range ({minimum}, {maximum}), which is not finite.")
+
+        if not np.all(maximum >= minimum):
+            raise ValueError(
+                f"Tried to scale with the data range ({minimum}, {maximum}), where data_max is smaller than data_min."
+            )
+
+        # A bound shaped (1,) would broadcast silently onto every feature, and
+        # a bound with any other wrong count would fail only once data arrives.
+        for bound in (minimum, maximum):
+            if bound.shape not in ((), (X_train.shape[-1],)):
+                raise ValueError(
+                    f"Tried to scale {X_train.shape[-1]} features with a data range for {bound.size} features."
+                )
+
+    n_features = X_train.shape[-1]
     spread = maximum - minimum
 
     # A constant feature spans nothing to scale onto the range, and dividing
@@ -222,10 +290,8 @@ def minmax_scale(X_train, X_test=None, feature_range=(0.0, np.pi), periodic=True
         X = _as_real(X, "scale")
         _check_finite(X, "scale")
 
-        if X.shape[-1] != X_train.shape[-1]:
-            raise ValueError(
-                f"Tried to scale {X.shape[-1]} features with a range derived from {X_train.shape[-1]} features."
-            )
+        if X.shape[-1] != n_features:
+            raise ValueError(f"Tried to scale {X.shape[-1]} features with a range for {n_features} features.")
 
         scaled = low + (high - low) * (X - minimum) / spread
         scaled = np.where(constant, low, scaled)

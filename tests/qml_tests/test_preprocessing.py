@@ -217,6 +217,60 @@ def test_minmax_scale_rejects_a_single_sample():
         minmax_scale([1.0, 2.0, 3.0])
 
 
+def test_minmax_scale_with_a_known_range_matches_the_derived_one():
+    """
+    A saved model scales new data with the training range given as data_min and
+    data_max. That has to reproduce the scaling derived from the training data,
+    including the clipping of test values outside the range.
+    """
+    X_train = np.array([[0.0, 10.0], [1.0, 20.0], [2.0, 30.0]])
+    X_test = np.array([[0.5, 15.0], [5.0, 0.0]])
+
+    derived = minmax_scale(X_train, X_test)
+    known = minmax_scale(X_train, X_test, data_min=X_train.min(axis=0), data_max=X_train.max(axis=0))
+
+    for a, b in zip(derived, known):
+        assert np.allclose(a, b)
+
+
+@pytest.mark.parametrize(
+    "x, data_min, data_max, expected",
+    [
+        # A single sample, which is the usual case after loading a model.
+        ([0.5, 15.0], [0.0, 10.0], [2.0, 30.0], [np.pi / 4, np.pi / 4]),
+        # Scalar bounds apply to every feature.
+        ([[1.0, 1.0]], 0.0, 2.0, [[np.pi / 2, np.pi / 2]]),
+        # Equal bounds describe a constant feature, which maps to the lower bound.
+        ([[5.0, 3.0]], [5.0, 0.0], [5.0, 6.0], [[0.0, np.pi / 2]]),
+    ],
+    ids=["single_sample", "scalar_bounds", "equal_bounds"],
+)
+def test_minmax_scale_with_a_known_range(x, data_min, data_max, expected):
+    """The given bounds are used as they are, without looking at the data."""
+    assert np.allclose(minmax_scale(np.array(x), data_min=data_min, data_max=data_max), expected)
+
+
+@pytest.mark.parametrize(
+    "bounds, message",
+    [
+        ({"data_min": [0.0, 10.0]}, "only one of data_min and data_max"),
+        ({"data_max": [2.0, 30.0]}, "only one of data_min and data_max"),
+        ({"data_min": [0.0, np.nan], "data_max": [2.0, 30.0]}, "not finite"),
+        ({"data_min": [2.0, 10.0], "data_max": [0.0, 30.0]}, "data_max is smaller than data_min"),
+        ({"data_min": [0.0], "data_max": [2.0]}, "data range for 1 features"),
+        ({"data_min": [0.0, 10.0, 0.0], "data_max": [2.0, 30.0, 1.0]}, "data range for 3 features"),
+    ],
+    ids=["only_min", "only_max", "not_finite", "reversed", "one_value", "too_many_values"],
+)
+def test_minmax_scale_rejects_an_unusable_data_range(bounds, message):
+    """
+    A range that cannot scale the data is rejected. A single value shaped (1,)
+    would otherwise broadcast onto every feature without an error.
+    """
+    with pytest.raises(ValueError, match=message):
+        minmax_scale(np.array([[0.0, 10.0], [2.0, 30.0]]), **bounds)
+
+
 def test_normalize_handles_a_vector_whose_norm_underflows():
     """
     A vector of tiny components has a well defined direction, but its norm
