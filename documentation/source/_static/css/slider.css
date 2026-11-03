@@ -38,27 +38,17 @@
   width: 100%;
   max-width: 1400px; /* Widened to allow for larger desktop logos */
   margin: 0 auto;
+  padding: 20px 0;
+  background-color: #fff; /* White band behind all logos, also in dark mode */
+  border-radius: 12px;
 }
 
-/* Faded edges for a polished look */
-.logo-slider::before,
-.logo-slider::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  width: 15%; /* Uses percentage so fades shrink on mobile */
-  height: 100%;
-  z-index: 2;
-}
-
-.logo-slider::before {
-  left: 0;
-  background: linear-gradient(to right, var(--theme-bg, white) 0%, rgba(255, 255, 255, 0) 100%);
-}
-
-.logo-slider::after {
-  right: 0;
-  background: linear-gradient(to left, var(--theme-bg, white) 0%, rgba(255, 255, 255, 0) 100%);
+/* Faded edges for a polished look. A mask fades the white band itself out at
+   both ends, so no overlay is drawn on top of the rounded corners (an overlay
+   left a thin light outline along the corner curve in dark mode). */
+.logo-slider {
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 15%, #000 85%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 15%, #000 85%, transparent 100%);
 }
 
 /* --- 4. The Moving Track --- */

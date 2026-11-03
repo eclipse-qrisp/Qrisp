@@ -155,6 +155,7 @@ html_theme_options = {
     ),
     "collapse_navigation": True,
     "navigation_depth": 4,
+    "header_links_before_dropdown": 4,
     "show_prev_next": False,
     "icon_links": [
         {
@@ -163,13 +164,17 @@ html_theme_options = {
             "icon": "fab fa-github-square",
         },
     ],
+    "logo": {
+        "image_dark": "_static/logo_white.png",
+    },
     "navbar_start": ["navbar-logo"],
     "navbar_center": ["navbar-nav"],
-    "navbar_end": ["navbar-icon-links"],
+    "navbar_end": ["theme-switcher", "navbar-icon-links"],
     "enable_search_shortcuts": True,
     "search_bar_text": "Search the docs... ",
     # "navbar_align": "content",
     "pygments_light_style": "lovelace",
+    "pygments_dark_style": "monokai",
     "secondary_sidebar_items": [
         "page-toc.html",
         "discord_link.html",
