@@ -380,7 +380,7 @@ This track demonstrates how to bridge the gap between complex scientific theory 
 
             <a href="./dynamical_cooling.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Use block encodings to dynamically prepare the groundstate of a Hamiltonian.</p>
+            <p class="sd-card-text">Use block encodings to prepare the groundstate of a Hamiltonian with dynamical cooling.</p>
             </div>
             </a>
 
