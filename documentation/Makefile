@@ -10,10 +10,12 @@ SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = source
 BUILDDIR      = build
 
+# Install qrisp-cudaq the same way as the Read the Docs build: without CUDA-Q
+# and its NVIDIA libraries (conf.py mocks cudaq), with xdsl from the extra.
 docs-install:
-	pip install -e "..[docs,cudaq]"
-	sudo apt install -y pandoc texlive-latex-base texlive-latex-recommended \
-		texlive-latex-extra texlive-fonts-recommended texlive-science dvisvgm
+	pip install -e "..[docs,xdsl]"
+	pip install --no-deps -r requirements-cudaq.txt
+	sudo apt install -y pandoc
 
 # Put it first so that "make" without argument is like "make help".
 help:

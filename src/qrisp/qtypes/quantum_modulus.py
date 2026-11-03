@@ -30,7 +30,7 @@ from jax.core import Tracer
 from qrisp import check_for_tracing_mode
 from qrisp.core import QuantumSession, cx, measure
 from qrisp.environments import invert
-from qrisp.jasp import q_fori_loop
+from qrisp.jasp import q_cond, q_fori_loop
 from qrisp.misc import gate_wrap
 from qrisp.qtypes.quantum_bool import QuantumBool
 from qrisp.qtypes.quantum_float import QuantumFloat
@@ -134,11 +134,102 @@ def _is_classical_factor(value: object) -> TypeGuard[_ClassicalInteger]:
 
 
 def _normalize_modular_arithmetic_operand(qm: QuantumModulus, other: _Operand) -> _Operand:
-    """Return a quantum operand as is, and encode a classical one in the representation of ``qm``."""
+    """Prepare the second operand of a QuantumModulus addition or subtraction.
+
+    Quantum operands are returned unchanged, classical values are reduced
+    modulo ``qm.modulus`` and encoded into ``qm``'s Montgomery representation.
+
+    Parameters
+    ----------
+    qm : QuantumModulus
+        The QuantumModulus whose representation the operand is prepared for.
+    other : QuantumFloat, int, or BigInteger
+        The second operand.
+
+    Returns
+    -------
+    QuantumFloat, int, or BigInteger
+        The quantum operand or the encoded classical value.
+
+    Raises
+    ------
+    TypeError
+        If ``other`` is a signed QuantumFloat. The bitwise conversion treats
+        every bit as a positive power of two, so the sign bit would get the
+        wrong weight.
+
+    """
     if isinstance(other, QuantumFloat):
+        if other.signed:
+            raise TypeError("QuantumModulus addition and subtraction do not support signed QuantumFloat operands")
         return other
 
     return qm.encoder(other % qm.modulus)
+
+
+def _shift_aware_iadd(qm: QuantumModulus, other: QuantumFloat) -> None:
+    """Perform ``qm += other`` for a quantum operand, accounting for Montgomery shifts.
+
+    Equal shifts use a single modular addition. Differing shifts convert ``other``
+    into ``qm``'s representation bitwise (see ``montgomery_addition``). QuantumFloat
+    operands (value = raw * 2^exponent) are treated as having shift -exponent.
+    If both shifts are static, the branch is chosen in Python; otherwise a
+    traced ``q_cond`` selects it.
+
+    Parameters
+    ----------
+    qm : QuantumModulus
+        The target, modified in place. Keeps its Montgomery shift.
+    other : QuantumFloat
+        The unsigned quantum operand (QuantumModulus or QuantumFloat).
+
+    """
+    # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
+    from qrisp.alg_primitives.arithmetic.modular_arithmetic import (
+        mod_adder,
+        montgomery_addition,
+    )
+
+    other_m = other.m if isinstance(other, QuantumModulus) else -other.exponent
+
+    def same_shift(other: QuantumFloat, qm: QuantumModulus) -> None:
+        mod_adder(other, qm, qm.inpl_adder, qm.modulus)
+
+    def differing_shift(other: QuantumFloat, qm: QuantumModulus) -> None:
+        montgomery_addition(other, qm)
+
+    if isinstance(qm.m, int) and isinstance(other_m, int):
+        if qm.m == other_m:
+            same_shift(other, qm)
+        else:
+            differing_shift(other, qm)
+    else:
+        # Quantum operands must be passed explicitly, q_cond rejects implicit captures
+        q_cond(qm.m == other_m, same_shift, differing_shift, other, qm)
+
+
+def _modular_iadd(qm: QuantumModulus, other: _Operand) -> None:
+    """Perform ``qm += other`` for a quantum or an already encoded classical operand.
+
+    Quantum operands go through the shift-aware addition, classical values are
+    expected to be encoded into ``qm``'s representation already.
+
+    Parameters
+    ----------
+    qm : QuantumModulus
+        The target, modified in place.
+    other : QuantumFloat, int, or BigInteger
+        The quantum operand, or a classical value encoded by
+        ``_normalize_modular_arithmetic_operand``.
+
+    """
+    if isinstance(other, QuantumFloat):
+        _shift_aware_iadd(qm, other)
+    else:
+        # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
+        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
+
+        mod_adder(other, qm, qm.inpl_adder, qm.modulus)
 
 
 def comparison_wrapper(func: _Comparison) -> _Comparison:
@@ -295,7 +386,11 @@ class QuantumModulus(QuantumFloat):
         # A traced modulus must be threaded through the pytree as a proper leaf,
         # otherwise it gets smuggled into static aux_data (via QuantumVariableTemplate's
         # copy.copy(qv)) and leaks stale tracers across independent traces.
-        self.traced_attributes = self.traced_attributes + ["modulus"]
+        # The same applies to the Montgomery shift m, which is derived from the modulus
+        # (e.g. in qq_montgomery_multiply_modulus). Since QuantumVariableTemplate equality
+        # ignores it, keeping m static would also let qache reuse traces built for a
+        # different shift.
+        self.traced_attributes = self.traced_attributes + ["modulus", "m"]
         # Dynamic modular arithmetic uses gidney_adder while static uses fourier_adder.
         # Consider reconciling it.
         if check_for_tracing_mode():
@@ -382,11 +477,14 @@ class QuantumModulus(QuantumFloat):
 
         if check_for_tracing_mode():
             # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
-            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import montgomery_encoder
+            from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_mod_tools import (
+                montgomery_encoder,
+                pow2mod_signed,
+            )
 
-            if isinstance(i, BigInteger):
-                return montgomery_encoder(i, BigInteger.create(1, i.digits.shape[0]) << self.m, self.modulus)
-            return montgomery_encoder(i, 1 << self.m, self.modulus)
+            # pow2mod_signed instead of 1 << m: m can be negative (e.g. after
+            # multiplication) and large shifts would overflow int64.
+            return montgomery_encoder(i, pow2mod_signed(self.m, self.modulus), self.modulus)
 
         # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
         from qrisp.alg_primitives.arithmetic.modular_arithmetic import montgomery_encoder
@@ -588,20 +686,11 @@ class QuantumModulus(QuantumFloat):
     def __add__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a new QuantumModulus holding the sum with a quantum or classical value."""
         other = _normalize_modular_arithmetic_operand(self, other)
-        if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                raise ValueError("Tried to add two QuantumModulus with differing Montgomery shift")
-        elif isinstance(other, QuantumFloat):
-            if self.m != 0:
-                raise ValueError("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
-
-        # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
         res = self.duplicate()
         cx(self, res)
 
-        mod_adder(other, res, self.inpl_adder, self.modulus)
+        _modular_iadd(res, other)
 
         return res
 
@@ -611,42 +700,19 @@ class QuantumModulus(QuantumFloat):
     def __iadd__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Add a quantum or classical value to the register in place."""
         other = _normalize_modular_arithmetic_operand(self, other)
-        if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
-                from qrisp.alg_primitives.arithmetic.modular_arithmetic import montgomery_addition
-
-                montgomery_addition(other, self)
-                return self
-        elif isinstance(other, QuantumFloat):
-            if self.m != 0:
-                raise ValueError("Tried to add a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
-
-        # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
-
-        mod_adder(other, self, self.inpl_adder, self.modulus)
+        _modular_iadd(self, other)
         return self
 
     @gate_wrap(permeability="args", is_qfree=True)
     def __sub__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a new QuantumModulus holding the difference with a quantum or classical value."""
         other = _normalize_modular_arithmetic_operand(self, other)
-        if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                raise ValueError("Tried to subtract QuantumModulus with differing Montgomery shift")
-        elif isinstance(other, QuantumFloat):
-            if self.m != 0:
-                raise ValueError("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
-
-        # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
         res = self.duplicate()
         cx(self, res)
 
         with invert():
-            mod_adder(other, res, self.inpl_adder, self.modulus)
+            _modular_iadd(res, other)
 
         return res
 
@@ -654,21 +720,12 @@ class QuantumModulus(QuantumFloat):
     def __rsub__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a new QuantumModulus holding a quantum or classical value minus the register."""
         other = _normalize_modular_arithmetic_operand(self, other)
-        if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                raise ValueError("Tried to subtract QuantumModulus with differing Montgomery shift")
-        elif isinstance(other, QuantumFloat):
-            if self.m != 0:
-                raise ValueError("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
-
-        # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
         res = self.duplicate()
 
         res -= self
 
-        mod_adder(other, res, self.inpl_adder, self.modulus)
+        _modular_iadd(res, other)
 
         return res
 
@@ -676,18 +733,9 @@ class QuantumModulus(QuantumFloat):
     def __isub__(self, other: _Operand) -> QuantumModulus:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Subtract a quantum or classical value from the register in place."""
         other = _normalize_modular_arithmetic_operand(self, other)
-        if isinstance(other, QuantumModulus):
-            if self.m != other.m:
-                raise ValueError("Tried to subtract QuantumModulus with differing Montgomery shift")
-        elif isinstance(other, QuantumFloat):
-            if self.m != 0:
-                raise ValueError("Tried to subtract a QuantumFloat and QuantumModulus with non-zero Montgomery shift")
-
-        # Imported here: qrisp.alg_primitives imports qrisp, which imports this module (circular import)
-        from qrisp.alg_primitives.arithmetic.modular_arithmetic import mod_adder
 
         with invert():
-            mod_adder(other, self, self.inpl_adder, self.modulus)
+            _modular_iadd(self, other)
 
         return self
 
