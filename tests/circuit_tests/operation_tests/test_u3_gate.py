@@ -715,3 +715,24 @@ class TestU3GateEdgeCases:
         ratio = gate_gp.get_unitary() / gate_no_gp.get_unitary()
         # All entries of the ratio should be the same (exp(i*gp))
         assert np.allclose(ratio, np.exp(1j * gp) * np.ones((2, 2)), atol=1e-10)
+
+@pytest.mark.parametrize(
+    "ctrl_state",
+    [
+        "00", "01", "10", "11",
+        "000", "001", "010", "011",
+        "100", "101", "110", "111",
+    ],
+)
+def test_controlled_gphase_definition_matches_unitary(ctrl_state):
+    """Check controlled global phase definitions for every control state."""
+    gate = GPhaseGate(0.75).control(len(ctrl_state), ctrl_state=ctrl_state)
+
+    direct = gate.get_unitary()
+    decomposed = gate.definition.transpile().get_unitary()
+
+    assert np.allclose(direct, decomposed, atol=1e-8)
+
+    qc = QuantumCircuit(len(ctrl_state) + 1)
+    qc.append(gate, qc.qubits)
+    assert np.allclose(transpile(qc).get_unitary(), qc.get_unitary(), atol=1e-8)
