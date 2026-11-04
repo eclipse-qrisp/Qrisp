@@ -17,7 +17,7 @@
 """Tests trotterization of fermionic Hamiltonians in qrisp.operators.fermionic."""
 
 from qrisp import *
-from qrisp.operators.fermionic import a, c
+from qrisp.operators.fermionic import a_f as a, c_f as c
 
 
 def test_fermionic_hamiltonian_simulation():
