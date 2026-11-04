@@ -51,13 +51,9 @@ def _hardware_efficient(qv, w, layers=1, rotations=("y",), entangler="cx"):
 
     Each rotation layer applies one rotation per qubit for every axis in
     ``rotations``, which means a register of $n$ qubits uses
-    $(L+1) \cdot n \cdot \lvert\text{rotations}\rvert$ parameters. The final
-    rotation layer makes sure that the output of the last entangling layer is
-    rotated before it is measured.
-
-    The entangling layer applies a two-qubit gate to each neighbouring pair of
-    qubits in a linear chain, which keeps the ansatz shallow and runs on
-    hardware with nearest-neighbour connectivity.
+    $(L+1) \cdot n \cdot \lvert\text{rotations}\rvert$ parameters. The
+    entangling layer applies a two-qubit gate to each neighbouring pair of
+    qubits in a linear chain.
 
     Parameters
     ----------
@@ -170,27 +166,9 @@ def _real_amplitudes(qv, w, layers=1, entanglement="ring"):
     register of $n$ qubits uses $(L+1) \cdot n$ parameters, one per qubit and
     rotation layer.
 
-    $R_Y$ and CX both have real matrix representations, which means the ansatz
-    maps real amplitudes to real amplitudes. Starting from
-    $\ket{0}^{\otimes n}$, or after an encoding with real amplitudes such as
-    angle encoding about the Y axis, it explores only the real subspace of the
-    Hilbert space. That subspace contains a state for every value that an
-    expectation of a real observable can take.
-
-    Some encodings introduce complex phases, such as dense angle encoding or
-    angle encoding about the X or Z axis. After them, the ansatz rotates the
-    real and imaginary parts of the state separately and never mixes them. The
-    expectation value of a real observable is then a sum of one contribution
-    from each part, which restricts the functions of the features that the
-    model can represent. An ansatz with rotations about further axes lifts this
-    restriction.
-
     With ``entanglement="linear"`` this ansatz is the same circuit as
-    :meth:`Ansatz.hardware_efficient` with ``rotations=("y",)``. The default
-    ``entanglement="ring"`` adds a closing entangler between the last and the
-    first qubit on three or more qubits, which the hardware efficient ansatz
-    does not offer. This ansatz is kept under its established name for
-    familiarity.
+    :meth:`Ansatz.hardware_efficient` with ``rotations=("y",)``, while
+    ``"ring"`` adds a closing entangler between the last and the first qubit.
 
     Parameters
     ----------
@@ -306,14 +284,8 @@ def _data_reuploading(qv, x, w, ansatz_size, encoding, ansatz, layers=2):  # noq
     Here $S$ is the encoding and $W$ the parameterized ansatz, and the
     operators act from right to left.
 
-    Re-encoding the same features between parameterized layers can widen the
-    frequency spectrum that the circuit represents. This holds for an encoding
-    that applies each feature as the angle of a Pauli rotation, as angle and
-    dense angle encoding do. The output of the circuit is then a Fourier series
-    in each feature, and every rotation by that feature adds one to the highest
-    frequency the series can hold [2]. A single encoding layer therefore limits
-    the spectrum, however many parameters follow it, while $L$ layers allow
-    frequencies up to $L$. For other encodings the spectrum need not grow.
+    With Pauli rotation encodings, $L$ layers allow frequencies up to $L$ in
+    each feature [2].
 
     Parameters
     ----------
@@ -484,68 +456,19 @@ class Ansatz:
             ansatz.apply(qf, w)
             return qf
 
-    **The qubit count is fixed at construction**
+    **Parameter count and register width**
 
-    An ansatz is configured for ``num_qubits`` qubits, which fixes the number of
-    parameters that it expects, and checks each parameter vector against that
-    number. Under :ref:`Jasp <jasp>` tracing the register size is a tracer
-    rather than a number, which means the count cannot be checked against the
-    register instead. Without this check a wrong number of parameters would be
-    accepted silently, with a surplus ignored or a short vector read past its
-    end by reusing its last value.
-
-    **Register width is the caller's responsibility**
-
-    As for :ref:`Encoding <Encoding>`, ``num_qubits`` is not checked against
-    the register that the ansatz is applied to, because that register remains
-    a tracer. An ansatz configured for three qubits and applied to a register
-    of four is not reported, and keeping the two in step is left to the
-    caller.
-
-    **Parameters the readout cannot see**
-
-    ``num_parameters`` counts gate angles, not directions the model can learn.
-    A gate that commutes with the observable cannot change its expectation
-    value. $R_Z$ rotations and CZ gates commute with a $Z$ readout, which means
-    a final $R_Z$ layer before such a readout does not affect the result.
-    Neither does a gate acting only on qubits that are not measured. The
-    derivatives for such parameters are zero, although sampling noise can make
-    them look small but nonzero.
+    An ansatz configured for ``num_qubits`` qubits checks every parameter
+    vector against the count that this implies, also under :ref:`Jasp <jasp>`
+    tracing. Similar to :ref:`Encoding <Encoding>`, the register itself is not
+    checked under tracing, and keeping ``num_qubits`` and the register in step
+    is left to the caller.
 
     **Writing an ansatz**
 
-    A subclass of this class gets the same parameter count check and error
-    messages as the built-in ansatzes. Implement :meth:`apply_gates` to emit
-    the circuit, and :meth:`parameter_count` to derive the number of
-    parameters from the register size instead of restating it at every
-    construction.
-
-    ::
-
-        from jax.tree_util import register_pytree_node_class
-        from qrisp import ry
-        from qrisp.jasp import jrange
-        from qrisp.qml import Ansatz
-
-        @register_pytree_node_class
-        class RotationAnsatz(Ansatz):
-            def parameter_count(self, num_qubits):
-                return num_qubits
-
-            def apply_gates(self, qv, w):
-                for i in jrange(qv.size):
-                    ry(w[i], qv[i])
-                return qv
-
-        ansatz = RotationAnsatz(num_qubits=3)
-
-    ``num_parameters`` is then derived on construction, and ``apply`` rejects a
-    parameter vector that does not match it. Registering the class as a PyTree
-    lets it be passed as an argument to a traced function, rather than only
-    captured from the enclosing scope. Return your own settings from
-    ``_options`` to keep them across that roundtrip. Since the rebuilt ansatz
-    does not pass through ``__init__``, a subclass may give ``__init__`` any
-    signature.
+    To write your own ansatz, subclass this class and implement
+    :meth:`apply_gates` and :meth:`parameter_count`. The documentation of
+    :meth:`apply_gates` shows an example.
 
     """
 
@@ -641,15 +564,16 @@ class Ansatz:
         Each rotation layer applies one $R_Y$ rotation per qubit, and entangling
         layers of CX gates separate the rotation layers. Since both gates have
         real matrix entries, a state with real amplitudes, such as the initial
-        state of a register, keeps real amplitudes.
+        state of a register, keeps real amplitudes. With
+        ``entanglement="linear"`` this ansatz is the same circuit as
+        :meth:`hardware_efficient` with ``rotations=("y",)``.
 
-        With a real observable, such as a product of $Z$ and $X$ operators, a
-        real ansatz gives the same expectation value for a state and its
-        complex conjugate. A phase encoded as $\phi$, for example by
-        :meth:`Encoding.dense_angle`, then looks the same as $-\phi$. Where the
-        sign of a phase carries information, use an ansatz with rotations about
-        other axes, such as :meth:`hardware_efficient` with
-        ``rotations=("x", "y")``, or an observable involving $Y$.
+        After this ansatz and with a real observable, such as a product of $Z$
+        and $X$ operators, a phase encoded as $\phi$, for example by
+        :meth:`Encoding.dense_angle`, looks the same as $-\phi$. Where the sign of a phase carries
+        information, use :meth:`hardware_efficient` with
+        ``rotations=("x", "y")``, or an observable with an odd number of $Y$
+        factors, such as $Y_0$.
 
         Parameters
         ----------
@@ -724,13 +648,9 @@ class Ansatz:
         frequencies up to $L$ in each feature. For other encodings the spectrum
         need not grow.
 
-        The growth requires encoding and ansatz layers that do not commute. A
-        basis encoding applies $X$ gates, which commute with $R_X$ rotations,
-        and with an ansatz of $R_X$ rotations alone the encodings cancel in
-        pairs and the output does not depend on the features. With $R_Y$ in
-        both encoding and ansatz on one qubit, the layers combine into one
-        rotation by $Lx + \sum_j w_j$. The frequency rises, but the parameters
-        enter only through their sum.
+        The growth also requires encoding and ansatz layers that do not
+        commute, since commuting layers merge into fewer rotations and the
+        parameters then enter only in combination.
 
         Unlike the other ansatzes, this one also takes the features and is
         applied as ``apply(qv, w, x)``.
@@ -841,10 +761,17 @@ class Ansatz:
         """
         Emits the gates of the ansatz.
 
-        Subclasses implement this to define their circuit. It is called by
+        Subclasses implement this to define their circuit, together with
+        :meth:`parameter_count`, and they get the same parameter count check
+        and error messages as the built-in ansatzes. It is called by
         :meth:`apply`, which has already rejected a parameter vector of the
         wrong size, and an implementation can rely on ``w`` holding exactly
         ``num_parameters`` parameters.
+
+        Registering the subclass as a PyTree lets it be passed into a traced
+        function. Return your own settings from ``_options`` to keep them across
+        that roundtrip. The rebuilt ansatz skips ``__init__``, which may
+        therefore take any signature.
 
         Parameters
         ----------
@@ -860,6 +787,30 @@ class Ansatz:
         -------
         QuantumVariable
             The QuantumVariable the gates were applied to.
+
+        Examples
+        --------
+        ::
+
+            from jax.tree_util import register_pytree_node_class
+            from qrisp import ry
+            from qrisp.jasp import jrange
+            from qrisp.qml import Ansatz
+
+            @register_pytree_node_class
+            class RotationAnsatz(Ansatz):
+                def parameter_count(self, num_qubits):
+                    return num_qubits
+
+                def apply_gates(self, qv, w):
+                    for i in jrange(qv.size):
+                        ry(w[i], qv[i])
+                    return qv
+
+            ansatz = RotationAnsatz(num_qubits=3)
+
+        ``num_parameters`` is then derived on construction, and :meth:`apply`
+        rejects a parameter vector that does not match it.
 
         """
         raise NotImplementedError(

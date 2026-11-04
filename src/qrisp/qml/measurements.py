@@ -26,20 +26,10 @@ def expectation(state_prep, observables, precision=0.01):
     Estimates the expectation values of one or more observables.
 
     A single observable gives a scalar, and a sequence of observables gives one
-    entry per observable
-
-    .. math::
-
-        \left( \braket{O_0}, \ldots, \braket{O_{m-1}} \right)
-
-    Each observable is estimated from its own sampling run, which keeps the
-    entries separate as a model with several outputs needs. An operator such
-    as ``Z(0) + Z(1)`` combines the qubits into a single number, from which the
-    individual contributions cannot be recovered.
-
-    The state preparation is sampled once per observable, and the cost grows
-    with the length of ``observables``. A single operator for the quantity that
-    you want is therefore cheaper than several entries combined afterwards.
+    entry per observable, each estimated from its own sampling run. A model
+    with several outputs is read out this way, while an operator such as
+    ``Z(0) + Z(1)`` gives a single number that the contributions of the qubits
+    cannot be recovered from. The cost grows with the number of observables.
 
     Parameters
     ----------
@@ -107,47 +97,33 @@ def expectation(state_prep, observables, precision=0.01):
     **Hybrid models**
 
     The returned function takes and returns Jax arrays, which lets it compose
-    with classical layers written in ``jnp`` on either side of it.
+    with classical layers written in ``jnp`` on either side of it. The circuit
+    of a hybrid model takes the trainable angles of an ansatz as a second
+    argument.
 
     ::
 
-        quantum_block = expectation(state_prep, [Z(0), Z(1)])
+        import jax.numpy as jnp
+        from qrisp.qml import Ansatz
+
+        ansatz = Ansatz.real_amplitudes(num_qubits=2, layers=1)
+
+        def circuit(x, theta):
+            qf = QuantumFloat(2)
+            encoding.apply(qf, x)
+            ansatz.apply(qf, theta)
+            return qf
+
+        quantum_block = expectation(circuit, [Z(0), Z(1)])
 
         def model(x, p):
             h = jnp.tanh(x * p["w_in"])                     # classical
             q = quantum_block(h, p["theta"])                # quantum
             return jnp.tanh(jnp.dot(q, p["w_out"]))         # classical
 
-    The optimizers take a single flat vector, while a model like this has named
-    groups of parameters. ``jax.flatten_util.ravel_pytree`` converts between
-    the two, and the unravel function that it returns works inside the traced
-    region. The whole model then trains through one flat vector.
-
-    ::
-
-        from jax.flatten_util import ravel_pytree
-        from qrisp.jasp import jaspify, minimize
-
-        parameters = {"w_in": jnp.ones(2), "theta": jnp.zeros(4),
-                      "w_out": jnp.ones(2)}
-        flat, unravel = ravel_pytree(parameters)
-
-        @jaspify
-        def train(flat_parameters):
-            def loss(v):
-                p = unravel(v)
-                return (model(x, p) - y) ** 2
-
-            return minimize(loss, flat_parameters, method="COBYLA").x
-
-    Slicing the flat vector by hand is a common source of silent errors. An
-    off-by-one hands the wrong numbers to the wrong layer, and the model still
-    trains without raising anything.
-
-    The optimizers of :func:`qrisp.jasp.minimize` are gradient-free, which
-    means a hybrid model trains without differentiating through the quantum
-    block. To train with gradients, use :func:`parameter_shift`, which returns
-    the derivatives of the expectation values together with the values.
+    Such a model trains with the gradient-free optimizers of
+    :func:`qrisp.jasp.minimize`, or with gradients from
+    :func:`parameter_shift`.
 
     """
     # A single operator is identified by what it provides rather than by what
@@ -182,28 +158,18 @@ def parameter_shift(state_prep, observables, precision=0.01, argnums=0):
         \frac{\partial \braket{O}}{\partial \theta_k}
         = \frac{\braket{O}(\theta_k + \pi/2) - \braket{O}(\theta_k - \pi/2)}{2}
 
-    Unlike in a finite difference, the shift is large, which means the sampling
-    noise of the two evaluations is not amplified. A vector argument with $n$
-    entries costs $2n$ evaluations on top of the one at the unshifted point.
+    A vector argument with $n$ entries costs $2n$ evaluations on top of the
+    one at the unshifted point.
 
     The rule holds when every entry of a differentiated argument is the angle
     of exactly one $R_X$, $R_Y$, $R_Z$ or phase gate, reaches that gate
-    unchanged, and appears nowhere else in the circuit.
-
-    The parameters of the built-in ansatzes meet this condition, as do the
-    features of :meth:`Encoding.angle` and :meth:`Encoding.dense_angle` when
-    the encoder has no ``data`` or ``data_range``. Features that an encoder
-    scales before they reach a gate do not meet it, and neither do the
-    features of :meth:`Encoding.amplitude` and :meth:`Encoding.basis`. The
-    features of :meth:`Ansatz.data_reuploading` do not meet it either, because
-    they enter the circuit once per layer. An encoding or ansatz of your own
-    meets the condition only if it places each entry, unchanged, in a single
-    gate.
-
-    Differentiating any other argument returns numbers that are not its
-    derivatives, without raising an error. To differentiate scaled features,
-    scale them before passing them, for instance with :func:`minmax_scale`, and
-    configure the encoder without a scaling.
+    unchanged, and appears nowhere else in the circuit. The parameters of the
+    built-in ansatzes meet this condition, as do the features of
+    :meth:`Encoding.angle` and :meth:`Encoding.dense_angle` without ``data``
+    or ``data_range``. Scaled, amplitude encoded, basis encoded and re-uploaded
+    features do not, and differentiating them returns wrong numbers without an
+    error. To differentiate scaled features, scale them beforehand with
+    :func:`minmax_scale` and configure the encoder without a scaling.
 
     Parameters
     ----------
@@ -230,8 +196,8 @@ def parameter_shift(state_prep, observables, precision=0.01, argnums=0):
         is a tuple with one such array per position. The parameters are in rows
         and the observables in columns, which is the transpose of the usual
         Jacobian. For a loss $L$ of the expectation values $f$, the gradient
-        with respect to the parameters is therefore ``J @ g``, with
-        $g_o = \partial L / \partial f_o$.
+        with respect to the parameters is therefore ``D @ g``, where ``D`` is
+        the array of derivatives and $g_o = \partial L / \partial f_o$.
 
     Raises
     ------
@@ -270,12 +236,6 @@ def parameter_shift(state_prep, observables, precision=0.01, argnums=0):
     (-1.0, -1.0)
 
     **Training with gradients**
-
-    The chain rule connects the derivatives to classical code on either side
-    of the circuit. A classical layer in front of the circuit is
-    differentiated with ``jax.vjp``, which takes the derivatives with respect
-    to the circuit's inputs and returns those with respect to the layer's own
-    parameters, without evaluating the circuit again.
 
     Every separate call of a jaspified function holds on to memory, and one
     call per shifted evaluation exhausts the memory of a long training run.

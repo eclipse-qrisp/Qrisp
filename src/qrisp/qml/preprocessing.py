@@ -61,61 +61,41 @@ def minmax_scale(  # noqa: PLR0913
     Scales features into an interval suitable for an encoding.
 
     Each feature is mapped linearly from its range on the training data onto
-    ``feature_range``
+    ``feature_range`` $= (a, b)$
 
     .. math::
 
         x' = a + (b - a) \frac{x - \min(x)}{\max(x) - \min(x)}
 
-    Information about the test data must not reach the model during training,
-    because it would make the measured accuracy look better than the model
-    really is. The minimum and maximum therefore come from ``X_train`` alone
-    and are applied unchanged to ``X_test``.
-
-    Since the test data is scaled with the training range, a test feature
-    outside that range would leave ``feature_range``. Such values are clipped
-    to its bounds, which keeps every encoded angle inside the interval that
-    the encoding expects.
+    The minimum and maximum come from ``X_train`` alone and are applied
+    unchanged to ``X_test``, which keeps information about the test data out of
+    training. Test values outside the training range are clipped to
+    ``feature_range``, and a feature that is constant across the training data
+    is mapped to its lower bound.
 
     **Reusing the range after saving a model**
 
     A model trained on scaled features needs the same scaling for every new
-    sample, also after :func:`load_model`. Pass ``data_min`` and ``data_max``
-    to scale with a known range instead of deriving it. Compute them once from
-    the training data, save them as parts of the model, and pass the loaded
-    values to scale new data. The training data itself is then no longer
-    needed. With a known range, a single sample shaped ``(n_features,)`` can
-    be scaled too. An encoder configured with ``data`` stores the range itself
-    and is an alternative to saving it separately.
+    sample, also after :func:`load_model`. Compute ``data_min`` and
+    ``data_max`` once from the training data, save them as parts of the model,
+    and pass the loaded values to scale new data. With a known range, a single
+    sample shaped ``(n_features,)`` can be scaled too. An encoder configured
+    with ``data`` stores the range itself and is an alternative to saving it.
 
-    **Why the interval matters**
+    **Choosing the interval**
 
     :meth:`Encoding.angle` and :meth:`Encoding.dense_angle` read features as
-    rotation angles. Rotations are $2\pi$-periodic, and features spanning more
-    than $2\pi$ wrap around. The values $x$ and $x + 2\pi$ prepare the same
-    state, which the model cannot separate. The default range $[0, \pi]$ stays
-    well inside one period and, for a $Y$ rotation, spans $\ket{0}$ to
-    $\ket{1}$.
+    rotation angles, which are $2\pi$-periodic, and two values $2\pi$ apart
+    encode to the same state. The default range $[0, \pi]$ stays inside one
+    period and, for a $Y$ rotation, runs from $\ket{0}$ to $\ket{1}$. A range
+    of exactly $2\pi$ is accepted, although its two endpoints then encode to
+    the same state.
 
-    A range of exactly $2\pi$ is a full turn, and its two endpoints encode to
-    the same state. The smallest and largest values of a feature then look the
-    same. Only the endpoints collide, and the range is accepted for callers who
-    want the full period. The default $[0,\pi]$ avoids the collision
-    entirely.
-
-    **Amplitude encoding**
-
-    :meth:`Encoding.amplitude` normalizes the features rather than reading
-    them as angles, which means no period limits the width of the range. Pass
-    ``periodic=False`` to lift the limit. Only the ratio of the bounds then
-    reaches the state. A range starting at $0$ maps the sample at the minimum
-    of every feature to the zero vector, which has no direction to encode, and
-    the lower bound should therefore be positive. The range ``(1, 10)`` matches
-    the default scaling of :meth:`Encoding.amplitude`.
-
-    A feature that is constant across the training data has a zero range and
-    carries no information. Dividing by that range would fail, and the feature
-    is mapped to the lower bound of ``feature_range`` instead.
+    :meth:`Encoding.amplitude` normalizes the features rather than reading them
+    as angles. Pass ``periodic=False`` to lift the $2\pi$ limit, and choose a
+    positive lower bound, such as the default ``(1, 10)`` of that encoder,
+    because a range starting at $0$ turns the sample at the minimum of every
+    feature into the zero vector.
 
     Parameters
     ----------
@@ -131,8 +111,8 @@ def minmax_scale(  # noqa: PLR0913
     feature_range : tuple[float, float], optional
         The interval to scale into. The default is ``(0, numpy.pi)``. A range
         longer than $2\pi$ raises a ``ValueError`` unless ``periodic`` is
-        ``False``, because the rotation based encodings cannot tell its
-        endpoints apart.
+        ``False``, because the rotation based encodings cannot tell apart two
+        values in it that lie $2\pi$ apart.
     periodic : bool, optional
         Whether the features will be read as rotation angles, which limits
         ``feature_range`` to a width of $2\pi$. The default is ``True``. Pass
@@ -190,16 +170,6 @@ def minmax_scale(  # noqa: PLR0913
     >>> np.round(X_test_scaled, 4)
     array([[0.7854, 0.7854]])
 
-    The scaled features are ready to be encoded.
-
-    ::
-
-        from qrisp import QuantumFloat
-        from qrisp.qml import Encoding
-
-        qf = QuantumFloat(2)
-        Encoding.angle(n_features=2).apply(qf, X_train_scaled[0])
-
     For a model that will be saved, we keep the training range and scale with
     it. After loading, the saved values scale a new sample in the same way.
 
@@ -232,9 +202,9 @@ def minmax_scale(  # noqa: PLR0913
     if periodic and high - low > 2 * np.pi:
         raise ValueError(
             f"Tried to scale into the feature range ({low}, {high}), which is "
-            f"longer than 2*pi. Rotation angles are 2*pi-periodic. Its "
-            "endpoints would encode to the same state. Pass periodic=False if "
-            "the features are amplitude encoded."
+            "longer than 2*pi. Rotation angles are 2*pi-periodic, which means "
+            "two values in the range that lie 2*pi apart would encode to the "
+            "same state. Pass periodic=False if the features are amplitude encoded."
         )
 
     if (data_min is None) != (data_max is None):
@@ -317,17 +287,11 @@ def normalize(X):
 
         x' = \frac{x}{\lVert x \rVert}
 
-    A quantum state has unit norm, and :meth:`Encoding.amplitude`, which writes
-    the features into the amplitudes of a register, therefore normalizes
-    internally. The length of a feature vector never reaches the circuit, only
-    its direction, and two samples differing by a scalar factor prepare the
-    same state.
-
-    Applying this function first makes that visible in the data instead of
-    leaving it to happen silently inside the encoding. Where the magnitude
-    carries information, keep it outside the amplitudes or append a constant
-    feature before encoding, as described for :meth:`Encoding.amplitude`.
-    Appending the norm itself does not keep the magnitude.
+    A quantum state has unit norm, and :meth:`Encoding.amplitude` therefore
+    normalizes internally, which means two samples differing by a scalar factor
+    prepare the same state. Applying this function first makes that loss
+    visible in the data. :meth:`Encoding.amplitude` describes how to keep the
+    magnitude where it carries information.
 
     Parameters
     ----------
@@ -397,20 +361,14 @@ def binarize(X, threshold=0.0):
 
         x' = \begin{cases} 1 & x > t \\ 0 & x \leq t \end{cases}
 
-    :meth:`Encoding.basis` maps a bit vector onto a computational basis state
-    and accepts only the values 0 and 1. Continuous features therefore have to
-    be reduced to bits before basis encoding.
+    Binarizing reduces features to the bits that :meth:`Encoding.basis` maps
+    onto a computational basis state. It keeps only the side of the threshold
+    that a feature falls on, which suits data that is already close to binary.
 
-    This keeps only the side of the threshold that a feature falls on and
-    discards everything else. It suits data that is already close to binary,
-    while it loses most of the information in other data.
-
-    The default threshold of $0$ splits data centred on zero at its centre.
-    Features scaled with :func:`minmax_scale` lie in its ``feature_range``,
-    whose lower bound is $0$ by default, and this threshold then turns every
-    feature above its training minimum into ``1``. Split such features at the
-    middle of the range instead, which is ``threshold=numpy.pi / 2`` for the
-    default range.
+    The default threshold of $0$ suits data centred on zero. For features
+    scaled with :func:`minmax_scale` into the default range, it turns every
+    feature above its training minimum into ``1``, and the middle of the range,
+    ``threshold=numpy.pi / 2``, is the better split.
 
     Parameters
     ----------

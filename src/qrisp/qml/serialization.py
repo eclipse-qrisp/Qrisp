@@ -47,21 +47,17 @@ def save_model(filename, **parts):
 
     Only the parts you pass are saved, which means preprocessing done before
     encoding has to be repeated on new raw data after loading. A loaded model
-    encodes features prepared differently without an error. What you need to
-    keep depends on the step.
+    encodes features prepared differently without an error.
 
     * Steps derived from the training data, such as :func:`minmax_scale`, need
-      the statistics that they were derived from. Save the training range as
-      parts, for example ``data_min`` and ``data_max``, and pass the loaded
-      values to :func:`minmax_scale` to scale new data the same way. An encoder
-      configured with ``data`` or ``data_range`` stores the range itself
-      instead. A fitted object from another library, such as a scikit-learn
-      scaler, can be saved as a part as well.
+      their statistics. Save ``data_min`` and ``data_max`` as parts and pass
+      the loaded values to :func:`minmax_scale`. An encoder configured with
+      ``data`` or ``data_range`` stores the range itself, and a fitted
+      scikit-learn scaler can be saved as a part as well.
     * Steps with a fixed setting, such as the threshold of :func:`binarize`,
-      need that setting applied again. Save it as a part if the code that uses
-      the model does not fix it.
-    * Steps acting on each sample alone, such as :func:`normalize`, store no
-      statistics but still have to be applied to every new sample.
+      need that setting applied again.
+    * Steps acting on each sample alone, such as :func:`normalize`, still have
+      to be applied to every new sample.
 
     Parameters
     ----------
