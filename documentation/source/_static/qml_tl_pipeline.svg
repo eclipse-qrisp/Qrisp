@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 910 222" width="910" height="222" font-family="Helvetica, Arial, sans-serif" font-size="14" text-anchor="middle">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#57606a"/>
+    </marker>
+    <marker id="arrow-shift" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf8700"/>
+    </marker>
+    <style>
+      .math { font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", "Times New Roman", serif; font-style: italic; }
+      .up { font-style: normal; }
+      .caption { font-size: 13px; fill: #57606a; }
+      .gate { fill: #ffffff; stroke-width: 1.4; }
+      .wire { stroke: #24292f; stroke-width: 1.4; }
+    </style>
+  </defs>
+
+  <rect width="910" height="222" rx="10" fill="#ffffff"/>
+  <rect x="20" y="80.0" width="62" height="52" rx="4" fill="#ffffff" stroke="#57606a" stroke-width="1.4"/>
+  <circle cx="38" cy="96.0" r="6" fill="#d0d7de"/>
+  <path d="M 24 128.0 L 44 106.0 L 58 118.0 L 66 110.0 L 78 128.0 Z" fill="#d0d7de"/>
+  <text x="51" y="152.0" class="caption">photo</text>
+  <line x1="84" y1="106.0" x2="112" y2="106.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <text x="98.0" y="96.0" class="math" font-size="14"></text>
+  <rect x="114" y="70" width="124" height="72" rx="8" fill="#eaeef2" stroke="#8c959f" stroke-width="1.4"/>
+  <text x="176.0" y="96" font-weight="bold" font-size="13">ResNet-18</text>
+  <text x="176.0" y="120" class="math" font-size="15"><tspan class="up" font-style="normal" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#57606a">without last layer</tspan></text>
+  <text x="176.0" y="160" class="caption">frozen</text>
+  <line x1="238" y1="106.0" x2="316" y2="106.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <text x="277.0" y="96.0" class="math" font-size="14"><tspan text-decoration="underline">f</tspan><tspan class="up">, 512</tspan></text>
+  <rect x="318" y="70" width="124" height="72" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
+  <text x="380.0" y="96" font-weight="bold" font-size="13">linear layer</text>
+  <text x="380.0" y="120" class="math" font-size="15">πσ(<tspan text-decoration="underline">f</tspan>M + <tspan text-decoration="underline">b</tspan>)</text>
+  <text x="380.0" y="160" class="caption">trained, 2565</text>
+  <line x1="442" y1="106.0" x2="512" y2="106.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <text x="477.0" y="96.0" class="math" font-size="14"><tspan text-decoration="underline">x</tspan><tspan class="up">, 5</tspan></text>
+  <rect x="514" y="70" width="124" height="72" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
+  <text x="576.0" y="96" font-weight="bold" font-size="13">circuit</text>
+  <text x="576.0" y="120" class="math" font-size="15">S(<tspan text-decoration="underline">x</tspan>)<tspan class="up">, </tspan>W(<tspan text-decoration="underline">w</tspan>)</text>
+  <text x="576.0" y="160" class="caption">trained, 10</text>
+  <line x1="638" y1="106.0" x2="708" y2="106.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <text x="673.0" y="96.0" class="math" font-size="14"><tspan text-decoration="underline">q</tspan><tspan class="up">, 5</tspan></text>
+  <rect x="710" y="70" width="110" height="72" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
+  <text x="765.0" y="96" font-weight="bold" font-size="13">head</text>
+  <text x="765.0" y="120" class="math" font-size="14">tanh(<tspan text-decoration="underline">v</tspan>·<tspan text-decoration="underline">q</tspan> + c)</text>
+  <text x="765.0" y="160" class="caption">trained, 6</text>
+  <line x1="820" y1="106.0" x2="862" y2="106.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <text x="841.0" y="96.0" class="math" font-size="14"></text>
+  <text x="880" y="112.0" class="math" font-size="18">ŷ</text>
+  <polyline points="576,168 576,186 380,186 380,168" fill="none" stroke="#bf8700" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arrow-shift)"/>
+  <text x="478" y="206" class="caption" style="fill:#9a6700">derivatives for <tspan class="math"><tspan text-decoration="underline">x</tspan></tspan> from the parameter-shift rule</text>
+  <rect x="20" y="16" width="16" height="16" rx="3" fill="#eaeef2" stroke="#8c959f"/>
+  <text x="44" y="29" text-anchor="start" class="caption">frozen</text>
+  <rect x="110" y="16" width="16" height="16" rx="3" fill="#ddf4ff" stroke="#0969da"/>
+  <text x="134" y="29" text-anchor="start" class="caption">trained (number of parameters below)</text>
+</svg>

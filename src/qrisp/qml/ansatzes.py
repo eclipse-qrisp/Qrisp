@@ -1,0 +1,994 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Defines the Ansatz class, the parameterized circuits that a model trains."""
+
+import jax.numpy as jnp
+import numpy as np
+from jax.tree_util import register_pytree_node_class, tree_leaves
+
+from qrisp.core.gate_application_functions import cx, cz, rx, ry, rz
+from qrisp.jasp import check_for_tracing_mode, jrange
+
+__all__ = [
+    "Ansatz",
+    "hardware_efficient_size",
+    "real_amplitudes_size",
+]
+
+_ROTATION_GATES = {"x": rx, "y": ry, "z": rz}
+
+_ENTANGLING_GATES = {"cx": cx, "cz": cz}
+
+_ENTANGLEMENTS = ("linear", "ring")
+
+
+def _hardware_efficient(qv, w, layers=1, rotations=("y",), entangler="cx"):
+    r"""
+    Applies a hardware efficient ansatz to a QuantumVariable.
+
+    The ansatz repeats a parameterized rotation layer and an entangling layer
+    ``layers`` times, and a final rotation layer closes it
+
+    .. math::
+
+        R(w_L)\, U_{\text{ent}} \cdots R(w_1)\, U_{\text{ent}}\, R(w_0)
+
+    The operators act from right to left, with $R(w_0)$ applied first.
+
+    Each rotation layer applies one rotation per qubit for every axis in
+    ``rotations``, which means a register of $n$ qubits uses
+    $(L+1) \cdot n \cdot \lvert\text{rotations}\rvert$ parameters. The
+    entangling layer applies a two-qubit gate to each neighbouring pair of
+    qubits in a linear chain.
+
+    Parameters
+    ----------
+    qv : QuantumVariable
+        The QuantumVariable to apply the ansatz to.
+    w : list[float] or numpy.ndarray
+        The parameters. Either a flat vector of
+        $(L+1) \cdot n \cdot \lvert\text{rotations}\rvert$ entries or an array
+        shaped ``(layers + 1, len(rotations), n)``. Both are read in the same
+        order, and a vector from an optimizer can be passed unchanged.
+    layers : int, optional
+        The number of rotation and entangling layer repetitions. The default
+        is ``1``.
+    rotations : tuple[str], optional
+        The rotation axes applied to each qubit in a rotation layer. The
+        default is ``("y",)``, which keeps the amplitudes real. A string is read
+        per character, which means ``"yz"`` is the same as ``("y", "z")``. The
+        sequence must hold at least one axis.
+    entangler : {'cx', 'cz'}, optional
+        The two-qubit gate of the entangling layer. The default is ``'cx'``.
+
+    Raises
+    ------
+    ValueError
+        If the number of parameters does not match the ansatz.
+    ValueError
+        If ``rotations`` is empty or holds an axis other than ``'x'``, ``'y'`` or ``'z'``.
+    ValueError
+        If ``entangler`` is not ``'cx'`` or ``'cz'``.
+
+    References
+    ----------
+    .. [1] A. Kandala, A. Mezzacapo, K. Temme, M. Takita, M. Brink,
+       J. M. Chow, and J. M. Gambetta, "Hardware-efficient variational
+       quantum eigensolver for small molecules and quantum magnets",
+       Nature 549, 242-246 (2017). arXiv:1704.05018
+
+    """
+    if len(rotations) == 0:
+        raise ValueError(
+            "Tried to configure a hardware efficient ansatz without rotation axes. "
+            "An ansatz needs at least one axis, such as rotations=('y',), to have parameters to train."
+        )
+
+    for axis in rotations:
+        if axis not in _ROTATION_GATES:
+            raise ValueError(
+                f"Unknown rotation axis '{axis}' for the hardware efficient ansatz. "
+                f"Supported axes are {sorted(_ROTATION_GATES)}."
+            )
+
+    if entangler not in _ENTANGLING_GATES:
+        raise ValueError(
+            f"Unknown entangler '{entangler}' for the hardware efficient ansatz. "
+            f"Supported entanglers are {sorted(_ENTANGLING_GATES)}."
+        )
+
+    if layers < 0:
+        raise ValueError(
+            f"Tried to apply a hardware efficient ansatz with a negative layer "
+            f"count ({layers}). A negative count expects no parameters and would "
+            "leave the QuantumVariable untouched, which the parameter count check "
+            "does not catch."
+        )
+
+    num_rotation_layers = layers + 1
+
+    if not check_for_tracing_mode():
+        expected = hardware_efficient_size(qv.size, layers, rotations)
+        if np.size(w) != expected:
+            raise ValueError(
+                f"Tried to apply a hardware efficient ansatz with {np.size(w)} "
+                f"parameters to a QuantumVariable of size {qv.size}. Expected "
+                f"{expected} parameters for {layers} layers and rotations "
+                f"{tuple(rotations)}."
+            )
+
+    w = _flatten_parameters(w)
+
+    entangling_gate = _ENTANGLING_GATES[entangler]
+    num_rotations = len(rotations)
+
+    for layer in range(num_rotation_layers):
+        for axis_index, axis in enumerate(rotations):
+            rotation = _ROTATION_GATES[axis]
+            # The parameters of one rotation layer are contiguous, and the axes
+            # of a layer follow each other before the next layer begins.
+            offset = (layer * num_rotations + axis_index) * qv.size
+            for i in jrange(qv.size):
+                rotation(w[offset + i], qv[i])
+
+        if layer < layers:
+            _entangling_layer(qv, entangling_gate, "linear")
+
+    return qv
+
+
+def _real_amplitudes(qv, w, layers=1, entanglement="ring"):
+    r"""
+    Applies an ansatz of $R_Y$ rotations and CX entanglers to a QuantumVariable.
+
+    The ansatz repeats an $R_Y$ rotation layer and a CX entangling layer
+    ``layers`` times, and a final rotation layer closes it
+
+    .. math::
+
+        R_Y(w_L)\, U_{\text{ent}} \cdots R_Y(w_1)\, U_{\text{ent}}\, R_Y(w_0)
+
+    The operators act from right to left, with $R_Y(w_0)$ applied first. A
+    register of $n$ qubits uses $(L+1) \cdot n$ parameters, one per qubit and
+    rotation layer.
+
+    With ``entanglement="linear"`` this ansatz is the same circuit as
+    :meth:`Ansatz.hardware_efficient` with ``rotations=("y",)``, while
+    ``"ring"`` adds a closing entangler between the last and the first qubit.
+
+    Parameters
+    ----------
+    qv : QuantumVariable
+        The QuantumVariable to apply the ansatz to.
+    w : list[float] or numpy.ndarray
+        The parameters. Either a flat vector of $(L+1) \cdot n$ entries or an
+        array shaped ``(layers + 1, n)``. Both are read in the same order, and a
+        vector from an optimizer can be passed unchanged.
+    layers : int, optional
+        The number of rotation and entangling layer repetitions. The default
+        is ``1``.
+    entanglement : {'ring', 'linear'}, optional
+        The connectivity of the entangling layer. ``'linear'`` applies a CX to
+        each neighbouring pair of qubits, while ``'ring'`` also closes the
+        chain between the last and the first qubit on three or more qubits. The
+        default is ``'ring'``.
+
+    Raises
+    ------
+    ValueError
+        If the number of parameters does not match the ansatz.
+    ValueError
+        If ``entanglement`` is not ``'ring'`` or ``'linear'``.
+
+    References
+    ----------
+    .. [1] A real-valued special case of the hardware-efficient ansatz,
+       restricted to $R_Y$ rotations and CX entanglers. A. Kandala,
+       A. Mezzacapo, K. Temme, M. Takita, M. Brink, J. M. Chow, and
+       J. M. Gambetta, "Hardware-efficient variational quantum eigensolver
+       for small molecules and quantum magnets", Nature 549, 242-246 (2017).
+       arXiv:1704.05018
+
+    """
+    if entanglement not in _ENTANGLEMENTS:
+        raise ValueError(
+            f"Unknown entanglement '{entanglement}' for the real amplitudes "
+            f"ansatz. Supported entanglements are {sorted(_ENTANGLEMENTS)}."
+        )
+
+    if layers < 0:
+        raise ValueError(
+            f"Tried to apply a real amplitudes ansatz with a negative layer "
+            f"count ({layers}). A negative count expects no parameters and would "
+            "leave the QuantumVariable untouched, which the parameter count check "
+            "does not catch."
+        )
+
+    if not check_for_tracing_mode():
+        expected = real_amplitudes_size(qv.size, layers)
+        if np.size(w) != expected:
+            raise ValueError(
+                f"Tried to apply a real amplitudes ansatz with {np.size(w)} "
+                f"parameters to a QuantumVariable of size {qv.size}. Expected "
+                f"{expected} parameters for {layers} layers."
+            )
+
+    w = _flatten_parameters(w)
+
+    for layer in range(layers + 1):
+        offset = layer * qv.size
+        for i in jrange(qv.size):
+            ry(w[offset + i], qv[i])
+
+        if layer < layers:
+            _entangling_layer(qv, cx, entanglement)
+
+    return qv
+
+
+def real_amplitudes_size(num_qubits, layers=1):
+    """
+    Returns the number of parameters of a :meth:`Ansatz.real_amplitudes` ansatz.
+
+    Parameters
+    ----------
+    num_qubits : int
+        The size of the QuantumVariable the ansatz is applied to.
+    layers : int, optional
+        The number of rotation and entangling layer repetitions. The default
+        is ``1``.
+
+    Returns
+    -------
+    int
+        The number of parameters.
+
+    Examples
+    --------
+    ::
+
+        import numpy as np
+        from qrisp.qml import real_amplitudes_size
+
+        w = np.random.uniform(0, 2 * np.pi, real_amplitudes_size(3, layers=2))
+
+    """
+    return (layers + 1) * num_qubits
+
+
+def _data_reuploading(qv, x, w, ansatz_size, encoding, ansatz, layers=2):  # noqa: PLR0913, PLR0917
+    r"""
+    Applies alternating encoding and ansatz layers to a QuantumVariable.
+
+    The feature vector is encoded once per layer rather than only at the start
+    of the circuit
+
+    .. math::
+
+        W(w_L)\, S(x) \cdots W(w_1)\, S(x)
+
+    Here $S$ is the encoding and $W$ the parameterized ansatz, and the
+    operators act from right to left.
+
+    With Pauli rotation encodings, $L$ layers allow frequencies up to $L$ in
+    each feature [2].
+
+    Parameters
+    ----------
+    qv : QuantumVariable
+        The QuantumVariable to apply the circuit to.
+    x : list[float] or numpy.ndarray
+        The feature vector, encoded once per layer.
+    w : list[float] or numpy.ndarray
+        The parameters of all ansatz layers, concatenated. A flat vector of
+        ``layers * ansatz_size`` entries.
+    ansatz_size : int
+        The number of parameters that ``ansatz`` uses on ``qv``, as returned by
+        the size function that accompanies the ansatz. It splits ``w`` into one
+        block per layer.
+    encoding : Encoding
+        Applied as ``encoding.apply(qv, x)`` at the start of each layer.
+    ansatz : Ansatz
+        Applied as ``ansatz.apply(qv, w_layer)`` after each encoding.
+    layers : int, optional
+        The number of encoding and ansatz layer repetitions. The default is
+        ``2``, the smallest number that re-uploads the features at all.
+
+    Raises
+    ------
+    ValueError
+        If the number of parameters does not match the layers.
+
+    References
+    ----------
+    .. [1] A. Pérez-Salinas, A. Cervera-Lierta, E. Gil-Fuster, and
+       J. I. Latorre, "Data re-uploading for a universal quantum
+       classifier", Quantum 4, 226 (2020). arXiv:1907.02085
+    .. [2] M. Schuld, R. Sweke, and J. J. Meyer, "Effect of data encoding on
+       the expressive power of variational quantum-machine-learning models",
+       Phys. Rev. A 103, 032430 (2021). arXiv:2008.08605
+
+    """
+    if np.size(w) != layers * ansatz_size:
+        raise ValueError(
+            f"Tried to apply data reuploading with {np.size(w)} parameters over "
+            f"{layers} layers. Expected {layers * ansatz_size} parameters, "
+            f"{ansatz_size} for each layer."
+        )
+
+    w = _flatten_parameters(w)
+
+    for layer in range(layers):
+        encoding.apply(qv, x)
+        ansatz.apply(qv, w[layer * ansatz_size : (layer + 1) * ansatz_size])
+
+    return qv
+
+
+def _entangling_layer(qv, entangling_gate, entanglement):
+    """
+    Applies a two-qubit gate to each neighbouring pair of qubits.
+
+    For ``"ring"`` an additional gate on the last and first qubit closes the
+    chain. It is omitted on a register of two qubits, where it would duplicate
+    the pair that the linear chain already covers.
+    """
+    for i in jrange(qv.size - 1):
+        entangling_gate(qv[i], qv[i + 1])
+
+    if entanglement == "ring":
+        # The closing gate runs once on more than two qubits and not at all
+        # otherwise, where it would repeat the pair that the chain already
+        # covered. Since qv.size is a tracer, the count drives a jrange rather
+        # than an if.
+        for _ in jrange(jnp.minimum(jnp.maximum(qv.size - 2, 0), 1)):
+            entangling_gate(qv[qv.size - 1], qv[0])
+
+
+def _flatten_parameters(w):
+    """
+    Views the parameters as a flat vector.
+
+    Accepts an array shaped ``(layers + 1, len(rotations), n)`` as well as a
+    flat vector, which makes both an explicitly shaped array and a vector
+    straight from an optimizer valid inputs.
+    """
+    if hasattr(w, "ravel"):
+        return w.ravel()
+
+    # A nested list describes the same shape as the equivalent array, and it
+    # is flattened rather than kept as the two-dimensional array that asarray
+    # builds.
+    return jnp.asarray(w, dtype=float).ravel()
+
+
+def hardware_efficient_size(num_qubits, layers=1, rotations=("y",)):
+    """
+    Returns the number of parameters of a :meth:`Ansatz.hardware_efficient` ansatz.
+
+    Parameters
+    ----------
+    num_qubits : int
+        The size of the QuantumVariable the ansatz is applied to.
+    layers : int, optional
+        The number of rotation and entangling layer repetitions. The default
+        is ``1``.
+    rotations : tuple[str], optional
+        The rotation axes applied to each qubit in a rotation layer. The
+        default is ``("y",)``. A string is read per character, which means
+        ``"yz"`` is the same as ``("y", "z")``. The sequence must hold at least
+        one axis.
+
+    Returns
+    -------
+    int
+        The number of parameters.
+
+    Raises
+    ------
+    ValueError
+        If ``rotations`` is empty.
+    ValueError
+        If an axis follows itself in ``rotations``.
+
+    Examples
+    --------
+    ::
+
+        import numpy as np
+        from qrisp.qml import hardware_efficient_size
+
+        w = np.random.uniform(0, 2 * np.pi, hardware_efficient_size(3, layers=2))
+
+    """
+    if len(rotations) == 0:
+        raise ValueError(
+            "Tried to configure a hardware efficient ansatz without rotation axes. "
+            "An ansatz needs at least one axis, such as rotations=('y',), to have parameters to train."
+        )
+
+    for axis, next_axis in zip(rotations, rotations[1:]):
+        if axis == next_axis:
+            raise ValueError(
+                f"Repeated rotation axis in {tuple(rotations)} for the hardware efficient ansatz. "
+                f"Consecutive rotations about the same axis compose into a single one, "
+                f"which means the repetition adds parameters the circuit cannot use. An axis may "
+                f"recur once another axis separates the repeats, as in ('z', 'y', 'z')."
+            )
+
+    return (layers + 1) * len(rotations) * num_qubits
+
+
+class Ansatz:
+    r"""
+    A configured parameterized circuit.
+
+    An ansatz is built once for a given register size and applied once per
+    evaluation. The classmethods :meth:`hardware_efficient`,
+    :meth:`real_amplitudes` and :meth:`data_reuploading` each return a
+    configured ansatz.
+
+    ::
+
+        from qrisp import QuantumFloat
+        from qrisp.jasp import jaspify
+        from qrisp.qml import Ansatz
+
+        ansatz = Ansatz.real_amplitudes(num_qubits=3, layers=2)
+
+        @jaspify
+        def circuit(w):
+            qf = QuantumFloat(3)
+            ansatz.apply(qf, w)
+            return qf
+
+    **Parameter count and register width**
+
+    An ansatz configured for ``num_qubits`` qubits checks every parameter
+    vector against the count that this implies, also under :ref:`Jasp <jasp>`
+    tracing. Similar to :ref:`Encoding <Encoding>`, the register itself is not
+    checked under tracing, and keeping ``num_qubits`` and the register in step
+    is left to the caller.
+
+    **Writing an ansatz**
+
+    To write your own ansatz, subclass this class and implement
+    :meth:`apply_gates` and :meth:`parameter_count`. The documentation of
+    :meth:`apply_gates` shows an example.
+
+    """
+
+    def __init__(self, num_qubits, num_parameters=None):
+        """Checks the register width and stores it together with the parameter count."""
+        if not isinstance(num_qubits, (int, np.integer)) or isinstance(num_qubits, bool):
+            raise ValueError(f"Tried to configure an ansatz for {num_qubits!r} qubits, which is not an integer.")
+
+        if num_qubits < 1:
+            raise ValueError(f"Tried to configure an ansatz for {num_qubits} qubits.")
+
+        self.num_qubits = int(num_qubits)
+
+        if num_parameters is None:
+            num_parameters = self.parameter_count(self.num_qubits)
+
+        self.num_parameters = int(num_parameters)
+
+    @classmethod
+    def hardware_efficient(cls, num_qubits, layers=1, rotations=("y",), entangler="cx"):
+        r"""
+        Returns an ansatz of rotation layers separated by entangling layers.
+
+        Each rotation layer applies one parameterized rotation per qubit and
+        rotation axis, and each entangling layer applies a two qubit gate to
+        neighbouring qubits. There is one more rotation layer than entangling
+        layers, which means the circuit both begins and ends with rotations.
+
+        Parameters
+        ----------
+        num_qubits : int
+            The size of the QuantumVariable the ansatz is applied to.
+        layers : int, optional
+            The number of rotation and entangling layer repetitions. The default
+            is ``1``.
+        rotations : tuple[str], optional
+            The rotation axes applied to each qubit in a rotation layer, in
+            order. The default is ``("y",)``. An axis may recur when another
+            axis separates the repeats, as in ``("z", "y", "z")``, which
+            parameterizes an arbitrary single qubit rotation up to a global
+            phase. A string is read per character, which means ``"yz"`` is the
+            same as ``("y", "z")``. The sequence must hold at least one axis.
+        entangler : {'cx', 'cz'}, optional
+            The two qubit gate of the entangling layers. The default is
+            ``'cx'``.
+
+        Returns
+        -------
+        Ansatz
+            The configured ansatz.
+
+        Examples
+        --------
+        ::
+
+            import numpy as np
+            from qrisp import QuantumFloat
+            from qrisp.qml import Ansatz
+
+            qf = QuantumFloat(3)
+            ansatz = Ansatz.hardware_efficient(num_qubits=3, layers=2)
+            w = np.random.uniform(0, 2 * np.pi, ansatz.num_parameters)
+            ansatz.apply(qf, w)
+
+        """
+        for axis in rotations:
+            if axis not in _ROTATION_GATES:
+                raise ValueError(
+                    f"Unknown rotation axis '{axis}' for the hardware efficient ansatz. "
+                    f"Supported axes are {sorted(_ROTATION_GATES)}."
+                )
+
+        if entangler not in _ENTANGLING_GATES:
+            raise ValueError(
+                f"Unknown entangler '{entangler}' for the hardware efficient ansatz. "
+                f"Supported entanglers are {sorted(_ENTANGLING_GATES)}."
+            )
+
+        _check_layers(layers, "hardware efficient")
+
+        ansatz = _HardwareEfficient(num_qubits, hardware_efficient_size(num_qubits, layers, rotations))
+        ansatz.layers = layers
+        ansatz.rotations = rotations
+        ansatz.entangler = entangler
+
+        return ansatz
+
+    @classmethod
+    def real_amplitudes(cls, num_qubits, layers=1, entanglement="ring"):
+        r"""
+        Returns an ansatz preparing states with real amplitudes.
+
+        Each rotation layer applies one $R_Y$ rotation per qubit, and entangling
+        layers of CX gates separate the rotation layers. Since both gates have
+        real matrix entries, a state with real amplitudes, such as the initial
+        state of a register, keeps real amplitudes. With
+        ``entanglement="linear"`` this ansatz is the same circuit as
+        :meth:`hardware_efficient` with ``rotations=("y",)``.
+
+        After this ansatz and with a real observable, such as a product of $Z$
+        and $X$ operators, a phase encoded as $\phi$, for example by
+        :meth:`Encoding.dense_angle`, looks the same as $-\phi$. Where the sign of a phase carries
+        information, use :meth:`hardware_efficient` with
+        ``rotations=("x", "y")``, or an observable with an odd number of $Y$
+        factors, such as $Y_0$.
+
+        Parameters
+        ----------
+        num_qubits : int
+            The size of the QuantumVariable the ansatz is applied to.
+        layers : int, optional
+            The number of rotation and entangling layer repetitions. The default
+            is ``1``.
+        entanglement : {'ring', 'linear'}, optional
+            The shape of the entangling layers. The default is ``'ring'``,
+            which closes the chain by entangling the last qubit with the first
+            on three or more qubits.
+
+        Returns
+        -------
+        Ansatz
+            The configured ansatz.
+
+        Examples
+        --------
+        ::
+
+            import numpy as np
+            from qrisp import QuantumFloat
+            from qrisp.qml import Ansatz
+
+            qf = QuantumFloat(3)
+            ansatz = Ansatz.real_amplitudes(num_qubits=3, layers=2)
+            w = np.random.uniform(0, 2 * np.pi, ansatz.num_parameters)
+            ansatz.apply(qf, w)
+
+        Every amplitude of the resulting state is real.
+
+        >>> np.allclose(np.array(qf.qs.statevector("array")).imag, 0)
+        True
+
+        """
+        if entanglement not in _ENTANGLEMENTS:
+            raise ValueError(
+                f"Unknown entanglement '{entanglement}' for the real amplitudes "
+                f"ansatz. Supported entanglements are {sorted(_ENTANGLEMENTS)}."
+            )
+
+        _check_layers(layers, "real amplitudes")
+
+        ansatz = _RealAmplitudes(num_qubits, real_amplitudes_size(num_qubits, layers))
+        ansatz.layers = layers
+        ansatz.entanglement = entanglement
+
+        return ansatz
+
+    @classmethod
+    def data_reuploading(cls, num_qubits, encoding, ansatz, layers=2):
+        r"""
+        Returns an ansatz alternating encoding and ansatz layers.
+
+        The feature vector is encoded once per layer rather than only at the
+        start of the circuit
+
+        .. math::
+
+            W(w_L)\, S(x) \cdots W(w_1)\, S(x)
+
+        Here $S$ is the encoding and $W$ the parameterized ansatz, and the
+        operators act from right to left.
+
+        Re-encoding the same features between parameterized layers can widen
+        the frequency spectrum that the circuit represents. This holds for an
+        encoding that applies each feature as the angle of a Pauli rotation, as
+        angle and dense angle encoding do. A single encoding layer then limits
+        the spectrum, however many parameters follow it, while $L$ layers allow
+        frequencies up to $L$ in each feature. For other encodings the spectrum
+        need not grow.
+
+        The growth also requires encoding and ansatz layers that do not
+        commute, since commuting layers merge into fewer rotations and the
+        parameters then enter only in combination.
+
+        Unlike the other ansatzes, this one also takes the features and is
+        applied as ``apply(qv, w, x)``.
+
+        Parameters
+        ----------
+        num_qubits : int
+            The size of the QuantumVariable the ansatz is applied to.
+        encoding : Encoding
+            Applied at the start of each layer. It acts on the state the
+            previous layers left. An encoding defined only on a register in
+            $\ket{0}$, such as :meth:`Encoding.amplitude`, is rejected.
+        ansatz : Ansatz
+            Applied after each encoding.
+        layers : int, optional
+            The number of encoding and ansatz layer repetitions. The default is
+            ``2``, the smallest number that re-uploads the features at all.
+
+        Returns
+        -------
+        Ansatz
+            The configured ansatz.
+
+        Examples
+        --------
+        ::
+
+            import numpy as np
+            from qrisp import QuantumFloat
+            from qrisp.qml import Ansatz, Encoding
+
+            qf = QuantumFloat(2)
+            reuploading = Ansatz.data_reuploading(
+                num_qubits=2,
+                encoding=Encoding.angle(n_features=2),
+                ansatz=Ansatz.real_amplitudes(num_qubits=2),
+                layers=3,
+            )
+            w = np.random.uniform(0, 2 * np.pi, reuploading.num_parameters)
+            reuploading.apply(qf, w, [0.4, 1.2])
+
+        """
+        _check_layers(layers, "data reuploading")
+
+        if getattr(encoding, "_from_zero_state", False):
+            raise ValueError(
+                "Tried to re-upload an encoding that prepares a state from |0>, such "
+                "as Encoding.amplitude. Only the first layer finds the register in "
+                "|0>, and the later layers would apply it to a state it is not "
+                "defined on. Use an encoding built from rotations, such as "
+                "Encoding.angle or Encoding.dense_angle."
+            )
+
+        # A reuploading ansatz takes the features as a third argument, while
+        # the inner ansatz is applied as apply(qv, w_layer). Nesting one inside
+        # another would raise a TypeError once applied, which is why it is
+        # rejected here rather than at the first evaluation.
+        if isinstance(ansatz, _DataReuploading):
+            raise ValueError(
+                "Tried to use a data reuploading ansatz as the inner ansatz of "
+                "another one. The inner ansatz is applied without the features, "
+                "which a reuploading ansatz requires. Pass an ansatz such as "
+                "Ansatz.real_amplitudes. Raise layers to re-upload more often."
+            )
+
+        if ansatz.num_qubits != num_qubits:
+            raise ValueError(
+                f"Tried to configure a data reuploading ansatz for {num_qubits} qubits "
+                f"around an inner ansatz configured for {ansatz.num_qubits}. Both act "
+                "on the same register and must be configured for the same size."
+            )
+
+        reuploading = _DataReuploading(num_qubits, layers * ansatz.num_parameters)
+        reuploading.layers = layers
+        reuploading.encoding = encoding
+        reuploading.ansatz = ansatz
+
+        return reuploading
+
+    def apply(self, qv, w):
+        """
+        Applies the ansatz to ``qv``.
+
+        Parameters
+        ----------
+        qv : QuantumVariable
+            The QuantumVariable to apply the ansatz to. Its size is not
+            validated. See the note on register width in the class docstring.
+        w : list[float] or numpy.ndarray
+            The parameters, either flat or shaped.
+
+        Returns
+        -------
+        QuantumVariable
+            The QuantumVariable the ansatz was applied to.
+
+        Raises
+        ------
+        ValueError
+            If ``w`` does not hold exactly ``num_parameters`` parameters.
+
+        """
+        self._check_parameters(w)
+
+        return self.apply_gates(qv, w)
+
+    def apply_gates(self, qv, w):
+        """
+        Emits the gates of the ansatz.
+
+        Subclasses implement this to define their circuit, together with
+        :meth:`parameter_count`, and they get the same parameter count check
+        and error messages as the built-in ansatzes. It is called by
+        :meth:`apply`, which has already rejected a parameter vector of the
+        wrong size, and an implementation can rely on ``w`` holding exactly
+        ``num_parameters`` parameters.
+
+        Registering the subclass as a PyTree lets it be passed into a traced
+        function. Return your own settings from ``_options`` to keep them across
+        that roundtrip. The rebuilt ansatz skips ``__init__``, which may
+        therefore take any signature.
+
+        Parameters
+        ----------
+        qv : QuantumVariable
+            The QuantumVariable to apply the gates to. Under tracing its size
+            is a tracer, which can neither be compared against ``num_qubits``
+            nor size an allocation. Loop over it with
+            :ref:`jrange <jrange>` rather than ``range(len(qv))``.
+        w : list[float] or numpy.ndarray
+            The parameters, either flat or shaped.
+
+        Returns
+        -------
+        QuantumVariable
+            The QuantumVariable the gates were applied to.
+
+        Examples
+        --------
+        ::
+
+            from jax.tree_util import register_pytree_node_class
+            from qrisp import ry
+            from qrisp.jasp import jrange
+            from qrisp.qml import Ansatz
+
+            @register_pytree_node_class
+            class RotationAnsatz(Ansatz):
+                def parameter_count(self, num_qubits):
+                    return num_qubits
+
+                def apply_gates(self, qv, w):
+                    for i in jrange(qv.size):
+                        ry(w[i], qv[i])
+                    return qv
+
+            ansatz = RotationAnsatz(num_qubits=3)
+
+        ``num_parameters`` is then derived on construction, and :meth:`apply`
+        rejects a parameter vector that does not match it.
+
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement apply_gates, which an ansatz needs to emit its gates."
+        )
+
+    def parameter_count(self, num_qubits):
+        """
+        Returns the number of parameters the ansatz expects.
+
+        Subclasses override this to derive the count from the register size
+        rather than have the caller restate it. It is called once, during
+        construction, and the result is available as ``num_parameters``.
+
+        Parameters
+        ----------
+        num_qubits : int
+            The size the ansatz is configured for, as an ordinary integer.
+
+        Returns
+        -------
+        int
+            The number of parameters.
+
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} neither implements parameter_count nor was "
+            f"given a num_parameters. The number of parameters it expects is unknown."
+        )
+
+    def _check_parameters(self, w):
+        """
+        Rejects a parameter vector of the wrong size.
+
+        np.size reads a static shape, and num_parameters was computed outside
+        the traced region. Unlike a count derived from qv.size, this comparison
+        therefore also runs while tracing.
+        """
+        if np.size(w) != self.num_parameters:
+            raise ValueError(
+                f"Tried to apply an ansatz configured for {self.num_qubits} qubits "
+                f"with {np.size(w)} parameters. Expected {self.num_parameters}."
+            )
+
+    def tree_flatten(self):
+        """
+        PyTree flatten for JAX.
+
+        The configuration is auxiliary data rather than a child, which keeps
+        ``num_qubits`` and ``num_parameters`` the plain integers that the trace
+        time check compares against.
+        """
+        return (), (self.num_qubits, self.num_parameters, self._options())
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        """PyTree unflatten for JAX."""
+        num_qubits, num_parameters, options = aux_data
+
+        # Built without __init__, whose signature a subclass may change. The
+        # configuration was validated when the flattened ansatz was built.
+        ansatz = cls.__new__(cls)
+        ansatz.num_qubits = num_qubits
+        ansatz.num_parameters = num_parameters
+
+        for name, value in options.items():
+            setattr(ansatz, name, value)
+
+        return ansatz
+
+    def __setstate__(self, state):
+        """Restores a loaded ansatz and registers its class as a PyTree when needed."""
+        # A subclass defined in a script is rebuilt from its code when loaded
+        # in another process, without running the decorator that registered it
+        # as a PyTree. Unregistered, it is its own single leaf, which
+        # treedef_is_leaf cannot tell, because it also holds for a registered
+        # node without children.
+        self.__dict__.update(state)
+        leaves = tree_leaves(self)
+
+        if len(leaves) == 1 and leaves[0] is self:
+            register_pytree_node_class(type(self))
+
+    def _options(self):
+        """Returns the per-ansatz settings, which subclasses set after building."""
+        return {}
+
+
+def _check_layers(layers, name):
+    """
+    Rejects a layer count that is not a non-negative integer.
+
+    A negative count expects no parameters and would leave the QuantumVariable
+    untouched, which the parameter count check does not catch. A fractional
+    count would give a fractional parameter count that construction
+    truncates.
+    """
+    if not isinstance(layers, (int, np.integer)) or isinstance(layers, bool):
+        raise ValueError(f"Tried to configure a {name} ansatz with {layers!r} layers, which is not an integer.")
+
+    if layers < 0:
+        raise ValueError(f"Tried to configure a {name} ansatz with a negative layer count ({layers}).")
+
+
+@register_pytree_node_class
+class _HardwareEfficient(Ansatz):
+    def _options(self):
+        return {"layers": self.layers, "rotations": self.rotations, "entangler": self.entangler}
+
+    def apply_gates(self, qv, w):
+        return _hardware_efficient(qv, w, layers=self.layers, rotations=self.rotations, entangler=self.entangler)
+
+
+@register_pytree_node_class
+class _RealAmplitudes(Ansatz):
+    def _options(self):
+        return {"layers": self.layers, "entanglement": self.entanglement}
+
+    def apply_gates(self, qv, w):
+        return _real_amplitudes(qv, w, layers=self.layers, entanglement=self.entanglement)
+
+
+@register_pytree_node_class
+class _DataReuploading(Ansatz):
+    def _options(self):
+        return {"layers": self.layers, "encoding": self.encoding, "ansatz": self.ansatz}
+
+    def tree_flatten(self):
+        """
+        PyTree flatten for JAX.
+
+        The encoding and the inner ansatz are children rather than auxiliary
+        data, because auxiliary data is a constant of every compiled function,
+        while the scaling of the encoding has to be an input to it.
+        """
+        return (self.encoding, self.ansatz), (self.num_qubits, self.num_parameters, self.layers)
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        """PyTree unflatten for JAX."""
+        reuploading = cls.__new__(cls)
+        reuploading.num_qubits, reuploading.num_parameters, reuploading.layers = aux_data
+        reuploading.encoding, reuploading.ansatz = children
+
+        return reuploading
+
+    def apply(self, qv, w, x):
+        """
+        Applies alternating encoding and ansatz layers to ``qv``.
+
+        Parameters
+        ----------
+        qv : QuantumVariable
+            The QuantumVariable to apply the circuit to.
+        w : list[float] or numpy.ndarray
+            The parameters of all ansatz layers, concatenated.
+        x : list[float] or numpy.ndarray
+            The feature vector, encoded once per layer.
+
+        Returns
+        -------
+        QuantumVariable
+            The QuantumVariable the circuit was applied to.
+
+        Raises
+        ------
+        ValueError
+            If ``w`` does not hold exactly ``num_parameters`` parameters.
+
+        """
+        self._check_parameters(w)
+
+        return _data_reuploading(
+            qv,
+            x,
+            w,
+            self.ansatz.num_parameters,
+            self.encoding,
+            self.ansatz,
+            layers=self.layers,
+        )

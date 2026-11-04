@@ -70,6 +70,24 @@ New Features
   * Raises ``ValueError`` for a non-positive shot count — including a
     dynamic one, which only becomes concrete once the backend runs.
 
+- **Quantum machine learning module** :ref:`qrisp.qml <qml_reference>`
+  The new module provides the building blocks of a quantum machine learning
+  model, and each part can be swapped without touching the others.
+
+  * :ref:`Encoding` writes classical features into a register, with angle, dense
+    angle, amplitude and basis encodings.
+  * :ref:`Ansatz` holds the trainable circuit, with hardware efficient, real
+    amplitudes and data re-uploading ansatzes.
+  * :ref:`expectation` reads out one or more observables, and :ref:`parameter_shift`
+    gives their derivatives with the parameter shift rule.
+  * :ref:`minmax_scale`, :ref:`normalize` and :ref:`binarize` prepare features for the
+    encodings.
+  * :ref:`save_model` and :ref:`load_model` store the parts of a model in a file and
+    load them again.
+
+  Encodings and ansatzes work under Jasp tracing and can be passed into traced
+  functions as PyTrees.
+
 Improvements
 ------------
 
@@ -620,6 +638,14 @@ New Tutorials/ Updated Documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
 
+* :doc:`QML tutorial </general/tutorial/QMLtutorial>` - Building, training
+  and saving a quantum classifier for the Iris data from encoding, ansatz and
+  measurement primitives.
+
+* :doc:`QML transfer learning tutorial </general/tutorial/QMLTransferLearning>` -
+  Training a quantum model on the features of a frozen pretrained image
+  network, with gradients from the parameter shift rule.
+
 
 .. Add new tutorials above this line
 
@@ -890,3 +916,4 @@ First Time Contributors 🎉
 * `micpap25 <https://github.com/micpap25>`_
 * `JiriGuthJarkovsky <https://github.com/JiriGuthJarkovsky>`_
 * `Joswin-10 <https://github.com/Joswin-10>`_
+* `seggraja <https://github.com/seggraja>`_

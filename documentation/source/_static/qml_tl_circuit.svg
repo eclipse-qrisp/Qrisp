@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 880 410" width="880" height="410" font-family="Helvetica, Arial, sans-serif" font-size="14" text-anchor="middle">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#57606a"/>
+    </marker>
+    <marker id="arrow-shift" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf8700"/>
+    </marker>
+    <style>
+      .math { font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", "Times New Roman", serif; font-style: italic; }
+      .up { font-style: normal; }
+      .caption { font-size: 13px; fill: #57606a; }
+      .gate { fill: #ffffff; stroke-width: 1.4; }
+      .wire { stroke: #24292f; stroke-width: 1.4; }
+    </style>
+  </defs>
+
+  <rect width="880" height="410" rx="10" fill="#ffffff"/>
+  <text x="170" y="34" class="math" font-size="16"><tspan font-family="Helvetica, Arial, sans-serif" font-style="normal" font-size="14" fill="#57606a">angles from the linear layer: </tspan><tspan text-decoration="underline">x</tspan><tspan class="up"> = (</tspan>x<tspan font-size="11" dy="4" class="up">0</tspan><tspan dy="-4" class="up">, …, </tspan>x<tspan font-size="11" dy="4" class="up">4</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <line x1="170" y1="42" x2="170" y2="78" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <rect x="110" y="80" width="120" height="284" rx="8" fill="#e6f4ea" stroke="#2da44e" stroke-width="1.4"/>
+  <rect x="250" y="80" width="470" height="284" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
+  <text x="62" y="115" class="math" font-size="16"><tspan class="up">|0⟩</tspan></text>
+  <line x1="84" y1="110" x2="752" y2="110" class="wire"/>
+  <text x="62" y="171" class="math" font-size="16"><tspan class="up">|0⟩</tspan></text>
+  <line x1="84" y1="166" x2="752" y2="166" class="wire"/>
+  <text x="62" y="227" class="math" font-size="16"><tspan class="up">|0⟩</tspan></text>
+  <line x1="84" y1="222" x2="752" y2="222" class="wire"/>
+  <text x="62" y="283" class="math" font-size="16"><tspan class="up">|0⟩</tspan></text>
+  <line x1="84" y1="278" x2="752" y2="278" class="wire"/>
+  <text x="62" y="339" class="math" font-size="16"><tspan class="up">|0⟩</tspan></text>
+  <line x1="84" y1="334" x2="752" y2="334" class="wire"/>
+  <rect x="130" y="94" width="80" height="32" rx="4" class="gate" stroke="#2da44e"/>
+  <text x="170" y="115" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>x<tspan font-size="10" dy="4" class="up">0</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="265" y="94" width="76" height="32" rx="4" class="gate" stroke="#0969da"/>
+  <text x="303" y="115" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">0</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="630" y="94" width="76" height="32" rx="4" class="gate" stroke="#0969da"/>
+  <text x="668" y="115" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">5</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="130" y="150" width="80" height="32" rx="4" class="gate" stroke="#2da44e"/>
+  <text x="170" y="171" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>x<tspan font-size="10" dy="4" class="up">1</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="265" y="150" width="76" height="32" rx="4" class="gate" stroke="#0969da"/>
+  <text x="303" y="171" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">1</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="630" y="150" width="76" height="32" rx="4" class="gate" stroke="#0969da"/>
+  <text x="668" y="171" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">6</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="130" y="206" width="80" height="32" rx="4" class="gate" stroke="#2da44e"/>
+  <text x="170" y="227" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>x<tspan font-size="10" dy="4" class="up">2</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="265" y="206" width="76" height="32" rx="4" class="gate" stroke="#0969da"/>
+  <text x="303" y="227" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">2</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="630" y="206" width="76" height="32" rx="4" class="gate" stroke="#0969da"/>
+  <text x="668" y="227" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">7</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="130" y="262" width="80" height="32" rx="4" class="gate" stroke="#2da44e"/>
+  <text x="170" y="283" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>x<tspan font-size="10" dy="4" class="up">3</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="265" y="262" width="76" height="32" rx="4" class="gate" stroke="#0969da"/>
+  <text x="303" y="283" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">3</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="630" y="262" width="76" height="32" rx="4" class="gate" stroke="#0969da"/>
+  <text x="668" y="283" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">8</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="130" y="318" width="80" height="32" rx="4" class="gate" stroke="#2da44e"/>
+  <text x="170" y="339" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>x<tspan font-size="10" dy="4" class="up">4</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="265" y="318" width="76" height="32" rx="4" class="gate" stroke="#0969da"/>
+  <text x="303" y="339" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">4</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="630" y="318" width="76" height="32" rx="4" class="gate" stroke="#0969da"/>
+  <text x="668" y="339" class="math">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">9</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <line x1="380" y1="110" x2="380" y2="178" stroke="#24292f" stroke-width="1.4"/>
+  <circle cx="380" cy="110" r="5" fill="#24292f"/>
+  <circle cx="380" cy="166" r="12" fill="#ffffff" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="368" y1="166" x2="392" y2="166" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="380" y1="154" x2="380" y2="178" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="432" y1="166" x2="432" y2="234" stroke="#24292f" stroke-width="1.4"/>
+  <circle cx="432" cy="166" r="5" fill="#24292f"/>
+  <circle cx="432" cy="222" r="12" fill="#ffffff" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="420" y1="222" x2="444" y2="222" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="432" y1="210" x2="432" y2="234" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="484" y1="222" x2="484" y2="290" stroke="#24292f" stroke-width="1.4"/>
+  <circle cx="484" cy="222" r="5" fill="#24292f"/>
+  <circle cx="484" cy="278" r="12" fill="#ffffff" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="472" y1="278" x2="496" y2="278" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="484" y1="266" x2="484" y2="290" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="536" y1="278" x2="536" y2="346" stroke="#24292f" stroke-width="1.4"/>
+  <circle cx="536" cy="278" r="5" fill="#24292f"/>
+  <circle cx="536" cy="334" r="12" fill="#ffffff" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="524" y1="334" x2="548" y2="334" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="536" y1="322" x2="536" y2="346" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="588" y1="334" x2="588" y2="98" stroke="#24292f" stroke-width="1.4"/>
+  <circle cx="588" cy="334" r="5" fill="#24292f"/>
+  <circle cx="588" cy="110" r="12" fill="#ffffff" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="576" y1="110" x2="600" y2="110" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="588" y1="98" x2="588" y2="122" stroke="#24292f" stroke-width="1.4"/>
+  <rect x="740" y="92" width="44" height="36" rx="4" fill="#fff8c5" stroke="#bf8700" stroke-width="1.4"/>
+  <path d="M 748 119 A 14 14 0 0 1 776 119" fill="none" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="762" y1="119" x2="772" y2="101" stroke="#24292f" stroke-width="1.4"/>
+  <text x="796" y="115" text-anchor="start" class="math" font-size="15">q<tspan font-size="10" dy="4" class="up">0</tspan><tspan dy="-4" class="up"> = ⟨</tspan>Z<tspan font-size="10" dy="4" class="up">0</tspan><tspan dy="-4" class="up">⟩</tspan></text>
+  <rect x="740" y="148" width="44" height="36" rx="4" fill="#fff8c5" stroke="#bf8700" stroke-width="1.4"/>
+  <path d="M 748 175 A 14 14 0 0 1 776 175" fill="none" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="762" y1="175" x2="772" y2="157" stroke="#24292f" stroke-width="1.4"/>
+  <text x="796" y="171" text-anchor="start" class="math" font-size="15">q<tspan font-size="10" dy="4" class="up">1</tspan><tspan dy="-4" class="up"> = ⟨</tspan>Z<tspan font-size="10" dy="4" class="up">1</tspan><tspan dy="-4" class="up">⟩</tspan></text>
+  <rect x="740" y="204" width="44" height="36" rx="4" fill="#fff8c5" stroke="#bf8700" stroke-width="1.4"/>
+  <path d="M 748 231 A 14 14 0 0 1 776 231" fill="none" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="762" y1="231" x2="772" y2="213" stroke="#24292f" stroke-width="1.4"/>
+  <text x="796" y="227" text-anchor="start" class="math" font-size="15">q<tspan font-size="10" dy="4" class="up">2</tspan><tspan dy="-4" class="up"> = ⟨</tspan>Z<tspan font-size="10" dy="4" class="up">2</tspan><tspan dy="-4" class="up">⟩</tspan></text>
+  <rect x="740" y="260" width="44" height="36" rx="4" fill="#fff8c5" stroke="#bf8700" stroke-width="1.4"/>
+  <path d="M 748 287 A 14 14 0 0 1 776 287" fill="none" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="762" y1="287" x2="772" y2="269" stroke="#24292f" stroke-width="1.4"/>
+  <text x="796" y="283" text-anchor="start" class="math" font-size="15">q<tspan font-size="10" dy="4" class="up">3</tspan><tspan dy="-4" class="up"> = ⟨</tspan>Z<tspan font-size="10" dy="4" class="up">3</tspan><tspan dy="-4" class="up">⟩</tspan></text>
+  <rect x="740" y="316" width="44" height="36" rx="4" fill="#fff8c5" stroke="#bf8700" stroke-width="1.4"/>
+  <path d="M 748 343 A 14 14 0 0 1 776 343" fill="none" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="762" y1="343" x2="772" y2="325" stroke="#24292f" stroke-width="1.4"/>
+  <text x="796" y="339" text-anchor="start" class="math" font-size="15">q<tspan font-size="10" dy="4" class="up">4</tspan><tspan dy="-4" class="up"> = ⟨</tspan>Z<tspan font-size="10" dy="4" class="up">4</tspan><tspan dy="-4" class="up">⟩</tspan></text>
+  <text x="170" y="390" class="caption" font-weight="bold" style="fill:#1a7f37">encoding <tspan class="math" fill="#24292f">S(<tspan text-decoration="underline">x</tspan>)</tspan></text>
+  <text x="485" y="390" class="caption" font-weight="bold" style="fill:#0969da">ansatz <tspan class="math" fill="#24292f">W(<tspan text-decoration="underline">w</tspan>)</tspan><tspan font-weight="normal">, 10 parameters</tspan></text>
+  <text x="485" y="70" class="caption">CX ring: 0→1, 1→2, 2→3, 3→4, 4→0</text>
+</svg>

@@ -187,6 +187,14 @@ Application to quantum states uses either ``.apply`` (deterministic, post-select
 For more details, see :doc:`Block Encodings/index`.
 
 
+Quantum Machine Learning
+========================
+
+The :doc:`Quantum Machine Learning <Quantum Machine Learning/index>` module builds a model from separate parts. An :doc:`Quantum Machine Learning/Encoding` writes the features into a register, an :doc:`Quantum Machine Learning/Ansatz` holds the trainable circuit, and :doc:`Quantum Machine Learning/expectation` reads out the observables. :doc:`Quantum Machine Learning/parameter_shift` adds their derivatives for gradient-based training. Each part can be replaced without touching the others, and encodings and ansatzes work under Jasp tracing.
+
+For more details, see :doc:`Quantum Machine Learning/index`.
+
+
 Backend Compatibility
 =====================
 
@@ -329,6 +337,7 @@ These implementations benefit directly from Qrisp's compilation infrastructure: 
    Algorithms/index
    Operators/index
    Block Encodings/index
+   Quantum Machine Learning/index
    Jasp/index
    Circuit Manipulation/index
    Backend Interface/index

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" width="720" height="300" font-family="Helvetica, Arial, sans-serif" font-size="14" text-anchor="middle">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="13" markerHeight="13" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#bc4c00"/>
+    </marker>
+    <style>
+      .math { font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", "Times New Roman", serif; font-style: italic; }
+      .up { font-style: normal; }
+      .caption { font-size: 13px; fill: #57606a; }
+      .wire { stroke: #24292f; stroke-width: 1.4; }
+    </style>
+  </defs>
+  <rect width="720" height="300" rx="10" fill="#ffffff"/>
+  <text x="20" y="30" text-anchor="start" font-size="14" font-weight="bold" fill="#24292f">Swapping the ansatz: the trained angles carry over, the new ones start at 0</text>
+  <rect x="70" y="70" width="120" height="150" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.4"/>
+  <text x="130.0" y="242" font-size="13" font-weight="bold" fill="#57606a">encoding</text>
+  <text x="130.0" y="260" class="caption">kept</text>
+  <rect x="210" y="70" width="390" height="150" rx="8" fill="#fff1e5" stroke="#bc4c00" stroke-width="1.4"/>
+  <text x="405.0" y="242" font-size="13" font-weight="bold" fill="#bc4c00">ansatz</text>
+  <text x="405.0" y="260" class="caption">new: hardware_efficient with Y and Z rotations</text>
+  <rect x="620" y="70" width="80" height="150" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.4"/>
+  <text x="660.0" y="242" font-size="13" font-weight="bold" fill="#57606a">readout</text>
+  <text x="660.0" y="260" class="caption">kept</text>
+  <text x="34" y="110" class="math up" font-size="16">|0⟩</text>
+  <text x="34" y="180" class="math up" font-size="16">|0⟩</text>
+  <line x1="54" y1="105" x2="638" y2="105" class="wire"/>
+  <line x1="54" y1="175" x2="638" y2="175" class="wire"/>
+  <rect x="95" y="89" width="70" height="32" rx="4" fill="#ffffff" stroke="#8c959f" stroke-width="1.4"/>
+  <text x="130.0" y="110" class="math" fill="#24292f">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>x<tspan font-size="10" dy="4" class="up">0</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="95" y="159" width="70" height="32" rx="4" fill="#ffffff" stroke="#8c959f" stroke-width="1.4"/>
+  <text x="130.0" y="180" class="math" fill="#24292f">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>x<tspan font-size="10" dy="4" class="up">1</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="225" y="89" width="70" height="32" rx="4" fill="#ffffff" stroke="#8c959f" stroke-width="1.4"/>
+  <text x="260.0" y="110" class="math" fill="#24292f">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">0</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="305" y="89" width="70" height="32" rx="4" fill="#ffffff" stroke="#bc4c00" stroke-width="1.4"/>
+  <text x="340.0" y="110" class="math" fill="#24292f">R<tspan font-size="10" dy="4">Z</tspan><tspan dy="-4" class="up">(</tspan><tspan class="up">0)</tspan></text>
+  <rect x="225" y="159" width="70" height="32" rx="4" fill="#ffffff" stroke="#8c959f" stroke-width="1.4"/>
+  <text x="260.0" y="180" class="math" fill="#24292f">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">1</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="305" y="159" width="70" height="32" rx="4" fill="#ffffff" stroke="#bc4c00" stroke-width="1.4"/>
+  <text x="340.0" y="180" class="math" fill="#24292f">R<tspan font-size="10" dy="4">Z</tspan><tspan dy="-4" class="up">(</tspan><tspan class="up">0)</tspan></text>
+  <line x1="405" y1="105" x2="405" y2="187" stroke="#24292f" stroke-width="1.4"/>
+  <circle cx="405" cy="105" r="5" fill="#24292f"/>
+  <circle cx="405" cy="175" r="12" fill="#ffffff" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="393" y1="175" x2="417" y2="175" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="405" y1="163" x2="405" y2="187" stroke="#24292f" stroke-width="1.4"/>
+  <rect x="435" y="89" width="70" height="32" rx="4" fill="#ffffff" stroke="#8c959f" stroke-width="1.4"/>
+  <text x="470.0" y="110" class="math" fill="#24292f">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">2</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="515" y="89" width="70" height="32" rx="4" fill="#ffffff" stroke="#bc4c00" stroke-width="1.4"/>
+  <text x="550.0" y="110" class="math" fill="#24292f">R<tspan font-size="10" dy="4">Z</tspan><tspan dy="-4" class="up">(</tspan><tspan class="up">0)</tspan></text>
+  <rect x="435" y="159" width="70" height="32" rx="4" fill="#ffffff" stroke="#8c959f" stroke-width="1.4"/>
+  <text x="470.0" y="180" class="math" fill="#24292f">R<tspan font-size="10" dy="4">Y</tspan><tspan dy="-4" class="up">(</tspan>w<tspan font-size="10" dy="4" class="up">3</tspan><tspan dy="-4" class="up">)</tspan></text>
+  <rect x="515" y="159" width="70" height="32" rx="4" fill="#ffffff" stroke="#bc4c00" stroke-width="1.4"/>
+  <text x="550.0" y="180" class="math" fill="#24292f">R<tspan font-size="10" dy="4">Z</tspan><tspan dy="-4" class="up">(</tspan><tspan class="up">0)</tspan></text>
+  <rect x="638" y="89" width="44" height="32" rx="4" fill="#ffffff" stroke="#8c959f" stroke-width="1.4"/>
+  <path d="M 646 113 A 14 14 0 0 1 674 113" fill="none" stroke="#24292f" stroke-width="1.4"/>
+  <line x1="660" y1="113" x2="671" y2="96" stroke="#24292f" stroke-width="1.4"/>
+  <text x="660" y="140" class="math" font-size="13">Z<tspan font-size="10" dy="4" class="up">0</tspan></text>
+  <rect x="40" y="277" width="14" height="14" rx="3" fill="#f6f8fa" stroke="#8c959f"/>
+  <text x="62" y="288" class="caption" text-anchor="start">kept from the saved model</text>
+  <rect x="260" y="277" width="14" height="14" rx="3" fill="#fff1e5" stroke="#bc4c00"/>
+  <text x="282" y="288" class="caption" text-anchor="start">new</text>
+</svg>

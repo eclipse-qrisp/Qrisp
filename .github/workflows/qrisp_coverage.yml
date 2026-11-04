@@ -59,7 +59,7 @@ jobs:
           pip install -e ".[all]"
       - name: Run algorithms-and-integrations tests with coverage
         run: |
-          pytest tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests \
+          pytest tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/qml_tests tests/interface_tests tests/stim_integration_tests \
             --cov=qrisp \
             --cov-branch \
             --cov-report=term:skip-covered

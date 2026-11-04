@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 900 280" width="900" height="280" font-family="Helvetica, Arial, sans-serif" font-size="14" text-anchor="middle">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#57606a"/>
+    </marker>
+    <marker id="arrow-shift" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf8700"/>
+    </marker>
+    <style>
+      .math { font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", "Times New Roman", serif; font-style: italic; }
+      .up { font-style: normal; }
+      .caption { font-size: 13px; fill: #57606a; }
+      .gate { fill: #ffffff; stroke-width: 1.4; }
+      .wire { stroke: #24292f; stroke-width: 1.4; }
+    </style>
+  </defs>
+
+  <rect width="900" height="280" rx="10" fill="#ffffff"/>
+  <text x="20" y="34" text-anchor="start" class="caption">forward: one prediction</text>
+  <rect x="110" y="60" width="120" height="60" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
+  <text x="170.0" y="86" font-weight="bold" font-size="13">linear layer</text>
+  <text x="170.0" y="110" class="math" font-size="15">πσ(<tspan text-decoration="underline">f</tspan>M + <tspan text-decoration="underline">b</tspan>)</text>
+  <text x="170.0" class="caption"></text>
+  <rect x="330" y="60" width="120" height="60" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
+  <text x="390.0" y="86" font-weight="bold" font-size="13">circuit</text>
+  <text x="390.0" y="110" class="math" font-size="15"><tspan text-decoration="underline">w</tspan></text>
+  <text x="390.0" class="caption"></text>
+  <rect x="550" y="60" width="110" height="60" rx="8" fill="#ddf4ff" stroke="#0969da" stroke-width="1.4"/>
+  <text x="605.0" y="86" font-weight="bold" font-size="13">head</text>
+  <text x="605.0" y="110" class="math" font-size="14">tanh(<tspan text-decoration="underline">v</tspan>·<tspan text-decoration="underline">q</tspan> + c)</text>
+  <text x="605.0" class="caption"></text>
+  <rect x="760" y="60" width="120" height="60" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.4"/>
+  <text x="820.0" y="86" font-weight="bold" font-size="13">loss</text>
+  <text x="820.0" y="110" class="math" font-size="15"><tspan class="up">(</tspan>ŷ<tspan class="up"> − </tspan>y<tspan class="up">)²</tspan></text>
+  <text x="820.0" class="caption"></text>
+  <text x="40" y="96.0" class="math" font-size="16"><tspan text-decoration="underline">f</tspan></text>
+  <line x1="54" y1="90.0" x2="108" y2="90.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <text x="81.0" y="80.0" class="math" font-size="14"></text>
+  <line x1="230" y1="90.0" x2="328" y2="90.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <text x="279.0" y="80.0" class="math" font-size="14"><tspan text-decoration="underline">x</tspan></text>
+  <line x1="450" y1="90.0" x2="548" y2="90.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <text x="499.0" y="80.0" class="math" font-size="14"><tspan text-decoration="underline">q</tspan></text>
+  <line x1="660" y1="90.0" x2="758" y2="90.0" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <text x="709.0" y="80.0" class="math" font-size="14">ŷ</text>
+  <text x="20" y="160" text-anchor="start" class="caption">backward: the gradient, right to left</text>
+  <line x1="820" y1="124" x2="820" y2="186" stroke="#57606a" stroke-width="1.4"/>
+  <line x1="820" y1="190" x2="452" y2="190" stroke="#57606a" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <line x1="390" y1="190" x2="232" y2="190" stroke="#bf8700" stroke-width="1.4" marker-end="url(#arrow-shift)"/>
+  <circle cx="170" cy="190" r="5" fill="#ffffff" stroke="#24292f" stroke-width="1.4"/>
+  <circle cx="390" cy="190" r="5" fill="#ffffff" stroke="#24292f" stroke-width="1.4"/>
+  <circle cx="605" cy="190" r="5" fill="#ffffff" stroke="#24292f" stroke-width="1.4"/>
+  <text x="605" y="216" class="caption" style="fill:#57606a">automatic differentiation</text>
+  <text x="605" y="234" class="caption" style="fill:#57606a">gradient for <tspan class="math"><tspan text-decoration="underline">v</tspan>, c</tspan> and for <tspan class="math"><tspan text-decoration="underline">q</tspan></tspan></text>
+  <text x="605" y="252" class="caption" style="fill:#57606a">no runs of the circuit</text>
+  <text x="390" y="216" class="caption" style="fill:#9a6700">parameter-shift rule</text>
+  <text x="390" y="234" class="caption" style="fill:#9a6700">gradient for <tspan class="math"><tspan text-decoration="underline">w</tspan></tspan> and for <tspan class="math"><tspan text-decoration="underline">x</tspan></tspan></text>
+  <text x="390" y="252" class="caption" style="fill:#9a6700">1 + 2 × 5 + 2 × 10 = 31 runs</text>
+  <text x="390" y="270" class="caption" style="fill:#9a6700">each run estimates the five ⟨Z⟩ values</text>
+  <text x="170" y="216" class="caption" style="fill:#57606a">automatic differentiation</text>
+  <text x="170" y="234" class="caption" style="fill:#57606a">gradient for <tspan class="math">M, <tspan text-decoration="underline">b</tspan></tspan></text>
+  <text x="170" y="252" class="caption" style="fill:#57606a">no runs of the circuit</text>
+</svg>

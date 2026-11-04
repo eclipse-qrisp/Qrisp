@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="-16 -16 581 346"
+   width="581"
+   height="346"
+   font-family="Helvetica, Arial, sans-serif"
+   font-size="15px"
+   version="1.1"
+   id="svg40"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <marker
+       id="st"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerUnits="userSpaceOnUse"
+       markerWidth="13"
+       markerHeight="13"
+       orient="auto">
+      <path
+         d="M 0,0 10,5 0,10 Z"
+         fill="#0969da"
+         id="path1" />
+    </marker>
+  </defs>
+  <rect
+     x="-16"
+     y="-16"
+     width="581"
+     height="346"
+     rx="10"
+     fill="#ffffff"
+     id="background" />
+  <text
+     x="121"
+     y="9.4770012"
+     text-anchor="middle"
+     font-size="13px"
+     fill="#57606a"
+     id="text1">a slice through the Bloch sphere</text>
+  <circle
+     cx="121"
+     cy="165.47701"
+     r="120"
+     fill="none"
+     stroke="#d0d7de"
+     stroke-width="2"
+     id="circle1" />
+  <line
+     x1="121"
+     y1="45.477001"
+     x2="121"
+     y2="285.47699"
+     stroke="#d0d7de"
+     stroke-width="1.5"
+     stroke-dasharray="5, 5"
+     id="line1" />
+  <!-- height of the state = <Z> -->
+  <line
+     x1="224.89999"
+     y1="105.47701"
+     x2="121"
+     y2="105.47701"
+     stroke="#1a7f37"
+     stroke-width="1.2"
+     stroke-dasharray="4, 4"
+     id="line2" />
+  <line
+     x1="121"
+     y1="165.47701"
+     x2="121"
+     y2="105.47701"
+     stroke="#1a7f37"
+     stroke-width="5"
+     id="line3" />
+  <text
+     x="111"
+     y="140.47701"
+     text-anchor="end"
+     fill="#1a7f37"
+     id="text6"><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       id="tspan3">⟨</tspan><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       font-style="italic"
+       id="tspan4">Z</tspan><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       id="tspan5">⟩ = cos</tspan><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       font-style="italic"
+       dx="4"
+       id="tspan6">θ</tspan></text>
+  <!-- the state -->
+  <line
+     x1="121"
+     y1="165.47701"
+     x2="224.89999"
+     y2="105.47701"
+     stroke="#0969da"
+     stroke-width="3"
+     marker-end="url(#st)"
+     id="line6" />
+  <path
+     d="m 121,125.477 a 40,40 0 0 1 34.6,20"
+     fill="none"
+     stroke="#24292f"
+     stroke-width="1.2"
+     id="path6" />
+  <text
+     x="149"
+     y="120.97701"
+     text-anchor="middle"
+     id="text7"><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       font-style="italic"
+       id="tspan7">θ</tspan></text>
+  <text
+     x="236.89999"
+     y="105.47701"
+     fill="#0969da"
+     id="text13"><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       font-style="italic"
+       id="tspan8">R</tspan><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       font-style="italic"
+       font-size="11px"
+       dy="4"
+       id="tspan9">Y</tspan><tspan
+       dy="-4"
+       id="tspan13"><tspan
+         font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+         id="tspan10">(</tspan><tspan
+         font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+         font-style="italic"
+         id="tspan11">θ</tspan><tspan
+         font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+         id="tspan12">)|0⟩</tspan></tspan></text>
+  <!-- landmarks -->
+  <circle
+     cx="121"
+     cy="45.477001"
+     r="5"
+     fill="#24292f"
+     id="circle13" />
+  <circle
+     cx="121"
+     cy="285.47699"
+     r="5"
+     fill="#24292f"
+     id="circle14" />
+  <circle
+     cx="241"
+     cy="165.47701"
+     r="4"
+     fill="#8c959f"
+     id="circle15" />
+  <text
+     x="124.41106"
+     y="33.050617"
+     text-anchor="middle"
+     font-size="17px"
+     id="text15"><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       id="tspan15">|0⟩</tspan></text>
+  <text
+     x="121.42638"
+     y="308.9187"
+     text-anchor="middle"
+     font-size="17px"
+     id="text16"><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       id="tspan16">|1⟩</tspan></text>
+  <text
+     x="110.27914"
+     y="42.802116"
+     text-anchor="end"
+     font-size="13px"
+     fill="#57606a"
+     id="text18"><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       font-style="italic"
+       id="tspan17">θ</tspan><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       dx="4"
+       id="tspan18">= 0</tspan></text>
+  <text
+     x="109.85277"
+     y="296.87271"
+     text-anchor="end"
+     font-size="13px"
+     fill="#57606a"
+     id="text20"><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       font-style="italic"
+       id="tspan19">θ</tspan><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       dx="4"
+       id="tspan20">= π</tspan></text>
+  <text
+     x="251"
+     y="170.47701"
+     font-size="13px"
+     fill="#57606a"
+     id="text22"><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       font-style="italic"
+       id="tspan21">θ</tspan><tspan
+       font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+       dx="4"
+       id="tspan22">= π/2</tspan></text>
+  <!-- reading the picture -->
+  <g
+     font-size="15px"
+     id="g40"
+     transform="translate(-65,-0.52299881)">
+    <text
+       x="390"
+       y="70"
+       font-weight="bold"
+       id="text24">Rotating <tspan font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif">|0⟩</tspan> by <tspan font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif" font-style="italic">θ</tspan></text>
+    <text
+       x="390"
+       y="104"
+       id="text27"><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   font-style="italic"
+   id="tspan25">θ</tspan><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   dx="4"
+       id="tspan26">= 0</tspan> → <tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   id="tspan27">|0⟩</tspan>, always measure 0</text>
+    <text
+       x="390"
+       y="132"
+       id="text29"><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   font-style="italic"
+   id="tspan28">θ</tspan><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   dx="4"
+       id="tspan29">= π/2</tspan> → equal superposition,</text>
+    <text
+       x="440"
+       y="152"
+       id="text30">measure 1 half the time</text>
+    <text
+       x="390"
+       y="180"
+       id="text32"><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   font-style="italic"
+   id="tspan30">θ</tspan><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   dx="4"
+       id="tspan31">= π</tspan> → <tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   id="tspan32">|1⟩</tspan>, always measure 1</text>
+    <text
+       x="390"
+       y="224"
+       id="text37">state: <tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   id="tspan33">cos(</tspan><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   font-style="italic"
+   id="tspan34">θ</tspan><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   id="tspan35">/2) |0⟩ + sin(</tspan><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   font-style="italic"
+   id="tspan36">θ</tspan><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   id="tspan37">/2) |1⟩</tspan></text>
+    <text
+       x="390"
+       y="250"
+       id="text40">probability of 1: <tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   id="tspan38">sin²(</tspan><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   font-style="italic"
+   id="tspan39">θ</tspan><tspan
+   font-family="'Latin Modern Math', 'STIX Two Math', 'Cambria Math', 'Times New Roman', serif"
+   id="tspan40">/2)</tspan></text>
+  </g>
+</svg>
