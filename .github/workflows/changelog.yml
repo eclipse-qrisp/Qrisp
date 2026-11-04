@@ -26,6 +26,7 @@ jobs:
           # the base would count other PRs' changelog entries as this PR's.
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Check changelog-dev.rst for entries
         id: check
