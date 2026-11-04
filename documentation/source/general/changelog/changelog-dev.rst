@@ -178,6 +178,7 @@ Improvements
 
 Other New Features
 ------------------
+- Added a function ``prepare_sparse`` for sparse quantum state preparation.
 
 - Added an ``RYYGate`` for Ising-YY couplings to accompany the existing ``RXXGate``
   and ``RZZGate``
