@@ -50,10 +50,27 @@ def dicke_state(
     in the example below. ``"divide-and-conquer"`` requires :math:`l = k`; ``"deterministic"`` accepts any
     :math:`l \leq k` (see ``method``).
 
+    .. hint::
+
+        **Qubit Ordering and Initial State:**
+
+        In Qrisp, bitstrings are ordered with ``qv[0]`` as the leftmost (first) bit and ``qv[n-1]``
+        as the rightmost (last) bit. The required initial state :math:`|0\rangle^{\otimes n-l}|1\rangle^{\otimes l}`
+        places the :math:`|1\rangle` excitations on the **last** :math:`l` qubits (``qv[n-l:]``).
+
+        For example, on a 3-qubit variable with :math:`k = 1`:
+
+        * Initializing with ``x(qv[2])`` (or ``x(qv[-1])``) yields the state :math:`|001\rangle`.
+          Applying ``dicke_state(qv, 1)`` to :math:`|001\rangle` produces the desired equal
+          superposition of all Hamming weight 1 basis states (:math:`|001\rangle`, :math:`|010\rangle`,
+          and :math:`|100\rangle`).
+        * Initializing with ``x(qv[0])`` yields the state :math:`|100\rangle`. Applying ``dicke_state``
+          to :math:`|100\rangle` does **not** prepare the Dicke state.
+
     Parameters
     ----------
     qv : QuantumVariable or Sequence[Qubit]
-        The qubits to prepare, initialized as described above.
+        The qubits to prepare, initialized as described above (with the last :math:`l` qubits set to :math:`|1\rangle`).
     k : int
         The Hamming weight (i.e. the number of "ones") of the desired Dicke state.
     method : {"deterministic", "divide-and-conquer"}, optional
