@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import sympy as sp
 
+from qrisp.alg_primitives.arithmetic.arithmetic_tools import is_inv
 from qrisp.alg_primitives.arithmetic.poly_tools import (
     expr_to_list,
     filter_pow,
@@ -969,8 +970,6 @@ def q_mult(
 
 
 def QFT_inpl_mult(qv, inplace_mult=1):
-    from qrisp.misc import is_inv
-
     qv = list(qv)
     qv = qv[::-1]
     n = len(qv)

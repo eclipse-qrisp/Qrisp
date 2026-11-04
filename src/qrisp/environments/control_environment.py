@@ -20,12 +20,12 @@ import numpy as np
 from jax._src.array import ArrayImpl
 from jax.core import ShapedArray
 
-from qrisp.circuit import QuantumCircuit, Qubit, XGate
+from qrisp.circuit import QuantumCircuit, Qubit, XGate, perm_lock, perm_unlock
 from qrisp.core import mcx, p, rz, x
 from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
 from qrisp.environments import ClControlEnvironment, QuantumEnvironment
 from qrisp.jasp import check_for_tracing_mode, get_last_equation
-from qrisp.misc import bin_rep, perm_lock, perm_unlock
+from qrisp.misc import bin_rep
 
 
 class ControlEnvironment(QuantumEnvironment):

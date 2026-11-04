@@ -18,12 +18,11 @@
 
 import jax
 
-from qrisp.circuit import Operation
+from qrisp.circuit import Operation, get_depth_dic
 from qrisp.core.session_merging_tools import merge, recursive_qs_search
 from qrisp.environments import QuantumEnvironment, control
 from qrisp.environments.custom_control_environment import custom_control
 from qrisp.jasp import check_for_tracing_mode, get_last_equation
-from qrisp.misc import get_depth_dic
 
 
 class ConjugationEnvironment(QuantumEnvironment):

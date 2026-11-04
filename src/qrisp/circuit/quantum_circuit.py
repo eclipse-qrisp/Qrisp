@@ -18,6 +18,9 @@
 
 from __future__ import annotations
 
+import os.path
+import subprocess
+import tempfile
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -31,13 +34,7 @@ from qiskit.qasm3 import dumps as dumps_qasm3
 from qiskit.visualization import circuit_drawer
 
 import qrisp.circuit.standard_operations as ops
-from qrisp.circuit import Clbit, Instruction, Operation, Qubit, U3Gate
-from qrisp.misc import (
-    cnot_count,
-    cnot_depth_indicator,
-    get_depth_dic,
-    t_depth_indicator,
-)
+from qrisp.circuit import Clbit, ClControlledOperation, Instruction, Operation, Qubit, U3Gate
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence, Set
@@ -824,7 +821,10 @@ class QuantumCircuit:
             (i.e. the maximum value in this dictionary).
 
         """
-        return get_depth_dic(self)
+        # get_depth_dic's return type is dict[Qubit, float] to accommodate
+        # custom depth_indicator callables (e.g. t_depth_indicator); with the
+        # default depth_indicator used here, values are always int.
+        return cast("dict[Qubit, int]", get_depth_dic(self))
 
     def cnot_count(self) -> int:
         """Returns the number of two-qubit Pauli-axis controlled gates (CX, CY, CZ) in
@@ -1275,7 +1275,7 @@ class QuantumCircuit:
 
     def depth(
         self,
-        depth_indicator: Callable[[Operation], int] = lambda _: 1,
+        depth_indicator: Callable[[Operation], float] = lambda _: 1,
         transpile: bool = True,
     ) -> int:
         """Returns the depth of the QuantumCircuit.
@@ -1287,7 +1287,7 @@ class QuantumCircuit:
 
         Parameters
         ----------
-        depth_indicator : Callable[[Operation], int], optional
+        depth_indicator : Callable[[Operation], float], optional
             A function that receives an :ref:`Operation` instance and returns
             the time or logical depth that operation takes. By default every
             operation contributes a depth of 1.
@@ -1426,6 +1426,7 @@ class QuantumCircuit:
             # Set epsilon based on the maximum precision across all parameters
             epsilon = 2 ** (-max_circuit_prec - 3)
 
+        assert epsilon is not None
         return self.depth(depth_indicator=lambda x: t_depth_indicator(x, epsilon))
 
     def cnot_depth(self) -> int:
@@ -3041,3 +3042,345 @@ def convert_to_cb_list(
     """
     item = _convert_cb_item(value, circuit)
     return item if isinstance(item, list) else [item]
+
+
+def cnot_count(qc: QuantumCircuit) -> int:
+    """Decompose the circuit until no more decompositions are possible and then count the cnot operations."""
+    qc = qc.transpile()
+
+    gate_count_dic = qc.count_ops()
+    count = 0
+    for gate_name in ["cx", "cy", "cz"]:
+        count += gate_count_dic.get(gate_name, 0)
+
+    return count
+
+
+# TODO: This should be fixed/improved (for example, it should always return a dict
+# and the type hint should be updated accordingly).
+def get_depth_dic(
+    qc: QuantumCircuit,
+    transpile_qc: bool = True,
+    depth_indicator: Callable[[Operation], float] = lambda x: 1,
+) -> dict[Qubit, float]:
+    """Compute the per-qubit circuit depth by stacking each instruction onto the qubits/clbits it acts on."""
+    if len(qc.qubits) == 0:
+        return {}
+
+    if transpile_qc:
+        qc = qc.transpile()
+
+    # Assign each bit in the circuit a unique integer
+    # to index into op_stack.
+    # qc.qubits is non-empty here (checked above), so bit_indices always is too.
+    bit_indices = {bit: idx for idx, bit in enumerate(qc.qubits + qc.clbits)}
+
+    # A list that holds the height of each qubit
+    # and classical bit.
+    op_stack = [0] * len(bit_indices)
+
+    # Here we are playing a modified version of
+    # Tetris where we stack gates, but multi-qubit
+    # gates, or measurements have a block for each
+    # qubit or cbit that are connected by a virtual
+    # line so that they all stacked at the same depth.
+    # Conditional gates act on all cbits in the register
+    # they are conditioned on.
+    # We treat barriers or snapshots different as
+    # They are transpiler and simulator directives.
+    # The max stack height is the circuit depth.
+
+    for instr in qc.data:
+        if instr.op.name in ["qb_alloc", "qb_dealloc", "gphase"]:
+            continue
+        qargs = instr.qubits
+        cargs = instr.clbits
+
+        levels = []
+        reg_ints = []
+        # If count then add one to stack heights
+
+        gate_depth = depth_indicator(instr.op)
+
+        for ind, reg in enumerate(qargs + cargs):
+            # Add to the stacks of the qubits and
+            # cbits used in the gate.
+            reg_ints.append(bit_indices[reg])
+            levels.append(op_stack[reg_ints[ind]] + gate_depth)
+
+        max_level = max(levels)
+        for ind in reg_ints:
+            op_stack[ind] = max_level
+
+    return {qc.qubits[i]: op_stack[i] for i in range(len(qc.qubits))}
+
+
+def _single_axis_rotation_t_depth(par: FloatLike, epsilon: float) -> float:
+    """T-depth of a single-axis rotation given its rotation angle normalized to [0, 1) turns."""
+    if par in [0, 1 / 2]:
+        return 0
+    if par in [1 / 4, 3 / 4]:
+        return 1
+    return 3 * np.log2(1 / epsilon)
+
+
+def t_depth_indicator(op: Operation, epsilon: float) -> float:
+    r"""This function returns the T-depth of an :ref:`Operation` object.
+
+    According to `this paper <https://arxiv.org/abs/1403.2975>`_, the synthesis of an $RZ(\phi)$
+    up to precision $\epsilon$ requires $3\text{log}_2(\frac{1}{\epsilon})$
+    T-gates.
+
+    Parameters
+    ----------
+    op : :ref:`Operation`
+        The operation, whose T-depth should be estimated.
+    epsilon : float
+        The precision of the RZ gate simulation.
+
+
+    Returns
+    -------
+    float
+        The estimated T-depth of the Operation.
+
+    """
+    if isinstance(op, ClControlledOperation):
+        return t_depth_indicator(op.base_op, epsilon)
+    if op.definition is not None:
+        return op.definition.t_depth(epsilon)
+    if op.name in [
+        "cx",
+        "cx",
+        "cz",
+        "x",
+        "y",
+        "z",
+        "s",
+        "h",
+        "s_dg",
+        "sx",
+        "sx_dg",
+        "measure",
+        "reset",
+        "qb_alloc",
+        "qb_dealloc",
+        "barrier",
+        "gphase",
+    ]:
+        return 0
+    if op.name in ["rx", "ry", "rz", "p", "u1"]:
+        par = cast(float, op.params[0]) / np.pi % 1
+        return _single_axis_rotation_t_depth(par, epsilon)
+    if op.name in ["t", "t_dg"]:
+        return 1
+    if op.name == "u3":
+        res = 0
+        for _ in range(3):
+            par = cast(float, op.params[0]) / np.pi % 1
+            res += _single_axis_rotation_t_depth(par, epsilon)
+        return res
+    raise NotImplementedError(f"Gate {op.name} not implemented")
+
+
+def cnot_depth_indicator(op: Operation) -> float:
+    r"""This function returns the CNOT-depth of an :ref:`Operation` object.
+
+    In NISQ-era devices, CNOT gates are the restricting bottleneck for quantum
+    circuit execution. This function can be used as a gate-speed specifier for
+    the :meth:`compile <qrisp.QuantumSession.compile>` method.
+
+    Parameters
+    ----------
+    op : :ref:`Operation`
+        The operation, whose CNOT-depth should be computed.
+
+    Returns
+    -------
+    float
+        The CNOT-depth of the Operation.
+
+    """
+    if isinstance(op, ClControlledOperation):
+        return cnot_depth_indicator(op.base_op)
+    if op.definition is not None:
+        return op.definition.cnot_depth()
+    if op.num_qubits == 1 or op.name == "barrier":
+        return 0
+    if op.name in ["cx", "cx", "cz"]:
+        return 1
+    raise NotImplementedError(f"Gate {op.name} not implemented")
+
+
+def perm_lock(qubits: Any) -> None:
+    """Locks a list of qubits such that only permeable gates can be executed on these qubits.
+
+    This means that an error will be raised if the user attempts to perform any
+    operation involving these qubits if the operation does not commute with the
+    Z-operator of this qubit. For more information, what a permeable gate is, check the
+    :ref:`uncomputation documentation <uncomputation>`.
+
+    This can be helpfull as it forbids all operations that change that computational
+    basis state of this qubit but still allow controling on this qubit or applying
+    phase gates.
+
+
+    The effect of this function can be reversed using perm_unlock.
+
+    Parameters
+    ----------
+    qubits : list[Qubit] or QuantumVariable
+        The qubits to phase-tolerantly lock.
+
+    Examples
+    --------
+    We create a QuantumChar, perm-lock it's Qubits and attempt to initialize.
+
+    >>> from qrisp import QuantumChar, perm_lock, cx, p
+    >>> q_ch_0 = QuantumChar()
+    >>> perm_lock(q_ch_0)
+    >>> q_ch_0[:] = "g"
+    Exception: Tried to perform non-permeable operations on perm_locked qubits
+
+    We now create a second QuantumChar and perform a CNOT gate
+
+    >>> q_ch_1 = QuantumChar()
+    >>> cx(q_ch_0[3], q_ch_1[2])
+
+    Phase-gates are possible, too
+
+    >>> p(0.1, q_ch_0)
+
+    """
+    for qb in convert_to_qb_list(qubits):
+        if isinstance(qb, list):
+            for item in qb:
+                perm_lock(item)
+
+            continue
+        qb.perm_lock = True
+
+
+def perm_unlock(qubits: Any) -> None:
+    """Reverses the effect of "perm_lock".
+
+    Parameters
+    ----------
+    qubits : list[Qubit] or QuantumVariable
+        The qubits to phase-tolerantly unlock.
+
+    Examples
+    --------
+    We create a QuantumChar, perm-lock it's Qubits and attempt to initialize.
+
+    >>> from qrisp import QuantumChar, perm_lock, perm_unlock
+    >>> q_ch = QuantumChar()
+    >>> perm_lock(q_ch)
+    >>> q_ch[:] = "g"
+    Exception: Tried to perform non-permeable operations on perm_locked qubits
+
+    >>> perm_unlock(q_ch)
+    >>> q_ch[:] = "g"
+    >>> print(q_ch)
+    {'g': 1.0}
+
+    """
+    for qb in convert_to_qb_list(qubits):
+        if isinstance(qb, list):
+            for item in qb:
+                perm_unlock(item)
+            continue
+        qb.perm_lock = False
+
+
+def lock(qubits: Any) -> None:
+    """Locks a list of qubits, raising an error if any operation is performed on them.
+
+    This can be reversed by calling unlock.
+
+    Parameters
+    ----------
+    qubits : list[Qubit] or QuantumVariable
+        The list of Qubits to lock.
+
+    Examples
+    --------
+    We create a QuantumChar, lock it's Qubits and attempt to initialize.
+
+    >>> from qrisp import QuantumChar, lock
+    >>> q_ch = QuantumChar()
+    >>> lock(q_ch)
+    >>> q_ch[:] = "g"
+    Exception: Tried to operation on locked qubits
+
+    """
+    for qb in convert_to_qb_list(qubits):
+        if isinstance(qb, list):
+            for item in qb:
+                lock(item)
+            continue
+
+        qb.lock = True
+
+
+def unlock(qubits: Any) -> None:
+    """Reverses the effect of "lock".
+
+    Parameters
+    ----------
+    qubits : list[Qubit] or QuantumVariable
+        The list of Qubits to lock.
+
+    Examples
+    --------
+    We create a QuantumChar, lock it's Qubits and attempt to initialize.
+
+    >>> from qrisp import QuantumChar, lock, unlock
+    >>> q_ch = QuantumChar()
+    >>> lock(q_ch)
+    >>> q_ch[:] = "g"
+    Exception: Tried to perform operations on locked qubits
+
+    We now unlock and try again
+
+    >>> unlock(q_ch)
+    >>> q_ch[:] = "g"
+    >>> print(q_ch)
+    {'g': 1.0}
+
+    """
+    for qb in convert_to_qb_list(qubits):
+        if isinstance(qb, list):
+            for item in qb:
+                unlock(item)
+            continue
+        qb.lock = False
+
+
+def render_qc(qc: QuantumCircuit) -> None:
+    """Render a QuantumCircuit as a LaTeX-typeset image and display it inline (e.g. in a Jupyter notebook)."""
+    latex_str = qc.to_latex()
+    from IPython.display import Image, display
+
+    with tempfile.TemporaryDirectory(prefix="texinpy_") as tmpdir:
+        path = os.path.join(tmpdir, "document.tex")
+        with open(path, "w", encoding="utf-8") as fp:
+            fp.write(latex_str)
+        subprocess.run(["lualatex", path], cwd=tmpdir, check=True)
+        subprocess.run(
+            [
+                "pdftocairo",
+                "-singlefile",
+                "-transp",
+                "-r",
+                "100",
+                "-png",
+                "document.pdf",
+                "document",
+            ],
+            cwd=tmpdir,
+            check=True,
+        )
+
+        im = Image(filename=os.path.join(tmpdir, "document.png"))
+        display(im)
