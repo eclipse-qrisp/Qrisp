@@ -58,7 +58,7 @@ def create_max_indep_replacement_routine(res, problem_updated):
     orig_nodes = list(graph.nodes())
 
     max_item, sign = find_max(orig_nodes, orig_edges, res, solutions)
-    if max_item == None:
+    if max_item is None:
         return graph, solutions, 0, exclusions
 
     # create a copy of the graph
