@@ -199,7 +199,8 @@ def reinterpret(jaxpr: Jaxpr | ClosedJaxpr, eqn_evaluator: Callable = exec_eqn):
 
     evaluator = eval_jaxpr(inter_jaxpr, eqn_evaluator=eqn_evaluator)
     jaxpr_input_avals = [var.aval for var in inter_jaxpr.constvars + inter_jaxpr.invars]
-    res = make_jaxpr(evaluator)(*jaxpr_input_avals).jaxpr
+    retraced = make_jaxpr(evaluator)(*jaxpr_input_avals)
+    res = retraced.jaxpr
 
     res.constvars.extend(res.invars[: len(inter_jaxpr.constvars)])
     temp = list(res.invars[len(inter_jaxpr.constvars) :])
@@ -207,7 +208,12 @@ def reinterpret(jaxpr: Jaxpr | ClosedJaxpr, eqn_evaluator: Callable = exec_eqn):
     res.invars.extend(temp)
 
     if isinstance(jaxpr, ClosedJaxpr):
-        res = ClosedJaxpr(res, jaxpr.consts)
+        # The retrace can hoist values that it closes over into constvars of its
+        # own. Those sit in front of the input's own constvars (which were
+        # appended behind them just above), so their consts have to go in front
+        # here as well - otherwise the result is a ClosedJaxpr whose consts no
+        # longer line up with its constvars.
+        res = ClosedJaxpr(res, list(retraced.consts) + list(jaxpr.consts))
 
     return res
 

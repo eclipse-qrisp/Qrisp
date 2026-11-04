@@ -16,83 +16,29 @@
 
 """Implements Jaspr/equation inversion (daggering), including while-loop inversion for jrange loops."""
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 from jax import make_jaxpr
-from jax.extend.core import ClosedJaxpr, Jaxpr, JaxprEqn, Var
+from jax.extend.core import ClosedJaxpr, JaxprEqn, Var
 from jax.lax import add_p, sub_p
 from sympy import lambdify
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn, extract_invalues, insert_outvalues, reinterpret
-from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_closed_jaxpr
+from qrisp.jasp.jasp_expression.jaxpr_utils import (
+    fold_extra_constvars_into_invars,
+    rebuild_closed_jaxpr,
+)
 from qrisp.jasp.primitives import AbstractQuantumState, greek_letters, quantum_gate_p
+
+if TYPE_CHECKING:
+    from qrisp.jasp.jasp_expression.centerclass import Jaspr
 
 qc_var_count = np.zeros(1, dtype=np.int64)
 
 
-def fold_extra_constvars_into_invars(closed_jaxpr, n_expected_const, insert_at=0):
-    """Fold unexpected leading constvars of a (re)traced ClosedJaxpr back into
-    genuine invars.
-
-    Retracing a Jaspr (e.g. during inversion) evaluates nested jit/cond/while
-    sub-equations through Jax's native primitive binding. As a side effect,
-    values that are only used inside such nested sub-equations (e.g. arrays
-    closed over by q_switch case functions, see prepare_qswitch) can get
-    reclassified from regular invars into self-contained constvars/consts of
-    the retraced jaxpr - Jax "closure converts" them relative to the retrace,
-    even though they were explicitly passed in as invars. If left as consts,
-    the resulting Jaspr would carry live tracers baked into ``consts``, which
-    breaks as soon as the Jaspr is reused in a different tracing context
-    (e.g. via LRU/custom-inversion caching or a subsequent re-trace such as
-    terminal_sampling's own sampling pass), producing either an arity
-    mismatch or a "leaked tracer" error.
-
-    This function folds any such newly introduced constvars back into being
-    genuine invars (in the same order in which they were introduced, which
-    corresponds to a prefix of the original invars).
-
-    Parameters
-    ----------
-    closed_jaxpr : jax.extend.core.ClosedJaxpr
-        The (re)traced ClosedJaxpr to normalize.
-    n_expected_const : int
-        The number of constvars that were already present/expected before
-        the retrace (usually 0).
-    insert_at : int, optional
-        The position (within the resulting invars list) at which to
-        re-insert the folded constvars. Use this when the retrace prepends
-        its own leading invars (e.g. a control qubit) that must stay in
-        front of the folded ones so the wrapping equation's argument order
-        matches. Default is 0 (folded invars go first).
-
-    Returns
-    -------
-    jax.extend.core.ClosedJaxpr
-        A ClosedJaxpr with at most ``n_expected_const`` constvars.
-
-    """
-    core = closed_jaxpr.jaxpr
-    n_extra = len(core.constvars) - n_expected_const
-    if n_extra <= 0:
-        return closed_jaxpr
-
-    folded_invars = list(core.constvars[:n_extra])
-    new_constvars = list(core.constvars[n_extra:])
-    new_consts = list(closed_jaxpr.consts[n_extra:])
-    new_invars = list(core.invars)
-    new_invars[insert_at:insert_at] = folded_invars
-    new_core = Jaxpr(
-        constvars=new_constvars,
-        invars=new_invars,
-        outvars=list(core.outvars),
-        eqns=list(core.eqns),
-        effects=core.effects,
-        debug_info=core.debug_info,
-    )
-    return ClosedJaxpr(new_core, new_consts)
-
-
-def invert_eqn(eqn):
+def invert_eqn(eqn: JaxprEqn) -> JaxprEqn:
     """Receives and equation that describes either an operation or a pjit primitive
     and returns an equation that describes the inverse.
 
@@ -109,31 +55,12 @@ def invert_eqn(eqn):
     """
     if eqn.primitive.name == "jit":
         params = dict(eqn.params)
-        orig_jaxpr = eqn.params["jaxpr"]
-        inv_jaxpr = orig_jaxpr.inverse()
 
-        # The inverted Jaspr may have been produced by a generic retrace or
-        # returned from a custom_inversion cache (inv_jaspr); either way, it
-        # must expose exactly the same number of (non-const) invars as
-        # `eqn.invars` supplies. Normalize away any unexpectedly introduced
-        # constvars, see fold_extra_constvars_into_invars.
-        from qrisp.jasp import Jaspr
-
-        normalized = fold_extra_constvars_into_invars(inv_jaxpr, len(orig_jaxpr.constvars))
-        if normalized is not inv_jaxpr:
-            # Wrapping the normalized jaxpr creates a fresh Jaspr, which starts out
-            # without the inv_jaspr back-pointer custom_inversion registered on the
-            # one being replaced. Carry it over: dropping it makes a second
-            # inversion fall back to inverting the body structurally, which for a
-            # custom_inversion user is exactly the derivation that does not apply.
-            # Folding restores the reclassified constvars to invars, so the
-            # normalized Jaspr's signature matches the wrapping equation and
-            # the original Jaspr referenced by the back-pointer.
-            preserved_inv_jaspr = inv_jaxpr.inv_jaspr
-            inv_jaxpr = Jaspr(normalized)
-            inv_jaxpr.inv_jaspr = preserved_inv_jaspr
-
-        params["jaxpr"] = inv_jaxpr
+        # The inverse takes the same arguments as the equation it replaces: a
+        # cached inv_jaspr was brought into pjit's calling convention when
+        # custom_inversion created it (see closure_convert_jaspr), and a derived
+        # one is built from this Jaspr's own signature.
+        params["jaxpr"] = eqn.params["jaxpr"].inverse()
 
         name = params["name"]
         if name[-3:] == "_dg":
@@ -180,7 +107,7 @@ def invert_eqn(eqn):
 
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
-def invert_jaspr(jaspr):
+def invert_jaspr(jaspr: "Jaspr") -> "Jaspr":
     """Takes a Jaspr and returns a Jaspr, which performs the inverted quantum operation
 
     Parameters
@@ -272,6 +199,10 @@ def invert_jaspr(jaspr):
 
     processed_jaxpr = reinterpret(temp_jaxpr, eqn_evaluator)
 
+    # The retrace above can hoist values into constvars of its own. Keep the
+    # derived inverse in the same calling convention as everything else by
+    # folding those back into invars, leaving only the Jaspr's genuine
+    # constvars behind.
     processed_jaxpr = fold_extra_constvars_into_invars(processed_jaxpr, len(jaspr.constvars))
 
     from qrisp.jasp import Jaspr
@@ -302,7 +233,7 @@ def invert_jaspr(jaspr):
 #    the comparison to determine the break condition needs to be adjusted.
 
 
-def invert_loop_body(jaxpr):
+def invert_loop_body(jaxpr: ClosedJaxpr) -> "Jaspr":
     # This function treats the loop body
 
     # This list will contain the equations with the loop index decrementation
@@ -376,7 +307,7 @@ def invert_loop_body(jaxpr):
 
 
 # This function performs the above mentioned step 2 to treat the loop primitive.
-def invert_loop_eqn(eqn):
+def invert_loop_eqn(eqn: JaxprEqn) -> JaxprEqn:
 
     # Process the loop body
     body_jaxpr = eqn.params["body_jaxpr"]
