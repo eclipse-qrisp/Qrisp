@@ -16,7 +16,10 @@
 
 """Defines expectation and parameter_shift, which read out expectation values and their derivatives."""
 
+import jax
 import jax.numpy as jnp
+
+from qrisp.jasp import check_for_tracing_mode
 
 __all__ = ["expectation", "parameter_shift"]
 
@@ -280,17 +283,25 @@ def parameter_shift(state_prep, observables, precision=0.01, argnums=0):
             # integer argument would truncate the shift of pi/2 to 1. Promoting
             # to float64 gives the dtype that adding a float64 shift produced.
             argument = argument.astype(jnp.promote_types(argument.dtype, jnp.float64))
-            shifted = list(args)
-            rows = []
+            n = jnp.shape(argument)[0]
 
-            for k in range(jnp.shape(argument)[0]):
-                shifted[position] = argument.at[k].add(jnp.pi / 2)
-                plus = estimate(*shifted)
-                shifted[position] = argument.at[k].add(-jnp.pi / 2)
-                minus = estimate(*shifted)
-                rows.append((plus - minus) / 2)
+            # Row k shifts entry k by +pi/2, and row n + k shifts it by -pi/2.
+            offsets = jnp.pi / 2 * jnp.eye(n)
+            shifts = jnp.concatenate([argument + offsets, argument - offsets])
 
-            derivatives.append(jnp.stack(rows))
+            def estimate_at(shifted_argument, position=position):
+                shifted = list(args)
+                shifted[position] = shifted_argument
+                return estimate(*shifted)
+
+            # Under tracing, lax.map builds the circuit once for all 2n shifts
+            # instead of once per shift, which makes it several times faster.
+            if check_for_tracing_mode():
+                estimates = jax.lax.map(estimate_at, shifts)
+            else:
+                estimates = jnp.stack([estimate_at(row) for row in shifts])
+
+            derivatives.append((estimates[:n] - estimates[n:]) / 2)
 
         return values, derivatives[0] if single else tuple(derivatives)
 

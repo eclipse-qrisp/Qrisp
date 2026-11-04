@@ -144,6 +144,34 @@ def test_parameter_shift_differentiates_a_tuple_of_arguments_under_tracing():
     assert np.allclose([dx[0], dw[0]], -np.sin(x + w), atol=TOLERANCE)
 
 
+def test_parameter_shift_gives_the_same_derivatives_traced_and_untraced():
+    """
+    Check that the shifts mapped under tracing give the derivatives of the loop
+    that runs outside of tracing, on generic signed inputs with two observables.
+    """
+    encoding = Encoding.angle(n_features=2)
+    ansatz = Ansatz.hardware_efficient(num_qubits=2, layers=1, rotations=("y", "z"))
+
+    def circuit(x, w):
+        qf = QuantumFloat(2)
+        encoding.apply(qf, x)
+        ansatz.apply(qf, w)
+        return qf
+
+    x = np.array([0.7, -1.3])
+    w = np.array([0.4, -2.1, 1.7, 0.3, -0.9, 2.6, -0.5, 1.1])
+    shift = parameter_shift(circuit, [Z(0), Z(1)], precision=PRECISION, argnums=(0, 1))
+
+    eager_values, (eager_dx, eager_dw) = direct(shift)(x, w)
+    traced_values, (traced_dx, traced_dw) = traced(shift)(x, w)
+
+    assert np.shape(traced_dx) == (2, 2)
+    assert np.shape(traced_dw) == (8, 2)
+    assert np.allclose(traced_values, eager_values, atol=TOLERANCE)
+    assert np.allclose(traced_dx, eager_dx, atol=TOLERANCE)
+    assert np.allclose(traced_dw, eager_dw, atol=TOLERANCE)
+
+
 def test_parameter_shift_accepts_an_integer_argument():
     """
     An integer argument shifted in place keeps its dtype, which truncates the
