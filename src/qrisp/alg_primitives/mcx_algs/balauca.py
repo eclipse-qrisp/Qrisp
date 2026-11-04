@@ -38,6 +38,7 @@ from qrisp.jasp import (
     jrange,
     qache,
 )
+from qrisp.misc.utility import gate_wrap
 from qrisp.qtypes import QuantumBool, QuantumVariable
 
 
@@ -476,6 +477,7 @@ def ctrl_state_conjugator(ctrls, ctrl_state):
             x(ctrls[i])
 
 
+@gate_wrap(permeability=[0], is_qfree=True)
 @qache
 def jasp_balauca_mcx(ctrls, target, ctrl_state):
 
@@ -508,6 +510,7 @@ def jasp_balauca_mcx(ctrls, target, ctrl_state):
             balauca_anc.delete()
 
 
+@gate_wrap(permeability=[1], is_qfree=True)
 @qache
 def jasp_balauca_mcp(phi, ctrls, ctrl_state):
 

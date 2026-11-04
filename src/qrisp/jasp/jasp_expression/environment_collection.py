@@ -111,7 +111,7 @@ def collect_environments(closed_jaxpr: "ClosedJaxpr | Jaspr") -> "ClosedJaxpr | 
         new_eqn_var_tracker.append(eqn)
 
     if isinstance(closed_jaxpr, Jaspr):
-        res = closed_jaxpr.update_eqns(new_eqn_list)
+        res = closed_jaxpr.update_eqns(new_eqn_list).inherit_permeability(closed_jaxpr)
 
         if closed_jaxpr.ctrl_jaspr is not None:
             res.ctrl_jaspr = closed_jaxpr.ctrl_jaspr
