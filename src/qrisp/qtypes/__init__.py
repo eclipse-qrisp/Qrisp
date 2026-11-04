@@ -22,3 +22,4 @@ from qrisp.qtypes.quantum_char import *
 from qrisp.qtypes.quantum_string import *
 from qrisp.qtypes.quantum_float import *
 from qrisp.qtypes.quantum_modulus import *
+from qrisp.qtypes.quantum_enum import *
