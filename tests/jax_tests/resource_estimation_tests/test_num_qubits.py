@@ -1,36 +1,48 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests for the num_qubits resource-counting metric, including control flow and callback_threshold."""
+
+import inspect
+import warnings
 
 import pytest
 
 from qrisp import (
     QuantumFloat,
+    QuantumVariable,
     control,
     cx,
+    gidney_adder,
     h,
     measure,
     num_qubits,
+    parity,
     x,
 )
-from qrisp.jasp import jrange, qache
+from qrisp.jasp import expectation_value, jlen, jrange, make_jaspr, profile_jaspr, qache
+from qrisp.jasp.interpreter_tools.interpreters.num_qubits_metric import (
+    extract_num_qubits,
+    get_num_qubits_profiler,
+)
 from qrisp.jasp.interpreter_tools.interpreters.utilities import (
     always_one,
     always_zero,
 )
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class TestNumQubitsSimple:
@@ -172,6 +184,128 @@ class TestNumQubitsSimple:
             "finally_allocated": 0,
         }
         assert main(num_qubits_input) == expected_dic
+
+    def test_num_qubits_with_multiple_return_values(self):
+        """Test that the counts are extracted correctly when the function returns several values."""
+
+        @num_qubits(meas_behavior="1")
+        def return_multiple(num_qubits_input):
+            qv = QuantumFloat(num_qubits_input)
+            qb = QuantumFloat(1)
+            h(qv[0])
+            h(qb[0])
+            return measure(qv), qb
+
+        num_qubits_input = 3
+        assert return_multiple(num_qubits_input) == {
+            "total_allocated": num_qubits_input + 1,
+            "total_deallocated": 0,
+            "peak_allocations": num_qubits_input + 1,
+            "finally_allocated": num_qubits_input + 1,
+        }
+
+
+class TestNumQubitsRegisterOperations:
+    """Test cases for slicing and fusing qubit arrays, whose sizes can determine later allocations."""
+
+    @pytest.mark.parametrize(
+        "slicer,expected_size",
+        [
+            (lambda qa: qa[1:3], 2),
+            (lambda qa: qa[:-1], 3),
+            (lambda qa: qa[1:-1], 2),
+            (lambda qa: qa[-2:], 2),
+            (lambda qa: qa[-10:], 4),
+            (lambda qa: qa[:-10], 0),
+            (lambda qa: qa[:9], 4),
+            (lambda qa: qa[6:], 0),
+            (lambda qa: qa[3:1], 0),
+        ],
+    )
+    def test_num_qubits_slice_size(self, slicer, expected_size):
+        """Test that slice sizes follow Python semantics for negative, out-of-range and empty bounds.
+
+        The slice size is used to allocate a second register, so an incorrect
+        size shows up directly in the allocation counts.
+        """
+
+        @num_qubits(meas_behavior="0")
+        def main(num_qubits_input):
+            qv = QuantumFloat(num_qubits_input)
+            h(qv[0])
+            anc = QuantumVariable(jlen(slicer(qv[:])))
+            h(anc[0])
+
+        num_qubits_input = 4
+        total = num_qubits_input + expected_size
+        expected_dic = {
+            "total_allocated": total,
+            "total_deallocated": 0,
+            "peak_allocations": total,
+            "finally_allocated": total,
+        }
+        assert main(num_qubits_input) == expected_dic
+
+    @pytest.mark.parametrize(
+        "fuser,expected_size",
+        [
+            (lambda qa, qb: qa[:] + [qb[0]], 5),
+            (lambda qa, qb: [qb[0]] + qa[:], 5),
+            (lambda qa, qb: qa[:] + qb[:], 6),
+        ],
+    )
+    def test_num_qubits_fuse_size(self, fuser, expected_size):
+        """Test that fusing counts a single qubit as one qubit and a qubit array by its size."""
+
+        @num_qubits(meas_behavior="0")
+        def main(num_qubits_input):
+            qa = QuantumFloat(num_qubits_input)
+            qb = QuantumFloat(2)
+            h(qa[0])
+            h(qb[0])
+            anc = QuantumVariable(jlen(fuser(qa, qb)))
+            h(anc[0])
+
+        num_qubits_input = 4
+        total = num_qubits_input + 2 + expected_size
+        expected_dic = {
+            "total_allocated": total,
+            "total_deallocated": 0,
+            "peak_allocations": total,
+            "finally_allocated": total,
+        }
+        assert main(num_qubits_input) == expected_dic
+
+    def test_num_qubits_adder_on_negative_slice(self):
+        """Test that an adder acting on a slice with a negative bound allocates its ancillas.
+
+        Regression test: the Montgomery reduction used in Shor's algorithm adds
+        into ``qf[m:-1]``. With the negative stop taken literally, the slice had
+        a negative size and the ancillas of the Gidney adder were never counted.
+        """
+
+        @num_qubits(meas_behavior="0")
+        def negative_stop(num_qubits_input):
+            qv = QuantumFloat(num_qubits_input)
+            h(qv[0])
+            gidney_adder(3, qv[:-1])
+
+        @num_qubits(meas_behavior="0")
+        def positive_stop(num_qubits_input):
+            qv = QuantumFloat(num_qubits_input)
+            h(qv[0])
+            gidney_adder(3, qv[: num_qubits_input - 1])
+
+        num_qubits_input = 4
+        # The adder acts on 3 qubits and uses 2 ancillas, which it deallocates again
+        expected_dic = {
+            "total_allocated": num_qubits_input + 2,
+            "total_deallocated": 2,
+            "peak_allocations": num_qubits_input + 2,
+            "finally_allocated": num_qubits_input,
+        }
+        assert negative_stop(num_qubits_input) == expected_dic
+        assert positive_stop(num_qubits_input) == expected_dic
 
 
 class TestNumQubitsControlFlow:
@@ -348,6 +482,32 @@ class TestNumQubitsControlFlow:
         res = circuit_branch_del2(num_qubits_input)
         assert res == expected_dic
 
+    def test_num_qubits_parity_controls_allocation(self):
+        """Test that the parity of measurement results is evaluated when it controls an allocation."""
+
+        @num_qubits(meas_behavior="1")
+        def main():
+            qv = QuantumVariable(2)
+            m1 = measure(qv[0])
+            m2 = measure(qv[1])
+
+            # Both measurements return 1: the parity of (m1, m2) is 0, the parity of m1 alone is 1
+            with control(parity(m1, m2)):
+                qv_even = QuantumFloat(3)
+                h(qv_even[0])
+
+            with control(parity(m1)):
+                qv_odd = QuantumFloat(5)
+                h(qv_odd[0])
+
+        expected_dic = {
+            "total_allocated": 2 + 5,
+            "total_deallocated": 0,
+            "peak_allocations": 2 + 5,
+            "finally_allocated": 2 + 5,
+        }
+        assert main() == expected_dic
+
 
 class TestNumQubitsExceptions:
     """Test cases for exceptions raised by the num_qubits metric."""
@@ -392,34 +552,111 @@ class TestNumQubitsExceptions:
         with pytest.raises(ValueError, match="Measurement behavior must return a boolean, got 42"):
             main()
 
-    def test_num_qubits_overflow1(self):
-        """Test that exceeding the maximum number of allocations raises an error."""
+    def test_num_qubits_kernelization_raises(self):
+        """Test that num_qubits on a kernelized function raises NotImplementedError."""
 
-        @num_qubits(meas_behavior="0", max_allocations=2)
+        def state_prep():
+            qf = QuantumFloat(3)
+            h(qf)
+            return qf
+
+        @num_qubits(meas_behavior="0")
         def main():
-            qv1 = QuantumFloat(1)
-            h(qv1[0])
-            qv2 = QuantumFloat(1)
-            h(qv2[0])
-            qv3 = QuantumFloat(1)  # This allocation should trigger the overflow
-            h(qv3[0])
+            return expectation_value(state_prep, 10)()
 
-        with pytest.raises(ValueError, match="The ``num_qubits`` metric computation overflowed"):
+        with pytest.raises(
+            NotImplementedError,
+            match="Quantum kernel creation not yet supported in profiling interpreter",
+        ):
             main()
 
-    def test_num_qubits_overflow2(self):
-        """Test that exceeding the maximum number of allocations raises an error."""
+    def test_num_qubits_many_allocations(self):
+        """Test that the number of allocation/deallocation events is not bounded."""
 
-        @num_qubits(meas_behavior="0", max_allocations=2)
-        def main():
-            qv1 = QuantumFloat(1)
-            h(qv1[0])
-            qv2 = QuantumFloat(1)
-            h(qv2[0])
-            qv2.delete()  # This should prevent the overflow since it frees up one allocation
+        @num_qubits(meas_behavior="0")
+        def main(num_iterations):
+            for _ in jrange(num_iterations):
+                qv = QuantumFloat(2)
+                h(qv[0])
+                qv.delete()
 
-        with pytest.raises(ValueError, match="The ``num_qubits`` metric computation overflowed"):
-            main()
+        num_iterations = 5000
+        expected_dic = {
+            "total_allocated": 2 * num_iterations,
+            "total_deallocated": 2 * num_iterations,
+            "peak_allocations": 2,
+            "finally_allocated": 0,
+        }
+        assert main(num_iterations) == expected_dic
+
+
+def _three_single_qubits():
+    """Allocate three single qubits, more than the ``max_allocations=2`` used below."""
+    qv1 = QuantumFloat(1)
+    h(qv1[0])
+    qv2 = QuantumFloat(1)
+    h(qv2[0])
+    qv3 = QuantumFloat(1)
+    h(qv3[0])
+
+
+_THREE_SINGLE_QUBITS_DIC = {
+    "total_allocated": 3,
+    "total_deallocated": 0,
+    "peak_allocations": 3,
+    "finally_allocated": 3,
+}
+
+
+class TestNumQubitsMaxAllocationsDeprecation:
+    """Test cases for the deprecated ``max_allocations`` argument, which is accepted but ignored."""
+
+    def test_decorator_keyword_warns(self):
+        """Test that passing ``max_allocations`` by keyword warns and does not limit the computation."""
+        with pytest.warns(QrispDeprecationWarning, match="max_allocations"):
+            decorator = num_qubits(meas_behavior="0", max_allocations=2)
+
+        assert decorator(_three_single_qubits)() == _THREE_SINGLE_QUBITS_DIC
+
+    def test_decorator_positional_warns(self):
+        """Test that passing ``max_allocations`` positionally, as the second argument, still warns."""
+        with pytest.warns(QrispDeprecationWarning, match="max_allocations"):
+            decorator = num_qubits("0", 2)
+
+        assert decorator(_three_single_qubits)() == _THREE_SINGLE_QUBITS_DIC
+
+    def test_decorator_without_max_allocations_does_not_warn(self):
+        """Test that the decorator does not warn when ``max_allocations`` is omitted."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", QrispDeprecationWarning)
+            assert num_qubits(meas_behavior="0")(_three_single_qubits)() == _THREE_SINGLE_QUBITS_DIC
+
+    def test_jaspr_method_warns(self):
+        """Test that ``Jaspr.num_qubits`` warns about ``max_allocations`` and only then."""
+        jaspr = make_jaspr(_three_single_qubits)()
+
+        with pytest.warns(QrispDeprecationWarning, match="max_allocations"):
+            assert jaspr.num_qubits(meas_behavior="0", max_allocations=2) == _THREE_SINGLE_QUBITS_DIC
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", QrispDeprecationWarning)
+            assert jaspr.num_qubits(meas_behavior="0") == _THREE_SINGLE_QUBITS_DIC
+
+    def test_internal_profiler_accepts_max_allocations(self):
+        """Test that the internal entry points still accept ``max_allocations`` and ignore it.
+
+        ``get_num_qubits_profiler`` keeps ``max_allocations`` as its third parameter,
+        so a positional value is not mistaken for ``callback_threshold``.
+        """
+        jaspr = make_jaspr(_three_single_qubits)()
+
+        assert profile_jaspr(jaspr, "num_qubits", "0", max_allocations=2)() == _THREE_SINGLE_QUBITS_DIC
+
+        parameters = list(inspect.signature(get_num_qubits_profiler).parameters)
+        assert parameters == ["jaspr", "meas_behavior", "max_allocations", "callback_threshold"]
+
+        profiler, aux = get_num_qubits_profiler(jaspr, always_zero, 2)
+        assert extract_num_qubits(profiler(), jaspr, aux) == _THREE_SINGLE_QUBITS_DIC
 
 
 def test_callback_threshold_num_qubits():
@@ -454,6 +691,13 @@ def test_callback_threshold_num_qubits():
 
     # Baseline: no callbacks
     baseline = num_qubits(meas_behavior="0")(make_circuit)()
+    # 3 qubits, plus 2 temporary qubits allocated and deleted by each of the three calls
+    assert baseline == {
+        "total_allocated": 3 + 3 * 2,
+        "total_deallocated": 3 * 2 + 3,
+        "peak_allocations": 3 + 2,
+        "finally_allocated": 0,
+    }
 
     # callback_threshold=0: wrap every reused sub-jaxpr
     result_0 = num_qubits(meas_behavior="0", callback_threshold=0)(make_circuit)()
@@ -517,6 +761,14 @@ def test_callback_threshold_num_qubits_nested():
         qv.delete()
 
     baseline = num_qubits(meas_behavior="0")(make_circuit)()
+    # Each outer call allocates 1 qubit and calls the inner subroutine twice (2 qubits each)
+    assert baseline == {
+        "total_allocated": 3 + 3 * (1 + 2 * 2),
+        "total_deallocated": 3 * (1 + 2 * 2) + 3,
+        "peak_allocations": 3 + 1 + 2,
+        "finally_allocated": 0,
+    }
+
     result_0 = num_qubits(meas_behavior="0", callback_threshold=0)(make_circuit)()
     assert result_0 == baseline, (
         f"Nested qache num_qubits callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
@@ -564,6 +816,14 @@ def test_callback_threshold_num_qubits_jrange():
         qv.delete()
 
     baseline = num_qubits(meas_behavior="0")(make_circuit)()
+    # 3 qubits, plus 2 temporary qubits allocated and deleted in each of the 10 iterations
+    assert baseline == {
+        "total_allocated": 3 + 10 * 2,
+        "total_deallocated": 10 * 2 + 3,
+        "peak_allocations": 3 + 2,
+        "finally_allocated": 0,
+    }
+
     result_0 = num_qubits(meas_behavior="0", callback_threshold=0)(make_circuit)()
     assert result_0 == baseline, (
         f"jrange num_qubits callback_threshold=0 diverged:\n  baseline={baseline}\n  got={result_0}"
