@@ -1,19 +1,18 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
 """Tests for the QuantumCircuit class in qrisp.circuit.quantum_circuit."""
 
@@ -26,7 +25,8 @@ import sympy
 from qiskit import QuantumCircuit as QiskitQuantumCircuit
 from sympy import symbols
 
-from qrisp.circuit import Clbit, Instruction, Qubit
+import qrisp.simulator.unitary_management as um
+from qrisp.circuit import Clbit, Instruction, Operation, Qubit
 from qrisp.circuit.quantum_circuit import QuantumCircuit
 from qrisp.circuit.standard_operations import CXGate, Measurement, RXGate, XGate
 from qrisp.permeability import PermeabilityGraph
@@ -1909,6 +1909,130 @@ class TestQuantumCircuitRunAndStatevector:
         qc.cx(0, 1)
         sv = qc.statevector_array()
         assert sv.dtype == np.complex64
+
+    def test_statevector_array_composite_gate_does_not_request_wide_unitary(self):
+        """statevector_array dissolves composite gates without requesting wide unitaries."""
+        sub = QuantumCircuit(16)
+        for qubit in sub.qubits:
+            sub.x(qubit)
+
+        qc = QuantumCircuit(16)
+        qc.append(sub.to_gate(), qc.qubits)
+
+        original = Operation.get_unitary
+
+        def guard(op_self, *args, **kwargs):
+            """Prevent wide unitary matrices from being allocated during simulation."""
+            if op_self.num_qubits > 8:
+                raise RuntimeError(f"unitary requested for {op_self.num_qubits} qubits")
+            return original(op_self, *args, **kwargs)
+
+        Operation.get_unitary = guard
+        try:
+            state = qc.statevector_array()
+            assert np.isclose(abs(state[-1]), 1.0)
+            assert np.isclose(np.linalg.norm(state), 1.0)
+        finally:
+            Operation.get_unitary = original
+
+    def test_statevector_array_explicit_unitary_preserved(self):
+        """Custom operations without definitions still have get_unitary() called."""
+        u = np.array([[0, 1], [1, 0]], dtype=complex)
+        custom_op = Operation(name="custom_x", num_qubits=1)
+        custom_op.get_unitary = lambda: u
+
+        qc = QuantumCircuit(1)
+        qc.append(custom_op, [0])
+        sv = qc.statevector_array()
+        assert np.isclose(abs(sv[1]), 1.0)
+
+    def test_statevector_array_zero_qubits_with_clbits(self):
+        """statevector_array handles circuits with classical bits but zero qubits."""
+        qc = QuantumCircuit(0, 1)
+        sv = qc.statevector_array()
+        assert sv.shape == (1,)
+        assert np.isclose(sv[0], 1.0)
+
+    def test_statevector_array_wide_mcx_does_not_request_wide_unitary(self):
+        """statevector_array dissolves wide controlled operations instead of building their unitary."""
+        qc = QuantumCircuit(14)
+        for i in range(13):
+            qc.h(i)
+        qc.mcx(list(range(13)), 13)
+
+        original = um.controlled_unitary
+
+        def guard(gate):
+            """Prevent wide controlled unitaries from being allocated during simulation."""
+            if gate.num_qubits > 8:
+                raise RuntimeError(f"unitary requested for {gate.num_qubits} qubits")
+            return original(gate)
+
+        um.controlled_unitary = guard
+        try:
+            sv = qc.statevector_array()
+        finally:
+            um.controlled_unitary = original
+        assert np.isclose(np.linalg.norm(sv), 1.0)
+        assert np.count_nonzero(np.abs(sv) > 1e-6) == 2**13
+
+    def test_statevector_array_keeps_narrow_controlled_operations(self):
+        """Toffolis are simulated via the closed-form controlled unitary, not their synthesized definition."""
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.h(1)
+        qc.ccx(0, 1, 2)
+
+        calls = []
+        original = um.controlled_unitary
+
+        def spy(gate):
+            calls.append(gate.name)
+            return original(gate)
+
+        um.controlled_unitary = spy
+        try:
+            qc.statevector_array()
+        finally:
+            um.controlled_unitary = original
+        assert "2cx" in calls
+
+    def test_run_keeps_narrow_controlled_operations(self):
+        """run() simulates Toffolis via the closed-form controlled unitary, not their synthesized definition."""
+        qc = QuantumCircuit(3)
+        qc.h(0)
+        qc.h(1)
+        qc.ccx(0, 1, 2)
+        qc.measure(qc.qubits)
+
+        calls = []
+        original = um.controlled_unitary
+
+        def spy(gate):
+            calls.append(gate.name)
+            return original(gate)
+
+        um.controlled_unitary = spy
+        try:
+            result = qc.run()
+        finally:
+            um.controlled_unitary = original
+        assert "2cx" in calls
+        assert set(result.keys()) == {"000", "001", "010", "111"}
+
+    def test_run_dissolves_measurements_inside_composite_operations(self):
+        """run() still performs measurements contained in the definition of a (narrow) composite operation."""
+        sub = QuantumCircuit(2)
+        sub.h(0)
+        sub.cx(0, 1)
+        sub.measure([0, 1])
+
+        qc = QuantumCircuit(2, 2)
+        qc.append(sub.to_op(), qc.qubits, qc.clbits)
+        result = qc.run()
+        assert set(result.keys()) == {"00", "11"}
+        assert np.isclose(result["00"], 0.5, atol=1e-5)
+        assert np.isclose(result["11"], 0.5, atol=1e-5)
 
 
 class TestQuantumCircuitSymbolicSimulation:

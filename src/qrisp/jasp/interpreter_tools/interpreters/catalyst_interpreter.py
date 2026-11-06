@@ -614,6 +614,9 @@ reset_jaxpr = make_jaxpr(reset_qubit_array)(AbstractQubitArray(), AbstractQuantu
 def process_reset(eqn, context_dic):
 
     invalues = extract_invalues(eqn, context_dic)
+    if isinstance(eqn.invars[0].aval, AbstractQubit):
+        # The reset jaxpr is traced for a QubitArray, so wrap the single position.
+        invalues[0] = Jlist([invalues[0]])
     outvalues = eval_jaxpr(reset_jaxpr.jaxpr, eqn_evaluator=catalyst_eqn_evaluator)(*invalues)
     insert_outvalues(eqn, context_dic, outvalues)
 
