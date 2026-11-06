@@ -619,7 +619,10 @@ New Tutorials/ Updated Documentation
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
-
+* Added a tutorial section on quantum machine learning with Qrisp,
+  including quantum reservoirs for time series prediction and quantum neural
+  networks for classification
+  (`PR #914 <https://github.com/eclipse-qrisp/Qrisp/pull/914>`_).
 
 .. Add new tutorials above this line
 
