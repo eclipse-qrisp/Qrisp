@@ -885,13 +885,14 @@ def get_bosonic_encoding_qubit_number(truncation, binary_encoding):
         return truncation
 
 
-def prepare_bosonic_fock_state(n: int, truncation: int = 8, binary_encoding: str = "gray_code"):
+def prepare_bosonic_fock_state(n: int | list[int], truncation: int = 8, binary_encoding: str = "gray_code"):
     """Return a QuantumVariable with a bosonic Fock state prepared on it.
 
     Parameters
     ----------
-    n : int
-       The occupation number of the Fock state.
+    n : int | list[int]
+       The occupation number(s) of the Fock state. For a multi-particle state, the ocupation numbers
+       of the single modes are provided as a list of integers.
     truncation : int, optional
        How many bosonic occupation numbers to take into account.
     binary_encoding : str, optional
@@ -923,24 +924,30 @@ def prepare_bosonic_fock_state(n: int, truncation: int = 8, binary_encoding: str
         # yields 2.9999999999999996
 
     """
-    if not 0 <= n < truncation:
-        raise ValueError("n must be between 0 an truncation-1")
-
-    n_qubits = get_bosonic_encoding_qubit_number(truncation, binary_encoding)
-
-    qv = QuantumVariable(n_qubits)
+    if not isinstance(n, list):
+        n = [n]
 
     if binary_encoding == "gray_code":
-        qubits = gray_code(n_qubits)[n]
+        encoder = gray_code
     elif binary_encoding == "standard_binary":
-        qubits = standard_binary(n_qubits)[n]
+        encoder = standard_binary
     elif binary_encoding == "one_hot":
-        qubits = one_hot(n_qubits)[n]
+        encoder = one_hot
     else:
         raise ValueError(f"Don't know binary encoding type {binary_encoding}")
 
-    for i, q in enumerate(qubits):
-        if q:
-            x(qv[i])
+    num_qubits = get_bosonic_encoding_qubit_number(truncation, binary_encoding)
+
+    qv = QuantumVariable(num_qubits * len(n))
+
+    for i, ni in enumerate(n):
+        if not 0 <= ni < truncation:
+            raise ValueError("Occupation number must be between 0 and truncation-1")
+
+        qubits = encoder(num_qubits)[ni]
+
+        for j, q in enumerate(qubits):
+            if q:
+                x(qv[i * num_qubits + j])
 
     return qv

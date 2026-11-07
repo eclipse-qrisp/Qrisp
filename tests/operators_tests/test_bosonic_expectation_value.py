@@ -88,7 +88,7 @@ def test_trotterization():
 
 
 def test_prepare_bosonic_fock_state_errors():
-    with pytest.raises(ValueError, match="n must be between 0 an truncation-1"):
+    with pytest.raises(ValueError, match="Occupation number must be between 0 and truncation-1"):
         qv = prepare_bosonic_fock_state(10, 8)
     with pytest.raises(ValueError, match="Don't know binary encoding type"):
         qv = prepare_bosonic_fock_state(5, 8, binary_encoding="xyz")
