@@ -57,7 +57,7 @@ def _create_sparse_state(n, S):
     return target_state_array, target_state_dict1, target_state_dict2
 
 
-def test_gleinig_hoefler_no_ancilla():
+def test_gleinig_hoefler():
     target_state_array, target_state_dict1, target_state_dict2 = _create_sparse_state(8, 100)
 
     qv1 = QuantumVariable(8)
@@ -85,27 +85,6 @@ def test_gleinig_hoefler_no_ancilla():
     assert np.max(np.abs(res4 - target_state_array_reversed.toarray())) < 1e-6
 
 
-def test_gleinig_hoefler_with_ancilla():
-    target_state_array, target_state_dict1, target_state_dict2 = _create_sparse_state(8, 50)
-
-    qv1 = QuantumVariable(8)
-    prepare_sparse(qv1, target_state_array, use_ancillas=True, method="gleinig_hoefler")
-
-    qv2 = QuantumVariable(8)
-    prepare_sparse(qv2, target_state_dict1, use_ancillas=True, method="gleinig_hoefler")
-
-    qv3 = QuantumVariable(8)
-    prepare_sparse(qv3, target_state_dict2, use_ancillas=True, method="gleinig_hoefler")
-
-    res1 = qv1.qs.compile().statevector_array()[::2]
-    res2 = qv2.qs.compile().statevector_array()[::2]
-    res3 = qv3.qs.compile().statevector_array()[::2]
-
-    assert np.max(np.abs(res1 - target_state_array.toarray())) < 1e-6
-    assert np.max(np.abs(res2 - target_state_array.toarray())) < 1e-6
-    assert np.max(np.abs(res3 - target_state_array.toarray())) < 1e-6
-
-
 def test_gleinig_hoefler_basis_state():
     target_state = {"01": 1.0}
     qv = QuantumVariable(2)
@@ -129,14 +108,7 @@ def test_gleinig_hoefler_jasp_mode():
         qv3 = QuantumVariable(5)
         prepare_sparse(qv3, target_state_dict2, method="gleinig_hoefler")
 
-        qv4 = QuantumVariable(5)
-        prepare_sparse(qv4, target_state_array, use_ancillas=True, method="gleinig_hoefler")
-        qv5 = QuantumVariable(5)
-        prepare_sparse(qv5, target_state_dict1, use_ancillas=True, method="gleinig_hoefler")
-        qv6 = QuantumVariable(5)
-        prepare_sparse(qv6, target_state_dict2, use_ancillas=True, method="gleinig_hoefler")
-
-        return measure(qv1), measure(qv2), measure(qv3), measure(qv4), measure(qv5), measure(qv6)
+        return measure(qv1), measure(qv2), measure(qv3)
 
     main()
 

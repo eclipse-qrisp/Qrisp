@@ -28,7 +28,6 @@ def prepare_sparse(
     target_state: sc.sparse.coo_array | dict,
     reverse: bool = False,
     method: str = "gleinig_hoefler",
-    use_ancillas: bool = False,
 ):
     r"""Prepare a sparse quantum state on ``qv``.
 
@@ -59,15 +58,6 @@ def prepare_sparse(
         Default is False.
     method : str
         Which method to use. Currently only "gleinig_hoefler" is implemented, which employs the algorithm presented in https://ieeexplore.ieee.org/abstract/document/9586240.
-    use_ancillas : bool
-        By default, the state preparation is carried out without the use of ancillas.
-        If ``use_ancillas`` is set to true, however, multi-controlled operations which are needed
-        within the state preparation algorithm are implemented with one ancilla.
-        This can create a large number of additional qubits temporarily,
-        but by calling ``.compile()`` in the end on the resulting quantum circuit,
-        these can be reduced to one single additional qubit.
-        In turn, CNOT gate count and circuit depth are significantly reduced if usage of an ancilla is allowed,
-        especially at large S.
 
     Examples
     --------
@@ -129,12 +119,12 @@ def prepare_sparse(
         )
 
     if method == "gleinig_hoefler":
-        _prepare_gleinig_hoefler(qv, coeffs, use_ancillas=use_ancillas)
+        _prepare_gleinig_hoefler(qv, coeffs)
     else:
         raise ValueError(f"Method {method} not known.")
 
 
-def _prepare_gleinig_hoefler(qv: QuantumVariable, coeffs: dict, use_ancillas: bool = False):
+def _prepare_gleinig_hoefler(qv: QuantumVariable, coeffs: dict):
     r"""Prepare a sparse quantum state according to the Gleinig-Hoefler algorithm.
 
     It computes a circuit that iteratively reduces the number of non-zero entries in the target state
@@ -149,7 +139,7 @@ def _prepare_gleinig_hoefler(qv: QuantumVariable, coeffs: dict, use_ancillas: bo
 
     with invert():
         while len(S) > 1:
-            S, coeffs = _gleinig_hoefler_subroutine(qv, S, coeffs, n, use_ancillas)
+            S, coeffs = _gleinig_hoefler_subroutine(qv, S, coeffs, n)
         for i, b in enumerate(S[0]):
             if b:
                 x(qv[i])
@@ -157,7 +147,7 @@ def _prepare_gleinig_hoefler(qv: QuantumVariable, coeffs: dict, use_ancillas: bo
         gphase(-np.angle(list(coeffs.values())[0]), qv[0])
 
 
-def _gleinig_hoefler_subroutine(qv: QuantumVariable, S: list[tuple], coeffs: dict, n: int, use_ancillas: bool):
+def _gleinig_hoefler_subroutine(qv: QuantumVariable, S: list[tuple], coeffs: dict, n: int):
     r"""Subroutine of the Gleinig-Hoefler algorithm, which reduces the number of non-zero entries in the state."""
     diff_qubits = []
     diff_values = []
@@ -224,7 +214,7 @@ def _gleinig_hoefler_subroutine(qv: QuantumVariable, S: list[tuple], coeffs: dic
             x1[i] = x1[i] ^ 1
             x2[i] = x2[i] ^ 1
 
-    newvalue = _rotate_state_to_0(qv, diff, diff_qubits, beta, alpha, use_ancillas)
+    newvalue = _rotate_state_to_0(qv, diff, diff_qubits, beta, alpha)
 
     coeffs.pop(tuple(x1))
     coeffs[tuple(x2)] = newvalue
@@ -267,14 +257,7 @@ def _cu3(theta, phi, lam, qubits):
         append_operation(U3Gate(theta, phi, lam).control(len(qubits) - 1), qubits)
 
 
-def _cu3_ancilla(theta, phi, lam, qubits):
-    with control(qubits[:-1]):
-        u3(theta, phi, lam, qubits[-1])
-
-
-def _rotate_state_to_0(
-    qv: QuantumVariable, target: int, control: list, alpha: complex | float, beta: complex | float, use_ancillas: bool
-):
+def _rotate_state_to_0(qv: QuantumVariable, target: int, control: list, alpha: complex | float, beta: complex | float):
     r"""Rotate a state alpha |0> + beta |1> in qubit target to the state |0>, controlled by the qubits in control."""
     _alpha, _beta, tot_phase, norm = _normal_form(alpha, beta)
 
@@ -282,10 +265,7 @@ def _rotate_state_to_0(
     phi = np.angle(_beta)
 
     if len(control) > 0:
-        if use_ancillas:
-            _cu3_ancilla(-theta, 0, -phi, [qv[i] for i in control] + [qv[target]])
-        else:
-            _cu3(-theta, 0, -phi, [qv[i] for i in control] + [qv[target]])
+        _cu3(-theta, 0, -phi, [qv[i] for i in control] + [qv[target]])
     else:
         u3(-theta, 0, -phi, qv[target])
 
