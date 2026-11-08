@@ -66,6 +66,12 @@ tutorial_authors = {
             "role": "Eclipse Qrisp Contributor",
             "linkedin": None,
         },
+        {
+            "name": "Pietropaolo Frisoni",
+            "affiliation": "IQM Quantum Computers",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
     ],
     "general/tutorial/CD": [
         {
