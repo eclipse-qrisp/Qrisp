@@ -155,12 +155,13 @@ def IQPE(  # noqa: PLR0913, PLR0917
 
     Parameters
     ----------
-    args : list
-        A list of arguments (could be QuantumVariables) which represent the state,
-        the quantum phase estimation is performed on.
-    U : function
-        A Python function, which will receive the list ``args`` as arguments in the
-        course of this algorithm.
+    args : Any
+        The state on which the phase estimation is performed, for example a
+        QuantumVariable or a list of QuantumVariables. It is passed to ``U`` as its
+        first argument.
+    U : Callable
+        The unitary, as a Python function that is called as ``U(args, **kwargs)``,
+        with the keyword ``iter`` as well if ``iter_spec`` is True.
     precision : int or Tracer
         The precision of the estimation.
     iter_spec : bool, optional
