@@ -203,6 +203,17 @@ Other New Features
   fully understand and take responsibility for the changes implemented
   (`PR #816 <https://github.com/eclipse-qrisp/Qrisp/pull/816>`_).
 
+- **Semiclassical order finding for Shor's algorithm**
+  :func:`~qrisp.shor.semiclassical_order_finding` runs the quantum part of
+  order finding in Jasp mode with a single control qubit, measured after every
+  step of the phase estimation, instead of a phase register of ``2n`` qubits
+  followed by the inverse QFT. The outcome has the same distribution, while the
+  circuit needs ``2n - 1`` fewer qubits (``3n + 2 ceil(log2 n) + 2`` with the
+  default adder) and ``2n`` single-qubit rotations instead of the controlled
+  phase gates of the inverse QFT. The resource estimators count the circuit
+  without simulating it
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
+
 .. Add other new features above this line
 
 Bug Fixes
@@ -536,6 +547,20 @@ Bug Fixes
   raises a ``TypeError``
   (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
 
+* :ref:`IQPE <IQPE>` applied the powers ``U**(2**t)``, ..., ``U**2`` of the
+  unitary instead of ``U**(2**(t - 1))``, ..., ``U``, where ``t`` is the
+  precision. It therefore returned twice the phase modulo 1 and lost its most
+  significant bit: a phase of 0.75 was estimated as 0.5. It now returns the
+  phase, as documented, so code that relied on the previous values (twice the
+  phase) needs to be updated
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
+
+* :ref:`IQPE <IQPE>` released its control qubit after measuring it, without
+  resetting it. Interpreters that reuse released qubits, such as the Catalyst
+  interpreter, could therefore start the next step with the qubit in ``|1>`` and
+  give a wrong estimate. The control qubit is now reset before it is released
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
+
 * Fixed simulation of composite operations in :meth:`~qrisp.QuantumCircuit.statevector_array`
   and :meth:`~qrisp.QuantumCircuit.run`: circuits now transpile composite operations before
   simulation to avoid computing wide unitary matrices, while preserving narrow controlled
@@ -546,13 +571,13 @@ Bug Fixes
   (`PR #975 <https://github.com/eclipse-qrisp/Qrisp/pull/975>`_).
 
 * Fixed a bug in ``resolve_naming_collisions`` where in the "qv_0 is newer" conditional branch,
-  ``qv_1.is_fixed_name`` (called ``user_given_name`` earlier) was checked 
+  ``qv_1.is_fixed_name`` (called ``user_given_name`` earlier) was checked
   when it should have been ``qv_0``'s.
-  As a result, merging two sessions could rename a variable with 
+  As a result, merging two sessions could rename a variable with
   an explicitly given (fixed) name. Now a fixed name is never renamed.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
-* Fixed a bug where calls of :meth:`~qrisp.QuantumVariable.duplicate` of the form ``duplicate(name="foo*")`` 
+* Fixed a bug where calls of :meth:`~qrisp.QuantumVariable.duplicate` of the form ``duplicate(name="foo*")``
   caused the variable being duplicated to change.
   There, ``self.is_fixed_name`` (called ``user_given_name`` earlier) was set to ``False``, instead of the duplicate's ``is_fixed_name``.
   This is fixed now.
@@ -596,6 +621,13 @@ Compatibility
   (``TypeError``, ``ValueError``, ``NotImplementedError``) instead of a
   generic ``Exception``. Code using ``except Exception:`` is unaffected
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
+
+* :ref:`IQPE <IQPE>` returns the phase instead of twice the phase modulo 1
+  (see Bug Fixes). It raises a ``TypeError`` for a precision that is not an
+  integer and, unless the precision is traced, a ``ValueError`` for a precision
+  above 63, for which the number of calls of the unitary overflowed a 64-bit
+  integer
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
 .. Add compatibility notes above this line
 
