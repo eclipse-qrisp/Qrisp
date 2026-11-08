@@ -165,14 +165,15 @@ def pow2_mod_N(m: int | Array, N: int | Array) -> Array:
     """Compute ``2 ** m % N`` for traced scalar inputs.
 
     Uses square-and-multiply inside ``lax.while_loop`` so the computation
-    remains valid under JAX tracing.
+    remains valid under JAX tracing. The modular products are computed with
+    ``_jax_mulmod``, so moduli up to ``2 ** 63`` do not overflow.
 
     Parameters
     ----------
     m : int or jnp scalar
         Non-negative exponent, typically traced under JAX.
     N : int or jnp scalar
-        Modulus.
+        Positive modulus below ``2 ** 63``.
 
     Returns
     -------
@@ -185,7 +186,7 @@ def pow2_mod_N(m: int | Array, N: int | Array) -> Array:
     base = jnp.asarray(2, dtype=N.dtype)
 
     # State tuple: (result, base, exponent, modulus)
-    init_state = (jnp.asarray(1, dtype=N.dtype), base % N, m, N)
+    init_state = (jnp.asarray(1, dtype=N.dtype) % N, base % N, m, N)
 
     def cond_fun(state: tuple[Array, Array, Array, Array]) -> Array:
         _, _, exp, _ = state
@@ -285,6 +286,43 @@ def pow2mod(exp: int | Array, modulus: int | BigInteger | Array) -> int | Array 
     if check_for_tracing_mode():
         return pow2_mod_N(exp, modulus)
     return pow(2, int(exp), int(modulus))
+
+
+def pow2mod_signed(exp: int | Array, modulus: int | BigInteger | Array) -> int | Array | BigInteger:
+    """Compute ``2 ** exp % modulus`` for any integer exponent, including negative ones.
+
+    Negative exponents are resolved through the modular inverse of ``2 ** |exp|``,
+    so ``modulus`` must be odd. Unlike ``pow2mod``, this is correct for negative
+    traced exponents.
+
+    Parameters
+    ----------
+    exp : int or jnp scalar
+        Exponent (any sign).
+    modulus : int or BigInteger
+        Odd modulus.
+
+    Returns
+    -------
+    int, jnp scalar, or BigInteger
+        ``2 ** exp % modulus`` in the representation matching ``modulus``.
+
+    Examples
+    --------
+    >>> pow2mod_signed(-2, 13)
+    10
+    >>> pow2mod_signed(3, 13)
+    8
+
+    """
+    if check_for_tracing_mode():
+        exp = jnp.int64(exp)
+        power = pow2mod(jnp.abs(exp), modulus)
+        return lax.cond(exp < 0, lambda p: modinv(p, modulus), lambda p: p, power)
+
+    exp = int(exp)
+    power = pow2mod(abs(exp), modulus)
+    return modinv(power, modulus) if exp < 0 else power
 
 
 def _bigint_width(*values: int | BigInteger | Array) -> int:
@@ -396,18 +434,7 @@ def new_montgomery_decoder(
     """
     if check_for_tracing_mode():
         m = jnp.int64(m)
-        abs_m = jnp.abs(m)
-        power = pow2mod(abs_m, N)
-        factor = lax.cond(
-            m > 0,
-            lambda p: modinv(p, N),
-            lambda p: p,
-            power,
-        )
-    else:
-        abs_m = abs(m)
-        power = pow2mod(abs_m, N)
-        factor = modinv(power, N) if m > 0 else power
+    factor = pow2mod_signed(-m, N)
 
     return montgomery_encoder(y, factor, N)
 
