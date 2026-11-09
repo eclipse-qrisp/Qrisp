@@ -25,6 +25,7 @@ from jax.numpy import bitwise_count
 
 from qrisp import QuantumVariable, cx, h, mcx, measure, reset, x, z
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    OptionalQubit,
     QuantumRegister,
     _extract_bit,
     _is_quantum_register,
@@ -230,12 +231,12 @@ def bit_inverted_zz_zz_mcx(
 def carry_venting_adder(
     d: int | BigInteger,
     target: QuantumRegister,
-    ancilla: QuantumVariable,
-    c_in: QuantumBool | None = None,
+    ancilla: QuantumRegister,
+    c_in: OptionalQubit | None = None,
     carry_xor_target: QuantumRegister | None = None,
     ctrl: QuantumVariable | None = None,
     vent_final: bool = True,
-    c_out: QuantumBool | None = None,
+    c_out: OptionalQubit | None = None,
 ) -> tuple[int, int]:
     r"""Fig. 2 — carry-venting CQ in-place adder.
 
@@ -257,15 +258,15 @@ def carry_venting_adder(
 
     Parameters
     ----------
-    target : QuantumVariable
+    target : QuantumRegister
         Target register, little-endian (index 0 = LSB). Modified in place.
     d : int
         Classical addend (compile-time constant).
-    ancilla : QuantumVariable
+    ancilla : QuantumRegister
         2-qubit clean ancilla register for the streaming carry chain.
-    c_in : QuantumBool | None
+    c_in : OptionalQubit | None
         Quantum carry-in.  ``None`` is treated as ``|0⟩``.
-    carry_xor_target : QuantumVariable | None
+    carry_xor_target : QuantumRegister | None
         Optional dirty workspace register used for the fused carry-xor pass
         (Fig. 4 in the paper).  The carry into bit i is XORed into
         ``carry_xor_target[i-1]``.
@@ -496,7 +497,7 @@ def carry_xor_block(
     d: int | BigInteger,
     dirty_ancillas: QuantumRegister,
     target: QuantumRegister,
-    c_in: QuantumBool | None = None,
+    c_in: OptionalQubit | None = None,
     ctrl: QuantumVariable | None = None,
 ) -> None:
     """Fig. 3 — carry-XOR block: second pass of the two-pass phase correction.
@@ -569,9 +570,9 @@ def dirty_ancillae_adder(
     d: int | BigInteger,
     target: QuantumRegister,
     dirty_ancillas: QuantumRegister,
-    ancilla: QuantumVariable,
-    c_in: QuantumBool | None = None,
-    c_out: QuantumBool | None = None,
+    ancilla: QuantumRegister,
+    c_in: OptionalQubit | None = None,
+    c_out: OptionalQubit | None = None,
     ctrl: QuantumVariable | None = None,
 ) -> int:
     r"""Fig. 4 — dirty-ancilla CQ in-place adder.
@@ -591,15 +592,15 @@ def dirty_ancillae_adder(
 
     Parameters
     ----------
-    target : QuantumVariable
+    target : QuantumRegister
         Target register, little-endian (index 0 = LSB). Modified in place.
     d : int
         Classical addend (compile-time constant).
-    dirty_ancillas : QuantumVariable
+    dirty_ancillas : QuantumRegister
         n-2 dirty workspace qubits.
-    ancilla : QuantumVariable
+    ancilla : QuantumRegister
         2-qubit clean ancilla register for the streaming carry chain.
-    c_in : QuantumBool | None
+    c_in : OptionalQubit | None
         Quantum carry-in.  ``None`` is treated as ``|0⟩``.
 
     Returns
@@ -663,8 +664,8 @@ def dirty_ancillae_adder(
 def gidney_cq_venting_adder(
     d: int | BigInteger,
     target: QuantumRegister,
-    c_in: QuantumBool | None = None,
-    c_out: QuantumBool | None = None,
+    c_in: OptionalQubit | None = None,
+    c_out: OptionalQubit | None = None,
     ctrl: QuantumVariable | QuantumBool | None = None,
 ) -> None:
     r"""In-place classical-quantum adder using Gidney's carry-venting technique.
@@ -691,11 +692,11 @@ def gidney_cq_venting_adder(
 
     Parameters
     ----------
-    target : QuantumVariable
+    target : QuantumRegister
         Target register, little-endian (index 0 = LSB). Modified in place.
     d : int or BigInteger
         Classical addend (compile-time constant).
-    c_in : QuantumBool | None
+    c_in : OptionalQubit | None
         Quantum carry-in. None is treated as :math:`\ket{0}`.
 
     Returns

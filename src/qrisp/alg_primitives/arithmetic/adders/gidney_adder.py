@@ -38,6 +38,7 @@ if TYPE_CHECKING:  # noqa
         BigInteger,
     )  # noqa
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    OptionalQubit,
     QuantumRegister,
     _binary_string_to_int,
     _extract_bit,
@@ -50,17 +51,16 @@ from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import control, custom_control
 from qrisp.jasp import check_for_tracing_mode, jlen, jrange
-from qrisp.qtypes import QuantumBool
 
 
-def _apply_x_bit(target, ctrl=None):
+def _apply_x_bit(target: Qubit, ctrl: OptionalQubit | None = None) -> None:
     """Apply X to ``target``, optionally controlled by ``ctrl``.
 
     Parameters
     ----------
     target : Qubit
         The qubit to flip.
-    ctrl : Qubit or None
+    ctrl : OptionalQubit or None
         Optional control qubit. When provided, a CNOT is applied
         instead of a plain X.
 
@@ -71,7 +71,13 @@ def _apply_x_bit(target, ctrl=None):
         x(target)
 
 
-def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, ctrl):
+def _apply_classical_carry_chain(
+    gidney_anc: QuantumRegister,
+    b_qbs: QuantumRegister,
+    n: int,
+    a_int: int | np.integer | jnp.ndarray | BigInteger,
+    ctrl: OptionalQubit | None,
+) -> None:
     """Apply carry-chain phases for classical input values.
 
     Implements the Gidney AND-based carry network (arXiv:1709.06648)
@@ -80,15 +86,15 @@ def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, ctrl):
 
     Parameters
     ----------
-    gidney_anc : QuantumVariable
+    gidney_anc : QuantumRegister
         Carry ancilla register with ``n - 1`` qubits.
-    b_qbs : list
+    b_qbs : QuantumRegister
         Target qubits participating in the carry chain.
     n : int
         Effective carry-chain width, including optional carry wires.
     a_int : int, jnp.ndarray scalar, or BigInteger
         Classical input representation used for bit extraction.
-    ctrl : Qubit or None
+    ctrl : OptionalQubit or None
         Optional outer control qubit.
 
     """
@@ -151,7 +157,15 @@ def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, ctrl):
             cx(b_qbs[0], gidney_anc[0])
 
 
-def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, ctrl):
+def _apply_quantum_carry_chain(
+    gidney_anc: QuantumRegister,
+    a_qbs: QuantumRegister,
+    b_qbs: QuantumRegister,
+    n: int,
+    c_in_qb: OptionalQubit | None,
+    c_out_qb: OptionalQubit | None,
+    ctrl: OptionalQubit | None,
+) -> None:
     """Apply carry-chain phases for quantum input registers.
 
     Implements the Gidney AND-based carry network (arXiv:1709.06648)
@@ -162,19 +176,19 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 
     Parameters
     ----------
-    gidney_anc : QuantumVariable
+    gidney_anc : QuantumRegister
         Carry ancilla register with ``n - 1`` qubits.
-    a_qbs : list
+    a_qbs : QuantumRegister
         Input-a qubits (including any extension ancillas).
-    b_qbs : list
+    b_qbs : QuantumRegister
         Target qubits participating in the carry chain.
     n : int
         Effective carry-chain width, including optional carry wires.
-    c_in_qb : Qubit or None
+    c_in_qb : OptionalQubit or None
         Optional carry-in qubit.
-    c_out_qb : Qubit or None
+    c_out_qb : OptionalQubit or None
         Optional carry-out qubit.
-    ctrl : Qubit or None
+    ctrl : OptionalQubit or None
         Optional outer control qubit.
 
     """
@@ -271,9 +285,9 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 def gidney_adder(
     a: int | str | BigInteger | QuantumRegister,
     b: QuantumRegister,
-    c_in: Qubit | QuantumBool | None = None,
-    c_out: Qubit | QuantumBool | None = None,
-    ctrl: Qubit | QuantumBool | None = None,
+    c_in: OptionalQubit | None = None,
+    c_out: OptionalQubit | None = None,
+    ctrl: OptionalQubit | None = None,
 ):
     r"""In-place Gidney adder performing ``b += a``.
 
@@ -301,7 +315,7 @@ def gidney_adder(
     c_out : QuantumBool, Qubit, or None
         Optional single-qubit carry-out.  When provided, this qubit
         receives the overflow carry of the addition.
-    ctrl : Qubit or None
+    ctrl : QuantumBool, Qubit, or None
         Optional control qubit.  When provided, the entire addition is
         executed only if ``ctrl`` is in state :math:`\ket{1}` (controlled addition).
 
