@@ -157,7 +157,7 @@ def _apply_classical_carry_chain(
             cx(b_qbs[0], gidney_anc[0])
 
 
-def _apply_quantum_carry_chain(
+def _apply_quantum_carry_chain(  # noqa: PLR0912, PLR0913, PLR0917 -- carry-chain stage needs all operands
     gidney_anc: QuantumRegister,
     a_qbs: QuantumRegister,
     b_qbs: QuantumRegister,
