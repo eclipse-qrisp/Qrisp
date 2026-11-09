@@ -19,17 +19,24 @@
 from __future__ import annotations
 
 from numbers import Integral
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING
 
 import jax.numpy as jnp
 
-from qrisp.alg_primitives.arithmetic.adders.adder_utilities import _is_quantum_register
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    OptionalQubit,
+    QuantumRegister,
+    _binary_string_to_int,
+    _normalize_list_operand,
+    _normalize_optional_input_arg,
+    _reject_unsupported_quantum_types,
+    _validate_adder_inputs,
+)
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import conjugate, custom_control
-from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, fuse_qb_array, jlen, jrange
+from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.misc import int_encoder
-from qrisp.qtypes import QuantumBool, QuantumChar, QuantumString
 
 # ``BigInteger`` only appears in type hints (lazy-evaluated thanks to
 # ``from __future__ import annotations``) and is never needed at runtime.
@@ -38,109 +45,6 @@ if TYPE_CHECKING:
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )
-
-# An optional control/carry qubit may be passed as a QuantumBool or a bare Qubit.
-OptionalQubit: TypeAlias = QuantumBool | Qubit
-
-# The quantum operands are QuantumVariables (or subclasses), DynamicQubitArrays
-# or plain lists of Qubits (including traced qubits).
-QuantumRegister: TypeAlias = QuantumVariable | DynamicQubitArray | list[Qubit]
-
-
-def _reject_unsupported_quantum_types(a: object, b: object) -> None:
-    """Reject quantum types that cannot be interpreted as additive registers.
-
-    ``QuantumChar`` and ``QuantumString`` are quantum types but do not represent
-    numeric registers, so silently applying the adder to their qubits would
-    produce meaningless results. Both operands are checked and rejected if
-    either one has an unsupported type.
-    """
-    for value in (a, b):
-        if isinstance(value, (QuantumChar, QuantumString)):
-            raise ValueError(
-                f"{type(value).__name__} is not supported by cuccaro_adder. Supported quantum types are "
-                "QuantumVariable, QuantumBool, QuantumFloat and QuantumModulus."
-            )
-
-
-def _normalize_optional_input_arg(value: OptionalQubit | None, name: str) -> Qubit | None:
-    """Normalize an optional QuantumBool or Qubit argument to a bare Qubit.
-
-    The purpose of this helper is to centralize the coercion and validation of
-    the optional ``c_in``, ``c_out`` and ``ctrl`` parameters of
-    :func:`cuccaro_adder`, each of which accepts a QuantumBool, a bare Qubit or
-    None, while the gate logic works only with bare Qubits. Defining it once
-    avoids repeating the same unwrapping and validation logic for every
-    parameter.
-
-    A QuantumBool is converted to its underlying Qubit via ``value[0]``, a bare
-    Qubit or None is passed through unchanged, and any other type raises a
-    TypeError in static mode. The helper neither touches the circuit nor
-    allocates qubits, so it can run before any ancilla is created, letting an
-    invalid argument fail cleanly instead of leaving a half-applied circuit
-    behind.
-    """
-    if value is None:
-        return None
-
-    if isinstance(value, QuantumBool):
-        return value[0]
-
-    if not check_for_tracing_mode() and not isinstance(value, Qubit):
-        raise TypeError(f"{name} must be of type QuantumBool or Qubit, not {type(value)}")
-
-    return value
-
-
-def _binary_string_to_int(value: str) -> int:
-    """Parse a little-endian binary string into an integer.
-
-    Binary strings are read little-endian, i.e. the leftmost character is the
-    least significant bit, so ``"10"`` means bit 0 is 1 (the value 1). An empty
-    string represents 0. Only the characters ``0`` and ``1`` are allowed.
-
-    Parameters
-    ----------
-    value : str
-        The little-endian binary string to parse.
-
-    Returns
-    -------
-    int
-        The integer encoded by ``value``.
-
-    Raises
-    ------
-    ValueError
-        If ``value`` contains characters other than ``0`` and ``1``.
-
-    """
-    if not set(value) <= {"0", "1"}:
-        raise ValueError(f"a must be a binary string of 0s and 1s, got {value!r}")
-    return int(value[::-1], 2) if value else 0
-
-
-def _normalize_list_operand(value):
-    """Convert a ``list[Qubit]`` operand to a ``DynamicQubitArray`` while tracing.
-
-    Python lists require concrete indices, so they cannot be sliced or indexed
-    with the traced values used by :func:`jrange`. Lists are left unchanged in
-    static mode, and other operand types (including existing
-    ``DynamicQubitArray`` inputs) are returned as they are.
-    """
-    if not isinstance(value, list) or not check_for_tracing_mode() or not value:
-        return value
-
-    if len(value) == 1:
-        # Fuse the qubit with itself to obtain an array, then slice back to a
-        # single element. Wrapping a bare qubit directly would not produce a
-        # qubit-array value at runtime.
-        return DynamicQubitArray(fuse_qb_array(value[0], value[0]))[:1]
-
-    result = value[0]
-    for qb in value[1:]:
-        result = result + qb
-    return result
 
 
 def _apply_maj_gates(
@@ -405,21 +309,29 @@ def cuccaro_adder(
     # valid operands, even though QuantumChar is a QuantumVariable subclass.
     _reject_unsupported_quantum_types(a, b)
 
-    # The second argument is required to be a (non-empty) quantum register
-    if not _is_quantum_register(b) or (isinstance(b, list) and len(b) == 0):
-        raise ValueError(
-            "The second argument must be of type QuantumVariable, DynamicQubitArray or a non-empty list[Qubit]."
+    # A classical addend must be an int, a little-endian binary string or a
+    # supported quantum register. Reject any other scalar type with a clear
+    # TypeError before the generic pair check below, which reports invalid
+    # input *pairs* (e.g. a non-quantum target) as ValueError.
+    if not isinstance(a, (Integral, str, list, QuantumVariable, DynamicQubitArray)) and not (
+        check_for_tracing_mode()
+        and (
+            hasattr(a, "get_bit")
+            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
         )
-
-    # A list that does not contain only Qubits is neither a valid quantum register
-    # nor a valid classical input.
-    if isinstance(a, list) and not _is_quantum_register(a):
-        raise ValueError("If the first argument is a list, it must contain only Qubits.")
+    ):
+        raise TypeError(
+            f"a must be of type int, str, BigInteger, QuantumVariable, DynamicQubitArray or list[Qubit], not {type(a)}"
+        )
 
     # Convert plain lists to DynamicQubitArray so traced slicing and indexing
     # work in the size adjustment and in the maj/uma loops.
     a = _normalize_list_operand(a)
     b = _normalize_list_operand(b)
+
+    # The second argument is required to be a (non-empty) quantum register,
+    # and the first must be a quantum register or a classical value.
+    a_is_quantum, _ = _validate_adder_inputs(a, b)
 
     # Normalize and validate the optional arguments before allocating any
     # ancillas or applying gates, so that an invalid argument raises cleanly
@@ -429,7 +341,7 @@ def cuccaro_adder(
     ctrl = _normalize_optional_input_arg(ctrl, "ctrl")
 
     # convert the classical input to a quantum input
-    if not _is_quantum_register(a):
+    if not a_is_quantum:
         if isinstance(a, str):
             # This runs in both static and tracing mode, so malformed binary
             # strings are rejected during tracing before any circuit is built.

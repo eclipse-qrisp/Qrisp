@@ -153,6 +153,9 @@ Improvements
   generation to QuantumSession in a central place.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
+- Centralized the shared in-place adder helpers in ``adder_utilities.py``
+  (`PR #990 <https://github.com/eclipse-qrisp/Qrisp/pull/990>`_).
+
 - **Faster resource estimation of modular multiplications in Jasp**
   The classical constants of the multiplication of a
   :class:`~qrisp.QuantumModulus` by a classical factor are now computed by

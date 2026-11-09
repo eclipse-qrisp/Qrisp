@@ -37,88 +37,30 @@ if TYPE_CHECKING:  # noqa
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )  # noqa
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    OptionalQubit,
+    QuantumRegister,
+    _binary_string_to_int,
+    _extract_bit,
+    _normalize_list_operand,
+    _normalize_optional_input_arg,
+    _reject_unsupported_quantum_types,
+    _validate_adder_inputs,
+)
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import control, custom_control
-from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
-from qrisp.qtypes import QuantumBool
+from qrisp.jasp import check_for_tracing_mode, jlen, jrange
 
 
-def _validate_gidney_adder_inputs(a, b):
-    """Validate that ``(a, b)`` is a supported input pair.
-
-    Returns
-    -------
-    a_is_quantum : bool
-        Whether ``a`` is a quantum register.
-
-    Raises
-    ------
-    ValueError
-        If the pair is not classical-quantum or quantum-quantum.
-
-    """
-    b_is_quantum = isinstance(b, (QuantumVariable, DynamicQubitArray)) or (
-        isinstance(b, list) and len(b) > 0 and all(isinstance(qb, Qubit) for qb in b)
-    )
-    # Empty list is valid for a (treated as a zero-size quantum register).
-    a_is_quantum = isinstance(a, (QuantumVariable, DynamicQubitArray)) or (
-        isinstance(a, list) and all(isinstance(qb, Qubit) for qb in a)
-    )
-
-    # TODO: outside of tracing, a concrete (non-traced) jax.Array scalar (e.g. from
-    # indexing a jnp.ndarray) is rejected here, unlike numpy.integer. Breaks
-    # QuantumArray @ jax_numpy_matrix, one level below smallest_power_of_two
-    # (which accepts numpy.integer here but not a concrete jax.Array).
-    is_valid_classical = isinstance(a, (int, np.integer, str)) or (
-        check_for_tracing_mode()
-        and (
-            hasattr(a, "get_bit")
-            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
-        )
-    )
-    if not (b_is_quantum and (a_is_quantum or is_valid_classical)):
-        raise ValueError(
-            "gidney_adder expects inputs to be either classical-quantum "
-            "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
-        )
-    return a_is_quantum
-
-
-def _extract_bit(a_int, digit_index):
-    """Extract one bit from a classical scalar as a JAX boolean.
-
-    Automatically detects BigInteger values by checking for a ``get_bit`` method.
-
-    Parameters
-    ----------
-    a_int : int, jnp.ndarray scalar, or BigInteger
-        Classical value whose bit is queried.
-    digit_index : int
-        Zero-based bit index to read (little-endian convention).
-
-    Examples
-    --------
-    >>> bool(_extract_bit(0b1010, 1))
-    True
-    >>> bool(_extract_bit(0b1010, 0))
-    False
-
-    """
-    # BigInteger (and other big-int wrappers) expose get_bit
-    if hasattr(a_int, "get_bit"):
-        return jnp.bool_(a_int.get_bit(digit_index))
-    return jnp.bool_((a_int >> digit_index) & 1)
-
-
-def _apply_x_bit(target, ctrl=None):
+def _apply_x_bit(target: Qubit, ctrl: OptionalQubit | None = None) -> None:
     """Apply X to ``target``, optionally controlled by ``ctrl``.
 
     Parameters
     ----------
     target : Qubit
         The qubit to flip.
-    ctrl : Qubit or None
+    ctrl : OptionalQubit or None
         Optional control qubit. When provided, a CNOT is applied
         instead of a plain X.
 
@@ -129,7 +71,13 @@ def _apply_x_bit(target, ctrl=None):
         x(target)
 
 
-def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, ctrl):
+def _apply_classical_carry_chain(
+    gidney_anc: QuantumRegister,
+    b_qbs: QuantumRegister,
+    n: int,
+    a_int: int | np.integer | jnp.ndarray | BigInteger,
+    ctrl: OptionalQubit | None,
+) -> None:
     """Apply carry-chain phases for classical input values.
 
     Implements the Gidney AND-based carry network (arXiv:1709.06648)
@@ -138,15 +86,15 @@ def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, ctrl):
 
     Parameters
     ----------
-    gidney_anc : QuantumVariable
+    gidney_anc : QuantumRegister
         Carry ancilla register with ``n - 1`` qubits.
-    b_qbs : list
+    b_qbs : QuantumRegister
         Target qubits participating in the carry chain.
     n : int
         Effective carry-chain width, including optional carry wires.
     a_int : int, jnp.ndarray scalar, or BigInteger
         Classical input representation used for bit extraction.
-    ctrl : Qubit or None
+    ctrl : OptionalQubit or None
         Optional outer control qubit.
 
     """
@@ -209,7 +157,15 @@ def _apply_classical_carry_chain(gidney_anc, b_qbs, n, a_int, ctrl):
             cx(b_qbs[0], gidney_anc[0])
 
 
-def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, ctrl):
+def _apply_quantum_carry_chain(  # noqa: PLR0912, PLR0913, PLR0917 -- carry-chain stage needs all operands
+    gidney_anc: QuantumRegister,
+    a_qbs: QuantumRegister,
+    b_qbs: QuantumRegister,
+    n: int,
+    c_in_qb: OptionalQubit | None,
+    c_out_qb: OptionalQubit | None,
+    ctrl: OptionalQubit | None,
+) -> None:
     """Apply carry-chain phases for quantum input registers.
 
     Implements the Gidney AND-based carry network (arXiv:1709.06648)
@@ -220,19 +176,19 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 
     Parameters
     ----------
-    gidney_anc : QuantumVariable
+    gidney_anc : QuantumRegister
         Carry ancilla register with ``n - 1`` qubits.
-    a_qbs : list
+    a_qbs : QuantumRegister
         Input-a qubits (including any extension ancillas).
-    b_qbs : list
+    b_qbs : QuantumRegister
         Target qubits participating in the carry chain.
     n : int
         Effective carry-chain width, including optional carry wires.
-    c_in_qb : Qubit or None
+    c_in_qb : OptionalQubit or None
         Optional carry-in qubit.
-    c_out_qb : Qubit or None
+    c_out_qb : OptionalQubit or None
         Optional carry-out qubit.
-    ctrl : Qubit or None
+    ctrl : OptionalQubit or None
         Optional outer control qubit.
 
     """
@@ -327,11 +283,11 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 
 @custom_control
 def gidney_adder(
-    a: int | str | BigInteger | QuantumVariable | DynamicQubitArray | list,
-    b: QuantumVariable | DynamicQubitArray | list,
-    c_in: Qubit | QuantumBool | None = None,
-    c_out: Qubit | QuantumBool | None = None,
-    ctrl: Qubit | QuantumBool | None = None,
+    a: int | str | BigInteger | QuantumRegister,
+    b: QuantumRegister,
+    c_in: OptionalQubit | None = None,
+    c_out: OptionalQubit | None = None,
+    ctrl: OptionalQubit | None = None,
 ):
     r"""In-place Gidney adder performing ``b += a``.
 
@@ -359,7 +315,7 @@ def gidney_adder(
     c_out : QuantumBool, Qubit, or None
         Optional single-qubit carry-out.  When provided, this qubit
         receives the overflow carry of the addition.
-    ctrl : Qubit or None
+    ctrl : QuantumBool, Qubit, or None
         Optional control qubit.  When provided, the entire addition is
         executed only if ``ctrl`` is in state :math:`\ket{1}` (controlled addition).
 
@@ -382,17 +338,21 @@ def gidney_adder(
     {9: 1.0}
 
     """
-    a_is_quantum = _validate_gidney_adder_inputs(a, b)
+    _reject_unsupported_quantum_types(a, b)
+    a = _normalize_list_operand(a)
+    b = _normalize_list_operand(b)
+    a_is_quantum, _ = _validate_adder_inputs(a, b)
 
     # Normalise QuantumBool wrappers to raw qubits for downstream code.
-    c_in_qb = c_in[0] if isinstance(c_in, QuantumBool) else c_in
-    c_out_qb = c_out[0] if isinstance(c_out, QuantumBool) else c_out
+    c_in_qb = _normalize_optional_input_arg(c_in, "c_in")
+    c_out_qb = _normalize_optional_input_arg(c_out, "c_out")
+    ctrl = _normalize_optional_input_arg(ctrl, "ctrl")
 
     # Semi-classical path (classical a, quantum b).
     if not a_is_quantum:
         # Binary strings are little-endian; convert to int.
         if isinstance(a, str):
-            a = int(a[::-1], 2) if a else 0
+            a = _binary_string_to_int(a)
 
         is_concrete_int = isinstance(a, (int, np.integer))
 
