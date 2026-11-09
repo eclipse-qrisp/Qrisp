@@ -31,6 +31,10 @@ from qrisp.qtypes import QuantumBool, QuantumChar, QuantumString
 # An optional control/carry qubit may be passed as a QuantumBool or a bare Qubit.
 OptionalQubit: TypeAlias = QuantumBool | Qubit
 
+# The quantum operands are QuantumVariables (or subclasses), DynamicQubitArrays
+# or plain lists of Qubits (including traced qubits).
+QuantumRegister: TypeAlias = QuantumVariable | DynamicQubitArray | list[Qubit]
+
 
 def _is_quantum_register(obj):
     """Return True if ``obj`` is a quantum register.

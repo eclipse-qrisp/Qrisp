@@ -19,12 +19,13 @@
 from __future__ import annotations
 
 from numbers import Integral
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING
 
 import jax.numpy as jnp
 
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
     OptionalQubit,
+    QuantumRegister,
     _binary_string_to_int,
     _normalize_list_operand,
     _normalize_optional_input_arg,
@@ -44,10 +45,6 @@ if TYPE_CHECKING:
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )
-
-# The quantum operands are QuantumVariables (or subclasses), DynamicQubitArrays
-# or plain lists of Qubits (including traced qubits).
-QuantumRegister: TypeAlias = QuantumVariable | DynamicQubitArray | list[Qubit]
 
 
 def _apply_maj_gates(

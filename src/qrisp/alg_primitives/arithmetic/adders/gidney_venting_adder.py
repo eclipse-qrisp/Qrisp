@@ -25,6 +25,7 @@ from jax.numpy import bitwise_count
 
 from qrisp import QuantumVariable, cx, h, mcx, measure, reset, x, z
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    QuantumRegister,
     _extract_bit,
     _is_quantum_register,
     _normalize_optional_input_arg,
@@ -228,10 +229,10 @@ def bit_inverted_zz_zz_mcx(
 
 def carry_venting_adder(
     d: int | BigInteger,
-    target: QuantumVariable,
+    target: QuantumRegister,
     ancilla: QuantumVariable,
     c_in: QuantumBool | None = None,
-    carry_xor_target: QuantumVariable | None = None,
+    carry_xor_target: QuantumRegister | None = None,
     ctrl: QuantumVariable | None = None,
     vent_final: bool = True,
     c_out: QuantumBool | None = None,
@@ -493,8 +494,8 @@ def carry_venting_adder(
 
 def carry_xor_block(
     d: int | BigInteger,
-    dirty_ancillas: QuantumVariable,
-    target: QuantumVariable,
+    dirty_ancillas: QuantumRegister,
+    target: QuantumRegister,
     c_in: QuantumBool | None = None,
     ctrl: QuantumVariable | None = None,
 ) -> None:
@@ -566,8 +567,8 @@ def carry_xor_block(
 
 def dirty_ancillae_adder(
     d: int | BigInteger,
-    target: QuantumVariable,
-    dirty_ancillas: QuantumVariable,
+    target: QuantumRegister,
+    dirty_ancillas: QuantumRegister,
     ancilla: QuantumVariable,
     c_in: QuantumBool | None = None,
     c_out: QuantumBool | None = None,
@@ -661,7 +662,7 @@ def dirty_ancillae_adder(
 @custom_control
 def gidney_cq_venting_adder(
     d: int | BigInteger,
-    target: QuantumVariable,
+    target: QuantumRegister,
     c_in: QuantumBool | None = None,
     c_out: QuantumBool | None = None,
     ctrl: QuantumVariable | QuantumBool | None = None,

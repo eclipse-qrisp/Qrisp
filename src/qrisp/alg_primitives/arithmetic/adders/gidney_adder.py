@@ -38,6 +38,7 @@ if TYPE_CHECKING:  # noqa
         BigInteger,
     )  # noqa
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    QuantumRegister,
     _binary_string_to_int,
     _extract_bit,
     _normalize_list_operand,
@@ -48,7 +49,7 @@ from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import control, custom_control
-from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
+from qrisp.jasp import check_for_tracing_mode, jlen, jrange
 from qrisp.qtypes import QuantumBool
 
 
@@ -268,8 +269,8 @@ def _apply_quantum_carry_chain(gidney_anc, a_qbs, b_qbs, n, c_in_qb, c_out_qb, c
 
 @custom_control
 def gidney_adder(
-    a: int | str | BigInteger | QuantumVariable | DynamicQubitArray | list,
-    b: QuantumVariable | DynamicQubitArray | list,
+    a: int | str | BigInteger | QuantumRegister,
+    b: QuantumRegister,
     c_in: Qubit | QuantumBool | None = None,
     c_out: Qubit | QuantumBool | None = None,
     ctrl: Qubit | QuantumBool | None = None,
