@@ -26,10 +26,10 @@ import jax.numpy as jnp
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
     OptionalQubit,
     _binary_string_to_int,
-    _is_quantum_register,
     _normalize_list_operand,
     _normalize_optional_input_arg,
     _reject_unsupported_quantum_types,
+    _validate_adder_inputs,
 )
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
@@ -312,21 +312,30 @@ def cuccaro_adder(
     # valid operands, even though QuantumChar is a QuantumVariable subclass.
     _reject_unsupported_quantum_types(a, b)
 
-    # The second argument is required to be a (non-empty) quantum register
-    if not _is_quantum_register(b) or (isinstance(b, list) and len(b) == 0):
-        raise ValueError(
-            "The second argument must be of type QuantumVariable, DynamicQubitArray or a non-empty list[Qubit]."
+    # A classical addend must be an int, a little-endian binary string or a
+    # supported quantum register. Reject any other scalar type with a clear
+    # TypeError before the generic pair check below, which reports invalid
+    # input *pairs* (e.g. a non-quantum target) as ValueError.
+    if not isinstance(a, (Integral, str, list, QuantumVariable, DynamicQubitArray)) and not (
+        check_for_tracing_mode()
+        and (
+            hasattr(a, "get_bit")
+            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
         )
-
-    # A list that does not contain only Qubits is neither a valid quantum register
-    # nor a valid classical input.
-    if isinstance(a, list) and not _is_quantum_register(a):
-        raise ValueError("If the first argument is a list, it must contain only Qubits.")
+    ):
+        raise TypeError(
+            "a must be of type int, str, BigInteger, QuantumVariable, "
+            f"DynamicQubitArray or list[Qubit], not {type(a)}"
+        )
 
     # Convert plain lists to DynamicQubitArray so traced slicing and indexing
     # work in the size adjustment and in the maj/uma loops.
     a = _normalize_list_operand(a)
     b = _normalize_list_operand(b)
+
+    # The second argument is required to be a (non-empty) quantum register,
+    # and the first must be a quantum register or a classical value.
+    a_is_quantum, _ = _validate_adder_inputs(a, b)
 
     # Normalize and validate the optional arguments before allocating any
     # ancillas or applying gates, so that an invalid argument raises cleanly
@@ -336,7 +345,7 @@ def cuccaro_adder(
     ctrl = _normalize_optional_input_arg(ctrl, "ctrl")
 
     # convert the classical input to a quantum input
-    if not _is_quantum_register(a):
+    if not a_is_quantum:
         if isinstance(a, str):
             # This runs in both static and tracing mode, so malformed binary
             # strings are rejected during tracing before any circuit is built.

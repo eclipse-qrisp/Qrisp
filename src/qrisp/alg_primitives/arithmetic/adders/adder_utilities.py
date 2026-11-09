@@ -19,6 +19,7 @@
 from typing import TypeAlias
 
 import jax.numpy as jnp
+import numpy as np
 from jax.core import Tracer
 
 from qrisp.circuit import Qubit
@@ -44,6 +45,49 @@ def _is_quantum_register(obj):
             isinstance(qb, Qubit) or (isinstance(qb, Tracer) and isinstance(qb.aval, AbstractQubit)) for qb in obj
         )
     return False
+
+
+def _validate_adder_inputs(a, b):
+    """Validate that ``(a, b)`` is a supported adder input pair.
+
+    The supported combinations are classical-quantum (classical ``a``, quantum
+    ``b``) and quantum-quantum (quantum ``a``, quantum ``b``). This is the
+    common operand contract of the in-place adders, so the check is shared
+    instead of being duplicated (and slowly drifting) in each implementation.
+
+    Returns
+    -------
+    a_is_quantum : bool
+        Whether ``a`` is a quantum register.
+    b_is_quantum : bool
+        Whether ``b`` is a quantum register.
+
+    Raises
+    ------
+    ValueError
+        If the pair is not classical-quantum or quantum-quantum.
+
+    """
+    b_is_quantum = _is_quantum_register(b) and not (isinstance(b, list) and len(b) == 0)
+    # Empty list is valid for a (treated as a zero-size quantum register).
+    a_is_quantum = _is_quantum_register(a)
+
+    # A classical addend is valid if it is a concrete int, binary string or
+    # numpy integer, or, while tracing, an integer JAX scalar or BigInteger
+    # (which exposes its own bit-access protocol via get_bit).
+    is_valid_classical = isinstance(a, (int, np.integer, str)) or (
+        check_for_tracing_mode()
+        and (
+            hasattr(a, "get_bit")
+            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
+        )
+    )
+    if not (b_is_quantum and (a_is_quantum or is_valid_classical)):
+        raise ValueError(
+            "The adder expects inputs to be either classical-quantum "
+            "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
+        )
+    return a_is_quantum, b_is_quantum
 
 
 def _reject_unsupported_quantum_types(a: object, b: object) -> None:

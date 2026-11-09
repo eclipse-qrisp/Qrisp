@@ -40,53 +40,16 @@ if TYPE_CHECKING:  # noqa
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
     _binary_string_to_int,
     _extract_bit,
-    _is_quantum_register,
     _normalize_list_operand,
     _normalize_optional_input_arg,
     _reject_unsupported_quantum_types,
+    _validate_adder_inputs,
 )
 from qrisp.circuit import Qubit
 from qrisp.core import QuantumVariable, cx, mcx, x
 from qrisp.environments import control, custom_control
 from qrisp.jasp import DynamicQubitArray, check_for_tracing_mode, jlen, jrange
 from qrisp.qtypes import QuantumBool
-
-
-def _validate_gidney_adder_inputs(a, b):
-    """Validate that ``(a, b)`` is a supported input pair.
-
-    Returns
-    -------
-    a_is_quantum : bool
-        Whether ``a`` is a quantum register.
-
-    Raises
-    ------
-    ValueError
-        If the pair is not classical-quantum or quantum-quantum.
-
-    """
-    b_is_quantum = _is_quantum_register(b) and not (isinstance(b, list) and len(b) == 0)
-    # Empty list is valid for a (treated as a zero-size quantum register).
-    a_is_quantum = _is_quantum_register(a)
-
-    # TODO: outside of tracing, a concrete (non-traced) jax.Array scalar (e.g. from
-    # indexing a jnp.ndarray) is rejected here, unlike numpy.integer. Breaks
-    # QuantumArray @ jax_numpy_matrix, one level below smallest_power_of_two
-    # (which accepts numpy.integer here but not a concrete jax.Array).
-    is_valid_classical = isinstance(a, (int, np.integer, str)) or (
-        check_for_tracing_mode()
-        and (
-            hasattr(a, "get_bit")
-            or (getattr(a, "ndim", None) == 0 and jnp.issubdtype(getattr(a, "dtype", None), jnp.integer))
-        )
-    )
-    if not (b_is_quantum and (a_is_quantum or is_valid_classical)):
-        raise ValueError(
-            "gidney_adder expects inputs to be either classical-quantum "
-            "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
-        )
-    return a_is_quantum
 
 
 def _apply_x_bit(target, ctrl=None):
@@ -363,7 +326,7 @@ def gidney_adder(
     _reject_unsupported_quantum_types(a, b)
     a = _normalize_list_operand(a)
     b = _normalize_list_operand(b)
-    a_is_quantum = _validate_gidney_adder_inputs(a, b)
+    a_is_quantum, _ = _validate_adder_inputs(a, b)
 
     # Normalise QuantumBool wrappers to raw qubits for downstream code.
     c_in_qb = _normalize_optional_input_arg(c_in, "c_in")
