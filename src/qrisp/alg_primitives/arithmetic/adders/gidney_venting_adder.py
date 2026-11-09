@@ -764,7 +764,7 @@ def gidney_cq_venting_adder(
 
     if isinstance(d, list) or _is_quantum_register(d):
         raise TypeError("The first argument must be a classical integer.")
-    if not _is_quantum_register(target):
+    if isinstance(target, list) or not _is_quantum_register(target):
         raise TypeError("The second argument must be a QuantumVariable.")
 
     _reject_unsupported_quantum_types(d, target)

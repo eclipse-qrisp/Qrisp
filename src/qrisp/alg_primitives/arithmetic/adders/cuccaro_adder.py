@@ -324,8 +324,7 @@ def cuccaro_adder(
         )
     ):
         raise TypeError(
-            "a must be of type int, str, BigInteger, QuantumVariable, "
-            f"DynamicQubitArray or list[Qubit], not {type(a)}"
+            f"a must be of type int, str, BigInteger, QuantumVariable, DynamicQubitArray or list[Qubit], not {type(a)}"
         )
 
     # Convert plain lists to DynamicQubitArray so traced slicing and indexing
