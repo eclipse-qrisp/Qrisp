@@ -25,6 +25,7 @@ from jax.numpy import bitwise_count
 
 from qrisp import QuantumVariable, cx, h, mcx, measure, reset, x, z
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
+    _extract_bit,
     _is_quantum_register,
     _normalize_optional_input_arg,
     _reject_unsupported_quantum_types,
@@ -47,8 +48,6 @@ if TYPE_CHECKING:  # noqa
     from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import (
         BigInteger,
     )  # noqa
-
-from qrisp.alg_primitives.arithmetic.adders.gidney_adder import _extract_bit
 
 
 def bit_inverted_mcx(

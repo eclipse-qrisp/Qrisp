@@ -39,6 +39,7 @@ if TYPE_CHECKING:  # noqa
     )  # noqa
 from qrisp.alg_primitives.arithmetic.adders.adder_utilities import (
     _binary_string_to_int,
+    _extract_bit,
     _is_quantum_register,
     _normalize_list_operand,
     _normalize_optional_input_arg,
@@ -86,32 +87,6 @@ def _validate_gidney_adder_inputs(a, b):
             "(classical a, quantum b) or quantum-quantum (quantum a, quantum b)."
         )
     return a_is_quantum
-
-
-def _extract_bit(a_int, digit_index):
-    """Extract one bit from a classical scalar as a JAX boolean.
-
-    Automatically detects BigInteger values by checking for a ``get_bit`` method.
-
-    Parameters
-    ----------
-    a_int : int, jnp.ndarray scalar, or BigInteger
-        Classical value whose bit is queried.
-    digit_index : int
-        Zero-based bit index to read (little-endian convention).
-
-    Examples
-    --------
-    >>> bool(_extract_bit(0b1010, 1))
-    True
-    >>> bool(_extract_bit(0b1010, 0))
-    False
-
-    """
-    # BigInteger (and other big-int wrappers) expose get_bit
-    if hasattr(a_int, "get_bit"):
-        return jnp.bool_(a_int.get_bit(digit_index))
-    return jnp.bool_((a_int >> digit_index) & 1)
 
 
 def _apply_x_bit(target, ctrl=None):

@@ -18,6 +18,7 @@
 
 from typing import TypeAlias
 
+import jax.numpy as jnp
 from jax.core import Tracer
 
 from qrisp.circuit import Qubit
@@ -87,6 +88,32 @@ def _normalize_optional_input_arg(value: OptionalQubit | None, name: str) -> Qub
         raise TypeError(f"{name} must be of type QuantumBool or Qubit, not {type(value)}")
 
     return value
+
+
+def _extract_bit(a_int, digit_index):
+    """Extract one bit from a classical scalar as a JAX boolean.
+
+    Automatically detects BigInteger values by checking for a ``get_bit`` method.
+
+    Parameters
+    ----------
+    a_int : int, jnp.ndarray scalar, or BigInteger
+        Classical value whose bit is queried.
+    digit_index : int
+        Zero-based bit index to read (little-endian convention).
+
+    Examples
+    --------
+    >>> bool(_extract_bit(0b1010, 1))
+    True
+    >>> bool(_extract_bit(0b1010, 0))
+    False
+
+    """
+    # BigInteger (and other big-int wrappers) expose get_bit
+    if hasattr(a_int, "get_bit"):
+        return jnp.bool_(a_int.get_bit(digit_index))
+    return jnp.bool_((a_int >> digit_index) & 1)
 
 
 def _binary_string_to_int(value: str) -> int:

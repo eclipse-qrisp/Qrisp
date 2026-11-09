@@ -32,7 +32,7 @@ from qrisp import (
     measure,
     x,
 )
-from qrisp.alg_primitives.arithmetic.adders.gidney_adder import _extract_bit
+from qrisp.alg_primitives.arithmetic.adders.adder_utilities import _extract_bit
 
 EXTRACT_BIT_CASES = [
     (0, 0, 0),
