@@ -166,6 +166,13 @@ Improvements
   ``qm.inpl_mult(X, inverse)``
   (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
 
+- Refactored the remaining methods of :ref:`QuantumVariable <QuantumVariable>`, adding type
+  hints and removing the process-wide registry of live variables (``QuantumVariable.live_qvs``),
+  along with ``QuantumVariable.__del__``. The ``auto_uncompute`` decorator now recognizes the
+  variables a function created by their creation time, and generated fallback names come from a
+  counter alone. Name collisions are still resolved per QuantumSession and when sessions are merged
+  (`PR #989 <https://github.com/eclipse-qrisp/Qrisp/pull/989>`_).
+
 - Fewer qubits for :func:`reflection <qrisp.reflection>`:
   :func:`reflection <qrisp.reflection>` no longer bundles its operations into a
   single gate. The bundling kept every ancilla of the ``state_function`` allocated
@@ -741,11 +748,9 @@ API Changes
   ``QuantumVariable.creation_counter`` instead
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
-* ``QuantumVariable.live_qvs`` is now a ``weakref.WeakValueDictionary`` mapping
-  ``hash(qv)`` to the variable, instead of a list of weak references, and
-  ``QuantumVariable.name_tracker`` is now a ``collections.Counter``. Code iterating
-  ``live_qvs`` must use ``QuantumVariable.live_qvs.values()`` instead of dereferencing
-  weak references
+* ``QuantumVariable.live_qvs`` has been removed, and ``QuantumVariable.name_tracker`` is
+  now a ``collections.Counter``. Code that looked up QuantumVariables through ``live_qvs``
+  must keep its own references, or use the ``qv_list`` of the relevant QuantumSession
   (`PR #989 <https://github.com/eclipse-qrisp/Qrisp/pull/989>`_).
 
 * :meth:`QuantumVariable.reduce <qrisp.QuantumVariable.reduce>` now only accepts a list of

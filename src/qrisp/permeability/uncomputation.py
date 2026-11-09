@@ -59,21 +59,22 @@ def auto_uncompute_inner(function):
 
         qs = qs_list[0]
 
-        # Determine quantum variables to uncompute
-        initial_qvs = set(QuantumVariable.live_qvs.keys())
+        # Every QuantumVariable registered from here on gets a creation_time of at
+        # least this value. This identifies the variables the function creates,
+        # including those created in other sessions and merged into qs below,
+        # while variables that existed before the call (e.g. captured from an
+        # outer scope) are left alone.
+        start = QuantumVariable.creation_counter
 
         # Execute function
         result = function(*args, **kwargs)
 
         multi_session_merge(recursive_qs_search(result) + [qs])
 
-        result_vars = set([hash(qv) for qv in recursive_qv_search(result)])
+        # The results are handed back to the caller, so they are not uncomputed.
+        result_ids = {id(qv) for qv in recursive_qv_search(result)}
 
-        uncomp_vars = []
-
-        for qv in qs.qv_list:
-            if hash(qv) not in initial_qvs.union(result_vars):
-                uncomp_vars.append(qv)
+        uncomp_vars = [qv for qv in qs.qv_list if qv.creation_time >= start and id(qv) not in result_ids]
 
         uncompute(qs, uncomp_vars)
 

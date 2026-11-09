@@ -20,7 +20,7 @@
 import numpy as np
 
 from qrisp import *
-from qrisp import QuantumVariable, cx, mcx, x
+from qrisp import QuantumBool, QuantumVariable, auto_uncompute, cx, mcx, x
 
 
 def test_uncomputation_example():
@@ -268,3 +268,33 @@ def test_uncomputation_example():
     print("Test 7 passed")
 
     verify[0] = 0
+
+
+def test_auto_uncompute_only_uncomputes_variables_created_by_the_function():
+    """Uncompute only what the function created.
+
+    A variable from another session that the function only reads (and that is merged
+    into the working session during the call) must survive, and so must the result.
+    """
+    a = QuantumBool()
+    outer = QuantumBool()  # own session, captured from the enclosing scope
+    x(a)
+    x(outer)
+    created = []
+
+    @auto_uncompute
+    def and_via_temp(a):
+        tmp = QuantumBool()
+        cx(a[0], tmp[0])
+        res = QuantumBool()
+        mcx([tmp[0], outer[0]], res[0])
+        created.append(tmp)
+        return res
+
+    res = and_via_temp(a)
+
+    assert created[0].is_deleted()
+    assert not res.is_deleted()
+    assert not outer.is_deleted()
+    assert not a.is_deleted()
+    assert res.get_measurement() == {True: 1.0}

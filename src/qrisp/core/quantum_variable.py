@@ -21,7 +21,6 @@ from __future__ import annotations
 import copy
 from collections import Counter
 from typing import TYPE_CHECKING, Any, ClassVar
-from weakref import WeakValueDictionary
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -236,7 +235,6 @@ class QuantumVariable:
     is_fixed_name: bool
     reg: Any  # pyright: ignore[reportExplicitAny, reportUninitializedInstanceVariable]
     creation_time: int  # pyright: ignore[reportUninitializedInstanceVariable]
-    live_qvs: ClassVar[WeakValueDictionary[int, QuantumVariable]] = WeakValueDictionary()
     creation_counter: ClassVar[int] = 0
     name_tracker: ClassVar[Counter[str]] = Counter()
     qs: QuantumSession | TracingQuantumSession
@@ -302,9 +300,6 @@ class QuantumVariable:
         # imports QuantumVariable from this module at load time.
         from qrisp.jasp.tracing_logic import flatten_qv, unflatten_qv
 
-        # This attribute tracks the created QuantumVariables for the
-        # auto_uncompute decorator
-        # We use weak references as some qrisp modules rely on reference counting
         try:
             # Register as a PyTree with JAX
             tree_util.register_pytree_node(type(self), flatten_qv, unflatten_qv)
@@ -430,7 +425,6 @@ class QuantumVariable:
             return
 
         self.qs.delete_qv(self, verify)
-        QuantumVariable.live_qvs.pop(hash(self), None)
 
         if recompute:
             for qb in self.reg:
@@ -1389,7 +1383,14 @@ class QuantumVariable:
             self.qs.uncomp_stack.append(self)
 
     def get_unique_name(self, name: str | None = None):
-        """Return ``name`` (or a type-based default) suffixed with a counter so no live QuantumVariable shares it."""
+        """Return ``name`` (or a type-based default) with a fresh numerical suffix.
+
+        The suffix comes from the class-wide ``name_tracker``, which only counts up, so
+        no two calls return the same name. Collisions with names that were chosen
+        explicitly or inferred from the code are handled by the QuantumSession:
+        ``generate_name`` retries until the name is free within the session, and
+        ``resolve_naming_collisions`` renames variables when sessions are merged.
+        """
         if name is None:
             # Imported locally: the qrisp package imports this module before defining these names.
             from qrisp import QuantumBool, QuantumChar, QuantumFloat
@@ -1404,18 +1405,9 @@ class QuantumVariable:
                 case _:
                     name = "qv"
 
-        def name_exists():
-            return any(map(lambda qv: qv.name == name, QuantumVariable.live_qvs.values()))
-
-        augmented = False
-        while not augmented or name_exists():
-            orig_name = name
-            # Not sure if we want to append new '_' everytime
-            name = f"{orig_name}_{self.name_tracker[orig_name]}"
-            self.name_tracker[orig_name] += 1
-            augmented = True
-
-        return name
+        suffix = self.name_tracker[name]
+        self.name_tracker[name] += 1
+        return f"{name}_{suffix}"
 
     def __iter__(self):
         if not isinstance(self.reg, list):

@@ -304,7 +304,6 @@ class TracingQuantumSession:
 
         qv.creation_time = QuantumVariable.creation_counter
         QuantumVariable.creation_counter += 1
-        QuantumVariable.live_qvs[hash(qv)] = qv
 
     def request_qubits(self, amount: int | Tracer) -> DynamicQubitArray:
         """Allocate *amount* qubits and return a :class:`~qrisp.jasp.DynamicQubitArray`.

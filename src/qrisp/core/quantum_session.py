@@ -333,7 +333,6 @@ class QuantumSession(QuantumCircuit):
 
         qv.creation_time = QuantumVariable.creation_counter
         QuantumVariable.creation_counter += 1
-        QuantumVariable.live_qvs[hash(qv)] = qv
 
     def get_qv(self, key):
         for qv in self.qv_list:

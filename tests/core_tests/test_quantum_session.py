@@ -17,7 +17,6 @@
 """Tests for the QuantumSession class in qrisp.core.quantum_session."""
 
 from dataclasses import dataclass
-from weakref import WeakValueDictionary
 
 import pytest
 
@@ -29,7 +28,6 @@ class _SessionState:
     qv_names: list[str]
     deleted_qv_names: list[str]
     qubit_count: int
-    live_qv_hashes: set[int]
     creation_counter: int
 
 
@@ -38,16 +36,14 @@ def _capture_state(qs: QuantumSession) -> _SessionState:
         qv_names=[existing.name for existing in qs.qv_list],
         deleted_qv_names=[existing.name for existing in qs.deleted_qv_list],
         qubit_count=len(qs.qubits),
-        live_qv_hashes=set(QuantumVariable.live_qvs.keys()),
         creation_counter=QuantumVariable.creation_counter,
     )
 
 
 def _assert_registered(qv: QuantumVariable, qs: QuantumSession, before: _SessionState) -> None:
     assert [existing.name for existing in qs.qv_list] == [*before.qv_names, qv.name]
+    assert qs.qv_list[-1] is qv
     assert [existing.name for existing in qs.deleted_qv_list] == before.deleted_qv_names
-    assert set(QuantumVariable.live_qvs.keys()) == {*before.live_qv_hashes, hash(qv)}
-    assert QuantumVariable.live_qvs[hash(qv)] is qv
     assert qv.creation_time == before.creation_counter
     assert QuantumVariable.creation_counter == before.creation_counter + 1
 
@@ -56,25 +52,21 @@ def _assert_unchanged(qs: QuantumSession, before: _SessionState) -> None:
     assert [existing.name for existing in qs.qv_list] == before.qv_names
     assert [existing.name for existing in qs.deleted_qv_list] == before.deleted_qv_names
     assert len(qs.qubits) == before.qubit_count
-    assert set(QuantumVariable.live_qvs.keys()) == before.live_qv_hashes
     assert QuantumVariable.creation_counter == before.creation_counter
 
 
 @pytest.fixture(autouse=True)
 def _isolated_quantum_variable_class_state():
-    """Give each test empty QuantumVariable class state and restore it afterwards.
+    """Reset QuantumVariable's class state for each test and restore it afterwards.
 
-    live_qvs and creation_counter live on the QuantumVariable class and are shared
-    process-wide, so without this, other tests would leak into the checks.
+    creation_counter lives on the QuantumVariable class and is shared process-wide,
+    so without this, other tests would leak into the checks.
     """
-    original_live_qvs = QuantumVariable.live_qvs
     original_creation_counter = QuantumVariable.creation_counter
-    QuantumVariable.live_qvs = WeakValueDictionary()
     QuantumVariable.creation_counter = 0
     try:
         yield
     finally:
-        QuantumVariable.live_qvs = original_live_qvs
         QuantumVariable.creation_counter = original_creation_counter
 
 
