@@ -11,6 +11,10 @@ Qrisp provides a dead simple interface to integer factorization using your own b
 
 .. autofunction:: shors_alg
 
+For resource estimation and for programs in :ref:`Jasp <jasp>` mode, the quantum part of order finding is also available with a semiclassical phase estimation, which needs a single control qubit instead of a phase register.
+
+.. autofunction:: semiclassical_order_finding
+
 .. _crypto_tools:
 
 Cryptography tools
