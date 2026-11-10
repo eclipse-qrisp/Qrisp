@@ -618,6 +618,7 @@ Bug Fixes
     in PennyLane.
   - ``U1Gate`` now converts to Qiskit's ``RZGate`` instead of ``PhaseGate``,
     since Qrisp's ``U1`` is an RZ rotation.
+
   (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
 
 Compatibility
@@ -640,6 +641,7 @@ Compatibility
   above 63, for which the number of calls of the unitary overflowed a 64-bit
   integer
   (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
+
 * ``RGate`` and ``QuantumCircuit.r`` are deprecated in favor of the identical
   ``PRXGate`` and the new ``QuantumCircuit.prx``. Both still work but emit a
   ``QrispDeprecationWarning``. ``RGate(theta, phi)`` now builds a
