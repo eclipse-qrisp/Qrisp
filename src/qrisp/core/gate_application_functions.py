@@ -95,6 +95,26 @@ def append_operation(operation, qubits=None, clbits=None, param_tracers=None):
         raise e
 
 
+def _check_toffoli_controls(name, controls):
+    """Raise an error unless a Toffoli construction gets exactly two controls.
+
+    Parameters
+    ----------
+    name : str
+        The name of the construction, used in the error message.
+    controls : list[Qubit]
+        The control qubits.
+
+    Raises
+    ------
+    ValueError
+        If there are not exactly two controls.
+
+    """
+    if len(controls) != _TOFFOLI_NUM_CONTROLS:
+        raise ValueError(f"Tried to call {name} with {len(controls)} controls instead of two")
+
+
 def cx(control, target):
     """Applies a CX gate.
 
@@ -565,7 +585,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         if isinstance(target, QuantumBool):
             target = target[0]
         else:
-            raise Exception("mcx target is not of type Qubit or QuantumBool")
+            raise TypeError("mcx target is not of type Qubit or QuantumBool")
 
     if not check_for_tracing_mode():
         qubits_0 = list(controls)
@@ -589,7 +609,8 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             ctrl_state = bin_rep(ctrl_state, n)[::-1]
 
         if len(ctrl_state) != n:
-            raise Exception(f"Given control state {ctrl_state} does not match control qubit amount {n}")
+            msg = f"Given control state {ctrl_state} does not match control qubit amount {n}"
+            raise ValueError(msg)
     else:
         qubits_0 = controls
         qubit_arrays = (QuantumVariable, DynamicQubitArray)
@@ -611,8 +632,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             qubits_0 + qubits_1,
         )
     elif method == "gidney":
-        if len(qubits_0) != _TOFFOLI_NUM_CONTROLS:
-            raise Exception(f"Tried to call Gidney logical AND with {len(qubits_0)} controls instead of two")
+        _check_toffoli_controls("Gidney logical AND", qubits_0)
 
         if check_for_tracing_mode():
             jasp_gidney_mcx(qubits_0[0], qubits_0[1], qubits_1[0])
@@ -623,8 +643,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             )
 
     elif method == "gidney_inv":
-        if len(qubits_0) != _TOFFOLI_NUM_CONTROLS:
-            raise Exception(f"Tried to call Gidney logical AND with {len(qubits_0)} controls instead of two")
+        _check_toffoli_controls("Gidney logical AND", qubits_0)
 
         if check_for_tracing_mode():
             with invert():
@@ -661,13 +680,11 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         hybrid_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state, num_ancilla=num_ancilla)
 
     elif method == "amy":
-        if len(qubits_0) != _TOFFOLI_NUM_CONTROLS:
-            raise Exception(f"Tried to call Amy MCX with {len(qubits_0)} controls instead of two")
+        _check_toffoli_controls("Amy MCX", qubits_0)
         amy_toffoli(qubits_0, qubits_1, ctrl_state=ctrl_state)
 
     elif method == "jones":
-        if len(qubits_0) != _TOFFOLI_NUM_CONTROLS:
-            raise Exception(f"Tried to call Jones MCX with {len(qubits_0)} controls instead of two")
+        _check_toffoli_controls("Jones MCX", qubits_0)
         jones_toffoli(qubits_0, qubits_1, ctrl_state=ctrl_state)
 
     elif method == "auto":
@@ -678,7 +695,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         khattar_mcx(qubits_0, qubits_1, ctrl_state)
 
     else:
-        raise Exception(f"Don't know mcx method {method}")
+        raise ValueError(f"Don't know mcx method {method}")
 
 
 def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
@@ -707,7 +724,8 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
     def mcz_inner(qubits, method="auto", ctrl_state=-1):
         if len(ctrl_state) != n:
-            raise Exception(f"Given control state {ctrl_state} does not matchcontrol qubit amount {n}")
+            msg = f"Given control state {ctrl_state} does not matchcontrol qubit amount {n}"
+            raise ValueError(msg)
 
         if ctrl_state[-1] == "0":
             x(qubits[-1])
@@ -869,7 +887,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         with control(n >= _MCP_AUTO_BALAUCA_MIN_QUBITS):
             mcp(phi, qubits, method="balauca", ctrl_state=ctrl_state)
     else:
-        raise Exception(f"Don't know method {method}")
+        raise ValueError(f"Don't know method {method}")
 
 
 def p(phi, qubits):
@@ -1362,7 +1380,7 @@ def reset(qubits):
     elif isinstance(qubits.aval, AbstractQubit):
         abs_qst = reset_p.bind(qubits, qs.abs_qst)
     else:
-        raise Exception(f"Tried to reset type {type(qubits.aval)}")
+        raise TypeError(f"Tried to reset type {type(qubits.aval)}")
 
     qs.abs_qst = abs_qst
 
