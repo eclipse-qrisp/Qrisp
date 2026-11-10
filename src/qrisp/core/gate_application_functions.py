@@ -725,7 +725,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
     """
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
-    def mcz_inner(qubits, method="auto", ctrl_state=-1):
+    def mcz_inner(qubits, method, ctrl_state):
         if len(ctrl_state) != n:
             msg = f"Given control state {ctrl_state} does not matchcontrol qubit amount {n}"
             raise ValueError(msg)
