@@ -16,7 +16,9 @@
 
 """Gate application functions (cx, h, mcx, rz, measure, ...) that append operations to circuits."""
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 import jax
 import jax.core
@@ -45,6 +47,16 @@ from qrisp.misc.utility import bin_rep, find_qs, gate_wrap
 # Private alias, so that star imports of this module do not export it.
 from qrisp.simulator.unitary_management import u3matrix as _u3matrix
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence, Sized
+
+    from jax.core import Tracer
+
+    from qrisp.alg_primitives.arithmetic.jasp_arithmetic.jasp_bigintiger import BigInteger
+    from qrisp.circuit import Clbit, Operation
+    from qrisp.qtypes import QuantumBool
+    from qrisp.typing import FloatLike, NDArrayLike, QuantumOperand
+
 # The gidney, gidney_inv, amy and jones mcx methods are Toffoli constructions.
 _TOFFOLI_NUM_CONTROLS = 2
 
@@ -61,7 +73,12 @@ _LOST_TRACK_MESSAGE = (
 )
 
 
-def append_operation(operation, qubits=None, clbits=None, param_tracers=None):
+def append_operation(
+    operation: Operation,
+    qubits: Sequence[QuantumOperand] | None = None,
+    clbits: Sequence[Clbit | Sequence[Clbit]] | None = None,
+    param_tracers: Sequence[FloatLike] | None = None,
+) -> None:
     """Append an operation to the QuantumSession of its qubits.
 
     The QuantumSession is found from ``qubits``. Appending to empty qubit lists, as in
@@ -101,7 +118,7 @@ def append_operation(operation, qubits=None, clbits=None, param_tracers=None):
         raise e
 
 
-def _check_toffoli_controls(name, controls):
+def _check_toffoli_controls(name: str, controls: Sized) -> None:
     """Raise an error unless a Toffoli construction gets exactly two controls.
 
     Parameters
@@ -121,7 +138,7 @@ def _check_toffoli_controls(name, controls):
         raise ValueError(f"Tried to call {name} with {len(controls)} controls instead of two")
 
 
-def cx(control, target):
+def cx(control: QuantumOperand, target: QuantumOperand) -> None:
     """Applies a CX gate.
 
     Parameters
@@ -135,7 +152,7 @@ def cx(control, target):
     append_operation(std_ops.CXGate(), [control, target])
 
 
-def cy(control, target):
+def cy(control: QuantumOperand, target: QuantumOperand) -> None:
     """Applies a CY gate.
 
     Parameters
@@ -149,7 +166,7 @@ def cy(control, target):
     append_operation(std_ops.CYGate(), [control, target])
 
 
-def cz(control, target):
+def cz(control: QuantumOperand, target: QuantumOperand) -> None:
     """Applies a CZ gate.
 
     Parameters
@@ -163,7 +180,7 @@ def cz(control, target):
     append_operation(std_ops.CZGate(), [control, target])
 
 
-def h(qubits):
+def h(qubits: QuantumOperand) -> None:
     """Applies an H gate.
 
     Parameters
@@ -175,7 +192,7 @@ def h(qubits):
     append_operation(std_ops.HGate(), [qubits])
 
 
-def x(qubits):
+def x(qubits: QuantumOperand) -> None:
     """Applies an X gate.
 
     Parameters
@@ -187,7 +204,7 @@ def x(qubits):
     append_operation(std_ops.XGate(), [qubits])
 
 
-def y(qubits):
+def y(qubits: QuantumOperand) -> None:
     """Applies a Y gate.
 
     Parameters
@@ -199,7 +216,7 @@ def y(qubits):
     append_operation(std_ops.YGate(), [qubits])
 
 
-def z(qubits):
+def z(qubits: QuantumOperand) -> None:
     """Applies a Z gate.
 
     Parameters
@@ -211,7 +228,13 @@ def z(qubits):
     append_operation(std_ops.ZGate(), [qubits])
 
 
-def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
+def mcx(
+    controls: Sequence[Qubit | Tracer | QuantumBool] | QuantumVariable | DynamicQubitArray,
+    target: Qubit | Tracer | QuantumBool,
+    method: str = "auto",
+    ctrl_state: int | str | jax.Array = -1,
+    num_ancilla: int = 1,
+) -> None:
     r""".. _mcx:
 
     Applies a multi-controlled X gate.
@@ -702,7 +725,12 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         raise ValueError(f"Don't know mcx method {method}")
 
 
-def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
+def mcz(
+    qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
+    method: str = "auto",
+    ctrl_state: int | str | jax.Array = -1,
+    num_ancilla: int = 1,
+) -> None:
     """Applies a multi-controlled Z gate.
 
     For more information on the available methods, check
@@ -725,7 +753,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
     """
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
-    def mcz_inner(qubits, method, ctrl_state):
+    def mcz_inner(qubits, method: str, ctrl_state: str) -> None:
         if len(ctrl_state) != n:
             msg = f"Given control state {ctrl_state} does not matchcontrol qubit amount {n}"
             raise ValueError(msg)
@@ -741,7 +769,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
             x(qubits[-1])
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
-    def jasp_mcz_inner(qubits, method="balauca", ctrl_state=-1):
+    def jasp_mcz_inner(qubits, method: str = "balauca", ctrl_state: int | jax.Array = -1) -> None:
         # qrisp.environments imports this module, so it can only be imported at call time.
         from qrisp.environments import control
 
@@ -798,7 +826,12 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
     mcz_inner(qubits, method, ctrl_state)
 
 
-def mcp(phi, qubits, method="auto", ctrl_state=-1):
+def mcp(
+    phi: FloatLike,
+    qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
+    method: str = "auto",
+    ctrl_state: int | str | jax.Array = -1,
+) -> None:
     """Applies a multi-controlled phase gate.
 
     The available methods are:
@@ -829,7 +862,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
     from qrisp.qtypes import QuantumBool
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
-    def balauca_mcp(phi, qubits, ctrl_state):
+    def balauca_mcp(phi: FloatLike, qubits, ctrl_state: str) -> None:
         qubits = convert_to_qb_list(qubits)
 
         temp = QuantumBool()
@@ -889,7 +922,7 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         raise ValueError(f"Don't know method {method}")
 
 
-def p(phi, qubits):
+def p(phi: FloatLike, qubits: QuantumOperand) -> None:
     """Applies a phase gate.
 
     Parameters
@@ -906,7 +939,7 @@ def p(phi, qubits):
         append_operation(std_ops.PGate(phi), [qubits])
 
 
-def cp(phi, qubits_0, qubits_1):
+def cp(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
     """Applies a controlled phase gate.
 
     Parameters
@@ -927,7 +960,7 @@ def cp(phi, qubits_0, qubits_1):
         append_operation(cp_gate, [qubits_0, qubits_1])
 
 
-def rx(phi, qubits):
+def rx(phi: FloatLike, qubits: QuantumOperand) -> None:
     """Applies an RX gate.
 
     Parameters
@@ -944,7 +977,7 @@ def rx(phi, qubits):
         append_operation(std_ops.RXGate(phi), [qubits])
 
 
-def ry(phi, qubits):
+def ry(phi: FloatLike, qubits: QuantumOperand) -> None:
     """Applies an RY gate.
 
     Parameters
@@ -961,7 +994,7 @@ def ry(phi, qubits):
         append_operation(std_ops.RYGate(phi), [qubits])
 
 
-def rz(phi, qubits):
+def rz(phi: FloatLike, qubits: QuantumOperand) -> None:
     """Applies an RZ gate.
 
     Parameters
@@ -978,7 +1011,7 @@ def rz(phi, qubits):
         append_operation(std_ops.RZGate(phi), [qubits])
 
 
-def crz(phi, qubits_0, qubits_1):
+def crz(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
     """Applies controlled RZ gate
 
     Parameters
@@ -999,7 +1032,7 @@ def crz(phi, qubits_0, qubits_1):
         append_operation(crz_gate, [qubits_0, qubits_1])
 
 
-def s(qubits):
+def s(qubits: QuantumOperand) -> None:
     """Applies an S gate.
 
     Parameters
@@ -1011,7 +1044,7 @@ def s(qubits):
     append_operation(std_ops.SGate(), [qubits])
 
 
-def t(qubits):
+def t(qubits: QuantumOperand) -> None:
     """Applies a T gate.
 
     Parameters
@@ -1023,7 +1056,7 @@ def t(qubits):
     append_operation(std_ops.TGate(), [qubits])
 
 
-def s_dg(qubits):
+def s_dg(qubits: QuantumOperand) -> None:
     """Applies a daggered S gate.
 
     Parameters
@@ -1035,7 +1068,7 @@ def s_dg(qubits):
     append_operation(std_ops.SGate().inverse(), [qubits])
 
 
-def t_dg(qubits):
+def t_dg(qubits: QuantumOperand) -> None:
     """Applies a daggered T gate.
 
     Parameters
@@ -1047,7 +1080,7 @@ def t_dg(qubits):
     append_operation(std_ops.TGate().inverse(), [qubits])
 
 
-def sx(qubits):
+def sx(qubits: QuantumOperand) -> None:
     """Applies an SX gate.
 
     Parameters
@@ -1059,7 +1092,7 @@ def sx(qubits):
     append_operation(std_ops.SXGate(), [qubits])
 
 
-def sx_dg(qubits):
+def sx_dg(qubits: QuantumOperand) -> None:
     """Applies a daggered SX gate.
 
     Parameters
@@ -1071,7 +1104,7 @@ def sx_dg(qubits):
     append_operation(std_ops.SXDGGate().inverse(), [qubits])
 
 
-def gphase(phi, qubits):
+def gphase(phi: FloatLike, qubits: QuantumOperand) -> None:
     """Applies a global phase. This gate turns into a phase gate when controlled.
 
     Parameters
@@ -1088,7 +1121,12 @@ def gphase(phi, qubits):
         append_operation(std_ops.GPhaseGate(phi), [qubits])
 
 
-def xxyy(phi, beta, qubits_0, qubits_1):
+def xxyy(
+    phi: FloatLike,
+    beta: FloatLike,
+    qubits_0: QuantumOperand,
+    qubits_1: QuantumOperand,
+) -> None:
     """Applies an XXYY interaction gate.
 
     Parameters
@@ -1112,7 +1150,7 @@ def xxyy(phi, beta, qubits_0, qubits_1):
         append_operation(xxyy_gate, [qubits_0, qubits_1])
 
 
-def rzz(phi, qubits_0, qubits_1):
+def rzz(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
     """Applies an RZZ gate.
 
     Parameters
@@ -1133,7 +1171,7 @@ def rzz(phi, qubits_0, qubits_1):
         append_operation(rzz_gate, [qubits_0, qubits_1])
 
 
-def rxx(phi, qubits_0, qubits_1):
+def rxx(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
     """Applies an RXX gate.
 
     Parameters
@@ -1154,7 +1192,7 @@ def rxx(phi, qubits_0, qubits_1):
         append_operation(rxx_gate, [qubits_0, qubits_1])
 
 
-def ryy(phi, qubits_0, qubits_1):
+def ryy(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
     """Applies an RYY gate.
 
     Parameters
@@ -1175,7 +1213,12 @@ def ryy(phi, qubits_0, qubits_1):
         append_operation(ryy_gate, [qubits_0, qubits_1])
 
 
-def u3(theta, phi, lam, qubits):
+def u3(
+    theta: FloatLike,
+    phi: FloatLike,
+    lam: FloatLike,
+    qubits: QuantumOperand,
+) -> None:
     """Applies an U3 gate.
 
     Parameters
@@ -1200,7 +1243,7 @@ def u3(theta, phi, lam, qubits):
         append_operation(std_ops.U3Gate(theta, phi, lam), [qubits])
 
 
-def unitary(unitary_array, qubits):
+def unitary(unitary_array: NDArrayLike, qubits: Qubit | Tracer) -> None:
     """Instruct a U3-gate from a given U3 matrix.
 
     Parameters
@@ -1231,7 +1274,7 @@ def unitary(unitary_array, qubits):
     gphase(gphase_angle, qubits)
 
 
-def measure(qubits: Any) -> Any:
+def measure(qubits: QuantumOperand) -> Any:
     """Measure qubits in the computational basis.
 
     In static mode, the measurement is appended to the circuit and the classical
@@ -1316,7 +1359,7 @@ def measure(qubits: Any) -> Any:
     raise TypeError(f"Tried to measure type {type(qubits)}")
 
 
-def measure_to_big_integer(qv, size):
+def measure_to_big_integer(qv: QuantumVariable, size: int) -> BigInteger:
     """Measure a QuantumVariable in Jasp mode and return the outcome as a BigInteger.
 
     The qubits are measured in groups of 32, each giving one 32-bit digit of the
@@ -1339,7 +1382,7 @@ def measure_to_big_integer(qv, size):
     # call time.
     from qrisp import BigInteger
 
-    def body_fun(i, val):
+    def body_fun(i: int | jax.Array, val: jax.Array) -> jax.Array:
         return val.at[i].set(jnp.uint32(measure(qv[32 * i : 32 * (i + 1)])))
 
     last_digit = (qv.size - 1) // 32
@@ -1348,7 +1391,7 @@ def measure_to_big_integer(qv, size):
     return BigInteger(digits)
 
 
-def reset(qubits):
+def reset(qubits: QuantumOperand) -> None:
     """Performs a reset of the specified qubits.
 
     Parameters
@@ -1380,7 +1423,7 @@ def reset(qubits):
     qs.abs_qst = abs_qst
 
 
-def barrier(qubits):
+def barrier(qubits: QuantumOperand) -> None:
     """A visual marker for structuring the QuantumCircuit.
 
     Parameters
@@ -1423,7 +1466,7 @@ def barrier(qubits):
     append_operation(std_ops.Barrier(len(qubits)), qubits)
 
 
-def swap(qubits_0, qubits_1):
+def swap(qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
     """Applies a SWAP gate.
 
     Parameters
