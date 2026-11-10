@@ -1078,9 +1078,6 @@ class QuantumVariable:
     def __repr__(self):
         """Return a short representation showing the type and name of this QuantumVariable."""
         return "<" + str(type(self)).split(".")[-1][:-2] + " '" + self.name + "'>"
-        # QUESTION: Are these still needed?
-        # return str(type(self)).split(".")[-1][:-2] + "(name = " + self.name + ")"
-        # return str(self)
 
     def __str__(self):
         """Return the measurement results, or the repr when in tracing mode."""
