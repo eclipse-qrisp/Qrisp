@@ -294,7 +294,7 @@ class Operation:
 
         return res
 
-    def control(self, num_ctrl_qubits=1, ctrl_state=-1, method=None):
+    def control(self, num_ctrl_qubits=1, ctrl_state: int | str = -1, method=None):
         """Returns the controlled version of this Operation (if applicable).
 
         Parameters
@@ -629,7 +629,7 @@ class PauliGate(U3Gate):
 # In many cases, they can replace the controlled version without changing the semantics,
 # because the phases introduced by the D_i are uncomputed at some later point.
 class PTControlledOperation(Operation):
-    def __init__(self, base_operation, num_ctrl_qubits=1, ctrl_state=-1, method="auto"):
+    def __init__(self, base_operation, num_ctrl_qubits=1, ctrl_state: int | str = -1, method="auto"):
         # Object which describes the method. Can be a string lr a callable function
         self.method = method
 
@@ -825,7 +825,7 @@ class PTControlledOperation(Operation):
 # Very simlar to phase tolerant operations but with a more specifix naming
 # convention, inversion algorithm and unitary generation algorithm
 class ControlledOperation(PTControlledOperation):
-    def __init__(self, base_operation, num_ctrl_qubits=1, ctrl_state=-1, method="gray"):
+    def __init__(self, base_operation, num_ctrl_qubits=1, ctrl_state: int | str = -1, method="gray"):
         super().__init__(
             base_operation,
             num_ctrl_qubits=num_ctrl_qubits,

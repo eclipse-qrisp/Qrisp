@@ -26,7 +26,7 @@ from qrisp.misc.utility import bin_rep
 
 
 # Ancilla supported multi controlled X gates from https://arxiv.org/pdf/1508.03273.pdf
-def maslov_mcx(n, ctrl_state=-1):
+def maslov_mcx(n, ctrl_state: int | str = -1):
     if not isinstance(ctrl_state, str):
         if ctrl_state == -1:
             ctrl_state += 2**n

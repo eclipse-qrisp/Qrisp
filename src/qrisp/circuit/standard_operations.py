@@ -119,16 +119,16 @@ def CZGate():
     return ZGate().control()
 
 
-def MCXGate(control_amount=1, ctrl_state=-1, method="gray"):
+def MCXGate(control_amount=1, ctrl_state: int | str = -1, method="gray"):
     """Return a multi-controlled X gate.
 
     Parameters
     ----------
     control_amount : int, optional
         Number of control qubits. The default is 1.
-    ctrl_state : int, optional
-        Integer that represents the control state in binary.
-        The default is ``-1`` (all controls active when in state ``|1⟩``).
+    ctrl_state : int or str, optional
+        The control state, as an integer in binary or as a string with one character
+        per control. The default is ``-1`` (all controls active when in state ``|1⟩``).
     method : str, optional
         Synthesis method. The default is ``"gray"``.
 
