@@ -74,9 +74,9 @@ if has_pennylane:
         "gphase": QMLGateDescriptor(
             qml.GlobalPhase, param_fn=lambda op: [-op.params[0]]
         ),  # GPhaseGate(phi) -> qml.GlobalPhase(-phi)
-        "r": QMLGateDescriptor(
-            qml.Rot, param_fn=lambda op: [np.pi / 2 - op.params[1], op.params[0], op.params[1] - np.pi / 2]
-        ),  # RGate(theta, phi) = RZ(phi) RX(theta) RZ(-phi) -> qml.Rot(pi/2 - phi, theta, phi - pi/2)
+        "prx": QMLGateDescriptor(
+            qml.Rot, param_fn=lambda op: [np.pi / 2 - op.beta, op.alpha, op.beta - np.pi / 2]
+        ),  # PRXGate(alpha, beta) = RZ(beta) RX(alpha) RZ(-beta) -> qml.Rot(pi/2 - beta, alpha, beta - pi/2)
         "measure": QMLGateDescriptor(qml.measurements.MidMeasureMP),
     }
 
