@@ -212,10 +212,56 @@ Other New Features
   fully understand and take responsibility for the changes implemented
   (`PR #816 <https://github.com/eclipse-qrisp/Qrisp/pull/816>`_).
 
+- **Semiclassical order finding for Shor's algorithm**
+  :func:`~qrisp.shor.semiclassical_order_finding` runs the quantum part of
+  order finding in Jasp mode with a single control qubit, measured after every
+  step of the phase estimation, instead of a phase register of ``2n`` qubits
+  followed by the inverse QFT. The outcome has the same distribution, while the
+  circuit needs ``2n - 1`` fewer qubits (``3n + 2 ceil(log2 n) + 2`` with the
+  default adder) and ``2n`` single-qubit rotations instead of the controlled
+  phase gates of the inverse QFT. The resource estimators count the circuit
+  without simulating it
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
+
 .. Add other new features above this line
 
 Bug Fixes
 ---------
+
+* Fixed the lowering of unsigned integers by
+  :meth:`Jaspr.to_mlir <qrisp.jasp.Jaspr.to_mlir>` with
+  ``lower_stablehlo=True``. An unsigned constant kept its unsigned value behind
+  a signless result type, so the module failed verification and MLIR parsers
+  rejected it. Since :class:`~qrisp.QuantumModulus` computes with ``uint64``
+  in Jasp mode (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_),
+  this broke ``QuantumModulus`` arithmetic in the CUDA-Q interface. Unsigned
+  remainders, comparisons and widening conversions were also lowered to their
+  signed ``arith`` counterparts, which gives wrong results for values with the
+  top bit set (`Issue #1008 <https://github.com/eclipse-qrisp/Qrisp/issues/1008>`_).
+
+* Fixed the handling of the Montgomery shift ``m`` of
+  :class:`~qrisp.QuantumModulus` in Jasp mode
+  (`Issue #925 <https://github.com/eclipse-qrisp/Qrisp/issues/925>`_).
+  ``m`` is now a traced attribute. Previously it was stored as static data that
+  :func:`qache <qrisp.jasp.qache>` ignored, which caused three failures:
+
+  * A ``qache``\ d function multiplying two ``QuantumModulus`` raised
+    ``UnexpectedTracerError``.
+  * A ``qache``\ d function called with differing shifts silently reused
+    the trace of the first call and returned wrong results.
+  * ``+=`` with differing shifts raised ``TracerIntegerConversionError``.
+
+  Addition and subtraction (``+``, ``-``, ``+=``, ``-=``) now support operands
+  with differing shifts in both Jasp and static mode, and no longer raise
+  ``ValueError``. The other operand is converted into the target's
+  representation, and the result keeps the left operand's shift. A
+  :class:`~qrisp.QuantumFloat` operand with exponent ``e`` is treated as having
+  shift ``-e``, so its bit weights are taken into account. Signed
+  :class:`~qrisp.QuantumFloat` operands now raise ``TypeError``. In Jasp
+  mode, encoding a classical value into a ``QuantumModulus`` with a negative
+  shift (e.g. after ``c = a * b; c += 1``) no longer raises
+  ``ValueError: negative shift count``.
+  (`PR #958 <https://github.com/eclipse-qrisp/Qrisp/pull/958>`_).
 
 * Fixed :func:`cuccaro_adder <qrisp.cuccaro_adder>` to support arbitrary
   quantum inputs, in particular ``list[Qubit]`` and ``DynamicQubitArray``
@@ -541,6 +587,20 @@ Bug Fixes
   raises a ``TypeError``
   (`PR #918 <https://github.com/eclipse-qrisp/Qrisp/pull/918>`_).
 
+* :ref:`IQPE <IQPE>` applied the powers ``U**(2**t)``, ..., ``U**2`` of the
+  unitary instead of ``U**(2**(t - 1))``, ..., ``U``, where ``t`` is the
+  precision. It therefore returned twice the phase modulo 1 and lost its most
+  significant bit: a phase of 0.75 was estimated as 0.5. It now returns the
+  phase, as documented, so code that relied on the previous values (twice the
+  phase) needs to be updated
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
+
+* :ref:`IQPE <IQPE>` released its control qubit after measuring it, without
+  resetting it. Interpreters that reuse released qubits, such as the Catalyst
+  interpreter, could therefore start the next step with the qubit in ``|1>`` and
+  give a wrong estimate. The control qubit is now reset before it is released
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
+
 * Fixed simulation of composite operations in :meth:`~qrisp.QuantumCircuit.statevector_array`
   and :meth:`~qrisp.QuantumCircuit.run`: circuits now transpile composite operations before
   simulation to avoid computing wide unitary matrices, while preserving narrow controlled
@@ -551,13 +611,13 @@ Bug Fixes
   (`PR #975 <https://github.com/eclipse-qrisp/Qrisp/pull/975>`_).
 
 * Fixed a bug in ``resolve_naming_collisions`` where in the "qv_0 is newer" conditional branch,
-  ``qv_1.is_fixed_name`` (called ``user_given_name`` earlier) was checked 
+  ``qv_1.is_fixed_name`` (called ``user_given_name`` earlier) was checked
   when it should have been ``qv_0``'s.
-  As a result, merging two sessions could rename a variable with 
+  As a result, merging two sessions could rename a variable with
   an explicitly given (fixed) name. Now a fixed name is never renamed.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
-* Fixed a bug where calls of :meth:`~qrisp.QuantumVariable.duplicate` of the form ``duplicate(name="foo*")`` 
+* Fixed a bug where calls of :meth:`~qrisp.QuantumVariable.duplicate` of the form ``duplicate(name="foo*")``
   caused the variable being duplicated to change.
   There, ``self.is_fixed_name`` (called ``user_given_name`` earlier) was set to ``False``, instead of the duplicate's ``is_fixed_name``.
   This is fixed now.
@@ -608,6 +668,13 @@ Compatibility
   a generic ``Exception``. The messages are unchanged, and code using
   ``except Exception:`` is unaffected
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
+* :ref:`IQPE <IQPE>` returns the phase instead of twice the phase modulo 1
+  (see Bug Fixes). It raises a ``TypeError`` for a precision that is not an
+  integer and, unless the precision is traced, a ``ValueError`` for a precision
+  above 63, for which the number of calls of the unitary overflowed a 64-bit
+  integer
+  (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
 .. Add compatibility notes above this line
 

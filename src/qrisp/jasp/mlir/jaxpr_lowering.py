@@ -213,8 +213,9 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
     The pipeline applied:
 
     1. symbol-dce: removes unused private shadow functions that JAX emits
-    2. stablehlo-convert-to-signless: converts to signless integers
-    3. stablehlo-legalize-to-linalg: converts arithmetic/data ops to linalg
+    2. stablehlo-legalize-to-linalg: converts arithmetic/data ops to linalg
+    3. stablehlo-convert-to-signless: converts the remaining unsigned integer
+       types (e.g. in function signatures) to signless integers
 
     Parameters
     ----------
@@ -247,7 +248,13 @@ def lower_jaxpr_to_linalg_MLIR(jaxpr, lowering_rules):
         # symbol-dce removes unused private shadow functions that JAX emits.
         # stablehlo-legalize-to-linalg converts arithmetic/data ops to linalg.
         # stablehlo control-flow ops (case, while) are left untouched here.
-        pipeline = "builtin.module(symbol-dce,stablehlo-convert-to-signless,stablehlo-legalize-to-linalg)"
+        # stablehlo-convert-to-signless must run after the legalizer, which
+        # picks signed or unsigned arith ops from the element types. Run
+        # before it, the conversion erases that information and leaves
+        # constants with an unsigned value behind a signless result type.
+        # It leaves identity unrealized_conversion_casts, which jaspr_to_mlir
+        # removes.
+        pipeline = "builtin.module(symbol-dce,stablehlo-legalize-to-linalg,stablehlo-convert-to-signless)"
 
         pm = passmanager.PassManager.parse(pipeline)
         # Disable verifier: stablehlo.case carries !jasp.QuantumState which
