@@ -20,10 +20,12 @@ from typing import Any
 
 import jax
 import jax.core
+import jax.numpy as jnp
+import numpy as np
 import sympy
 
 import qrisp.circuit.standard_operations as std_ops
-from qrisp.circuit import convert_to_qb_list
+from qrisp.circuit import Qubit, convert_to_qb_list
 from qrisp.core.quantum_array import QuantumArray
 from qrisp.core.quantum_variable import QuantumVariable
 from qrisp.jasp import (
@@ -35,9 +37,13 @@ from qrisp.jasp import (
     check_for_tracing_mode,
     jlen,
     jrange,
+    q_fori_loop,
     reset_p,
 )
-from qrisp.misc.utility import find_qs
+from qrisp.misc.utility import bin_rep, find_qs, gate_wrap
+
+# Private alias, so that star imports of this module do not export it.
+from qrisp.simulator.unitary_management import u3matrix as _u3matrix
 
 # The gidney, gidney_inv, amy and jones mcx methods are Toffoli constructions.
 _TOFFOLI_NUM_CONTROLS = 2
@@ -561,15 +567,21 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
 
     """
+    # These packages import this module, so they can only be imported at call time.
     from qrisp.alg_primitives.mcx_algs import (
         GidneyLogicalAND,
         amy_toffoli,
+        balauca_dirty,
+        balauca_mcx,
+        hybrid_mcx,
+        jasp_balauca_mcx,
         jasp_gidney_mcx,
         jones_toffoli,
         khattar_mcx,
+        maslov_mcx,
+        yong_mcx,
     )
     from qrisp.environments import invert
-    from qrisp.misc import bin_rep
     from qrisp.qtypes import QuantumBool
 
     if isinstance(controls, list):
@@ -617,14 +629,6 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         if isinstance(qubits_0, qubit_arrays) and method not in ["balauca", "khattar"]:
             method = "balauca"
         qubits_1 = [target]
-    from qrisp.alg_primitives.mcx_algs import (
-        balauca_dirty,
-        balauca_mcx,
-        hybrid_mcx,
-        jasp_balauca_mcx,
-        maslov_mcx,
-        yong_mcx,
-    )
 
     if method in ["gray", "gray_pt", "gray_pt_inv"]:
         append_operation(
@@ -719,7 +723,6 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
         the method is set to ``hybrid``. The default is 1.
 
     """
-    from qrisp.misc import bin_rep, gate_wrap
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
     def mcz_inner(qubits, method="auto", ctrl_state=-1):
@@ -739,14 +742,12 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
     def jasp_mcz_inner(qubits, method="balauca", ctrl_state=-1):
-        import jax.numpy as jnp
-        from jax.lax import cond
-
+        # qrisp.environments imports this module, so it can only be imported at call time.
         from qrisp.environments import control
 
         n = jlen(qubits)
         ctrl_state = jnp.int64(ctrl_state)
-        ctrl_state = cond(ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state)
+        ctrl_state = jax.lax.cond(ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state)
 
         with control((ctrl_state >> (n - 1)) & 1 == 0):
             x(qubits[-1])
@@ -822,12 +823,10 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         The control state on which to apply the phase. The default is "111...".
 
     """
-    import numpy as np
-
-    from qrisp import QuantumBool
+    # These packages import this module, so they can only be imported at call time.
     from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp, khattar_mcp
     from qrisp.environments import control
-    from qrisp.misc import bin_rep, gate_wrap
+    from qrisp.qtypes import QuantumBool
 
     @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
     def balauca_mcp(phi, qubits, ctrl_state):
@@ -1212,8 +1211,6 @@ def unitary(unitary_array, qubits):
         The Qubit to apply the gate on.
 
     """
-    import jax.numpy as jnp
-
     mat = unitary_array
     coeff = 1 / jnp.sqrt(jnp.linalg.det(mat))
     gphase_angle = -jnp.angle(coeff) % (2 * jnp.pi)
@@ -1226,9 +1223,7 @@ def unitary(unitary_array, qubits):
     lam = phiplambda2 - phimlambda2
 
     arg_max = jnp.argmax(jnp.abs(mat).flatten())
-    from qrisp.simulator.unitary_management import u3matrix
-
-    temp_u3 = u3matrix(theta, phi, lam, 0).flatten()
+    temp_u3 = _u3matrix(theta, phi, lam, 0).flatten()
 
     gphase_angle = (-jnp.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (2 * jnp.pi)
 
@@ -1340,9 +1335,9 @@ def measure_to_big_integer(qv, size):
         The measured value.
 
     """
-    import jax.numpy as jnp
-
-    from qrisp import BigInteger, q_fori_loop
+    # qrisp.alg_primitives imports this module, so BigInteger can only be imported at
+    # call time.
+    from qrisp import BigInteger
 
     def body_fun(i, val):
         return val.at[i].set(jnp.uint32(measure(qv[32 * i : 32 * (i + 1)])))
@@ -1422,8 +1417,6 @@ def barrier(qubits):
         QuantumVariable qv
 
     """
-    from qrisp import Qubit
-
     if isinstance(qubits, Qubit):
         qubits = [qubits]
 
