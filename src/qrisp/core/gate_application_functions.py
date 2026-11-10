@@ -986,7 +986,7 @@ def sx_dg(qubits):
         The Qubit to perform the daggered SX gate on.
 
     """
-    append_operation(std_ops.SXDGGate().inverse(), [qubits])
+    append_operation(std_ops.SXDGGate(), [qubits])
 
 
 def gphase(phi, qubits):

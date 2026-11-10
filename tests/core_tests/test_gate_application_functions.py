@@ -16,6 +16,7 @@
 
 """Tests for the gate application functions in Qrisp."""
 
+import numpy as np
 import pytest
 
 from qrisp import QuantumVariable
@@ -119,3 +120,11 @@ def test_mcz_applies_the_gate_exactly_once(method):
     result = mcz(list(qv.reg), method=method)
     assert result is None
     assert str(qv.qs.statevector()) == "-|111>"
+
+
+def test_sx_dg_is_inverse_of_sx():
+    """sx_dg used to apply SX itself, so sx followed by sx_dg gave X instead of the identity."""
+    qv = QuantumVariable(1)
+    sx(qv[0])
+    sx_dg(qv[0])
+    assert np.allclose(qv.qs.compile().get_unitary(), np.eye(2))

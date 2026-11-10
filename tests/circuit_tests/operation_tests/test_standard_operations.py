@@ -31,6 +31,7 @@ from qrisp.circuit.standard_operations import (
     MCRXGate,
     MCXGate,
     Measurement,
+    PRXGate,
     QubitAlloc,
     QubitDealloc,
     Reset,
@@ -46,6 +47,7 @@ from qrisp.circuit.standard_operations import (
     XXYYGate,
     u3Gate,
 )
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 class TestSXGate:
@@ -64,17 +66,16 @@ class TestSXGate:
         assert gate.is_qfree is False
 
     def test_sx_unitary(self):
-        """SXGate unitary matches RX(π/2) = (1/√2)*[[1, -i], [-i, 1]]."""
+        """SXGate unitary matches √X = (1/2)*[[1 + i, 1 -i], [1 - i, 1 + i]]."""
         gate = SXGate()
-        s = 1 / np.sqrt(2)
-        expected = np.array([[s, -1j * s], [-1j * s, s]], dtype=complex)
+        expected = (1 / 2) * np.array([[1 + 1j, 1 - 1j], [1 - 1j, 1 + 1j]], dtype=complex)
         assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
 
     def test_sx_squared_is_x_up_to_phase(self):
-        """SX @ SX = -i·X (RX(π/2) composed twice = RX(π) = -i·X)."""
+        """SX @ SX = X"""
         sx = SXGate().get_unitary()
         x = np.array([[0, 1], [1, 0]], dtype=complex)
-        assert np.allclose(sx @ sx, -1j * x, atol=1e-6)
+        assert np.allclose(sx @ sx, x, atol=1e-6)
 
     def test_sxdg_name_and_params(self):
         """SXDGGate has name 'sx_dg' and no parameters."""
@@ -137,18 +138,110 @@ class TestU1Gate:
         assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
 
 
-class TestRGate:
-    """Tests for the R gate (rotation around cos(phi)*X + sin(phi)*Y axis)."""
+class TestPRXGateConstruction:
+    """Tests for PRXGate parameter mapping and U3 inheritance."""
 
-    def test_r_name_and_params(self):
-        """RGate stores [theta, phi] in params and has name 'r'."""
-        theta, phi = 1.2, 0.8
-        gate = RGate(theta, phi)
-        assert gate.name == "r"
-        assert gate.params == [theta, phi]
+    def test_u3_parameter_mapping(self):
+        """PRX(alpha, beta) maps to U3(alpha, beta - pi/2, pi/2 - beta)."""
+        alpha, beta = np.pi / 2, np.pi / 4
+        prx = PRXGate(alpha, beta)
+
+        assert prx.alpha == alpha
+        assert prx.beta == beta
+        assert abs(prx.theta - alpha) < 1e-10
+        assert abs(prx.phi - (beta - np.pi / 2)) < 1e-10
+        assert abs(prx.lam - (np.pi / 2 - beta)) < 1e-10
+
+    def test_is_subclass_of_U3Gate(self):
+        """PRXGate must inherit from U3Gate."""
+        prx = PRXGate(0.5, 0.3)
+        assert isinstance(prx, U3Gate)
+        assert issubclass(PRXGate, U3Gate)
+
+    def test_name_is_prx(self):
+        """PRXGate is named 'prx'."""
+        assert PRXGate(0.1, 0.2).name == "prx"
+
+    def test_u3_equivalence(self):
+        """PRXGate parameters should reproduce an equivalent U3Gate."""
+        alpha, beta = np.pi / 2, np.pi / 4
+        prx = PRXGate(alpha, beta)
+        u3 = U3Gate(alpha, beta - np.pi / 2, np.pi / 2 - beta)
+        assert abs(prx.theta - u3.theta) < 1e-10
+        assert abs(prx.phi - u3.phi) < 1e-10
+        assert abs(prx.lam - u3.lam) < 1e-10
+
+
+class TestPRXGateEdgeCases:
+    """Parameter edge cases: zero, negative, and large values."""
+
+    def test_zero_parameters(self):
+        """PRX(0, 0) maps to U3(0, -pi/2, pi/2)."""
+        prx = PRXGate(0, 0)
+        assert prx.alpha == 0
+        assert prx.beta == 0
+        assert abs(prx.phi - (-np.pi / 2)) < 1e-10
+        assert abs(prx.lam - np.pi / 2) < 1e-10
+
+    def test_negative_parameters(self):
+        """Negative alpha and beta are stored unchanged."""
+        prx = PRXGate(-np.pi / 3, -np.pi / 6)
+        assert prx.alpha == -np.pi / 3
+        assert prx.beta == -np.pi / 6
+
+    def test_large_parameters(self):
+        """Angles beyond 2*pi are stored unchanged."""
+        alpha = 2 * np.pi + np.pi / 2
+        beta = 3 * np.pi
+        prx = PRXGate(alpha, beta)
+        assert prx.alpha == alpha
+        assert prx.beta == beta
+
+
+class TestPRXGateInverse:
+    """Tests for the inverse() method."""
+
+    def test_inverse_returns_prxgate(self):
+        """inverse() returns a PRXGate named 'prx'."""
+        prx = PRXGate(0.7, 1.2)
+        inv = prx.inverse()
+        assert isinstance(inv, PRXGate)
+        assert inv.name == "prx"
+
+    def test_inverse_negates_alpha_preserves_beta(self):
+        """inverse() maps PRX(alpha, beta) to PRX(-alpha, beta)."""
+        alpha, beta = 0.7, 1.2
+        prx = PRXGate(alpha, beta)
+        inv = prx.inverse()
+        assert abs(inv.alpha - (-alpha)) < 1e-10
+        assert abs(inv.beta - beta) < 1e-10
+
+    def test_double_inverse_is_identity(self):
+        """Inverting twice restores the original alpha and beta."""
+        prx = PRXGate(0.7, 1.2)
+        inv_inv = prx.inverse().inverse()
+        assert abs(inv_inv.alpha - prx.alpha) < 1e-10
+        assert abs(inv_inv.beta - prx.beta) < 1e-10
+
+
+class TestPRXGateBindParameters:
+    """Tests for binding symbolic PRXGate parameters."""
+
+    def test_bind_parameters_keeps_prx_gate(self):
+        """Binding symbolic parameters returns a PRXGate with bound alpha and beta, not a plain U3Gate."""
+        alpha, beta = sympy.symbols("alpha beta")
+        gate = PRXGate(alpha, beta).bind_parameters({alpha: 0.7, beta: 1.2})
+        assert isinstance(gate, PRXGate)
+        assert np.isclose(gate.alpha, 0.7)
+        assert np.isclose(gate.beta, 1.2)
+        assert np.allclose(gate.get_unitary(), PRXGate(0.7, 1.2).get_unitary())
+
+
+class TestPRXGateUnitary:
+    """Tests for the PRXGate unitary."""
 
     @pytest.mark.parametrize(
-        "theta, phi",
+        "alpha, beta",
         [
             (0.0, 0.0),
             (np.pi, 0.0),
@@ -158,22 +251,44 @@ class TestRGate:
             (2.5, -1.3),
         ],
     )
-    def test_r_unitary(self, theta, phi):
-        """R(theta, phi) unitary matches the analytical formula."""
-        gate = RGate(theta, phi)
-        c = np.cos(theta / 2)
-        s = np.sin(theta / 2)
+    def test_matches_analytical_formula(self, alpha, beta):
+        """PRX(alpha, beta) = RZ(beta) RX(alpha) RZ(-beta), matching the IQM SDK definition."""
+        gate = PRXGate(alpha, beta)
+        c = np.cos(alpha / 2)
+        s = np.sin(alpha / 2)
         expected = np.array(
-            [[c, np.exp(-1j * phi) * s], [-np.exp(1j * phi) * s, c]],
+            [[c, -1j * np.exp(-1j * beta) * s], [-1j * np.exp(1j * beta) * s, c]],
             dtype=complex,
         )
         assert np.allclose(gate.get_unitary(), expected, atol=1e-6)
 
-    def test_r_zero_theta_is_identity(self):
-        """R(0, phi) is identity for any phi."""
-        for phi in [0.0, 1.0, np.pi]:
-            gate = RGate(0.0, phi)
+    def test_zero_alpha_is_identity(self):
+        """PRX(0, beta) is identity for any beta."""
+        for beta in [0.0, 1.0, np.pi]:
+            gate = PRXGate(0.0, beta)
             assert np.allclose(gate.get_unitary(), np.eye(2), atol=1e-6)
+
+
+class TestRGate:
+    """Tests for the deprecated RGate alias of PRXGate."""
+
+    def test_r_is_deprecated_alias_of_prx(self):
+        """RGate(theta, phi) warns and builds PRXGate(theta, phi)."""
+        theta, phi = 1.2, 0.8
+        with pytest.warns(QrispDeprecationWarning, match="RGate is deprecated"):
+            gate = RGate(theta, phi)
+        assert isinstance(gate, PRXGate)
+        assert gate.name == "prx"
+        assert (gate.alpha, gate.beta) == (theta, phi)
+        assert np.allclose(gate.get_unitary(), PRXGate(theta, phi).get_unitary())
+
+    def test_r_bind_parameters_returns_prx_gate(self):
+        """Binding symbolic parameters returns a PRXGate, not a plain U3Gate."""
+        theta, phi = sympy.symbols("theta phi")
+        gate = RGate(theta, phi).bind_parameters({theta: 1.2, phi: 0.7})
+        assert isinstance(gate, PRXGate)
+        assert np.allclose([gate.alpha, gate.beta], [1.2, 0.7])
+        assert np.allclose(gate.get_unitary(), PRXGate(1.2, 0.7).get_unitary())
 
 
 class TestCPGate:

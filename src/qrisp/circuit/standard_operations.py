@@ -19,12 +19,14 @@
 from __future__ import annotations
 
 import types
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
 
 from qrisp.circuit import PauliGate, U3Gate
 from qrisp.circuit.operation import Operation
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 if TYPE_CHECKING:
     from qrisp.typing import FloatLike
@@ -255,8 +257,68 @@ def RZGate(phi: FloatLike = 0):
     return res
 
 
-def RGate(theta: FloatLike = 0, phi: FloatLike = 0):
-    """Return an R gate.
+class PRXGate(U3Gate):
+    r"""PRX (Phased-RX) gate.
+
+    The PRX gate is a single-qubit gate of the form:
+
+    .. math::
+
+        \text{PRX}(\alpha, \beta) = R_Z(\beta) \cdot R_X(\alpha) \cdot R_Z(-\beta)
+
+    Parameters
+    ----------
+    alpha : FloatLike, optional
+        The rotation angle. The default is 0.
+    beta : FloatLike, optional
+        The phase parameter. The default is 0.
+
+    """
+
+    def __init__(self, alpha: FloatLike = 0, beta: FloatLike = 0) -> None:
+        """Initialize the PRX gate as ``U3(alpha, beta - pi/2, pi/2 - beta)``."""
+        self.alpha = alpha
+        self.beta = beta
+
+        # PRX(alpha, beta) = RZ(beta) * RX(alpha) * RZ(-beta)
+        #
+        # Using RX(alpha) = RZ(-pi/2) * RY(alpha) * RZ(pi/2) and the U3
+        # decomposition U3(theta, phi, lam) = RZ(phi) * RY(theta) * RZ(lam):
+        #
+        #   PRX(alpha, beta) = RZ(beta) * RZ(-pi/2) * RY(alpha) * RZ(pi/2) * RZ(-beta)
+        #                    = RZ(beta - pi/2) * RY(alpha) * RZ(pi/2 - beta)
+        #                    = U3(alpha, beta - pi/2, pi/2 - beta)
+        #
+        super().__init__(alpha, beta - np.pi / 2, np.pi / 2 - beta, name="prx")  # type: ignore[operator]
+
+    def inverse(self) -> PRXGate:
+        r"""Returns the inverse of the PRX gate.
+
+        The inverse of :math:`R_Z(\beta) R_X(\alpha) R_Z(-\beta)` is
+        :math:`R_Z(\beta) R_X(-\alpha) R_Z(-\beta)`.
+
+        Returns
+        -------
+        PRXGate
+            The inverted PRX gate with parameters ``(-alpha, beta)``.
+
+        """
+        return PRXGate(-self.alpha, self.beta)  # type: ignore[arg-type]
+
+    def bind_parameters(self, subs_dic: dict) -> PRXGate:
+        """Return the PRX gate with the abstract parameters in ``subs_dic`` bound to their values."""
+        # U3Gate.bind_parameters would return a plain U3Gate named "prx"
+        bound = U3Gate.bind_parameters(self, subs_dic)
+        return PRXGate(bound.theta, bound.phi + np.pi / 2)  # type: ignore[operator]
+
+
+class RGate(PRXGate):
+    """R gate.
+
+    .. deprecated:: 0.10
+
+        ``RGate`` is deprecated, use :class:`PRXGate` instead.
+        ``RGate(theta, phi)`` is identical to ``PRXGate(theta, phi)``.
 
     Parameters
     ----------
@@ -265,15 +327,18 @@ def RGate(theta: FloatLike = 0, phi: FloatLike = 0):
     phi : FloatLike, optional
         The axis angle in radians. The default is 0.
 
-    Returns
-    -------
-    :class:`.Operation`
-        The R gate operation.
-
     """
-    res = U3Gate(-theta, phi, -phi, name="r", global_phase=0)
-    res.params = [theta, phi]
-    return res
+
+    def __init__(self, theta: FloatLike = 0, phi: FloatLike = 0) -> None:
+        """Initialize the deprecated R gate as ``PRXGate(theta, phi)``."""
+        warnings.warn(
+            "DeprecationWarning: RGate is deprecated and will be removed in a later "
+            "release of Qrisp. Use PRXGate instead, RGate(theta, phi) is identical "
+            "to PRXGate(theta, phi).",
+            QrispDeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(theta, phi)
 
 
 def GPhaseGate(phi: FloatLike = 0):
@@ -540,7 +605,10 @@ def u3Gate(theta: FloatLike = 0, phi: FloatLike = 0, lam: FloatLike = 0):
 
 
 def U1Gate(phi: FloatLike = 0):
-    """Return a U1 gate, equivalent to :func:`RZGate` up to a global phase.
+    """Return a U1 gate, identical to :func:`RZGate`.
+
+    Unlike Qiskit's ``u1``, which is the phase gate :func:`PGate`, this gate
+    includes the global phase of RZ.
 
     Parameters
     ----------
@@ -587,6 +655,7 @@ def SXGate():
 
     """
     res = RXGate(np.pi / 2)
+    res.global_phase = np.pi / 4
     res.name = "sx"
     res.params = []
 
@@ -606,6 +675,7 @@ def SXDGGate():
 
     """
     res = RXGate(-np.pi / 2)
+    res.global_phase = -np.pi / 4
     res.name = "sx_dg"
     res.params = []
 
@@ -705,5 +775,5 @@ op_list = [
     SwapGate,
     U1Gate,
     IDGate,
-    RGate,
+    PRXGate,
 ]
