@@ -147,6 +147,30 @@ def _append_parametrized_gate(
         append_operation(make_gate(*params), qubits)
 
 
+def _ctrl_state_string(ctrl_state: int | str | jax.Array, n: int) -> str:
+    """Return a static control state as a string, whose character i is the state of qubit i.
+
+    Parameters
+    ----------
+    ctrl_state : int or str
+        The control state. An integer is read in binary, -1 meaning all qubits in state 1.
+        A string is returned unchanged.
+    n : int
+        The number of control qubits.
+
+    Returns
+    -------
+    str
+        The control state as a string.
+
+    """
+    if isinstance(ctrl_state, str):
+        return ctrl_state
+    if ctrl_state == -1:
+        ctrl_state += 2**n
+    return bin_rep(ctrl_state, n)[::-1]
+
+
 def _check_toffoli_controls(name: str, controls: Sized) -> None:
     """Raise an error unless a Toffoli construction gets exactly two controls.
 
@@ -598,11 +622,7 @@ def mcx(
             )
             return
 
-        if not isinstance(ctrl_state, str):
-            if ctrl_state == -1:
-                ctrl_state += 2**n
-            ctrl_state = bin_rep(ctrl_state, n)[::-1]
-
+        ctrl_state = _ctrl_state_string(ctrl_state, n)
         if len(ctrl_state) != n:
             msg = f"Given control state {ctrl_state} does not match control qubit amount {n}"
             raise ValueError(msg)
@@ -754,10 +774,7 @@ def mcz(
 
     n = jlen(qubits)
     if not check_for_tracing_mode():
-        if not isinstance(ctrl_state, str):
-            if ctrl_state == -1:
-                ctrl_state += 2**n
-            ctrl_state = bin_rep(ctrl_state, n)[::-1]
+        ctrl_state = _ctrl_state_string(ctrl_state, n)
     else:
         if method == "auto":
             method = "balauca"
@@ -844,10 +861,7 @@ def mcp(
 
     n = jlen(qubits)
     if not check_for_tracing_mode():
-        if not isinstance(ctrl_state, str):
-            if ctrl_state == -1:
-                ctrl_state += 2**n
-            ctrl_state = bin_rep(ctrl_state, n)[::-1]
+        ctrl_state = _ctrl_state_string(ctrl_state, n)
     else:
         if method == "auto":
             method = "balauca"
