@@ -66,12 +66,12 @@ Qrisp. These can be imported directly from the top-level package:
    ``jax.typing.ArrayLike``, but is defined within Qrisp for consistency with
    the rest of this typing module.
 
-.. py:data:: Param
+.. py:data:: FloatLike
    :type: TypeAlias
-   :value: float | int | complex | np.number | sympy.Expr | jax.Array | jax.core.Tracer
+   :value: float | int | np.floating | np.integer | sympy.Expr | jax.Array | jax.core.Tracer
 
    A gate parameter value.
 
    Covers all types accepted as gate parameters throughout Qrisp: Python
-   numeric scalars, NumPy numeric scalars, symbolic expressions,
-   concrete JAX arrays, and JAX tracers.
+   numeric scalars, NumPy floating-point and integer scalars, symbolic
+   expressions, concrete JAX arrays, and JAX tracers.
