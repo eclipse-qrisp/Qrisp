@@ -771,9 +771,20 @@ class QuantumFloat(QuantumVariable):
             res[:] = 1
             return res
 
-        temp_results = [QuantumFloat((i + 1) * self.size) for i in range(power)]
+        temp_results = [
+            QuantumFloat(
+                (i + 1) * self.size - int(self.signed),
+                exponent=(i + 1) * self.exponent,
+                signed=self.signed,
+            )
+            for i in range(power)
+        ]
 
-        res = QuantumFloat(self.size * power)
+        res = QuantumFloat(
+            self.size * power - int(self.signed),
+            exponent=self.exponent * power,
+            signed=self.signed,
+        )
         with conjugate(_power_conjugator)(self, power, temp_results):
             cx(temp_results[-1], res)
 
