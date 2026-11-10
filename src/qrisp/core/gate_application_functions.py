@@ -18,6 +18,8 @@
 
 from __future__ import annotations
 
+# Private alias, so that star imports of this module do not export it.
+from functools import partial as _partial
 from typing import TYPE_CHECKING, Any
 
 import jax
@@ -272,6 +274,326 @@ def z(qubits: QuantumOperand) -> None:
 
     """
     append_operation(std_ops.ZGate(), [qubits])
+
+
+# The mcx methods. Each function applies an mcx gate with one method and takes the controls,
+# the target, the control state and the number of ancillas, in this order. In static mode,
+# the controls are a list and the control state is a string with one character per control.
+# In Jasp mode, the controls can also be a QuantumVariable or a DynamicQubitArray, and the
+# control state an integer, a string or a traced integer. The algorithm modules import this
+# module, so the functions import them at call time.
+
+
+def _mcx_gate(
+    controls: list[Qubit | Tracer],
+    target: Qubit | Tracer,
+    ctrl_state: int | str,
+    _num_ancilla: int,
+    method: str,
+) -> None:
+    """Append an MCXGate, which implements the gray-code methods and ``auto``."""
+    append_operation(std_ops.MCXGate(len(controls), ctrl_state, method=method), controls + [target])
+
+
+def _gidney_mcx(
+    controls: list[Qubit],
+    target: Qubit,
+    ctrl_state: str,
+    _num_ancilla: int,
+    inv: bool,
+) -> None:
+    """Append the Gidney logical AND, or its uncomputation if ``inv``, in static mode."""
+    from qrisp.alg_primitives.mcx_algs import GidneyLogicalAND
+
+    _check_toffoli_controls("Gidney logical AND", controls)
+    append_operation(GidneyLogicalAND(ctrl_state=ctrl_state, inv=inv), controls + [target])
+
+
+def _jasp_gidney_mcx(
+    controls: list[Tracer],
+    target: Tracer,
+    _ctrl_state: int | str | jax.Array,
+    _num_ancilla: int,
+    inv: bool,
+) -> None:
+    """Apply the Gidney logical AND, or its uncomputation if ``inv``, in Jasp mode.
+
+    The control state is not used.
+    """
+    from qrisp.alg_primitives.mcx_algs import jasp_gidney_mcx
+    from qrisp.environments import invert
+
+    _check_toffoli_controls("Gidney logical AND", controls)
+    if inv:
+        with invert():
+            jasp_gidney_mcx(controls[0], controls[1], target)
+    else:
+        jasp_gidney_mcx(controls[0], controls[1], target)
+
+
+def _maslov_mcx(controls: list[Qubit], target: Qubit, ctrl_state: str, _num_ancilla: int) -> None:
+    """Append the maslov mcx gate, with an ancilla from three controls on."""
+    from qrisp.alg_primitives.mcx_algs import maslov_mcx
+    from qrisp.qtypes import QuantumBool
+
+    n = len(controls)
+    if n >= _MASLOV_ANCILLA_MIN_CONTROLS:
+        ancilla = [QuantumBool(name="maslov_anc_")]
+    else:
+        ancilla = []
+    append_operation(maslov_mcx(n, ctrl_state), controls + ancilla + [target])
+
+    for qv in ancilla:
+        qv.delete()
+
+
+def _balauca_mcx(controls: list[Qubit], target: Qubit, ctrl_state: str, _num_ancilla: int) -> None:
+    """Apply the balauca mcx gate in static mode."""
+    from qrisp.alg_primitives.mcx_algs import balauca_mcx
+
+    balauca_mcx(controls, [target], ctrl_state=ctrl_state)
+
+
+def _jasp_balauca_mcx(
+    controls: Sequence[Tracer] | QuantumVariable | DynamicQubitArray,
+    target: Tracer,
+    ctrl_state: int | str | jax.Array,
+    _num_ancilla: int,
+) -> None:
+    """Apply the balauca mcx gate in Jasp mode."""
+    from qrisp.alg_primitives.mcx_algs import jasp_balauca_mcx
+
+    jasp_balauca_mcx(controls, [target], ctrl_state)
+
+
+def _balauca_dirty_mcx(controls, target, ctrl_state, num_ancilla: int) -> None:
+    """Apply the balauca mcx gate with ``num_ancilla`` dirty ancillas."""
+    from qrisp.alg_primitives.mcx_algs import balauca_dirty
+
+    balauca_dirty(controls, [target], k=num_ancilla, ctrl_state=ctrl_state)
+
+
+def _yong_mcx(controls, target, ctrl_state, _num_ancilla: int) -> None:
+    """Apply the yong mcx gate."""
+    from qrisp.alg_primitives.mcx_algs import yong_mcx
+
+    yong_mcx(controls, [target], ctrl_state=ctrl_state)
+
+
+def _hybrid_mcx(controls, target, ctrl_state, num_ancilla: int) -> None:
+    """Apply the hybrid mcx gate with ``num_ancilla`` ancillas."""
+    from qrisp.alg_primitives.mcx_algs import hybrid_mcx
+
+    hybrid_mcx(controls, [target], ctrl_state=ctrl_state, num_ancilla=num_ancilla)
+
+
+def _amy_mcx(controls, target, ctrl_state, _num_ancilla: int) -> None:
+    """Apply the Toffoli construction of Amy et al."""
+    from qrisp.alg_primitives.mcx_algs import amy_toffoli
+
+    _check_toffoli_controls("Amy MCX", controls)
+    amy_toffoli(controls, [target], ctrl_state=ctrl_state)
+
+
+def _jones_mcx(controls, target, ctrl_state, _num_ancilla: int) -> None:
+    """Apply the Toffoli construction of Jones."""
+    from qrisp.alg_primitives.mcx_algs import jones_toffoli
+
+    _check_toffoli_controls("Jones MCX", controls)
+    jones_toffoli(controls, [target], ctrl_state=ctrl_state)
+
+
+def _khattar_mcx(controls, target, ctrl_state, _num_ancilla: int) -> None:
+    """Apply the khattar mcx gate."""
+    from qrisp.alg_primitives.mcx_algs import khattar_mcx
+
+    khattar_mcx(controls, [target], ctrl_state)
+
+
+# The methods that are called in the same way in both modes.
+_SHARED_MCX_METHODS: dict[str, Callable[..., None]] = {
+    "gray": _partial(_mcx_gate, method="gray"),
+    "gray_pt": _partial(_mcx_gate, method="gray_pt"),
+    "gray_pt_inv": _partial(_mcx_gate, method="gray_pt_inv"),
+    "auto": _partial(_mcx_gate, method="auto"),
+    "balauca_dirty": _balauca_dirty_mcx,
+    "yong": _yong_mcx,
+    "hybrid": _hybrid_mcx,
+    "amy": _amy_mcx,
+    "jones": _jones_mcx,
+    "khattar": _khattar_mcx,
+}
+
+_STATIC_MCX_METHODS: dict[str, Callable[..., None]] = {
+    **_SHARED_MCX_METHODS,
+    "gidney": _partial(_gidney_mcx, inv=False),
+    "gidney_inv": _partial(_gidney_mcx, inv=True),
+    "maslov": _maslov_mcx,
+    "balauca": _balauca_mcx,
+}
+
+_JASP_MCX_METHODS: dict[str, Callable[..., None]] = {
+    **_SHARED_MCX_METHODS,
+    "gidney": _partial(_jasp_gidney_mcx, inv=False),
+    "gidney_inv": _partial(_jasp_gidney_mcx, inv=True),
+    "balauca": _jasp_balauca_mcx,
+}
+
+
+def _mcx_method(methods: dict[str, Callable[..., None]], method: str) -> Callable[..., None]:
+    """Return the function of an mcx method.
+
+    Parameters
+    ----------
+    methods : dict[str, callable]
+        The available methods, ``_STATIC_MCX_METHODS`` or ``_JASP_MCX_METHODS``.
+    method : str
+        The name of the method.
+
+    Returns
+    -------
+    callable
+        The function applying the mcx gate with this method.
+
+    Raises
+    ------
+    ValueError
+        If the method is unknown.
+
+    """
+    synthesize = methods.get(method) if isinstance(method, str) else None
+    if synthesize is None:
+        raise ValueError(f"Don't know mcx method {method}")
+    return synthesize
+
+
+def _mcx_operands(
+    controls: Sequence[Qubit | Tracer | QuantumBool] | QuantumVariable | DynamicQubitArray,
+    target: Qubit | Tracer | QuantumBool,
+) -> tuple[Any, Qubit | Tracer]:
+    """Return the controls and target of mcx, with QuantumBools replaced by their qubit.
+
+    Parameters
+    ----------
+    controls : list[Qubit or QuantumBool] or QuantumVariable or DynamicQubitArray
+        The controls.
+    target : Qubit or QuantumBool
+        The target.
+
+    Returns
+    -------
+    tuple
+        The controls and the target qubit.
+
+    Raises
+    ------
+    TypeError
+        If the target is a list or a QuantumVariable other than a QuantumBool.
+
+    """
+    # qrisp.qtypes imports this module, so it can only be imported at call time.
+    from qrisp.qtypes import QuantumBool
+
+    if isinstance(controls, list):
+        controls = [qbl[0] if isinstance(qbl, QuantumBool) else qbl for qbl in controls]
+
+    if isinstance(target, (list, QuantumVariable)):
+        if isinstance(target, QuantumBool):
+            target = target[0]
+        else:
+            raise TypeError("mcx target is not of type Qubit or QuantumBool")
+
+    return controls, target
+
+
+def _static_mcx(
+    controls: Sequence[Qubit] | QuantumVariable,
+    target: Qubit,
+    method: str,
+    ctrl_state: int | str,
+    num_ancilla: int,
+) -> None:
+    """Apply an mcx gate in static mode.
+
+    Without controls, nothing is applied. With one control, a CX gate on the control
+    state is applied, whatever the method.
+
+    Parameters
+    ----------
+    controls : list[Qubit] or QuantumVariable
+        The controls.
+    target : Qubit
+        The target.
+    method : str
+        The synthesis method.
+    ctrl_state : int or str
+        The control state.
+    num_ancilla : int
+        The number of ancillas of the ``hybrid`` and ``balauca_dirty`` methods.
+
+    Raises
+    ------
+    ValueError
+        If the control state does not have one character per control, or the method
+        is unknown.
+
+    """
+    controls = list(controls)
+    n = len(controls)
+
+    if n == 0:
+        return
+    if n == 1:
+        append_operation(std_ops.MCXGate(n, ctrl_state, method="gray"), controls + [target])
+        return
+
+    ctrl_state = _ctrl_state_string(ctrl_state, n)
+    if len(ctrl_state) != n:
+        msg = f"Given control state {ctrl_state} does not match control qubit amount {n}"
+        raise ValueError(msg)
+
+    _mcx_method(_STATIC_MCX_METHODS, method)(controls, target, ctrl_state, num_ancilla)
+
+
+def _jasp_mcx(
+    controls: Sequence[Tracer] | QuantumVariable | DynamicQubitArray,
+    target: Tracer,
+    method: str,
+    ctrl_state: int | str | jax.Array,
+    num_ancilla: int,
+) -> None:
+    """Apply an mcx gate in Jasp mode.
+
+    Controls given as a QuantumVariable or a DynamicQubitArray use the ``balauca`` method,
+    unless the method is ``khattar``.
+
+    Parameters
+    ----------
+    controls : list[Qubit] or QuantumVariable or DynamicQubitArray
+        The controls.
+    target : Qubit
+        The target.
+    method : str
+        The synthesis method.
+    ctrl_state : int or str or jax.Array
+        The control state.
+    num_ancilla : int
+        The number of ancillas of the ``hybrid`` and ``balauca_dirty`` methods.
+
+    Raises
+    ------
+    ValueError
+        If the method is unknown or not available in Jasp mode.
+
+    """
+    qubit_arrays = (QuantumVariable, DynamicQubitArray)
+    if isinstance(controls, qubit_arrays) and method not in ("balauca", "khattar"):
+        method = "balauca"
+
+    if method == "maslov":
+        raise ValueError("The maslov method of mcx is not available in Jasp mode")
+
+    _mcx_method(_JASP_MCX_METHODS, method)(controls, target, ctrl_state, num_ancilla)
 
 
 def mcx(
@@ -567,127 +889,11 @@ def mcx(
     QuantumBool target
 
     """
-    # These packages import this module, so they can only be imported at call time.
-    from qrisp.alg_primitives.mcx_algs import (
-        GidneyLogicalAND,
-        amy_toffoli,
-        balauca_dirty,
-        balauca_mcx,
-        hybrid_mcx,
-        jasp_balauca_mcx,
-        jasp_gidney_mcx,
-        jones_toffoli,
-        khattar_mcx,
-        maslov_mcx,
-        yong_mcx,
-    )
-    from qrisp.environments import invert
-    from qrisp.qtypes import QuantumBool
-
-    if isinstance(controls, list):
-        controls = [qbl[0] if isinstance(qbl, QuantumBool) else qbl for qbl in controls]
-
-    if isinstance(target, (list, QuantumVariable)):
-        if isinstance(target, QuantumBool):
-            target = target[0]
-        else:
-            raise TypeError("mcx target is not of type Qubit or QuantumBool")
-
-    qubits_1 = [target]
-    if not check_for_tracing_mode():
-        qubits_0 = list(controls)
-        n = len(qubits_0)
-
-        if n == 0:
-            return
-        if n == 1:
-            method = "gray"
-            append_operation(
-                std_ops.MCXGate(len(qubits_0), ctrl_state, method=method),
-                qubits_0 + qubits_1,
-            )
-            return
-
-        ctrl_state = _ctrl_state_string(ctrl_state, n)
-        if len(ctrl_state) != n:
-            msg = f"Given control state {ctrl_state} does not match control qubit amount {n}"
-            raise ValueError(msg)
+    controls, target = _mcx_operands(controls, target)
+    if check_for_tracing_mode():
+        _jasp_mcx(controls, target, method, ctrl_state, num_ancilla)
     else:
-        qubits_0 = controls
-        qubit_arrays = (QuantumVariable, DynamicQubitArray)
-        if isinstance(qubits_0, qubit_arrays) and method not in ("balauca", "khattar"):
-            method = "balauca"
-
-    if method in ("gray", "gray_pt", "gray_pt_inv"):
-        append_operation(
-            std_ops.MCXGate(len(qubits_0), ctrl_state, method=method),
-            qubits_0 + qubits_1,
-        )
-    elif method == "gidney":
-        _check_toffoli_controls("Gidney logical AND", qubits_0)
-
-        if check_for_tracing_mode():
-            jasp_gidney_mcx(qubits_0[0], qubits_0[1], qubits_1[0])
-        else:
-            append_operation(
-                GidneyLogicalAND(ctrl_state=ctrl_state),
-                qubits_0 + qubits_1,
-            )
-
-    elif method == "gidney_inv":
-        _check_toffoli_controls("Gidney logical AND", qubits_0)
-
-        if check_for_tracing_mode():
-            with invert():
-                jasp_gidney_mcx(qubits_0[0], qubits_0[1], qubits_1[0])
-        else:
-            append_operation(
-                GidneyLogicalAND(ctrl_state=ctrl_state, inv=True),
-                qubits_0 + qubits_1,
-            )
-
-    elif method == "maslov":
-        if n >= _MASLOV_ANCILLA_MIN_CONTROLS:
-            ancilla = [QuantumBool(name="maslov_anc_")]
-        else:
-            ancilla = []
-        append_operation(maslov_mcx(n, ctrl_state), qubits_0 + ancilla + qubits_1)
-
-        for qv in ancilla:
-            qv.delete()
-
-    elif method == "balauca":
-        if check_for_tracing_mode():
-            jasp_balauca_mcx(qubits_0, qubits_1, ctrl_state)
-        else:
-            balauca_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state)
-
-    elif method == "balauca_dirty":
-        balauca_dirty(qubits_0, qubits_1, k=num_ancilla, ctrl_state=ctrl_state)
-
-    elif method == "yong":
-        yong_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state)
-
-    elif method == "hybrid":
-        hybrid_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state, num_ancilla=num_ancilla)
-
-    elif method == "amy":
-        _check_toffoli_controls("Amy MCX", qubits_0)
-        amy_toffoli(qubits_0, qubits_1, ctrl_state=ctrl_state)
-
-    elif method == "jones":
-        _check_toffoli_controls("Jones MCX", qubits_0)
-        jones_toffoli(qubits_0, qubits_1, ctrl_state=ctrl_state)
-
-    elif method == "auto":
-        gate = std_ops.MCXGate(len(qubits_0), ctrl_state, method="auto")
-        append_operation(gate, qubits_0 + qubits_1)
-
-    elif method == "khattar":
-        khattar_mcx(qubits_0, qubits_1, ctrl_state)
-
-    else:
-        raise ValueError(f"Don't know mcx method {method}")
+        _static_mcx(controls, target, method, ctrl_state, num_ancilla)
 
 
 @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")

@@ -227,7 +227,6 @@ LIST_METHODS = [
     "yong",
     "khattar",
     "auto",
-    pytest.param("maslov", marks=bug("n is only set in static mode", raises=UnboundLocalError)),
     pytest.param("balauca_dirty", marks=bug("static construction", raises=AttributeError)),
     pytest.param("hybrid", marks=bug("static construction", raises=AttributeError)),
     pytest.param("amy", marks=bug("static construction", raises=TypeError)),
@@ -288,6 +287,18 @@ def test_jasp_mcx_string_control_state(method, ctrl_state, activating_value):
         mcx([controls[0], controls[1], controls[2]], target, method=method, ctrl_state=ctrl_state)
 
     assert mcx_truth_table(apply, 3) == expected_truth_table(activating_value, 3)
+
+
+def test_jasp_mcx_maslov_is_not_available():
+    """The maslov method raises a ValueError in Jasp mode."""
+
+    def main():
+        qf, qb = QuantumFloat(2), QuantumBool()
+        mcx([qf[0], qf[1]], qb, method="maslov")
+        return measure(qb)
+
+    with pytest.raises(ValueError, match="The maslov method of mcx is not available in Jasp mode"):
+        make_jaspr(main)()
 
 
 def test_jasp_mcx_toffoli_methods_need_two_controls():
