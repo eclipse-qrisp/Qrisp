@@ -18,6 +18,7 @@
 
 import copy
 
+import jax
 import jax.numpy as jnp
 from jax import tree_util
 
@@ -81,6 +82,33 @@ class QuantumVariableTemplate:
         return type(self.qv) == type(other.qv)
 
 
+# Static attributes are stored in the pytree structure, so they are part of the
+# qache key. A JAX value (e.g. a Montgomery shift computed from a traced modulus)
+# can't be stored there without leaking it, so it is passed as a child instead,
+# and this marker takes its place in the structure.
+_TRACED_VALUE = object()
+
+
+def flatten_static_attributes(qv):
+    children = []
+    aux_values = ()
+    for static_attribute in qv.static_attributes:
+        attr = getattr(qv, static_attribute)
+        if isinstance(attr, jax.Array):
+            children.append(attr)
+            attr = _TRACED_VALUE
+        aux_values += (attr,)
+    return children, aux_values
+
+
+def unflatten_static_attributes(qv, aux_values, children):
+    children = iter(children)
+    for static_attribute, attr in zip(qv.static_attributes, aux_values):
+        if attr is _TRACED_VALUE:
+            attr = next(children)
+        setattr(qv, static_attribute, attr)
+
+
 def flatten_qv(qv):
     # return the tracers and auxiliary data (structure of the object)
     children = [qv.reg.tracer]
@@ -94,11 +122,10 @@ def flatten_qv(qv):
             attr = jnp.array(attr, jnp.dtype("float64"))
         children.append(attr)
 
-    aux_values = (QuantumVariableTemplate(qv, False),)
+    static_children, static_values = flatten_static_attributes(qv)
+    children.extend(static_children)
 
-    for static_attribute in qv.static_attributes:
-        attr = getattr(qv, static_attribute)
-        aux_values += (attr,)
+    aux_values = (QuantumVariableTemplate(qv, False),) + static_values
 
     return tuple(children), aux_values
 
@@ -118,10 +145,10 @@ def unflatten_qv(aux_data, children):
     # context manually.
     qv.qs = None
 
-    for i in range(len(qv.traced_attributes)):
+    num_traced = len(qv.traced_attributes)
+    for i in range(num_traced):
         setattr(qv, qv.traced_attributes[i], children[i + 1])
-    for i in range(len(qv.static_attributes)):
-        setattr(qv, qv.static_attributes[i], aux_data[i + 1])
+    unflatten_static_attributes(qv, aux_data[1:], children[num_traced + 1 :])
     return qv
 
 
@@ -138,20 +165,27 @@ def flatten_template(tmpl):
             attr = jnp.array(attr, jnp.dtype("float64"))
         children.append(attr)
 
+    static_children, static_values = flatten_static_attributes(qv)
+    children.extend(static_children)
+
     if tmpl.size_tracked:
         children.append(tmpl.qv_size)
 
-    return tuple(children), tmpl
+    return tuple(children), (tmpl,) + static_values
 
 
 def unflatten_template(aux_data, children):
-    res = copy.copy(aux_data)
+    res = copy.copy(aux_data[0])
     res.qv = copy.copy(res.qv)
-    for i in range(len(res.qv.traced_attributes)):
+    num_traced = len(res.qv.traced_attributes)
+    for i in range(num_traced):
         setattr(res.qv, res.qv.traced_attributes[i], children[i])
 
     if res.size_tracked:
         res.qv_size = children[-1]
+        children = children[:-1]
+
+    unflatten_static_attributes(res.qv, aux_data[1:], children[num_traced:])
 
     return res
 
