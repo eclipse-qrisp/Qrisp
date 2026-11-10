@@ -243,8 +243,6 @@ def create_qiskit_instruction(op, params=[]):
         qiskit_ins = qsk_gates.TGate().inverse()
     elif op.name == "u3":
         qiskit_ins = qsk_gates.U3Gate(*params)
-    elif op.name == "r":
-        qiskit_ins = qsk_gates.RGate(*params)
     elif isinstance(op, PRXGate):
         qiskit_ins = qsk_gates.RGate(op.alpha, op.beta)
     elif op.name == "id":
@@ -363,9 +361,7 @@ def convert_from_qiskit(qiskit_qc):
 
         # Qiskit RGate → PRXGate
         if qiskit_op.name == "r":
-            from qrisp.circuit import PRXGate as _PRXGate
-
-            op = _PRXGate(params[0], params[1])
+            op = PRXGate(params[0], params[1])
         else:
             try:
                 op = op_dic[qiskit_op.name](*params)
