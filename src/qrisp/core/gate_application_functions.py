@@ -260,6 +260,9 @@ def mcx(
             - Method based on this `paper
               <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`__ with
               logarithmic depth but requires many ancilla qubits.
+        *   - ``balauca_dirty``
+            - A variant of ``balauca`` based on dirty ancilla qubits, whose number is set
+              by ``num_ancilla``.
         *   - ``khattar``
             - Method based on this `paper <https://arxiv.org/abs/2407.17966>`_, implements
               the n-controlled x with 2n − 3 Toffoli and linear depth using 1 clean
@@ -269,12 +272,12 @@ def mcx(
             - Documented `here <https://arxiv.org/abs/1508.03273>`_, requires less ancilla
               qubits but is only available for 4 or less control qubits.
         *   - ``yong``
-            - Can be found int this `article
-              <https://link.springer.com/article/10.1007/s10773-017-3389-4>`__.This method
+            - Can be found in this `article
+              <https://link.springer.com/article/10.1007/s10773-017-3389-4>`__. This method
               requires only a single ancilla and has moderate scaling in depth and gate
               count.
         *   - ``amy``
-            - A Toffoli-circuit (ie. only two control qubits are possible), which
+            - A Toffoli-circuit (i.e. only two control qubits are possible), which
               (temporarily) requires one ancilla qubit. However, instead of the no-ancilla
               T-depth 4, this circuit achieves a T-depth of 2. Find the implementation
               details in `this paper <https://arxiv.org/pdf/1206.0758.pdf>`__.
@@ -288,6 +291,8 @@ def mcx(
               for uncomputation. The uncomputation circuit has T-depth 0, such that the
               combined T-depth is 1. Requires no ancillae. More details `here
               <https://arxiv.org/abs/1709.06648>`__. Works only for two control qubits.
+        *   - ``gidney_inv``
+            - The uncomputation of ``gidney``, see the examples below.
         *   - ``hybrid``
             - A flexible method which combines the other available methods, such that the
               amount of used ancillae is customizable. After several ``balauca``-layers,
@@ -302,130 +307,70 @@ def mcx(
         Due to Qrisp's automatic qubit management, clean ancilla qubits are not as much
         of a sparse resource as one might think. Even though the ``balauca`` method
         requires a considerable amount of ancillae, many other functions also do,
-        implying there is alot of recycling potential. The net effect is that in more
+        implying there is a lot of recycling potential. The net effect is that in more
         complex programs, the amount of qubits of the circuit returned by the
         :meth:`compile method <qrisp.QuantumSession.compile>` increases only slightly.
 
-
     Parameters
     ----------
-    controls : list[Qubits] or QuantumVariable
+    controls : list[Qubit] or QuantumVariable
         The Qubits to control on.
     target : Qubit or QuantumBool
         The Qubit to perform the X gate on.
     method : str, optional
-        The synthesis method. Available are ``auto``, ``gray``, ``gray_pt``,
-        ``gray_pt_inv``, ``maslov``, ``balauca`` and ``yong``. The default is ``auto``.
+        The synthesis method, one of the methods in the table above. The default is
+        ``auto``.
     ctrl_state : int or str, optional
         The state on which to activate the X gate. The default is "1111..".
     num_ancilla : int, optional
-        Specifies the amount of ancilla qubits to use. This parameter is used only if
-        the method is set to ``hybrid``. The default is 1.
-
+        Specifies the amount of ancilla qubits to use. This parameter is used only by
+        the ``hybrid`` and ``balauca_dirty`` methods. The default is 1.
 
     Examples
     --------
-    We apply a 3-contolled X gate
+    We apply a 3-controlled X gate:
 
-    >>> from qrisp import QuantumVariable, mcx, QuantumBool
+    >>> from qrisp import QuantumBool, QuantumVariable, mcx
     >>> control = QuantumVariable(3)
     >>> target = QuantumBool()
-    >>> mcx(control, target, method = "gray")
-    >>> print(control.qs)
+    >>> mcx(control, target, method="gray")
+    >>> print(control.qs)  # doctest: +SKIP
+    QuantumCircuit:
+    ---------------
+    control.0: ──■──
+                 │
+    control.1: ──■──
+                 │
+    control.2: ──■──
+               ┌─┴─┐
+     target.0: ┤ X ├
+               └───┘
+    Live QuantumVariables:
+    ----------------------
+    QuantumVariable control
+    QuantumBool target
 
-    .. code-block:: none
+    We compare different performance indicators:
 
-        QuantumCircuit:
-        --------------
-        control.0: ──■──
-                     │
-        control.1: ──■──
-                     │
-        control.2: ──■──
-                   ┌─┴─┐
-         target.0: ┤ X ├
-                   └───┘
-        Live QuantumVariables:
-        ---------------------
-        QuantumVariable control
-        QuantumBool target
-
-    We compare different performance indicators. ::
-
-        from qrisp import QuantumVariable, mcx, QuantumBool
-
-        def benchmark_mcx(n, methods):
-            for method in methods:
-
-                controls = QuantumVariable(n)
-                target = QuantumBool()
-
-                mcx(controls, target, method = method)
-
-                compiled_qc = controls.qs.compile()
-
-                print(f"==================\nMethod: {method}\n------------------")
-                print(f"Depth: \t\t\t{compiled_qc.depth()}")
-                print(f"CNOT count: \t{compiled_qc.cnot_count()}")
-                print(f"Qubit count: \t{compiled_qc.num_qubits()}")
-
-
-    >>> benchmark_mcx(4, methods = ["gray", "gray_pt", "maslov", "balauca", "yong"])
-    ==================
-    Method: gray
-    ------------------
-    Depth:          50
-    CNOT count:     30
-    Qubit count:    5
-    ==================
-    Method: gray_pt
-    ------------------
-    Depth:          34
-    CNOT count:     16
-    Qubit count:    5
-    ==================
-    Method: maslov
-    ------------------
-    Depth:          43
-    CNOT count:     18
-    Qubit count:    6
-    ==================
-    Method: balauca
-    ------------------
-    Depth:          22
-    CNOT count:     18
-    Qubit count:    7
-    ==================
-    Method: yong
-    ------------------
-    Depth:          77
-    CNOT count:     30
-    Qubit count:    6
-    >>> benchmark_mcx(10, methods = ["gray", "gray_pt", "balauca", "yong"])
-    ==================
-    Method: gray
-    ------------------
-    Depth:          3106
-    CNOT count:     2046
-    Qubit count:    11
-    ==================
-    Method: gray_pt
-    ------------------
-    Depth:          2050
-    CNOT count:     1024
-    Qubit count:    11
-    ==================
-    Method: balauca
-    ------------------
-    Depth:          53
-    CNOT count:     54
-    Qubit count:    18
-    ==================
-    Method: yong
-    ------------------
-    Depth:          621
-    CNOT count:     264
-    Qubit count:    12
+    >>> def benchmark_mcx(n, methods):
+    ...     for method in methods:
+    ...         controls = QuantumVariable(n)
+    ...         target = QuantumBool()
+    ...         mcx(controls, target, method=method)
+    ...         qc = controls.qs.compile()
+    ...         depth, cnots, qubits = qc.depth(), qc.cnot_count(), qc.num_qubits()
+    ...         print(f"{method:8} depth: {depth:4}  CNOT count: {cnots:4}  qubits: {qubits}")
+    >>> benchmark_mcx(4, methods=["gray", "gray_pt", "maslov", "balauca", "yong"])
+    gray     depth:   38  CNOT count:   30  qubits: 5
+    gray_pt  depth:   38  CNOT count:   30  qubits: 5
+    maslov   depth:   44  CNOT count:   18  qubits: 6
+    balauca  depth:   26  CNOT count:   18  qubits: 7
+    yong     depth:   91  CNOT count:   60  qubits: 6
+    >>> benchmark_mcx(10, methods=["gray", "gray_pt", "balauca", "yong"])
+    gray     depth: 4069  CNOT count: 2046  qubits: 11
+    gray_pt  depth: 4069  CNOT count: 2046  qubits: 11
+    balauca  depth:   50  CNOT count:   56  qubits: 18
+    yong     depth:  746  CNOT count:  528  qubits: 12
 
     **Mid circuit measurement based methods**
 
@@ -439,24 +384,23 @@ def mcx(
 
     To get a better understanding consider the following script:
 
-    >>> from qrisp import QuantumVariable, mcx
     >>> control = QuantumVariable(2)
     >>> target = QuantumBool()
-    >>> mcx(control, target, method = "jones")
-    >>> print(control.qs)
+    >>> mcx(control, target, method="jones")
+    >>> print(control.qs)  # doctest: +SKIP
     QuantumCircuit:
     ---------------
-                     ┌───────────────────────────┐
-          control.0: ┤0                          ├
-                     │                           │
-          control.1: ┤1                          ├
-                     │                           │
-           target.0: ┤2 uncompiled_jones_toffoli ├
-                     │                           │
-    jones_ancilla.0: ┤3                          ├
-                     │                           │
-    jones_ancilla.1: ┤4                          ├
-                     └───────────────────────────┘
+                        ┌───────────────────────────┐
+             control.0: ┤0                          ├
+                        │                           │
+             control.1: ┤1                          ├
+                        │                           │
+              target.0: ┤2 uncompiled_jones_toffoli ├
+                        │                           │
+    jones_ancilla_40.0: ┤3                          ├
+                        │                           │
+    jones_ancilla_40.1: ┤4                          ├
+                        └───────────────────────────┘
     Live QuantumVariables:
     ----------------------
     QuantumVariable control
@@ -466,38 +410,28 @@ def mcx(
     The statevector can still be accessed:
 
     >>> print(control.qs.statevector())
-    |00>*|0>
+    |00>*|False>
 
     To introduce the measurement we simply call the
     :meth:`.compile <qrisp.QuantumSession.compile>` method with the keyword
-    ``compile_mcm = True``:
+    ``compile_mcm = True``. The compiled circuit has a classical bit for the measurement:
 
-    >>> qc = control.qs.compile(compile_mcm = True)
-    >>> print(qc)
-                 ┌─────────────────────────┐
-      control.0: ┤0                        ├
-                 │                         │
-      control.1: ┤1                        ├
-                 │                         │
-       target.0: ┤2                        ├
-                 │  compiled_jones_toffoli │
-    workspace_0: ┤3                        ├
-                 │                         │
-    workspace_1: ┤4                        ├
-                 │                         │
-           cb_0: ╡0                        ╞
-                 └─────────────────────────┘
+    >>> qc = control.qs.compile(compile_mcm=True)
+    >>> len(qc.clbits)
+    1
 
     Because there is a measurement now, the statevector can no longer be accessed.
 
     >>> qc.statevector_array()
-    Exception: Unitary of operation measure not defined.
+    Traceback (most recent call last):
+    ...
+    Exception: Tried to determine the statevector of a circuit containing a measurement
 
     However the T-depth went down by 50%:
 
     >>> print(qc.t_depth())
     1
-    >>> print(control.qs.compile(compile_mcm = False).t_depth())
+    >>> print(control.qs.compile(compile_mcm=False).t_depth())
     2
 
     A similar construction holds for the
@@ -513,8 +447,8 @@ def mcx(
 
     >>> control = QuantumVariable(2)
     >>> target = QuantumBool()
-    >>> mcx(control, target, method = "gidney")
-    >>> print(control.qs)
+    >>> mcx(control, target, method="gidney")
+    >>> print(control.qs)  # doctest: +SKIP
     QuantumCircuit:
     ---------------
                ┌────────────────────────┐
@@ -532,7 +466,7 @@ def mcx(
     This even works in conjunction with the :ref:`uncomputation module <Uncomputation>`:
 
     >>> target.uncompute()
-    >>> print(target.qs)
+    >>> print(target.qs)  # doctest: +SKIP
     QuantumCircuit:
     ---------------
                ┌────────────────────────┐┌────────────────────────────┐
@@ -546,34 +480,32 @@ def mcx(
     ----------------------
     QuantumVariable control
 
-    To introduce the measurement, we call the compile method.
+    The compile method inserts the measurement of the uncomputation. Here the pair
+    surrounds a CX gate, since a computation directly followed by its uncomputation
+    is removed at compile time:
 
-    >>> print(target.qs.compile(compile_mcm = True))
-                 ┌──────────────────────┐┌──────────────────────────┐
-      control.0: ┤0                     ├┤0                         ├
-                 │                      ││                          │
-      control.1: ┤1 compiled_gidney_mcx ├┤1                         ├
-                 │                      ││  compiled_gidney_mcx_inv │
-    workspace_0: ┤2                     ├┤2                         ├
-                 └──────────────────────┘│                          │
-           cb_0: ════════════════════════╡0                         ╞
-                                         └──────────────────────────┘
+    >>> from qrisp import cx
+    >>> control = QuantumVariable(2)
+    >>> target = QuantumBool()
+    >>> result = QuantumBool()
+    >>> mcx(control, target, method="gidney")
+    >>> cx(target, result)
+    >>> target.uncompute()
+    >>> qc = result.qs.compile(compile_mcm=True)
+    >>> [instr.op.name for instr in qc.data if instr.op.name.startswith("compiled")]
+    ['compiled_gidney_mcx', 'compiled_gidney_mcx_inv']
+    >>> len(qc.clbits)
+    1
 
-    Apart from uncomputation, the inverted Gidney mcx can also be accessed via,
+    Apart from uncomputation, the inverted Gidney mcx can also be accessed via
     the :ref:`InversionEnvironment`:
 
-    ::
-
-        from qrisp import invert
-
-        control = QuantumVariable(2)
-        target = QuantumBool()
-
-        with invert():
-            mcx(control, target, method = "gidney")
-
-
-    >>> print(control.qs)
+    >>> from qrisp import invert
+    >>> control = QuantumVariable(2)
+    >>> target = QuantumBool()
+    >>> with invert():
+    ...     mcx(control, target, method="gidney")
+    >>> print(control.qs)  # doctest: +SKIP
     QuantumCircuit:
     ---------------
                ┌────────────────────────────┐
@@ -587,7 +519,6 @@ def mcx(
     ----------------------
     QuantumVariable control
     QuantumBool target
-
 
     """
     # These packages import this module, so they can only be imported at call time.
@@ -734,16 +665,16 @@ def mcz(
     """Applies a multi-controlled Z gate.
 
     For more information on the available methods, check
-    :meth:`the mcx documentation page <qrisp.mcx>`.
+    :func:`the mcx documentation page <qrisp.mcx>`.
 
     Parameters
     ----------
-    qubits : QuantumVariable or list[Qubits]
+    qubits : QuantumVariable or list[Qubit]
         The Qubits to control on.
     method : str, optional
         The synthesis method. Available are ``auto``, ``gray``, ``gray_pt``,
-        ``gray_pt_inv``, ``maslov``, ``balauca``, ``yong`` and ``hybrid``. The default
-        is ``auto``.
+        ``gray_pt_inv``, ``maslov``, ``balauca``, ``yong``, ``hybrid`` and ``khattar``.
+        The default is ``auto``.
     ctrl_state : int or str, optional
         The state on which to activate the Z gate. The default is "1111...".
     num_ancilla : int, optional
@@ -836,12 +767,17 @@ def mcp(
 
     The available methods are:
 
-    * ``gray`` , which performs a traversal of the gray code.
+    * ``gray``, which performs a traversal of the gray code.
 
-    * ``balauca`` , which is a modified version of the algorithm presented `here
+    * ``gray_pt``, a phase-tolerant version of ``gray``, see the
+      :func:`mcx documentation <qrisp.mcx>`.
+
+    * ``balauca``, which is a modified version of the algorithm presented `here
       <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`_.
 
-    * ``auto`` , which picks ``gray`` for any qubit count less than 4 and ``balauca``
+    * ``khattar``, which is based on this `paper <https://arxiv.org/abs/2407.17966>`_.
+
+    * ``auto``, which picks ``gray`` for any qubit count less than 4 and ``balauca``
       otherwise.
 
     Parameters
@@ -1012,7 +948,7 @@ def rz(phi: FloatLike, qubits: QuantumOperand) -> None:
 
 
 def crz(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
-    """Applies controlled RZ gate
+    """Applies a controlled RZ gate.
 
     Parameters
     ----------
@@ -1158,9 +1094,9 @@ def rzz(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> N
     phi : float or sympy.Symbol
         The phase to apply.
     qubits_0 : Qubit or list[Qubit] or QuantumVariable
-        The first argument to perform the RZZ gate one.
+        The first argument to perform the RZZ gate on.
     qubits_1 : Qubit or list[Qubit] or QuantumVariable
-        The second argument to perform the RZZ gate one.
+        The second argument to perform the RZZ gate on.
 
     """
     if check_for_tracing_mode():
@@ -1179,9 +1115,9 @@ def rxx(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> N
     phi : float or sympy.Symbol
         The phase to apply.
     qubits_0 : Qubit or list[Qubit] or QuantumVariable
-        The first argument to perform the RXX gate one.
+        The first argument to perform the RXX gate on.
     qubits_1 : Qubit or list[Qubit] or QuantumVariable
-        The second argument to perform the RXX gate one.
+        The second argument to perform the RXX gate on.
 
     """
     if check_for_tracing_mode():
@@ -1200,9 +1136,9 @@ def ryy(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> N
     phi : float or sympy.Symbol
         The phase to apply.
     qubits_0 : Qubit or list[Qubit] or QuantumVariable
-        The first argument to perform the RYY gate one.
+        The first argument to perform the RYY gate on.
     qubits_1 : Qubit or list[Qubit] or QuantumVariable
-        The second argument to perform the RYY gate one.
+        The second argument to perform the RYY gate on.
 
     """
     if check_for_tracing_mode():
@@ -1219,7 +1155,7 @@ def u3(
     lam: FloatLike,
     qubits: QuantumOperand,
 ) -> None:
-    """Applies an U3 gate.
+    """Applies a U3 gate.
 
     Parameters
     ----------
@@ -1244,14 +1180,25 @@ def u3(
 
 
 def unitary(unitary_array: NDArrayLike, qubits: Qubit | Tracer) -> None:
-    """Instruct a U3-gate from a given U3 matrix.
+    """Applies a single-qubit gate given by its unitary matrix.
+
+    The matrix is decomposed into a U3 gate and a global phase.
 
     Parameters
     ----------
     unitary_array : numpy.ndarray
-        The U3 matrix to apply.
+        The 2x2 unitary matrix to apply.
     qubits : Qubit
         The Qubit to apply the gate on.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from qrisp import QuantumVariable, unitary
+    >>> qv = QuantumVariable(1)
+    >>> unitary(np.array([[0, 1], [1, 0]], dtype=complex), qv[0])
+    >>> print(qv)
+    {'1': 1.0}
 
     """
     mat = unitary_array
@@ -1438,26 +1385,23 @@ def barrier(qubits: QuantumOperand) -> None:
     >>> x(qv)
     >>> barrier(qv)
     >>> y(qv)
-    >>> print(qv.qs)
-
-    .. code-block:: none
-
-        QuantumCircuit:
-        --------------
-              ┌───┐ ░ ┌───┐
-        qv.0: ┤ X ├─░─┤ Y ├
-              ├───┤ ░ ├───┤
-        qv.1: ┤ X ├─░─┤ Y ├
-              ├───┤ ░ ├───┤
-        qv.2: ┤ X ├─░─┤ Y ├
-              ├───┤ ░ ├───┤
-        qv.3: ┤ X ├─░─┤ Y ├
-              ├───┤ ░ ├───┤
-        qv.4: ┤ X ├─░─┤ Y ├
-              └───┘ ░ └───┘
-        Live QuantumVariables:
-        ---------------------
-        QuantumVariable qv
+    >>> print(qv.qs)  # doctest: +SKIP
+    QuantumCircuit:
+    ---------------
+          ┌───┐ ░ ┌───┐
+    qv.0: ┤ X ├─░─┤ Y ├
+          ├───┤ ░ ├───┤
+    qv.1: ┤ X ├─░─┤ Y ├
+          ├───┤ ░ ├───┤
+    qv.2: ┤ X ├─░─┤ Y ├
+          ├───┤ ░ ├───┤
+    qv.3: ┤ X ├─░─┤ Y ├
+          ├───┤ ░ ├───┤
+    qv.4: ┤ X ├─░─┤ Y ├
+          └───┘ ░ └───┘
+    Live QuantumVariables:
+    ----------------------
+    QuantumVariable qv
 
     """
     if isinstance(qubits, Qubit):
