@@ -34,6 +34,7 @@ from qrisp.circuit.standard_operations import (  # Barrier,
     MCRXGate,
     MCXGate,
     PGate,
+    PRXGate,
     RGate,
     RXGate,
     RXXGate,
@@ -729,6 +730,29 @@ class TestControlledGateConversion:
                     qrisp_qv[4].identifier,
                 ],
                 control_values=[0, 1, 0, 1],
+            )
+        ]
+        check_qml_operations(qml_converted_circuit, expected_ops)
+
+        check_statevector_equivalence(qrisp_qv, qml_res)
+
+    def test_controlled_prx_gate(self):
+        """A controlled PRXGate reads alpha and beta from its base gate and converts to a controlled qml.Rot."""
+        alpha, beta = 0.7, 1.2
+        qrisp_qv = QuantumVariable(3)
+        qrisp_qv.qs.append(
+            PRXGate(alpha, beta).control(num_ctrl_qubits=2, ctrl_state="01"),
+            [qrisp_qv[0], qrisp_qv[1], qrisp_qv[2]],
+        )
+
+        qml_converted_circuit = _create_qml_circuit(qrisp_qv)
+        qml_res = qml_converted_circuit()
+
+        expected_ops = [
+            qml.ctrl(
+                op=qml.Rot(np.pi / 2 - beta, alpha, beta - np.pi / 2, wires=qrisp_qv[2].identifier),
+                control=[qrisp_qv[0].identifier, qrisp_qv[1].identifier],
+                control_values=[0, 1],
             )
         ]
         check_qml_operations(qml_converted_circuit, expected_ops)

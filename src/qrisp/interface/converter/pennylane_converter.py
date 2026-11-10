@@ -156,7 +156,8 @@ def _process_qrisp_circuit(qc: QuantumCircuit | QuantumSession, wire_map: dict, 
         n_ctrls = len(op.ctrl_state) if is_controlled else 0
         controls, targets = qml_wires[:n_ctrls], qml_wires[n_ctrls:]
 
-        qml_params = qml_gate_desc.param_fn(op)
+        # param_fn is keyed by the base gate's name, so it reads the base gate's attributes (e.g. PRXGate.alpha)
+        qml_params = qml_gate_desc.param_fn(op.base_operation if is_controlled else op)
 
         if subs_dic is not None:
             qml_params = _evaluate_abstract_params(qml_params, subs_dic)
