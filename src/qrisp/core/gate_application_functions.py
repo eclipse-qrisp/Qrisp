@@ -48,7 +48,7 @@ from qrisp.misc.utility import bin_rep, find_qs, gate_wrap
 from qrisp.simulator.unitary_management import u3matrix as _u3matrix
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence, Sized
+    from collections.abc import Callable, Sequence, Sized
 
     from jax.core import Tracer
 
@@ -116,6 +116,35 @@ def append_operation(
                 return
 
         raise e
+
+
+# Placeholder parameters of the gates appended in Jasp mode, where the traced values are
+# passed separately as param_tracers.
+_PARAM_SYMBOLS = (sympy.Symbol("alpha"), sympy.Symbol("beta"), sympy.Symbol("gamma"))
+
+
+def _append_parametrized_gate(
+    make_gate: Callable[..., Operation],
+    params: list[FloatLike],
+    qubits: list[QuantumOperand],
+) -> None:
+    """Append a gate with parameters, using placeholder symbols in Jasp mode.
+
+    Parameters
+    ----------
+    make_gate : callable
+        Builds the gate from its parameters.
+    params : list[FloatLike]
+        The parameters of the gate.
+    qubits : list[QuantumOperand]
+        The qubit arguments of the gate.
+
+    """
+    if check_for_tracing_mode():
+        gate = make_gate(*_PARAM_SYMBOLS[: len(params)])
+        append_operation(gate, qubits, param_tracers=params)
+    else:
+        append_operation(make_gate(*params), qubits)
 
 
 def _check_toffoli_controls(name: str, controls: Sized) -> None:
@@ -830,7 +859,7 @@ def mcp(
             x(qubits[-1])
 
         if check_for_tracing_mode():
-            p_gate = std_ops.PGate(sympy.Symbol("alpha"))
+            p_gate = std_ops.PGate(_PARAM_SYMBOLS[0])
             mcp_gate = p_gate.control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
             append_operation(mcp_gate, qubits, param_tracers=[phi])
         else:
@@ -869,10 +898,7 @@ def p(phi: FloatLike, qubits: QuantumOperand) -> None:
         The Qubit on which to apply the phase gate.
 
     """
-    if check_for_tracing_mode():
-        append_operation(std_ops.PGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
-    else:
-        append_operation(std_ops.PGate(phi), [qubits])
+    _append_parametrized_gate(std_ops.PGate, [phi], [qubits])
 
 
 def cp(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
@@ -888,12 +914,7 @@ def cp(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> No
         The second Qubit.
 
     """
-    if check_for_tracing_mode():
-        cp_gate = std_ops.CPGate(sympy.Symbol("alpha"))
-        append_operation(cp_gate, [qubits_0, qubits_1], param_tracers=[phi])
-    else:
-        cp_gate = std_ops.CPGate(phi)
-        append_operation(cp_gate, [qubits_0, qubits_1])
+    _append_parametrized_gate(std_ops.CPGate, [phi], [qubits_0, qubits_1])
 
 
 def rx(phi: FloatLike, qubits: QuantumOperand) -> None:
@@ -907,10 +928,7 @@ def rx(phi: FloatLike, qubits: QuantumOperand) -> None:
         The Qubit to perform the RX gate on.
 
     """
-    if check_for_tracing_mode():
-        append_operation(std_ops.RXGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
-    else:
-        append_operation(std_ops.RXGate(phi), [qubits])
+    _append_parametrized_gate(std_ops.RXGate, [phi], [qubits])
 
 
 def ry(phi: FloatLike, qubits: QuantumOperand) -> None:
@@ -924,10 +942,7 @@ def ry(phi: FloatLike, qubits: QuantumOperand) -> None:
         The Qubit to perform the RY gate on.
 
     """
-    if check_for_tracing_mode():
-        append_operation(std_ops.RYGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
-    else:
-        append_operation(std_ops.RYGate(phi), [qubits])
+    _append_parametrized_gate(std_ops.RYGate, [phi], [qubits])
 
 
 def rz(phi: FloatLike, qubits: QuantumOperand) -> None:
@@ -941,10 +956,7 @@ def rz(phi: FloatLike, qubits: QuantumOperand) -> None:
         The Qubit to perform the RZ gate on.
 
     """
-    if check_for_tracing_mode():
-        append_operation(std_ops.RZGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
-    else:
-        append_operation(std_ops.RZGate(phi), [qubits])
+    _append_parametrized_gate(std_ops.RZGate, [phi], [qubits])
 
 
 def crz(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
@@ -960,12 +972,11 @@ def crz(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> N
         The second Qubit.
 
     """
-    if check_for_tracing_mode():
-        crz_gate = std_ops.RZGate(sympy.Symbol("alpha")).control(1)
-        append_operation(crz_gate, [qubits_0, qubits_1], param_tracers=[phi])
-    else:
-        crz_gate = std_ops.RZGate(phi).control(1)
-        append_operation(crz_gate, [qubits_0, qubits_1])
+    _append_parametrized_gate(
+        lambda angle: std_ops.RZGate(angle).control(1),
+        [phi],
+        [qubits_0, qubits_1],
+    )
 
 
 def s(qubits: QuantumOperand) -> None:
@@ -1051,10 +1062,7 @@ def gphase(phi: FloatLike, qubits: QuantumOperand) -> None:
         The Qubit to perform the global phase gate on.
 
     """
-    if check_for_tracing_mode():
-        append_operation(std_ops.GPhaseGate(sympy.Symbol("alpha")), [qubits], param_tracers=[phi])
-    else:
-        append_operation(std_ops.GPhaseGate(phi), [qubits])
+    _append_parametrized_gate(std_ops.GPhaseGate, [phi], [qubits])
 
 
 def xxyy(
@@ -1077,13 +1085,7 @@ def xxyy(
         The second Qubit to perform the XXYY gate on.
 
     """
-    if check_for_tracing_mode():
-        xxyy_gate = std_ops.XXYYGate(sympy.Symbol("alpha"), sympy.Symbol("beta"))
-        append_operation(xxyy_gate, [qubits_0, qubits_1], param_tracers=[phi, beta])
-
-    else:
-        xxyy_gate = std_ops.XXYYGate(phi, beta)
-        append_operation(xxyy_gate, [qubits_0, qubits_1])
+    _append_parametrized_gate(std_ops.XXYYGate, [phi, beta], [qubits_0, qubits_1])
 
 
 def rzz(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
@@ -1099,12 +1101,7 @@ def rzz(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> N
         The second argument to perform the RZZ gate on.
 
     """
-    if check_for_tracing_mode():
-        rzz_gate = std_ops.RZZGate(sympy.Symbol("alpha"))
-        append_operation(rzz_gate, [qubits_0, qubits_1], param_tracers=[phi])
-    else:
-        rzz_gate = std_ops.RZZGate(phi)
-        append_operation(rzz_gate, [qubits_0, qubits_1])
+    _append_parametrized_gate(std_ops.RZZGate, [phi], [qubits_0, qubits_1])
 
 
 def rxx(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
@@ -1120,12 +1117,7 @@ def rxx(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> N
         The second argument to perform the RXX gate on.
 
     """
-    if check_for_tracing_mode():
-        rxx_gate = std_ops.RXXGate(sympy.Symbol("alpha"))
-        append_operation(rxx_gate, [qubits_0, qubits_1], param_tracers=[phi])
-    else:
-        rxx_gate = std_ops.RXXGate(phi)
-        append_operation(rxx_gate, [qubits_0, qubits_1])
+    _append_parametrized_gate(std_ops.RXXGate, [phi], [qubits_0, qubits_1])
 
 
 def ryy(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> None:
@@ -1141,12 +1133,7 @@ def ryy(phi: FloatLike, qubits_0: QuantumOperand, qubits_1: QuantumOperand) -> N
         The second argument to perform the RYY gate on.
 
     """
-    if check_for_tracing_mode():
-        ryy_gate = std_ops.RYYGate(sympy.Symbol("alpha"))
-        append_operation(ryy_gate, [qubits_0, qubits_1], param_tracers=[phi])
-    else:
-        ryy_gate = std_ops.RYYGate(phi)
-        append_operation(ryy_gate, [qubits_0, qubits_1])
+    _append_parametrized_gate(std_ops.RYYGate, [phi], [qubits_0, qubits_1])
 
 
 def u3(
@@ -1169,14 +1156,7 @@ def u3(
         The Qubit to perform the U3 gate on.
 
     """
-    if check_for_tracing_mode():
-        append_operation(
-            std_ops.U3Gate(sympy.Symbol("alpha"), sympy.Symbol("beta"), sympy.Symbol("gamma")),
-            [qubits],
-            param_tracers=[theta, phi, lam],
-        )
-    else:
-        append_operation(std_ops.U3Gate(theta, phi, lam), [qubits])
+    _append_parametrized_gate(std_ops.U3Gate, [theta, phi, lam], [qubits])
 
 
 def unitary(unitary_array: NDArrayLike, qubits: Qubit | Tracer) -> None:
