@@ -968,6 +968,78 @@ def _jasp_mcz_inner(qubits, method: str, ctrl_state: int | jax.Array) -> None:
         x(qubits[-1])
 
 
+def _static_mcz(
+    qubits: Sequence[Qubit] | QuantumVariable,
+    n: int,
+    method: str,
+    ctrl_state: int | str,
+) -> None:
+    """Apply a multi-controlled Z gate in static mode.
+
+    The ``gray`` and ``auto`` methods append a controlled Z gate, the other methods
+    conjugate an mcx gate with H gates.
+
+    Parameters
+    ----------
+    qubits : list[Qubit] or QuantumVariable
+        The qubits of the gate.
+    n : int
+        The number of qubits.
+    method : str
+        The synthesis method.
+    ctrl_state : int or str
+        The control state.
+
+    """
+    ctrl_state = _ctrl_state_string(ctrl_state, n)
+
+    if method in ("gray", "auto"):
+        if ctrl_state[-1] == "0":
+            x(qubits[-1])
+
+        if len(qubits) > 1:
+            append_operation(
+                std_ops.ZGate().control(len(qubits) - 1, method=method, ctrl_state=ctrl_state[:-1]),
+                qubits,
+            )
+        else:
+            z(qubits[0])
+
+        if ctrl_state[-1] == "0":
+            x(qubits[-1])
+
+        return
+
+    _mcz_inner(qubits, method, ctrl_state)
+
+
+def _jasp_mcz(
+    qubits: Sequence[Tracer] | QuantumVariable | DynamicQubitArray,
+    method: str,
+    ctrl_state: int | str | jax.Array,
+) -> None:
+    """Apply a multi-controlled Z gate in Jasp mode.
+
+    The ``auto`` method uses ``balauca``, and a string control state is converted to an
+    integer.
+
+    Parameters
+    ----------
+    qubits : list[Qubit] or QuantumVariable or DynamicQubitArray
+        The qubits of the gate.
+    method : str
+        The synthesis method.
+    ctrl_state : int or str or jax.Array
+        The control state.
+
+    """
+    if method == "auto":
+        method = "balauca"
+    if isinstance(ctrl_state, str):
+        ctrl_state = int(ctrl_state, 2)
+    _jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
+
+
 def mcz(
     qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
     method: str = "auto",
@@ -995,34 +1067,10 @@ def mcz(
 
     """
     n = jlen(qubits)
-    if not check_for_tracing_mode():
-        ctrl_state = _ctrl_state_string(ctrl_state, n)
+    if check_for_tracing_mode():
+        _jasp_mcz(qubits, method, ctrl_state)
     else:
-        if method == "auto":
-            method = "balauca"
-        if isinstance(ctrl_state, str):
-            ctrl_state = int(ctrl_state, 2)
-        _jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
-        return
-
-    if method in ("gray", "auto"):
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
-
-        if len(qubits) > 1:
-            append_operation(
-                std_ops.ZGate().control(len(qubits) - 1, method=method, ctrl_state=ctrl_state[:-1]),
-                qubits,
-            )
-        else:
-            z(qubits[0])
-
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
-
-        return
-
-    _mcz_inner(qubits, method, ctrl_state)
+        _static_mcz(qubits, n, method, ctrl_state)
 
 
 @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
@@ -1056,6 +1104,125 @@ def _balauca_mcp(phi: FloatLike, qubits, ctrl_state: str) -> None:
     )
 
     temp.delete()
+
+
+def _static_mcp(
+    phi: FloatLike,
+    qubits: Sequence[Qubit] | QuantumVariable,
+    n: int,
+    method: str,
+    ctrl_state: int | str,
+) -> None:
+    """Apply a multi-controlled phase gate in static mode.
+
+    Parameters
+    ----------
+    phi : FloatLike
+        The phase to apply.
+    qubits : list[Qubit] or QuantumVariable
+        The qubits of the gate.
+    n : int
+        The number of qubits.
+    method : str
+        The synthesis method.
+    ctrl_state : int or str
+        The control state.
+
+    Raises
+    ------
+    ValueError
+        If the method is unknown.
+
+    """
+    # These packages import this module, so they can only be imported at call time.
+    from qrisp.alg_primitives.mcx_algs import khattar_mcp
+    from qrisp.environments import control
+
+    ctrl_state = _ctrl_state_string(ctrl_state, n)
+
+    if method in ("gray", "gray_pt"):
+        if ctrl_state[-1] == "0":
+            x(qubits[-1])
+
+        mcp_gate = std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
+        append_operation(mcp_gate, qubits)
+
+        if ctrl_state[-1] == "0":
+            x(qubits[-1])
+
+    elif method == "balauca":
+        _balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
+
+    elif method == "khattar":
+        khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
+
+    elif method == "auto":
+        with control(n < _MCP_AUTO_BALAUCA_MIN_QUBITS):
+            mcp(phi, qubits, method="gray", ctrl_state=ctrl_state)
+        with control(n >= _MCP_AUTO_BALAUCA_MIN_QUBITS):
+            mcp(phi, qubits, method="balauca", ctrl_state=ctrl_state)
+    else:
+        raise ValueError(f"Don't know method {method}")
+
+
+def _jasp_mcp(
+    phi: FloatLike,
+    qubits: Sequence[Tracer] | QuantumVariable | DynamicQubitArray,
+    n: int | jax.Array,
+    method: str,
+    ctrl_state: int | str | jax.Array,
+) -> None:
+    """Apply a multi-controlled phase gate in Jasp mode.
+
+    The ``auto`` method uses ``balauca``, and a string control state is converted to an
+    integer.
+
+    Parameters
+    ----------
+    phi : FloatLike
+        The phase to apply.
+    qubits : list[Qubit] or QuantumVariable or DynamicQubitArray
+        The qubits of the gate.
+    n : int or jax.Array
+        The number of qubits.
+    method : str
+        The synthesis method.
+    ctrl_state : int or str or jax.Array
+        The control state.
+
+    Raises
+    ------
+    ValueError
+        If the method is unknown.
+
+    """
+    # These packages import this module, so they can only be imported at call time.
+    from qrisp.alg_primitives.mcx_algs import jasp_balauca_mcp, khattar_mcp
+
+    if method == "auto":
+        method = "balauca"
+    if isinstance(ctrl_state, str):
+        ctrl_state = int(ctrl_state, 2)
+
+    if method in ("gray", "gray_pt"):
+        if ctrl_state[-1] == "0":
+            x(qubits[-1])
+
+        p_gate = std_ops.PGate(_PARAM_SYMBOLS[0])
+        mcp_gate = p_gate.control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
+        append_operation(mcp_gate, qubits, param_tracers=[phi])
+
+        if ctrl_state[-1] == "0":
+            x(qubits[-1])
+
+    elif method == "balauca":
+        jasp_balauca_mcp(phi, qubits, ctrl_state)
+
+    elif method == "khattar":
+        khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
+
+    else:
+        raise ValueError(f"Don't know method {method}")
 
 
 def mcp(
@@ -1093,50 +1260,11 @@ def mcp(
         The control state on which to apply the phase. The default is "111...".
 
     """
-    # These packages import this module, so they can only be imported at call time.
-    from qrisp.alg_primitives.mcx_algs import jasp_balauca_mcp, khattar_mcp
-    from qrisp.environments import control
-
     n = jlen(qubits)
-    if not check_for_tracing_mode():
-        ctrl_state = _ctrl_state_string(ctrl_state, n)
+    if check_for_tracing_mode():
+        _jasp_mcp(phi, qubits, n, method, ctrl_state)
     else:
-        if method == "auto":
-            method = "balauca"
-        if isinstance(ctrl_state, str):
-            ctrl_state = int(ctrl_state, 2)
-
-    if method in ("gray", "gray_pt"):
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
-
-        if check_for_tracing_mode():
-            p_gate = std_ops.PGate(_PARAM_SYMBOLS[0])
-            mcp_gate = p_gate.control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
-            append_operation(mcp_gate, qubits, param_tracers=[phi])
-        else:
-            mcp_gate = std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
-            append_operation(mcp_gate, qubits)
-
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
-
-    elif method == "balauca":
-        if check_for_tracing_mode():
-            jasp_balauca_mcp(phi, qubits, ctrl_state)
-        else:
-            _balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
-
-    elif method == "khattar":
-        khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
-
-    elif method == "auto":
-        with control(n < _MCP_AUTO_BALAUCA_MIN_QUBITS):
-            mcp(phi, qubits, method="gray", ctrl_state=ctrl_state)
-        with control(n >= _MCP_AUTO_BALAUCA_MIN_QUBITS):
-            mcp(phi, qubits, method="balauca", ctrl_state=ctrl_state)
-    else:
-        raise ValueError(f"Don't know method {method}")
+        _static_mcp(phi, qubits, n, method, ctrl_state)
 
 
 def p(phi: FloatLike, qubits: QuantumOperand) -> None:

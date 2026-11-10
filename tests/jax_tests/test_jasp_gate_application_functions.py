@@ -356,6 +356,24 @@ def test_jasp_mcp_matches_static_mcp(method, ctrl_state, hadamard_qubit):
     assert jasp_values == static_values
 
 
+@pytest.mark.parametrize("gate", [mcx, mcz, mcp])
+def test_jasp_unknown_methods(gate):
+    """Unknown methods raise a ValueError in Jasp mode too."""
+
+    def main():
+        qf = QuantumFloat(3)
+        if gate is mcx:
+            mcx([qf[0], qf[1]], qf[2], method="nonsense")
+        elif gate is mcz:
+            mcz([qf[0], qf[1], qf[2]], method="nonsense")
+        else:
+            mcp(0.5, qf, method="nonsense")
+        return measure(qf)
+
+    with pytest.raises(ValueError, match="Don't know (mcx )?method nonsense"):
+        make_jaspr(main)()
+
+
 # measure_to_big_integer
 
 BIG_VALUES = [(32, 2**31 + 5), (40, 2**39 + 12345), (70, 2**69 + 2**40 + 7)]
