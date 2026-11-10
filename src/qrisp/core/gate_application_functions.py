@@ -39,6 +39,15 @@ from qrisp.jasp import (
 )
 from qrisp.misc.utility import find_qs
 
+# The gidney, gidney_inv, amy and jones mcx methods are Toffoli constructions.
+_TOFFOLI_NUM_CONTROLS = 2
+
+# From this many controls on, the maslov mcx method uses an ancilla.
+_MASLOV_ANCILLA_MIN_CONTROLS = 3
+
+# With method "auto", mcp uses the balauca method from this many qubits on.
+_MCP_AUTO_BALAUCA_MIN_QUBITS = 4
+
 _LOST_TRACK_MESSAGE = (
     "Lost track of QuantumCircuit during tracing. This might have been caused by a missing "
     "quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). "
@@ -46,7 +55,7 @@ _LOST_TRACK_MESSAGE = (
 )
 
 
-def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
+def append_operation(operation, qubits=None, clbits=None, param_tracers=None):
     """Append an operation to the QuantumSession of its qubits.
 
     The QuantumSession is found from ``qubits``. Appending to empty qubit lists, as in
@@ -65,6 +74,9 @@ def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
         is an empty list.
 
     """
+    qubits = [] if qubits is None else qubits
+    clbits = [] if clbits is None else clbits
+    param_tracers = [] if param_tracers is None else param_tracers
     try:
         qs = find_qs(qubits)
         qs.append(operation, qubits, clbits, param_tracers=param_tracers)
@@ -563,7 +575,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
 
         if n == 0:
             return
-        elif n == 1:
+        if n == 1:
             method = "gray"
             append_operation(
                 std_ops.MCXGate(len(qubits_0), ctrl_state, method=method),
@@ -580,14 +592,15 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             raise Exception(f"Given control state {ctrl_state} does not match control qubit amount {n}")
     else:
         qubits_0 = controls
-        if isinstance(qubits_0, (QuantumVariable, DynamicQubitArray)) and method not in ["balauca", "khattar"]:
+        qubit_arrays = (QuantumVariable, DynamicQubitArray)
+        if isinstance(qubits_0, qubit_arrays) and method not in ["balauca", "khattar"]:
             method = "balauca"
         qubits_1 = [target]
     from qrisp.alg_primitives.mcx_algs import (
         balauca_dirty,
         balauca_mcx,
         hybrid_mcx,
-        jasp_balauca_mcx,  # Merge the import
+        jasp_balauca_mcx,
         maslov_mcx,
         yong_mcx,
     )
@@ -598,7 +611,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             qubits_0 + qubits_1,
         )
     elif method == "gidney":
-        if len(qubits_0) != 2:
+        if len(qubits_0) != _TOFFOLI_NUM_CONTROLS:
             raise Exception(f"Tried to call Gidney logical AND with {len(qubits_0)} controls instead of two")
 
         if check_for_tracing_mode():
@@ -610,7 +623,7 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             )
 
     elif method == "gidney_inv":
-        if len(qubits_0) != 2:
+        if len(qubits_0) != _TOFFOLI_NUM_CONTROLS:
             raise Exception(f"Tried to call Gidney logical AND with {len(qubits_0)} controls instead of two")
 
         if check_for_tracing_mode():
@@ -623,15 +636,14 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
             )
 
     elif method == "maslov":
-        from qrisp import QuantumBool
-
-        if n >= 3:
+        if n >= _MASLOV_ANCILLA_MIN_CONTROLS:
             ancilla = [QuantumBool(name="maslov_anc_")]
         else:
             ancilla = []
         append_operation(maslov_mcx(n, ctrl_state), qubits_0 + ancilla + qubits_1)
 
-        [qv.delete() for qv in ancilla]
+        for qv in ancilla:
+            qv.delete()
 
     elif method == "balauca":
         if check_for_tracing_mode():
@@ -649,30 +661,21 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         hybrid_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state, num_ancilla=num_ancilla)
 
     elif method == "amy":
-        if len(qubits_0) != 2:
+        if len(qubits_0) != _TOFFOLI_NUM_CONTROLS:
             raise Exception(f"Tried to call Amy MCX with {len(qubits_0)} controls instead of two")
         amy_toffoli(qubits_0, qubits_1, ctrl_state=ctrl_state)
 
     elif method == "jones":
-        if len(qubits_0) != 2:
+        if len(qubits_0) != _TOFFOLI_NUM_CONTROLS:
             raise Exception(f"Tried to call Jones MCX with {len(qubits_0)} controls instead of two")
         jones_toffoli(qubits_0, qubits_1, ctrl_state=ctrl_state)
 
     elif method == "auto":
-        # if n <= 3:
-        #     return mcx(qubits_0, qubits_1, method = "gray", ctrl_state = ctrl_state)
-        # if 3 < n < 5:
-        #     return mcx(qubits_0, qubits_1, method = "maslov", ctrl_state = ctrl_state)
-        # else:
-        #     return mcx(qubits_0, qubits_1, method = "balauca", ctrl_state = ctrl_state) # noqa: E501
         gate = std_ops.MCXGate(len(qubits_0), ctrl_state, method="auto")
         append_operation(gate, qubits_0 + qubits_1)
 
     elif method == "khattar":
-        # if check_for_tracing_mode():
         khattar_mcx(qubits_0, qubits_1, ctrl_state)
-        # else:
-        #    balauca_mcx(qubits_0, qubits_1, ctrl_state=ctrl_state) # PLACEHOLDER
 
     else:
         raise Exception(f"Don't know mcx method {method}")
@@ -705,8 +708,6 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
     def mcz_inner(qubits, method="auto", ctrl_state=-1):
         if len(ctrl_state) != n:
             raise Exception(f"Given control state {ctrl_state} does not matchcontrol qubit amount {n}")
-
-        from qrisp import h, x
 
         if ctrl_state[-1] == "0":
             x(qubits[-1])
@@ -755,7 +756,8 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
             method = "balauca"
         if isinstance(ctrl_state, str):
             ctrl_state = int(ctrl_state, 2)
-        return jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
+        jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
+        return
 
     if method in ["gray", "auto"]:
         if ctrl_state[-1] == "0":
@@ -774,7 +776,7 @@ def mcz(qubits, method="auto", ctrl_state=-1, num_ancilla=1):
 
         return
 
-    return mcz_inner(qubits, method, ctrl_state)
+    mcz_inner(qubits, method, ctrl_state)
 
 
 def mcp(phi, qubits, method="auto", ctrl_state=-1):
@@ -837,12 +839,13 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
         if isinstance(ctrl_state, str):
             ctrl_state = int(ctrl_state, 2)
 
-    if method == "gray" or method == "gray_pt":
+    if method in ("gray", "gray_pt"):
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
         if check_for_tracing_mode():
-            mcp_gate = std_ops.PGate(sympy.Symbol("alpha")).control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
+            p_gate = std_ops.PGate(sympy.Symbol("alpha"))
+            mcp_gate = p_gate.control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
             append_operation(mcp_gate, qubits, param_tracers=[phi])
         else:
             mcp_gate = std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
@@ -854,20 +857,17 @@ def mcp(phi, qubits, method="auto", ctrl_state=-1):
     elif method == "balauca":
         if check_for_tracing_mode():
             jasp_balauca_mcp(phi, qubits, ctrl_state)
-            return
         else:
             balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
 
     elif method == "khattar":
         khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
-        # return qubits   #is it needed? maybe for static case
 
     elif method == "auto":
-        with control(n < 4):
+        with control(n < _MCP_AUTO_BALAUCA_MIN_QUBITS):
             mcp(phi, qubits, method="gray", ctrl_state=ctrl_state)
-        with control(n >= 4):
+        with control(n >= _MCP_AUTO_BALAUCA_MIN_QUBITS):
             mcp(phi, qubits, method="balauca", ctrl_state=ctrl_state)
-        return
     else:
         raise Exception(f"Don't know method {method}")
 
@@ -1329,8 +1329,9 @@ def measure_to_big_integer(qv, size):
     def body_fun(i, val):
         return val.at[i].set(jnp.uint32(measure(qv[32 * i : 32 * (i + 1)])))
 
-    digits = q_fori_loop(0, (qv.size - 1) // 32, body_fun, jnp.zeros(size, jnp.uint32))
-    digits = digits.at[(qv.size - 1) // 32].set(jnp.uint32(measure(qv[32 * ((qv.size - 1) // 32) :])))
+    last_digit = (qv.size - 1) // 32
+    digits = q_fori_loop(0, last_digit, body_fun, jnp.zeros(size, jnp.uint32))
+    digits = digits.at[last_digit].set(jnp.uint32(measure(qv[32 * last_digit :])))
     return BigInteger(digits)
 
 
@@ -1347,25 +1348,23 @@ def reset(qubits):
 
     if not isinstance(qs, TracingQuantumSession):
         append_operation(std_ops.Reset(), [qubits])
-        return None
+        return
+
+    if isinstance(qubits, QuantumVariable):
+        abs_qst = reset_p.bind(qubits.reg.tracer, qs.abs_qst)
+    elif isinstance(qubits, QuantumArray):
+        flattened_qa = qubits.flatten()
+        for i in jrange(qubits.size):
+            reset(flattened_qa[i])
+        return
+    elif isinstance(qubits.aval, AbstractQubitArray):
+        abs_qst = reset_p.bind(qubits.tracer, qs.abs_qst)
+    elif isinstance(qubits.aval, AbstractQubit):
+        abs_qst = reset_p.bind(qubits, qs.abs_qst)
     else:
-        if isinstance(qubits, QuantumVariable):
-            abs_qst = reset_p.bind(qubits.reg.tracer, qs.abs_qst)
-        elif isinstance(qubits, QuantumArray):
-            flattened_qa = qubits.flatten()
-            for i in jrange(qubits.size):
-                reset(flattened_qa[i])
-            return
-        elif isinstance(qubits.aval, AbstractQubitArray):
-            abs_qst = reset_p.bind(qubits.tracer, qs.abs_qst)
-        elif isinstance(qubits.aval, AbstractQubit):
-            abs_qst = reset_p.bind(qubits, qs.abs_qst)
-        else:
-            raise Exception(f"Tried to reset type {type(qubits.aval)}")
+        raise Exception(f"Tried to reset type {type(qubits.aval)}")
 
-        qs.abs_qst = abs_qst
-
-        return None
+    qs.abs_qst = abs_qst
 
 
 def barrier(qubits):
