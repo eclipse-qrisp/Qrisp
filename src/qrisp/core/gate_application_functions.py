@@ -705,6 +705,78 @@ def mcx(
         raise ValueError(f"Don't know mcx method {method}")
 
 
+@gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
+def _mcz_inner(qubits, method: str, ctrl_state: str) -> None:
+    """Apply a static multi-controlled Z gate as an mcx gate conjugated by H gates.
+
+    Parameters
+    ----------
+    qubits : list[Qubit] or QuantumVariable
+        The qubits of the gate. The last one is the target of the mcx gate.
+    method : str
+        The mcx method.
+    ctrl_state : str
+        The control state, with one character per qubit.
+
+    Raises
+    ------
+    ValueError
+        If the control state does not have one character per qubit.
+
+    """
+    n = jlen(qubits)
+    if len(ctrl_state) != n:
+        msg = f"Given control state {ctrl_state} does not matchcontrol qubit amount {n}"
+        raise ValueError(msg)
+
+    if ctrl_state[-1] == "0":
+        x(qubits[-1])
+
+    h(qubits[-1])
+    mcx(qubits[:-1], qubits[-1], method=method, ctrl_state=ctrl_state[:-1])
+    h(qubits[-1])
+
+    if ctrl_state[-1] == "0":
+        x(qubits[-1])
+
+
+@gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
+def _jasp_mcz_inner(qubits, method: str, ctrl_state: int | jax.Array) -> None:
+    """Apply a multi-controlled Z gate in Jasp mode as an mcx gate conjugated by H gates.
+
+    Parameters
+    ----------
+    qubits : QuantumVariable or DynamicQubitArray or list[Qubit]
+        The qubits of the gate. The last one is the target of the mcx gate.
+    method : str
+        The mcx method.
+    ctrl_state : int or jax.Array
+        The control state, -1 meaning all qubits in state 1.
+
+    """
+    # qrisp.environments imports this module, so it can only be imported at call time.
+    from qrisp.environments import control
+
+    n = jlen(qubits)
+    ctrl_state = jnp.int64(ctrl_state)
+    ctrl_state = jax.lax.cond(ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state)
+
+    with control((ctrl_state >> (n - 1)) & 1 == 0):
+        x(qubits[-1])
+
+    h(qubits[-1])
+    mcx(
+        qubits[:-1],
+        qubits[-1],
+        method=method,
+        ctrl_state=ctrl_state & ((1 << (n - 1)) - 1),
+    )
+    h(qubits[-1])
+
+    with control((ctrl_state >> (n - 1)) & 1 == 0):
+        x(qubits[-1])
+
+
 def mcz(
     qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
     method: str = "auto",
@@ -731,47 +803,6 @@ def mcz(
         the method is set to ``hybrid``. The default is 1.
 
     """
-
-    @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
-    def mcz_inner(qubits, method: str, ctrl_state: str) -> None:
-        if len(ctrl_state) != n:
-            msg = f"Given control state {ctrl_state} does not matchcontrol qubit amount {n}"
-            raise ValueError(msg)
-
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
-
-        h(qubits[-1])
-        mcx(qubits[:-1], qubits[-1], method=method, ctrl_state=ctrl_state[:-1])
-        h(qubits[-1])
-
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
-
-    @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
-    def jasp_mcz_inner(qubits, method: str = "balauca", ctrl_state: int | jax.Array = -1) -> None:
-        # qrisp.environments imports this module, so it can only be imported at call time.
-        from qrisp.environments import control
-
-        n = jlen(qubits)
-        ctrl_state = jnp.int64(ctrl_state)
-        ctrl_state = jax.lax.cond(ctrl_state == -1, lambda x: x + (1 << n), lambda x: x, ctrl_state)
-
-        with control((ctrl_state >> (n - 1)) & 1 == 0):
-            x(qubits[-1])
-
-        h(qubits[-1])
-        mcx(
-            qubits[:-1],
-            qubits[-1],
-            method=method,
-            ctrl_state=ctrl_state & ((1 << (n - 1)) - 1),
-        )
-        h(qubits[-1])
-
-        with control((ctrl_state >> (n - 1)) & 1 == 0):
-            x(qubits[-1])
-
     n = jlen(qubits)
     if not check_for_tracing_mode():
         ctrl_state = _ctrl_state_string(ctrl_state, n)
@@ -780,7 +811,7 @@ def mcz(
             method = "balauca"
         if isinstance(ctrl_state, str):
             ctrl_state = int(ctrl_state, 2)
-        jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
+        _jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
         return
 
     if method in ["gray", "auto"]:
@@ -800,7 +831,40 @@ def mcz(
 
         return
 
-    mcz_inner(qubits, method, ctrl_state)
+    _mcz_inner(qubits, method, ctrl_state)
+
+
+@gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
+def _balauca_mcp(phi: FloatLike, qubits, ctrl_state: str) -> None:
+    """Apply a static multi-controlled phase gate with the balauca method.
+
+    Parameters
+    ----------
+    phi : FloatLike
+        The phase to apply.
+    qubits : list[Qubit] or QuantumVariable
+        The qubits of the gate.
+    ctrl_state : str
+        The control state, with one character per qubit.
+
+    """
+    # These packages import this module, so they can only be imported at call time.
+    from qrisp.alg_primitives.mcx_algs import hybrid_mcx
+    from qrisp.qtypes import QuantumBool
+
+    qubits = convert_to_qb_list(qubits)
+
+    temp = QuantumBool()
+    hybrid_mcx(
+        qubits,
+        temp[0],
+        ctrl_state=ctrl_state,
+        phase=phi,
+        num_ancilla=np.inf,
+        use_mcm=True,
+    )
+
+    temp.delete()
 
 
 def mcp(
@@ -839,25 +903,8 @@ def mcp(
 
     """
     # These packages import this module, so they can only be imported at call time.
-    from qrisp.alg_primitives.mcx_algs import hybrid_mcx, jasp_balauca_mcp, khattar_mcp
+    from qrisp.alg_primitives.mcx_algs import jasp_balauca_mcp, khattar_mcp
     from qrisp.environments import control
-    from qrisp.qtypes import QuantumBool
-
-    @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
-    def balauca_mcp(phi: FloatLike, qubits, ctrl_state: str) -> None:
-        qubits = convert_to_qb_list(qubits)
-
-        temp = QuantumBool()
-        hybrid_mcx(
-            qubits,
-            temp[0],
-            ctrl_state=ctrl_state,
-            phase=phi,
-            num_ancilla=np.inf,
-            use_mcm=True,
-        )
-
-        temp.delete()
 
     n = jlen(qubits)
     if not check_for_tracing_mode():
@@ -887,7 +934,7 @@ def mcp(
         if check_for_tracing_mode():
             jasp_balauca_mcp(phi, qubits, ctrl_state)
         else:
-            balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
+            _balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
 
     elif method == "khattar":
         khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
