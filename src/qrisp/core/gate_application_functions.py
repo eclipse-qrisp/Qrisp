@@ -77,7 +77,7 @@ _LOST_TRACK_MESSAGE = (
 
 def append_operation(
     operation: Operation,
-    qubits: Sequence[QuantumOperand] | None = None,
+    qubits: Sequence[QuantumOperand] | QuantumVariable | DynamicQubitArray | None = None,
     clbits: Sequence[Clbit | Sequence[Clbit]] | None = None,
     param_tracers: Sequence[FloatLike] | None = None,
 ) -> None:
@@ -90,8 +90,9 @@ def append_operation(
     ----------
     operation : Operation
         The operation to append.
-    qubits : list, optional
-        The qubit arguments of the operation. The default is an empty list.
+    qubits : list or QuantumVariable or DynamicQubitArray, optional
+        The qubit arguments of the operation, one per qubit of the operation. The default
+        is an empty list.
     clbits : list, optional
         The classical bit arguments of the operation. The default is an empty list.
     param_tracers : list, optional
@@ -470,7 +471,10 @@ def _mcx_method(methods: dict[str, Callable[..., None]], method: str) -> Callabl
 def _mcx_operands(
     controls: Sequence[Qubit | Tracer | QuantumBool] | QuantumVariable | DynamicQubitArray,
     target: Qubit | Tracer | QuantumBool,
-) -> tuple[Any, Qubit | Tracer]:
+) -> tuple[
+    Sequence[Qubit | Tracer | QuantumBool] | QuantumVariable | DynamicQubitArray,
+    Qubit | Tracer,
+]:
     """Return the controls and target of mcx, with QuantumBools replaced by their qubit.
 
     Parameters
@@ -499,18 +503,17 @@ def _mcx_operands(
 
     if isinstance(target, (list, QuantumVariable)):
         if isinstance(target, QuantumBool):
-            target = target[0]
-        else:
-            raise TypeError("mcx target is not of type Qubit or QuantumBool")
+            return controls, target[0]
+        raise TypeError("mcx target is not of type Qubit or QuantumBool")
 
     return controls, target
 
 
 def _static_mcx(
-    controls: Sequence[Qubit] | QuantumVariable,
-    target: Qubit,
+    controls: Sequence[Qubit | Tracer | QuantumBool] | QuantumVariable | DynamicQubitArray,
+    target: Qubit | Tracer,
     method: str,
-    ctrl_state: int | str,
+    ctrl_state: int | str | jax.Array,
     num_ancilla: int,
 ) -> None:
     """Apply an mcx gate in static mode.
@@ -556,8 +559,8 @@ def _static_mcx(
 
 
 def _jasp_mcx(
-    controls: Sequence[Tracer] | QuantumVariable | DynamicQubitArray,
-    target: Tracer,
+    controls: Sequence[Qubit | Tracer | QuantumBool] | QuantumVariable | DynamicQubitArray,
+    target: Qubit | Tracer,
     method: str,
     ctrl_state: int | str | jax.Array,
     num_ancilla: int,
@@ -969,10 +972,10 @@ def _jasp_mcz_inner(qubits, method: str, ctrl_state: int | jax.Array) -> None:
 
 
 def _static_mcz(
-    qubits: Sequence[Qubit] | QuantumVariable,
+    qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
     n: int,
     method: str,
-    ctrl_state: int | str,
+    ctrl_state: int | str | jax.Array,
 ) -> None:
     """Apply a multi-controlled Z gate in static mode.
 
@@ -1014,7 +1017,7 @@ def _static_mcz(
 
 
 def _jasp_mcz(
-    qubits: Sequence[Tracer] | QuantumVariable | DynamicQubitArray,
+    qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
     method: str,
     ctrl_state: int | str | jax.Array,
 ) -> None:
@@ -1108,10 +1111,10 @@ def _balauca_mcp(phi: FloatLike, qubits, ctrl_state: str) -> None:
 
 def _static_mcp(
     phi: FloatLike,
-    qubits: Sequence[Qubit] | QuantumVariable,
+    qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
     n: int,
     method: str,
-    ctrl_state: int | str,
+    ctrl_state: int | str | jax.Array,
 ) -> None:
     """Apply a multi-controlled phase gate in static mode.
 
@@ -1167,7 +1170,7 @@ def _static_mcp(
 
 def _jasp_mcp(
     phi: FloatLike,
-    qubits: Sequence[Tracer] | QuantumVariable | DynamicQubitArray,
+    qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
     n: int | jax.Array,
     method: str,
     ctrl_state: int | str | jax.Array,
