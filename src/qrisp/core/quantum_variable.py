@@ -35,9 +35,7 @@ from qrisp.misc.utility import redirect_qfunction
 from qrisp.permeability import uncompute
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Hashable
-
-    import jax
+    from collections.abc import Callable, Hashable, Sequence
 
     from qrisp.circuit import QuantumCircuit
     from qrisp.core.quantum_session import QuantumSession
@@ -352,8 +350,9 @@ class QuantumVariable:
     def __lshift__(self, other: Callable[..., QuantumVariable]):
         """Return a variadic function that calls ``other`` and stores its result in ``self``.
 
-        The returned function forwards its arguments to ``other`` and writes the
-        QuantumVariable that ``other`` returns into ``self``.
+        This implements the quantum function injection pattern: ``(self << other)(*args)``
+        runs the out-of-place quantum function ``other`` in place on ``self``. See
+        https://www.qrisp.eu/reference/Core/Function%20Injection.html.
         """
         if not callable(other):
             raise Exception("Tried to inject QuantumVariable into non-callable")
@@ -662,7 +661,7 @@ class QuantumVariable:
 
         int_encoder(self, self.encoder(value))
 
-    def init_state(self, params: dict[str, np.complex128] | jax.Array, method="auto"):
+    def init_state(self, params: dict[Any, complex] | np.typing.ArrayLike, method="auto"):
         r"""Initialize an arbitrary quantum state on this quantum variable.
 
         This method supports two input formats:
@@ -861,7 +860,7 @@ class QuantumVariable:
         TypeError
             A single Qubit was passed instead of a list of qubits.
 
-        Exception
+        TracingModeError
             Tried to reduce a QuantumVariable in tracing mode.
 
         Exception
@@ -887,10 +886,10 @@ class QuantumVariable:
             raise TypeError("QuantumVariable.reduce expects a list of qubits, got a single Qubit")
 
         # Imported locally: qrisp.jasp imports QuantumVariable from this module.
-        from qrisp.jasp import TracingQuantumSession
+        from qrisp.jasp import TracingModeError, TracingQuantumSession
 
         if isinstance(self.qs, TracingQuantumSession):
-            raise Exception("Tried to reduce a QuantumVariable in tracing mode")
+            raise TracingModeError("Tried to reduce a QuantumVariable in tracing mode")
 
         if not set(qubits).issubset(self.reg):
             raise Exception("Tried to reduce QuantumVariable by invalid qubits")
@@ -1049,7 +1048,6 @@ class QuantumVariable:
                     raise Exception("Outcome value " + str(self.decoder(i)) + " is not hashable")
                 outcome_labels.append(temp)
             plot_histogram(outcome_labels, dict(result), filename)
-            plt.show()
 
         return result
 
@@ -1219,7 +1217,7 @@ class QuantumVariable:
 
         self.encode(value)
 
-    def app_phase_function(self, phi: Callable[[str], float]):
+    def app_phase_function(self, phi: Callable[[Any], float]):
         r"""Applies a previously specified phase function to each computational basis state
         of the QuantumVariable using Gray-Synthesis.
 
@@ -1554,7 +1552,7 @@ class QuantumVariable:
         return QuantumVariableTemplate(self)
 
 
-def plot_histogram(outcome_labels: list[str], counts: dict[Any, float], filename=None):
+def plot_histogram(outcome_labels: Sequence[Any], counts: dict[Any, float], filename=None):
     """Plot ``counts`` as a bar chart over ``outcome_labels``, saving to ``filename`` if given, otherwise showing it."""
     res_list = []
 
