@@ -11,6 +11,7 @@ These functions facilitate the application of (elementary) quantum gates. Note t
    :toctree: generated/
    
    measure
+   measure_to_big_integer
    parity
    x
    y
@@ -36,9 +37,12 @@ These functions facilitate the application of (elementary) quantum gates. Note t
    sx_dg
    swap
    rxx
+   ryy
    rzz
    xxyy
    u3
+   unitary
    barrier
+   reset
    gphase
    id
