@@ -1205,6 +1205,34 @@ def u3(
     _append_parametrized_gate(std_ops.U3Gate, [theta, phi, lam], [qubits])
 
 
+def _u3_matrix_jax(theta: jax.Array, phi: jax.Array, lam: jax.Array) -> jax.Array:
+    """Return the matrix of a U3 gate as a JAX array, so that the angles can be traced.
+
+    Parameters
+    ----------
+    theta : jax.Array
+        The first angle of the U3 gate.
+    phi : jax.Array
+        The second angle of the U3 gate.
+    lam : jax.Array
+        The third angle of the U3 gate.
+
+    Returns
+    -------
+    jax.Array
+        The 2x2 matrix, with the same entries as ``qrisp.simulator.unitary_management.u3matrix``.
+
+    """
+    cos = jnp.cos(theta / 2)
+    sin = jnp.sin(theta / 2)
+    return jnp.array(
+        [
+            [cos, -jnp.exp(1j * lam) * sin],
+            [jnp.exp(1j * phi) * sin, jnp.exp(1j * (phi + lam)) * cos],
+        ]
+    )
+
+
 def unitary(unitary_array: NDArrayLike, qubits: Qubit | Tracer) -> None:
     """Applies a single-qubit gate given by its unitary matrix.
 
@@ -1238,9 +1266,15 @@ def unitary(unitary_array: NDArrayLike, qubits: Qubit | Tracer) -> None:
     phi = phiplambda2 + phimlambda2
     lam = phiplambda2 - phimlambda2
 
-    flat_mat = mat.flatten()
+    if check_for_tracing_mode():
+        # The angles are traced, so the U3 matrix is built with jax.numpy, and the
+        # matrix is indexed with a traced index.
+        flat_mat = jnp.ravel(mat)
+        temp_u3 = _u3_matrix_jax(theta, phi, lam).ravel()
+    else:
+        flat_mat = mat.flatten()
+        temp_u3 = _u3matrix(theta, phi, lam, 0).flatten()
     arg_max = jnp.argmax(jnp.abs(flat_mat))
-    temp_u3 = _u3matrix(theta, phi, lam, 0).flatten()
 
     gphase_angle = (-jnp.angle(temp_u3[arg_max] / flat_mat[arg_max])) % (2 * jnp.pi)
 

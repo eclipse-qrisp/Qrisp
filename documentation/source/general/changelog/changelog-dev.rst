@@ -652,6 +652,11 @@ Bug Fixes
   :ref:`Jasp <jasp>` mode. A barrier only structures static circuits, so in Jasp mode it
   now does nothing (`Issue #375 <https://github.com/eclipse-qrisp/Qrisp/issues/375>`_).
 
+* Fixed :func:`~qrisp.unitary` raising ``TracerArrayConversionError`` in
+  :ref:`Jasp <jasp>` mode. The U3 matrix used to compute the global phase is now built with
+  ``jax.numpy``, so the matrix can be a constant or a traced value. Static mode is unchanged
+  (`Issue #581 <https://github.com/eclipse-qrisp/Qrisp/issues/581>`_).
+
 Compatibility
 -------------
 

@@ -16,7 +16,6 @@
 
 """Tests for the gate application functions in Jasp mode."""
 
-import jax
 import numpy as np
 import pytest
 
@@ -171,12 +170,16 @@ def test_jasp_barrier_does_nothing(argument):
 
     without_barrier = make_jaspr(program(lambda qubits: None))()
     assert str(make_jaspr(program(barrier))()) == str(without_barrier)
-    assert jaspify(program(barrier))() == 1
+
+    @jaspify
+    def simulate():
+        return program(barrier)()
+
+    assert simulate() == 1
 
 
-@bug("unitary converts traced angles with NumPy", raises=jax.errors.TracerArrayConversionError)
 def test_jasp_unitary():
-    """An arbitrary unitary can be traced."""
+    """An arbitrary unitary can be traced and simulated."""
 
     @jaspify
     def main():
@@ -185,6 +188,33 @@ def test_jasp_unitary():
         return measure(qb)
 
     assert main()
+
+
+def random_unitary(seed):
+    """Return a random 2x2 unitary matrix."""
+    rng = np.random.default_rng(seed)
+    matrix, _ = np.linalg.qr(rng.normal(size=(2, 2)) + 1j * rng.normal(size=(2, 2)))
+    return matrix
+
+
+UNITARIES = [random_unitary(seed) for seed in range(3)] + [
+    np.eye(2, dtype=complex),
+    np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2),
+]
+
+
+@pytest.mark.parametrize("traced", [False, True])
+@pytest.mark.parametrize("matrix", UNITARIES)
+def test_jasp_unitary_applies_the_matrix(matrix, traced):
+    """The circuit of the Jaspr applies the matrix, given as a constant or traced."""
+
+    def main(traced_matrix):
+        qv = QuantumVariable(1)
+        unitary(traced_matrix if traced else matrix, qv[0])
+        return qv
+
+    jasp_circuit = make_jaspr(main)(matrix).to_qc(matrix)[-1]
+    assert np.allclose(jasp_circuit.get_unitary(), matrix)
 
 
 # mcx
