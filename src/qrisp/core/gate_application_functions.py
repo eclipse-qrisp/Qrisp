@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Defines gate application functions (cx, h, mcx, rz, measure, ...) that append operations to circuits."""
+"""Gate application functions (cx, h, mcx, rz, measure, ...) that append operations to circuits."""
 
 from typing import Any
 
@@ -47,6 +47,24 @@ _LOST_TRACK_MESSAGE = (
 
 
 def append_operation(operation, qubits=[], clbits=[], param_tracers=[]):
+    """Append an operation to the QuantumSession of its qubits.
+
+    The QuantumSession is found from ``qubits``. Appending to empty qubit lists, as in
+    ``cx([], [])``, does nothing.
+
+    Parameters
+    ----------
+    operation : Operation
+        The operation to append.
+    qubits : list, optional
+        The qubit arguments of the operation. The default is an empty list.
+    clbits : list, optional
+        The classical bit arguments of the operation. The default is an empty list.
+    param_tracers : list, optional
+        In Jasp mode, the traced values of the parameters of ``operation``. The default
+        is an empty list.
+
+    """
     try:
         qs = find_qs(qubits)
         qs.append(operation, qubits, clbits, param_tracers=param_tracers)
@@ -170,27 +188,54 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
         *   - Method
             - Description
         *   - ``gray``
-            - Performs a gray code traversal which requires no ancillae but is rather inefficient for large numbers of control qubits.
+            - Performs a gray code traversal which requires no ancillae but is rather
+              inefficient for large numbers of control qubits.
         *   - ``gray_pt``/``gray_pt_inv``
-            - More efficient but introduce extra phases that need to be uncomputed by performing the inverse of this gate on the same inputs. For more information on phase tolerance, check `this paper <https://iopscience.iop.org/article/10.1088/2058-9565/acaf9d/meta>`__.
+            - More efficient but introduce extra phases that need to be uncomputed by
+              performing the inverse of this gate on the same inputs. For more information
+              on phase tolerance, check `this paper
+              <https://iopscience.iop.org/article/10.1088/2058-9565/acaf9d/meta>`__.
         *   - ``balauca``
-            - Method based on this `paper <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`__ with logarithmic depth but requires many ancilla qubits.
+            - Method based on this `paper
+              <https://www.iccs-meeting.org/archive/iccs2022/papers/133530169.pdf>`__ with
+              logarithmic depth but requires many ancilla qubits.
         *   - ``khattar``
-            - Method based on this `paper <https://arxiv.org/abs/2407.17966>`_, implements the n-controlled x with 2n − 3 Toffoli and linear depth using 1 clean ancilla. The case n=3 implements this `paper <https://arxiv.org/abs/2106.11513>`__.
+            - Method based on this `paper <https://arxiv.org/abs/2407.17966>`_, implements
+              the n-controlled x with 2n − 3 Toffoli and linear depth using 1 clean
+              ancilla. The case n=3 implements this `paper
+              <https://arxiv.org/abs/2106.11513>`__.
         *   - ``maslov``
-            - Documented `here <https://arxiv.org/abs/1508.03273>`_, requires less ancilla qubits but is only available for 4 or less control qubits.
+            - Documented `here <https://arxiv.org/abs/1508.03273>`_, requires less ancilla
+              qubits but is only available for 4 or less control qubits.
         *   - ``yong``
-            - Can be found int this `article <https://link.springer.com/article/10.1007/s10773-017-3389-4>`__.This method requires only a single ancilla and has moderate scaling in depth and gate count.
+            - Can be found int this `article
+              <https://link.springer.com/article/10.1007/s10773-017-3389-4>`__.This method
+              requires only a single ancilla and has moderate scaling in depth and gate
+              count.
         *   - ``amy``
-            - A Toffoli-circuit (ie. only two control qubits are possible), which (temporarily) requires one ancilla qubit. However, instead of the no-ancilla T-depth 4, this circuit achieves a T-depth of 2. Find the implementation details in `this paper <https://arxiv.org/pdf/1206.0758.pdf>`__.
+            - A Toffoli-circuit (ie. only two control qubits are possible), which
+              (temporarily) requires one ancilla qubit. However, instead of the no-ancilla
+              T-depth 4, this circuit achieves a T-depth of 2. Find the implementation
+              details in `this paper <https://arxiv.org/pdf/1206.0758.pdf>`__.
         *   - ``jones``
-            - Similar to ``amy`` but uses two ancilla qubits, and has a T-depth of 1. Read about it `here <https://arxiv.org/abs/1212.5069>`__.
+            - Similar to ``amy`` but uses two ancilla qubits, and has a T-depth of 1. Read
+              about it `here <https://arxiv.org/abs/1212.5069>`__.
         *   - ``gidney``
-            - A very unique way for synthesizing a logical AND. The Gidney Logical AND performs a circuit with T-depth 1 to compute the truth value and performs another circuit involving a measurement and a classically controlled CZ gate for uncomputation. The uncomputation circuit has T-depth 0, such that the combined T-depth is 1. Requires no ancillae. More details `here <https://arxiv.org/abs/1709.06648>`__. Works only for two control qubits.
+            - A very unique way for synthesizing a logical AND. The Gidney Logical AND
+              performs a circuit with T-depth 1 to compute the truth value and performs
+              another circuit involving a measurement and a classically controlled CZ gate
+              for uncomputation. The uncomputation circuit has T-depth 0, such that the
+              combined T-depth is 1. Requires no ancillae. More details `here
+              <https://arxiv.org/abs/1709.06648>`__. Works only for two control qubits.
         *   - ``hybrid``
-            - A flexible method which combines the other available methods, such that the amount of used ancillae is customizable. After several ``balauca``-layers, the recursion is canceled by either a ``yong``, ``maslov`` or ``gray`` mcx, depending on what fits the most.
+            - A flexible method which combines the other available methods, such that the
+              amount of used ancillae is customizable. After several ``balauca``-layers,
+              the recursion is canceled by either a ``yong``, ``maslov`` or ``gray`` mcx,
+              depending on what fits the most.
         *   - ``auto``
-            - Recompiles the mcx gate at compile time using the hybrid algorithm together with the information about how many clean/dirty ancillae qubits are available. For more information check :meth:`qrisp.QuantumSession.compile`.
+            - Recompiles the mcx gate at compile time using the hybrid algorithm together
+              with the information about how many clean/dirty ancillae qubits are
+              available. For more information check :meth:`qrisp.QuantumSession.compile`.
 
     .. note::
         Due to Qrisp's automatic qubit management, clean ancilla qubits are not as much
@@ -362,8 +407,9 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     >>> print(control.qs.statevector())
     |00>*|0>
 
-    To introduce the measurement we simply call the :meth:`.compile <qrisp.QuantumSession.compile>` method
-    with the keyword ``compile_mcm = True``:
+    To introduce the measurement we simply call the
+    :meth:`.compile <qrisp.QuantumSession.compile>` method with the keyword
+    ``compile_mcm = True``:
 
     >>> qc = control.qs.compile(compile_mcm = True)
     >>> print(qc)
@@ -393,7 +439,8 @@ def mcx(controls, target, method="auto", ctrl_state=-1, num_ancilla=1):
     >>> print(control.qs.compile(compile_mcm = False).t_depth())
     2
 
-    A similar construction holds for the `Gidney's temporary logical AND <https://arxiv.org/abs/1709.06648>`_.
+    A similar construction holds for the
+    `Gidney's temporary logical AND <https://arxiv.org/abs/1709.06648>`_.
     However there are additional details: This technique always comes in pairs. A computation
     and an uncomputation. The computation circuit has a T-depth of 1 and the uncomputation
     circuit has a T-depth of 0. The uncomputation circuit however contains a measurement.
@@ -1120,7 +1167,7 @@ def u3(theta, phi, lam, qubits):
         The first angle parameter.
     phi : float or sympy.Symbol
         The second angle parameter.
-    lambda : float or sympy.Symbol
+    lam : float or sympy.Symbol
         The third angle parameter.
     qubits : Qubit or list[Qubit] or QuantumVariable
         The Qubit to perform the U3 gate on.
@@ -1257,6 +1304,24 @@ def measure(qubits: Any) -> Any:
 
 
 def measure_to_big_integer(qv, size):
+    """Measure a QuantumVariable in Jasp mode and return the outcome as a BigInteger.
+
+    The qubits are measured in groups of 32, each giving one 32-bit digit of the
+    result, so the variable can have more qubits than a 64-bit integer can hold.
+
+    Parameters
+    ----------
+    qv : QuantumVariable
+        The variable to measure.
+    size : int
+        The number of 32-bit digits of the returned BigInteger.
+
+    Returns
+    -------
+    BigInteger
+        The measured value.
+
+    """
     import jax.numpy as jnp
 
     from qrisp import BigInteger, q_fori_loop
@@ -1270,12 +1335,12 @@ def measure_to_big_integer(qv, size):
 
 
 def reset(qubits):
-    """Performs a reset of the specified Qubit.
+    """Performs a reset of the specified qubits.
 
     Parameters
     ----------
-    qubit : Qubit or list[Qubit] or QuantumVariable
-        The Qubit to measure.
+    qubits : Qubit or list[Qubit] or QuantumVariable or QuantumArray
+        The qubits to reset.
 
     """
     qs = find_qs(qubits)
