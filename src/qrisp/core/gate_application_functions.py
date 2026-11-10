@@ -104,18 +104,11 @@ def append_operation(
         qs = find_qs(qubits)
         qs.append(operation, qubits, clbits, param_tracers=param_tracers)
     except Exception as e:
-        # Handle the case that the user specified an empty qubit list, i.e.
-        # cx([], [])
-        if "Couldn't find QuantumSession" in str(e):
-            if len(qubits) == 0:
-                return
-            for q in qubits:
-                if not (isinstance(q, list) and len(q) == 0):
-                    break
-            else:
-                return
-
-        raise e
+        # Appending to empty qubit lists, as in cx([], []), does nothing.
+        no_session = "Couldn't find QuantumSession" in str(e)
+        if no_session and all(isinstance(q, list) and len(q) == 0 for q in qubits):
+            return
+        raise
 
 
 # Placeholder parameters of the gates appended in Jasp mode, where the traced values are
@@ -592,13 +585,7 @@ def mcx(
     from qrisp.qtypes import QuantumBool
 
     if isinstance(controls, list):
-        new_controls = []
-        for qbl in controls:
-            if isinstance(qbl, QuantumBool):
-                new_controls.append(qbl[0])
-            else:
-                new_controls.append(qbl)
-        controls = new_controls
+        controls = [qbl[0] if isinstance(qbl, QuantumBool) else qbl for qbl in controls]
 
     if isinstance(target, (list, QuantumVariable)):
         if isinstance(target, QuantumBool):
@@ -606,10 +593,9 @@ def mcx(
         else:
             raise TypeError("mcx target is not of type Qubit or QuantumBool")
 
+    qubits_1 = [target]
     if not check_for_tracing_mode():
         qubits_0 = list(controls)
-        qubits_1 = [target]
-
         n = len(qubits_0)
 
         if n == 0:
@@ -629,11 +615,10 @@ def mcx(
     else:
         qubits_0 = controls
         qubit_arrays = (QuantumVariable, DynamicQubitArray)
-        if isinstance(qubits_0, qubit_arrays) and method not in ["balauca", "khattar"]:
+        if isinstance(qubits_0, qubit_arrays) and method not in ("balauca", "khattar"):
             method = "balauca"
-        qubits_1 = [target]
 
-    if method in ["gray", "gray_pt", "gray_pt_inv"]:
+    if method in ("gray", "gray_pt", "gray_pt_inv"):
         append_operation(
             std_ops.MCXGate(len(qubits_0), ctrl_state, method=method),
             qubits_0 + qubits_1,
@@ -814,7 +799,7 @@ def mcz(
         _jasp_mcz_inner(qubits, method=method, ctrl_state=ctrl_state)
         return
 
-    if method in ["gray", "auto"]:
+    if method in ("gray", "auto"):
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
@@ -1253,10 +1238,11 @@ def unitary(unitary_array: NDArrayLike, qubits: Qubit | Tracer) -> None:
     phi = phiplambda2 + phimlambda2
     lam = phiplambda2 - phimlambda2
 
-    arg_max = jnp.argmax(jnp.abs(mat).flatten())
+    flat_mat = mat.flatten()
+    arg_max = jnp.argmax(jnp.abs(flat_mat))
     temp_u3 = _u3matrix(theta, phi, lam, 0).flatten()
 
-    gphase_angle = (-jnp.angle(temp_u3[arg_max] / mat.flatten()[arg_max])) % (2 * jnp.pi)
+    gphase_angle = (-jnp.angle(temp_u3[arg_max] / flat_mat[arg_max])) % (2 * jnp.pi)
 
     u3(theta, phi, lam, qubits)
     gphase(gphase_angle, qubits)
