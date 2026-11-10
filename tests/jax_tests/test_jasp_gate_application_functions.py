@@ -153,18 +153,25 @@ def test_jasp_gates_match_static_gates(name):
     assert np.allclose(jasp_unitary, qs.compile().get_unitary())
 
 
-@bug("barrier calls len on a traced size", raises=jax.errors.TracerIntegerConversionError)
-def test_jasp_barrier():
-    """A barrier can be traced and leaves the state unchanged."""
+BARRIER_ARGUMENTS = [lambda qf: qf, lambda qf: qf[0], lambda qf: [qf[0], qf[2]]]
 
-    @jaspify
-    def main():
-        qf = QuantumFloat(3)
-        x(qf[0])
-        barrier(qf)
-        return measure(qf)
 
-    assert main() == 1
+@pytest.mark.parametrize("argument", BARRIER_ARGUMENTS)
+def test_jasp_barrier_does_nothing(argument):
+    """In Jasp mode, a barrier adds nothing to the Jaspr and leaves the state unchanged."""
+
+    def program(apply):
+        def main():
+            qf = QuantumFloat(3)
+            x(qf[0])
+            apply(argument(qf))
+            return measure(qf)
+
+        return main
+
+    without_barrier = make_jaspr(program(lambda qubits: None))()
+    assert str(make_jaspr(program(barrier))()) == str(without_barrier)
+    assert jaspify(program(barrier))() == 1
 
 
 @bug("unitary converts traced angles with NumPy", raises=jax.errors.TracerArrayConversionError)

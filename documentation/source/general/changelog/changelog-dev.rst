@@ -648,6 +648,10 @@ Bug Fixes
   compile with :ref:`qjit <qjit>`. Resetting a whole QuantumVariable was not
   affected (`PR #941 <https://github.com/eclipse-qrisp/Qrisp/pull/941>`_).
 
+* Fixed :func:`~qrisp.barrier` raising ``TracerIntegerConversionError`` in
+  :ref:`Jasp <jasp>` mode. A barrier only structures static circuits, so in Jasp mode it
+  now does nothing (`Issue #375 <https://github.com/eclipse-qrisp/Qrisp/issues/375>`_).
+
 Compatibility
 -------------
 

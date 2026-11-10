@@ -1400,6 +1400,9 @@ def reset(qubits: QuantumOperand) -> None:
 def barrier(qubits: QuantumOperand) -> None:
     """A visual marker for structuring the QuantumCircuit.
 
+    In :ref:`Jasp <jasp>` mode, ``barrier`` does nothing, since there is no static
+    circuit to structure.
+
     Parameters
     ----------
     qubits : Qubit or list[Qubit] or QuantumVariable
@@ -1431,6 +1434,9 @@ def barrier(qubits: QuantumOperand) -> None:
     QuantumVariable qv
 
     """
+    if check_for_tracing_mode():
+        return
+
     if isinstance(qubits, Qubit):
         qubits = [qubits]
 
