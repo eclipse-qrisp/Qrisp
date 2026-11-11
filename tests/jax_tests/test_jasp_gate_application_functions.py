@@ -458,21 +458,26 @@ def test_jasp_reset():
     assert not qb_value
 
 
-@bug("the qubit-array branch of reset is unreachable", raises=AttributeError)
-@pytest.mark.parametrize("use_tracer", [False, True])
-def test_jasp_reset_qubit_array(use_tracer):
-    """The qubit array of a QuantumVariable can be reset too."""
+QUBIT_ARRAYS = {
+    "register": lambda qf: qf.reg,
+    "register tracer": lambda qf: qf.reg.tracer,
+    "slice": lambda qf: qf[0:2],
+}
+
+
+@pytest.mark.parametrize("name", QUBIT_ARRAYS)
+def test_jasp_reset_qubit_array(name):
+    """A qubit array, as a DynamicQubitArray or as its tracer, can be reset too."""
 
     @jaspify
     def main():
         qf = QuantumFloat(3)
         x(qf)
-        reg = qf.reg
-        assert reg is not None
-        reset(reg.tracer if use_tracer else reg)
+        reset(QUBIT_ARRAYS[name](qf))
         return measure(qf)
 
-    assert main() == 0
+    # The slice holds qubits 0 and 1, so only qubit 2 stays in state 1.
+    assert main() == (4 if name == "slice" else 0)
 
 
 def test_jasp_reset_rejects_classical_values():

@@ -72,6 +72,9 @@ _MCP_AUTO_BALAUCA_MIN_QUBITS = 4
 # traced qubit has no length.
 _UNSIZED_JASP_OPERANDS = (QuantumVariable, DynamicQubitArray, jax.core.Tracer)
 
+# The avals of traced qubits and qubit arrays.
+_QUBIT_AVALS = (AbstractQubitArray, AbstractQubit)
+
 _LOST_TRACK_MESSAGE = (
     "Lost track of QuantumCircuit during tracing. This might have been caused by a missing "
     "quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). "
@@ -1699,8 +1702,7 @@ def measure(qubits: QuantumOperand) -> Any:
 
     if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
         return qubits.measure()
-    qubit_avals = (AbstractQubitArray, AbstractQubit)
-    if isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, qubit_avals):
+    if isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, _QUBIT_AVALS):
         result, qs.abs_qst = Measurement_p.bind(qubits, qs.abs_qst)
         return result
 
@@ -1744,8 +1746,9 @@ def reset(qubits: QuantumOperand) -> None:
 
     Parameters
     ----------
-    qubits : Qubit or list[Qubit] or QuantumVariable or QuantumArray
-        The qubits to reset.
+    qubits : Qubit or list[Qubit] or QuantumVariable or QuantumArray or DynamicQubitArray
+        The qubits to reset. In Jasp mode, a qubit array, such as a slice of a
+        QuantumVariable, can be reset too.
 
     """
     qs = find_qs(qubits)
@@ -1761,9 +1764,9 @@ def reset(qubits: QuantumOperand) -> None:
         for i in jrange(qubits.size):
             reset(flattened_qa[i])
         return
-    elif isinstance(qubits.aval, AbstractQubitArray):
+    elif isinstance(qubits, DynamicQubitArray):
         abs_qst = reset_p.bind(qubits.tracer, qs.abs_qst)
-    elif isinstance(qubits.aval, AbstractQubit):
+    elif isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, _QUBIT_AVALS):
         abs_qst = reset_p.bind(qubits, qs.abs_qst)
     else:
         raise TypeError(f"Tried to reset type {type(qubits.aval)}")

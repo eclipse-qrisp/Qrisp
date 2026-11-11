@@ -655,6 +655,10 @@ Bug Fixes
   QuantumArray is applied as before
   (`Issue #375 <https://github.com/eclipse-qrisp/Qrisp/issues/375>`_).
 
+* Fixed :func:`~qrisp.reset` raising ``AttributeError`` on a qubit array in
+  :ref:`Jasp <jasp>` mode, such as ``reset(qv.reg)`` or a slice ``reset(qv[0:2])``
+  (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
+
 * Fixed :func:`~qrisp.unitary` raising ``TracerArrayConversionError`` in
   :ref:`Jasp <jasp>` mode. The U3 matrix used to compute the global phase is now built with
   ``jax.numpy``, so the matrix can be a constant or a traced value. Static mode is unchanged
