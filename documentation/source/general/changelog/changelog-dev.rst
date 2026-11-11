@@ -673,6 +673,12 @@ Bug Fixes
   available in Jasp mode
   (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
 
+* Fixed :func:`~qrisp.unitary` giving NaN gate parameters for a real matrix with a
+  negative determinant, such as ``np.array([[0.0, 1.0], [1.0, 0.0]])``: the square root
+  of the determinant was taken in real numbers. Such matrices are now converted to
+  complex numbers first. Other matrices give the same parameters as before
+  (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
+
 * Fixed :func:`~qrisp.unitary` raising ``TracerArrayConversionError`` in
   :ref:`Jasp <jasp>` mode. The U3 matrix used to compute the global phase is now built with
   ``jax.numpy``, so the matrix can be a constant or a traced value. Static mode is unchanged

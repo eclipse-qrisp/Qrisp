@@ -1601,8 +1601,8 @@ def unitary(unitary_array: NDArrayLike, qubits: Qubit | Tracer) -> None:
 
     Parameters
     ----------
-    unitary_array : numpy.ndarray
-        The 2x2 unitary matrix to apply.
+    unitary_array : numpy.ndarray or jax.Array
+        The 2x2 unitary matrix to apply, real or complex.
     qubits : Qubit
         The Qubit to apply the gate on.
 
@@ -1617,6 +1617,11 @@ def unitary(unitary_array: NDArrayLike, qubits: Qubit | Tracer) -> None:
 
     """
     mat = unitary_array
+    # A real matrix with a negative determinant needs complex numbers for the square root
+    # of its determinant. In Jasp mode, where the determinant is traced, every real matrix
+    # is converted. In static mode, only those, so other real matrices keep their results.
+    if not jnp.iscomplexobj(mat) and (check_for_tracing_mode() or np.linalg.det(mat) < 0):
+        mat = mat.astype(complex)
     coeff = 1 / jnp.sqrt(jnp.linalg.det(mat))
     tmp_10 = jnp.abs((coeff * mat[1][0]))
     tmp_00 = jnp.abs((coeff * mat[0][0]))

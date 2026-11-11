@@ -30,6 +30,7 @@ from qrisp import (
     invert,
     multi_measurement,
 )
+from qrisp.circuit import Qubit
 from qrisp.core.gate_application_functions import (
     append_operation,
     barrier,
@@ -205,7 +206,7 @@ def test_append_operation_ignores_empty_qubit_lists():
 def test_append_operation_without_quantum_session_raises():
     """Qubit arguments without a QuantumSession that are not empty lists raise."""
     with pytest.raises(Exception, match="Couldn't find QuantumSession"):
-        append_operation(CXGate(), [[], [5]])
+        append_operation(CXGate(), [[], [Qubit("unregistered")]])
 
 
 def test_append_operation_reraises_other_errors():
@@ -309,6 +310,20 @@ SPECIAL_UNITARIES = [
 def test_unitary_applies_special_unitaries(matrix):
     """Matrices with zero entries are handled too."""
     assert np.allclose(unitary_of(lambda qubit: unitary(matrix.astype(complex), qubit)), matrix)
+
+
+ANGLE = 0.7
+REAL_UNITARIES = [
+    *SPECIAL_UNITARIES,
+    np.diag([1, -1]),
+    np.array([[np.cos(ANGLE), -np.sin(ANGLE)], [np.sin(ANGLE), np.cos(ANGLE)]]),
+]
+
+
+@pytest.mark.parametrize("matrix", REAL_UNITARIES)
+def test_unitary_applies_real_matrices(matrix):
+    """Real matrices work too, including those with a negative determinant."""
+    assert np.allclose(unitary_of(lambda qubit: unitary(matrix, qubit)), matrix)
 
 
 # mcx

@@ -239,6 +239,9 @@ def random_unitary(seed):
 UNITARIES = [random_unitary(seed) for seed in range(3)] + [
     np.eye(2, dtype=complex),
     np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2),
+    # Real matrices, with a negative and a positive determinant.
+    np.array([[0.0, 1.0], [1.0, 0.0]]),
+    np.array([[np.cos(0.7), -np.sin(0.7)], [np.sin(0.7), np.cos(0.7)]]),
 ]
 
 
