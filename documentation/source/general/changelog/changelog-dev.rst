@@ -659,6 +659,13 @@ Bug Fixes
   :ref:`Jasp <jasp>` mode, such as ``reset(qv.reg)`` or a slice ``reset(qv[0:2])``
   (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
 
+* Fixed :func:`~qrisp.mcp` with ``method="gray"`` or ``"gray_pt"`` raising
+  ``TypeError: 'int' object is not subscriptable`` in :ref:`Jasp <jasp>` mode. On a list
+  of qubits with a static control state, these methods work again, and read a string
+  control state as in static mode. On a QuantumVariable, whose size is traced, they raise
+  a ``TypeError`` that says so
+  (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
+
 * Fixed :func:`~qrisp.unitary` raising ``TracerArrayConversionError`` in
   :ref:`Jasp <jasp>` mode. The U3 matrix used to compute the global phase is now built with
   ``jax.numpy``, so the matrix can be a constant or a traced value. Static mode is unchanged

@@ -373,17 +373,9 @@ def test_jasp_mcz_matches_static_mcz(method, ctrl_state, hadamard_qubit):
     assert jasp_values == static_values
 
 
-MCP_METHODS = [
-    "balauca",
-    "khattar",
-    "auto",
-    pytest.param("gray", marks=bug("ctrl_state is indexed as a string", raises=TypeError)),
-]
-
-
 @pytest.mark.parametrize("hadamard_qubit", [0, 2])
 @pytest.mark.parametrize("ctrl_state", JASP_CONTROL_STATES)
-@pytest.mark.parametrize("method", MCP_METHODS)
+@pytest.mark.parametrize("method", ["balauca", "khattar", "auto"])
 def test_jasp_mcp_matches_static_mcp(method, ctrl_state, hadamard_qubit):
     """The phase pi applied by each method, revealed by an H gate, is the one of static mode."""
 
@@ -393,6 +385,37 @@ def test_jasp_mcp_matches_static_mcp(method, ctrl_state, hadamard_qubit):
 
     jasp_values, static_values = jasp_and_static_values(apply)
     assert jasp_values == static_values
+
+
+@pytest.mark.parametrize("hadamard_qubit", [0, 2])
+@pytest.mark.parametrize("ctrl_state", [-1, 3, "011"])
+@pytest.mark.parametrize("method", ["gray", "gray_pt"])
+def test_jasp_gray_mcp_on_a_list_of_qubits(method, ctrl_state, hadamard_qubit):
+    """On a list of qubits, the gray-code methods apply the phase of static mode.
+
+    Unlike the other methods in Jasp mode, they read a string control state as static
+    mode does.
+    """
+
+    def apply(qf):
+        mcp(np.pi, [qf[0], qf[1], qf[2]], method=method, ctrl_state=ctrl_state)
+        h(qf[hadamard_qubit])
+
+    jasp_values, static_values = jasp_and_static_values(apply)
+    assert jasp_values == static_values
+
+
+@pytest.mark.parametrize("method", ["gray", "gray_pt"])
+def test_jasp_gray_mcp_needs_a_list_of_qubits(method):
+    """The gray-code methods raise a TypeError for a QuantumVariable in Jasp mode."""
+
+    def main():
+        qf = QuantumFloat(3)
+        mcp(0.5, qf, method=method)
+        return measure(qf)
+
+    with pytest.raises(TypeError, match=f"mcp method {method} needs a list of qubits"):
+        make_jaspr(main)()
 
 
 @pytest.mark.parametrize("gate", [mcx, mcz, mcp])

@@ -1178,14 +1178,14 @@ def _static_mcp(
 def _jasp_mcp(
     phi: FloatLike,
     qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
-    n: int | jax.Array,
     method: str,
     ctrl_state: int | str | jax.Array,
 ) -> None:
     """Apply a multi-controlled phase gate in Jasp mode.
 
-    The ``auto`` method uses ``balauca``, and a string control state is converted to an
-    integer.
+    The ``auto`` method uses ``balauca``. The ``gray`` and ``gray_pt`` methods need a
+    list of qubits and a static control state, which they read as in static mode. For
+    the other methods, a string control state is converted to an integer.
 
     Parameters
     ----------
@@ -1193,8 +1193,6 @@ def _jasp_mcp(
         The phase to apply.
     qubits : list[Qubit] or QuantumVariable or DynamicQubitArray
         The qubits of the gate.
-    n : int or jax.Array
-        The number of qubits.
     method : str
         The synthesis method.
     ctrl_state : int or str or jax.Array
@@ -1202,6 +1200,9 @@ def _jasp_mcp(
 
     Raises
     ------
+    TypeError
+        If a gray-code method gets qubits without a static number, or a traced control
+        state.
     ValueError
         If the method is unknown.
 
@@ -1211,10 +1212,16 @@ def _jasp_mcp(
 
     if method == "auto":
         method = "balauca"
-    if isinstance(ctrl_state, str):
-        ctrl_state = int(ctrl_state, 2)
 
     if method in ("gray", "gray_pt"):
+        # The gray-code gate is built for a fixed number of qubits and control state.
+        static_ctrl_state = isinstance(ctrl_state, (int, np.integer, str))
+        if not isinstance(qubits, list) or not static_ctrl_state:
+            requirement = "a list of qubits and a static control state"
+            raise TypeError(f"mcp method {method} needs {requirement} in Jasp mode")
+        n = len(qubits)
+        ctrl_state = _ctrl_state_string(ctrl_state, n)
+
         if ctrl_state[-1] == "0":
             x(qubits[-1])
 
@@ -1224,8 +1231,12 @@ def _jasp_mcp(
 
         if ctrl_state[-1] == "0":
             x(qubits[-1])
+        return
 
-    elif method == "balauca":
+    if isinstance(ctrl_state, str):
+        ctrl_state = int(ctrl_state, 2)
+
+    if method == "balauca":
         jasp_balauca_mcp(phi, qubits, ctrl_state)
 
     elif method == "khattar":
@@ -1272,7 +1283,7 @@ def mcp(
     """
     n = jlen(qubits)
     if check_for_tracing_mode():
-        _jasp_mcp(phi, qubits, n, method, ctrl_state)
+        _jasp_mcp(phi, qubits, method, ctrl_state)
     else:
         _static_mcp(phi, qubits, n, method, ctrl_state)
 
