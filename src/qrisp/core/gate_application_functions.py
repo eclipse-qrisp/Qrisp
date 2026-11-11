@@ -68,6 +68,10 @@ _MASLOV_ANCILLA_MIN_CONTROLS = 3
 # With method "auto", mcp uses the balauca method from this many qubits on.
 _MCP_AUTO_BALAUCA_MIN_QUBITS = 4
 
+# In Jasp mode, QuantumVariables and qubit arrays have a traced size, and a single
+# traced qubit has no length.
+_UNSIZED_JASP_OPERANDS = (QuantumVariable, DynamicQubitArray, jax.core.Tracer)
+
 _LOST_TRACK_MESSAGE = (
     "Lost track of QuantumCircuit during tracing. This might have been caused by a missing "
     "quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). "
@@ -1771,8 +1775,9 @@ def reset(qubits: QuantumOperand) -> None:
 def barrier(qubits: QuantumOperand) -> None:
     """A visual marker for structuring the QuantumCircuit.
 
-    In :ref:`Jasp <jasp>` mode, ``barrier`` does nothing, since there is no static
-    circuit to structure.
+    In :ref:`Jasp <jasp>` mode, a barrier on a list of qubits or on a QuantumArray is
+    applied as in static mode. A barrier on a QuantumVariable, whose size is traced, or
+    on a single qubit does nothing.
 
     Parameters
     ----------
@@ -1805,11 +1810,11 @@ def barrier(qubits: QuantumOperand) -> None:
     QuantumVariable qv
 
     """
-    if check_for_tracing_mode():
-        return
-
     if isinstance(qubits, Qubit):
         qubits = [qubits]
+    elif check_for_tracing_mode() and isinstance(qubits, _UNSIZED_JASP_OPERANDS):
+        # These have no static number of qubits, so no Barrier operation can be built.
+        return
 
     append_operation(std_ops.Barrier(len(qubits)), qubits)
 

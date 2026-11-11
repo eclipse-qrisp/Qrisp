@@ -648,9 +648,12 @@ Bug Fixes
   compile with :ref:`qjit <qjit>`. Resetting a whole QuantumVariable was not
   affected (`PR #941 <https://github.com/eclipse-qrisp/Qrisp/pull/941>`_).
 
-* Fixed :func:`~qrisp.barrier` raising ``TracerIntegerConversionError`` in
-  :ref:`Jasp <jasp>` mode. A barrier only structures static circuits, so in Jasp mode it
-  now does nothing (`Issue #375 <https://github.com/eclipse-qrisp/Qrisp/issues/375>`_).
+* Fixed :func:`~qrisp.barrier` raising ``TracerIntegerConversionError`` on a
+  QuantumVariable in :ref:`Jasp <jasp>` mode. A QuantumVariable has a traced size, so no
+  barrier operation can be built: in Jasp mode, a barrier on a QuantumVariable, a slice of
+  one or a single qubit now does nothing. A barrier on a list of qubits or on a
+  QuantumArray is applied as before
+  (`Issue #375 <https://github.com/eclipse-qrisp/Qrisp/issues/375>`_).
 
 * Fixed :func:`~qrisp.unitary` raising ``TracerArrayConversionError`` in
   :ref:`Jasp <jasp>` mode. The U3 matrix used to compute the global phase is now built with

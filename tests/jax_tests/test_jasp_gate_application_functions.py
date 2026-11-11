@@ -152,12 +152,13 @@ def test_jasp_gates_match_static_gates(name):
     assert np.allclose(jasp_unitary, qs.compile().get_unitary())
 
 
-BARRIER_ARGUMENTS = [lambda qf: qf, lambda qf: qf[0], lambda qf: [qf[0], qf[2]]]
+# Inputs without a static number of qubits: a QuantumVariable, a slice, a single qubit.
+UNSIZED_BARRIER_ARGUMENTS = [lambda qf: qf, lambda qf: qf[0:2], lambda qf: qf[0]]
 
 
-@pytest.mark.parametrize("argument", BARRIER_ARGUMENTS)
-def test_jasp_barrier_does_nothing(argument):
-    """In Jasp mode, a barrier adds nothing to the Jaspr and leaves the state unchanged."""
+@pytest.mark.parametrize("argument", UNSIZED_BARRIER_ARGUMENTS)
+def test_jasp_barrier_without_a_static_size_does_nothing(argument):
+    """In Jasp mode, such a barrier adds nothing to the Jaspr and leaves the state unchanged."""
 
     def program(apply):
         def main():
@@ -176,6 +177,44 @@ def test_jasp_barrier_does_nothing(argument):
         return program(barrier)()
 
     assert simulate() == 1
+
+
+@pytest.mark.parametrize("argument", [lambda qf: [qf[0], qf[2]], lambda qf: (qf[0], qf[2])])
+def test_jasp_barrier_on_a_list_of_qubits(argument):
+    """In Jasp mode, a barrier on a list of qubits is applied as in static mode."""
+
+    def main():
+        qf = QuantumFloat(3)
+        h(qf[0])
+        barrier(argument(qf))
+        cx(qf[0], qf[2])
+        return qf
+
+    circuit = make_jaspr(main)().to_qc()[-1]
+    gates = [
+        (instruction.op.name, [circuit.qubits.index(qubit) for qubit in instruction.qubits])
+        for instruction in circuit.data
+        if instruction.op.name in ("h", "barrier", "cx")
+    ]
+    assert gates == [("h", [0]), ("barrier", [0, 2]), ("cx", [0, 2])]
+
+
+def test_jasp_barrier_on_a_quantum_array():
+    """In Jasp mode, a barrier on a QuantumArray is applied to its qubits."""
+
+    def main():
+        qa = QuantumArray(QuantumBool(), shape=2)
+        barrier(qa)
+        return qa
+
+    circuit = make_jaspr(main)().to_qc()[-1]
+    barrier_qubits = {
+        circuit.qubits.index(qubit)
+        for instruction in circuit.data
+        if instruction.op.name == "barrier"
+        for qubit in instruction.qubits
+    }
+    assert barrier_qubits == {0, 1}
 
 
 def test_jasp_unitary():
