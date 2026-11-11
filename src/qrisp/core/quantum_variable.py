@@ -843,13 +843,13 @@ class QuantumVariable:
                 )
                 self.reg.insert(position + i, insertion_qubits[i])
 
-    def reduce(self, qubits: list[Qubit], verify=False):
+    def reduce(self, qubits: Qubit | list[Qubit], verify=False):
         r"""Reduces the qubit count of the QuantumVariable by removing a specified set of qubits.
 
         Parameters
         ----------
-        qubits : list[Qubit]
-            The qubits to remove from the QuantumVariable.
+        qubits : qubit | list[Qubit]
+            The qubit(s) to remove from the QuantumVariable.
 
         verify : bool
             Boolean value which indicates wether Qrisp should verify that the reduced
@@ -857,9 +857,6 @@ class QuantumVariable:
 
         Raises
         ------
-        TypeError
-            A single Qubit was passed instead of a list of qubits.
-
         TracingModeError
             Tried to reduce a QuantumVariable in tracing mode.
 
@@ -883,7 +880,7 @@ class QuantumVariable:
 
         """
         if isinstance(qubits, Qubit):
-            raise TypeError("QuantumVariable.reduce expects a list of qubits, got a single Qubit")
+            qubits = [qubits]
 
         # Imported locally: qrisp.jasp imports QuantumVariable from this module.
         from qrisp.jasp import TracingModeError, TracingQuantumSession

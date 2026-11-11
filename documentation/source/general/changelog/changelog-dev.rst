@@ -753,12 +753,6 @@ API Changes
   must keep its own references, or use the ``qv_list`` of the relevant QuantumSession
   (`PR #989 <https://github.com/eclipse-qrisp/Qrisp/pull/989>`_).
 
-* :meth:`QuantumVariable.reduce <qrisp.QuantumVariable.reduce>` now only accepts a list of
-  qubits. Passing a single :ref:`Qubit <Qubit>` raises a ``TypeError``; wrap it in a list
-  instead, e.g. ``qv.reduce([qv[0]])`` rather than ``qv.reduce(qv[0])``. Calling ``reduce``
-  in tracing mode now raises an exception
-  (`PR #989 <https://github.com/eclipse-qrisp/Qrisp/pull/989>`_).
-
 .. Add API changes above this line
 
 Development
