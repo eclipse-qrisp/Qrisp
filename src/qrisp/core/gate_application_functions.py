@@ -1598,7 +1598,6 @@ def unitary(unitary_array: NDArrayLike, qubits: Qubit | Tracer) -> None:
     """
     mat = unitary_array
     coeff = 1 / jnp.sqrt(jnp.linalg.det(mat))
-    gphase_angle = -jnp.angle(coeff) % (2 * jnp.pi)
     tmp_10 = jnp.abs((coeff * mat[1][0]))
     tmp_00 = jnp.abs((coeff * mat[0][0]))
     theta = 2 * jnp.arctan2(tmp_10, tmp_00)
