@@ -666,6 +666,13 @@ Bug Fixes
   a ``TypeError`` that says so
   (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
 
+* In :ref:`Jasp <jasp>` mode, :func:`~qrisp.mcx` with a list of controls and the
+  ``maslov``, ``balauca_dirty``, ``hybrid``, ``amy`` or ``jones`` method raised unrelated
+  errors (``UnboundLocalError``, ``AttributeError``, ``TypeError``). These methods build
+  static circuits, so it now raises a ``ValueError`` saying that the method is not
+  available in Jasp mode
+  (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
+
 * Fixed :func:`~qrisp.unitary` raising ``TracerArrayConversionError`` in
   :ref:`Jasp <jasp>` mode. The U3 matrix used to compute the global phase is now built with
   ``jax.numpy``, so the matrix can be a constant or a traced value. Static mode is unchanged

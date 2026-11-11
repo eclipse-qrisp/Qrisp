@@ -424,11 +424,7 @@ _SHARED_MCX_METHODS: dict[str, Callable[..., None]] = {
     "gray_pt": _partial(_mcx_gate, method="gray_pt"),
     "gray_pt_inv": _partial(_mcx_gate, method="gray_pt_inv"),
     "auto": _partial(_mcx_gate, method="auto"),
-    "balauca_dirty": _balauca_dirty_mcx,
     "yong": _yong_mcx,
-    "hybrid": _hybrid_mcx,
-    "amy": _amy_mcx,
-    "jones": _jones_mcx,
     "khattar": _khattar_mcx,
 }
 
@@ -438,8 +434,14 @@ _STATIC_MCX_METHODS: dict[str, Callable[..., None]] = {
     "gidney_inv": _partial(_gidney_mcx, inv=True),
     "maslov": _maslov_mcx,
     "balauca": _balauca_mcx,
+    "balauca_dirty": _balauca_dirty_mcx,
+    "hybrid": _hybrid_mcx,
+    "amy": _amy_mcx,
+    "jones": _jones_mcx,
 }
 
+# maslov, balauca_dirty, hybrid, amy and jones build static circuits, so they are not
+# available in Jasp mode.
 _JASP_MCX_METHODS: dict[str, Callable[..., None]] = {
     **_SHARED_MCX_METHODS,
     "gidney": _partial(_jasp_gidney_mcx, inv=False),
@@ -600,8 +602,8 @@ def _jasp_mcx(
     if isinstance(controls, qubit_arrays) and method not in ("balauca", "khattar"):
         method = "balauca"
 
-    if method == "maslov":
-        raise ValueError("The maslov method of mcx is not available in Jasp mode")
+    if method in _STATIC_MCX_METHODS and method not in _JASP_MCX_METHODS:
+        raise ValueError(f"The {method} method of mcx is not available in Jasp mode")
 
     _mcx_method(_JASP_MCX_METHODS, method)(controls, target, ctrl_state, num_ancilla)
 
@@ -688,6 +690,10 @@ def mcx(
         implying there is a lot of recycling potential. The net effect is that in more
         complex programs, the amount of qubits of the circuit returned by the
         :meth:`compile method <qrisp.QuantumSession.compile>` increases only slightly.
+
+    In :ref:`Jasp <jasp>` mode, the ``maslov``, ``balauca_dirty``, ``hybrid``, ``amy`` and
+    ``jones`` methods are not available, and controls given as a QuantumVariable or as a
+    qubit array use ``balauca`` unless the method is ``khattar``.
 
     Parameters
     ----------

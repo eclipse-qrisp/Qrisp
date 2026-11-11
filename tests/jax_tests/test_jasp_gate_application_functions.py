@@ -266,10 +266,6 @@ LIST_METHODS = [
     "yong",
     "khattar",
     "auto",
-    pytest.param("balauca_dirty", marks=bug("static construction", raises=AttributeError)),
-    pytest.param("hybrid", marks=bug("static construction", raises=AttributeError)),
-    pytest.param("amy", marks=bug("static construction", raises=TypeError)),
-    pytest.param("jones", marks=bug("static construction", raises=AttributeError)),
 ]
 
 
@@ -328,15 +324,17 @@ def test_jasp_mcx_string_control_state(method, ctrl_state, activating_value):
     assert mcx_truth_table(apply, 3) == expected_truth_table(activating_value, 3)
 
 
-def test_jasp_mcx_maslov_is_not_available():
-    """The maslov method raises a ValueError in Jasp mode."""
+@pytest.mark.parametrize("method", ["maslov", "balauca_dirty", "hybrid", "amy", "jones"])
+def test_jasp_static_mcx_methods_are_not_available(method):
+    """The methods that build static circuits raise a ValueError in Jasp mode."""
 
     def main():
         qf, qb = QuantumFloat(2), QuantumBool()
-        mcx([qf[0], qf[1]], qb, method="maslov")
+        mcx([qf[0], qf[1]], qb, method=method)
         return measure(qb)
 
-    with pytest.raises(ValueError, match="The maslov method of mcx is not available in Jasp mode"):
+    message = f"The {method} method of mcx is not available in Jasp mode"
+    with pytest.raises(ValueError, match=message):
         make_jaspr(main)()
 
 
