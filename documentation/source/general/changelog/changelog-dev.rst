@@ -649,6 +649,42 @@ Bug Fixes
   compile with :ref:`qjit <qjit>`. Resetting a whole QuantumVariable was not
   affected (`PR #941 <https://github.com/eclipse-qrisp/Qrisp/pull/941>`_).
 
+* Fixed :func:`~qrisp.barrier` raising ``TracerIntegerConversionError`` on a
+  QuantumVariable in :ref:`Jasp <jasp>` mode. A QuantumVariable has a traced size, so no
+  barrier operation can be built: in Jasp mode, a barrier on a QuantumVariable, a slice of
+  one or a single qubit now does nothing. A barrier on a list of qubits or on a
+  QuantumArray is applied as before
+  (`Issue #375 <https://github.com/eclipse-qrisp/Qrisp/issues/375>`_).
+
+* Fixed :func:`~qrisp.reset` raising ``AttributeError`` on a qubit array in
+  :ref:`Jasp <jasp>` mode, such as ``reset(qv.reg)`` or a slice ``reset(qv[0:2])``
+  (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
+
+* Fixed :func:`~qrisp.mcp` with ``method="gray"`` or ``"gray_pt"`` raising
+  ``TypeError: 'int' object is not subscriptable`` in :ref:`Jasp <jasp>` mode. On a list
+  of qubits with a static control state, these methods work again, and read a string
+  control state as in static mode. On a QuantumVariable, whose size is traced, they raise
+  a ``TypeError`` that says so
+  (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
+
+* In :ref:`Jasp <jasp>` mode, :func:`~qrisp.mcx` with a list of controls and the
+  ``maslov``, ``balauca_dirty``, ``hybrid``, ``amy`` or ``jones`` method raised unrelated
+  errors (``UnboundLocalError``, ``AttributeError``, ``TypeError``). These methods build
+  static circuits, so it now raises a ``ValueError`` saying that the method is not
+  available in Jasp mode
+  (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
+
+* Fixed :func:`~qrisp.unitary` giving NaN gate parameters for a real matrix with a
+  negative determinant, such as ``np.array([[0.0, 1.0], [1.0, 0.0]])``: the square root
+  of the determinant was taken in real numbers. Such matrices are now converted to
+  complex numbers first. Other matrices give the same parameters as before
+  (`PR #1020 <https://github.com/eclipse-qrisp/Qrisp/pull/1020>`_).
+
+* Fixed :func:`~qrisp.unitary` raising ``TracerArrayConversionError`` in
+  :ref:`Jasp <jasp>` mode. The U3 matrix used to compute the global phase is now built with
+  ``jax.numpy``, so the matrix can be a constant or a traced value. Static mode is unchanged
+  (`Issue #581 <https://github.com/eclipse-qrisp/Qrisp/issues/581>`_).
+
 Compatibility
 -------------
 

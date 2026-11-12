@@ -18,10 +18,20 @@ Qrisp. These can be imported directly from the top-level package:
    :type: TypeAlias
    :value: Qubit | int | Sequence[Qubit | int]
 
-   Accepted as a qubit specifier in circuit methods and gate functions.
+   Accepted as a qubit specifier in circuit methods.
    A single qubit can be identified either by its :ref:`Qubit` object or by its
    integer index within the circuit. A sequence of either represents multiple
    qubits.
+
+.. py:data:: QuantumOperand
+   :type: TypeAlias
+   :value: Qubit | Tracer | QuantumVariable | QuantumArray | DynamicQubitArray | Sequence[QuantumOperand]
+
+   Accepted as the qubit arguments of the :ref:`gate functions <gate_application_functions>`.
+   A single :ref:`Qubit`, a :ref:`QuantumVariable`, a :ref:`QuantumArray`, a
+   ``DynamicQubitArray``, or a sequence of these. In :ref:`Jasp <jasp>` mode, a
+   single qubit is a JAX tracer. Unlike the other aliases, ``QuantumOperand`` is a
+   forward reference (a string), so it is meant for type annotations only.
 
 .. py:data:: ClbitLike
    :type: TypeAlias
@@ -56,12 +66,12 @@ Qrisp. These can be imported directly from the top-level package:
    ``jax.typing.ArrayLike``, but is defined within Qrisp for consistency with
    the rest of this typing module.
 
-.. py:data:: Param
+.. py:data:: FloatLike
    :type: TypeAlias
-   :value: float | int | complex | np.number | sympy.Expr | jax.Array | jax.core.Tracer
+   :value: float | int | np.floating | np.integer | sympy.Expr | jax.Array | jax.core.Tracer
 
    A gate parameter value.
 
    Covers all types accepted as gate parameters throughout Qrisp: Python
-   numeric scalars, NumPy numeric scalars, symbolic expressions,
-   concrete JAX arrays, and JAX tracers.
+   numeric scalars, NumPy floating-point and integer scalars, symbolic
+   expressions, concrete JAX arrays, and JAX tracers.

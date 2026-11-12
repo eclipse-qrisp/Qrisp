@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 
-from typing import Sequence, TypeAlias
+from typing import TYPE_CHECKING, Sequence, TypeAlias
 
 import jax
 import jax.core
@@ -28,8 +28,16 @@ from sympy import Expr
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
 
+if TYPE_CHECKING:
+    from jax.core import Tracer
+
+    from qrisp.core.quantum_array import QuantumArray
+    from qrisp.core.quantum_variable import QuantumVariable
+    from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
+
 __all__ = [
     "QubitLike",
+    "QuantumOperand",
     "ClbitLike",
     "ScalarLike",
     "NDArrayLike",
@@ -38,11 +46,22 @@ __all__ = [
 ]
 
 QubitLike: TypeAlias = Qubit | int | Sequence[Qubit | int]
-"""Accepted as a qubit specifier in circuit methods and gate functions.
+"""Accepted as a qubit specifier in circuit methods.
 
 A single qubit can be identified either by its ``Qubit`` object or by its
 integer index within the circuit. A sequence of either represents multiple
 qubits.
+"""
+
+# qrisp.core and qrisp.jasp import this module while loading, so this is a forward reference.
+QuantumOperand: TypeAlias = (
+    "Qubit | Tracer | QuantumVariable | QuantumArray | DynamicQubitArray | Sequence[QuantumOperand]"
+)
+"""Accepted as the qubit arguments of the gate functions, such as ``x`` and ``cx``.
+
+A single qubit, a QuantumVariable, a QuantumArray, a DynamicQubitArray, or a
+sequence of these. In Jasp mode, a single qubit is a JAX tracer. The alias is a
+forward reference, so it is meant for type annotations only.
 """
 
 ClbitLike: TypeAlias = Clbit | int | Sequence[Clbit | int]

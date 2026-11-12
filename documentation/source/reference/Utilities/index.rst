@@ -41,9 +41,11 @@ Utilities
      - Tests if an inplace adder is working correctly.
    * - :data:`~qrisp.QubitLike`, :data:`~qrisp.ClbitLike`
      - Type aliases for qubit and classical bit specifiers.
+   * - :data:`~qrisp.QuantumOperand`
+     - Type alias for the qubit arguments of the gate functions.
    * - :data:`~qrisp.ScalarLike`, :data:`~qrisp.NDArrayLike`, :data:`~qrisp.ArrayLike`
      - Type aliases for scalar values, multi-dimensional arrays, and their union.
-   * - :data:`~qrisp.Param`
+   * - :data:`~qrisp.FloatLike`
      - Type alias for gate parameter values (numerics, SymPy expressions, JAX tracers).
 
 .. toctree::
