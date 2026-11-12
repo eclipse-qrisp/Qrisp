@@ -14,26 +14,26 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Setuptools packaging configuration for building and distributing the qrisp package."""
+"""Shared helpers for all the Qrisp adder implementations."""
 
-import setuptools
+from jax.core import Tracer
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+from qrisp.circuit import Qubit
+from qrisp.core import QuantumVariable
+from qrisp.jasp import DynamicQubitArray
+from qrisp.jasp.primitives import AbstractQubit
 
-setuptools.setup(
-    name="qrisp",
-    author="The Qrisp team",
-    author_email="raphael.seidel@fokus.fraunhofer.de",
-    description="Qrisp - A high level language for gate-based quantum computing",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
-        "Operating System :: OS Independent",
-    ],
-    package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
-    python_requires=">=3.11, <3.14",
-)
+
+def _is_quantum_register(obj):
+    """Return True if ``obj`` is a quantum register.
+
+    A quantum register is a QuantumVariable (or subclass thereof), a
+    DynamicQubitArray or a list of Qubits (including traced qubits).
+    """
+    if isinstance(obj, (QuantumVariable, DynamicQubitArray)):
+        return True
+    if isinstance(obj, list):
+        return all(
+            isinstance(qb, Qubit) or (isinstance(qb, Tracer) and isinstance(qb.aval, AbstractQubit)) for qb in obj
+        )
+    return False

@@ -14,12 +14,21 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
+"""Tests for the QUBO to Ising instance builders of COLD and LCD."""
+
+import itertools
+
 import numpy as np
+import pytest
+from qubo_problems import Q4, Q6, Q_coupled
 
 from qrisp.algorithms.cold.problems.QUBO import create_COLD_instance, create_LCD_instance
-from qrisp.algorithms.cold.problems.qubo_problems import Q6
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators.qubit import Y, Z
 from qrisp.operators.qubit.qubit_operator import QubitOperator
+
+_ATOL = 1e-9
+_DIAG_ATOL = 1e-12
 
 
 def test_qubit_operator_sum_matches_naive_sum():
@@ -33,14 +42,14 @@ def test_qubit_operator_sum_matches_naive_sum():
 
     assert fast.terms_dict.keys() == naive.terms_dict.keys()
     for term, coeff in naive.terms_dict.items():
-        assert abs(fast.terms_dict[term] - coeff) < 1e-9
+        assert abs(fast.terms_dict[term] - coeff) < _ATOL
 
 
 def test_create_cold_instance_H_prob_matches_naive_build():
     """create_COLD_instance's H_prob matches a naive-sum() reference build."""
     Q = Q6
     N = Q.shape[0]
-    h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+    h = -0.5 * np.sum(Q, axis=1)
     J = 0.5 * Q
 
     H_prob_naive = sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)]) + sum(
@@ -51,14 +60,14 @@ def test_create_cold_instance_H_prob_matches_naive_build():
 
     assert H_prob.terms_dict.keys() == H_prob_naive.terms_dict.keys()
     for term, coeff in H_prob_naive.terms_dict.items():
-        assert abs(H_prob.terms_dict[term] - coeff) < 1e-9
+        assert abs(H_prob.terms_dict[term] - coeff) < _ATOL
 
 
 def test_create_lcd_instance_H_prob_and_nc_agp_match_naive_build():
     """create_LCD_instance(agp_type="nc")'s H_prob and nested-commutator A_lam match a naive-sum() reference build."""
     Q = Q6
     N = Q.shape[0]
-    h = -0.5 * np.diag(Q) - 0.5 * np.sum(Q, axis=1)
+    h = -0.5 * np.sum(Q, axis=1)
     J = 0.5 * Q
 
     H_prob_naive = sum([sum([J[i][j] * Z(i) * Z(j) for j in range(i, N)]) for i in range(N)]) + sum(
@@ -76,10 +85,49 @@ def test_create_lcd_instance_H_prob_and_nc_agp_match_naive_build():
 
     assert H_prob.terms_dict.keys() == H_prob_naive.terms_dict.keys()
     for term, coeff in H_prob_naive.terms_dict.items():
-        assert abs(H_prob.terms_dict[term] - coeff) < 1e-9
+        assert abs(H_prob.terms_dict[term] - coeff) < _ATOL
 
     assert len(A_lam) == len(A_lam_naive)
     for op, op_naive in zip(A_lam, A_lam_naive):
         assert op.terms_dict.keys() == op_naive.terms_dict.keys()
         for term, coeff in op_naive.terms_dict.items():
-            assert abs(op.terms_dict[term] - coeff) < 1e-9
+            assert abs(op.terms_dict[term] - coeff) < _ATOL
+
+
+@pytest.mark.parametrize(
+    ("Q", "label"),
+    [(Q4, "field-dominated"), (Q6, "sparse-chain"), (Q_coupled, "coupling-dominated")],
+    ids=["field-dominated", "sparse-chain", "coupling-dominated"],
+)
+def test_H_prob_reproduces_qubo_cost_up_to_constant(Q, label):
+    """H_prob's whole spectrum must be x^T Q x shifted by one constant, not merely share its minimum.
+
+    Sharing a minimum is too weak a check. On Q4 the optimum is whatever sign(h) says, so an
+    encoding whose local fields are off by a factor still lands on it, and even where the couplings
+    do decide the ground state can survive a wrong h by luck. Pinning the whole spectrum fixes J
+    and h together and fails on all three instances the moment diag(Q) is counted twice.
+    """
+    N = Q.shape[0]
+    H_prob = create_LCD_instance(Q, agp_type="local", uniform_AGP_coeffs=True)[2]
+
+    matrix = H_prob.to_array()
+    off_diagonal = matrix - np.diag(np.diag(matrix))
+    assert np.abs(off_diagonal).max() < _DIAG_ATOL, f"{label}: H_prob must be diagonal in the Z basis"
+
+    # to_array() indexes basis states in the same order as the measurement keys: qubit 0 leftmost.
+    energies = np.real(np.diag(matrix))
+    costs = np.array([x @ Q @ x for x in (np.array(b) for b in itertools.product([0, 1], repeat=N))])
+
+    offsets = costs - energies
+    assert np.allclose(offsets, offsets[0]), f"{label}: H_prob is not x^T Q x up to a constant"
+
+
+@pytest.mark.parametrize("factory", [create_LCD_instance, create_COLD_instance])
+def test_agp_type_order1_is_deprecated_alias_of_local(factory):
+    """The old agp_type name 'order1' still works, warns, and builds the same operators as 'local'."""
+    Q = np.array([[-1.0, 0.5], [0.5, 0.3]])
+    kwargs = {"uniform_AGP_coeffs": True}
+    with pytest.warns(QrispDeprecationWarning, match="order1"):
+        old = factory(Q, agp_type="order1", **kwargs)
+    new = factory(Q, agp_type="local", **kwargs)
+    assert str(old[3]) == str(new[3])

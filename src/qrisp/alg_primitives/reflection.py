@@ -26,7 +26,6 @@ from qrisp import (
     QuantumVariable,
     conjugate,
     control,
-    gate_wrap,
     gphase,
     h,
     invert,
@@ -39,7 +38,6 @@ from qrisp.jasp import jlen
 from qrisp.typing import FloatLike
 
 
-@gate_wrap(permeability=[], is_qfree=False)
 def reflection(
     qargs: QuantumVariable | QuantumArray | Sequence[QuantumVariable | QuantumArray],
     state_function: Callable | None = None,

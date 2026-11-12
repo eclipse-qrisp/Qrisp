@@ -75,3 +75,24 @@ def test_gqsp(poly, k):
     res_numpy = expvalm(poly, k, H_arr) @ np.array([1, 0, 0, 0])
     res_numpy = np.abs(res_numpy / np.linalg.norm(res_numpy)) ** 2
     assert np.linalg.norm(res - res_numpy) < 1e-2
+
+
+def test_qpsp_complex_coeffs():
+    """Test GQSP with complex coefficients."""
+
+    # p(z) = (1 + i z)/2
+    coeffs = np.array([0.5, 0.5j])
+
+    # diag(1, i)
+    def U(qv):
+        p(np.pi / 2, qv[0])
+
+    qv = QuantumFloat(1)
+    h(qv)
+    anc = QuantumBool()
+    GQSP(anc, qv, unitary=U, p=np.array(coeffs))
+    res = multi_measurement([qv, anc])
+    post_selected_res = {k[0]: v for k, v in res.items() if k[1] is False}
+
+    # I + i U = I + i * diag(1, i) = diag(1 + i, 1 - 1) = diag(1 + i, 0)
+    assert post_selected_res.get(1, 0) == 0
