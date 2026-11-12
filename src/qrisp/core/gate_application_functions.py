@@ -72,9 +72,6 @@ _MCP_AUTO_BALAUCA_MIN_QUBITS = 4
 # traced qubit has no length.
 _UNSIZED_JASP_OPERANDS = (QuantumVariable, DynamicQubitArray, jax.core.Tracer)
 
-# The avals of traced qubits and qubit arrays.
-_QUBIT_AVALS = (AbstractQubitArray, AbstractQubit)
-
 _LOST_TRACK_MESSAGE = (
     "Lost track of QuantumCircuit during tracing. This might have been caused by a missing "
     "quantum_kernel decorator or not using quantum prefix control (like q_fori_loop, q_cond). "
@@ -1009,24 +1006,26 @@ def _static_mcz(
     """
     ctrl_state = _ctrl_state_string(ctrl_state, n)
 
-    if method in ("gray", "auto"):
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
+    match method:
+        case "gray" | "auto":
+            if ctrl_state[-1] == "0":
+                x(qubits[-1])
 
-        if len(qubits) > 1:
-            append_operation(
-                std_ops.ZGate().control(len(qubits) - 1, method=method, ctrl_state=ctrl_state[:-1]),
-                qubits,
-            )
-        else:
-            z(qubits[0])
+            if len(qubits) > 1:
+                z_gate = std_ops.ZGate().control(
+                    len(qubits) - 1,
+                    method=method,
+                    ctrl_state=ctrl_state[:-1],
+                )
+                append_operation(z_gate, qubits)
+            else:
+                z(qubits[0])
 
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
+            if ctrl_state[-1] == "0":
+                x(qubits[-1])
 
-        return
-
-    _mcz_inner(qubits, method, ctrl_state)
+        case _:
+            _mcz_inner(qubits, method, ctrl_state)
 
 
 def _jasp_mcz(
@@ -1156,29 +1155,31 @@ def _static_mcp(
 
     ctrl_state = _ctrl_state_string(ctrl_state, n)
 
-    if method in ("gray", "gray_pt"):
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
+    match method:
+        case "gray" | "gray_pt":
+            if ctrl_state[-1] == "0":
+                x(qubits[-1])
 
-        mcp_gate = std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
-        append_operation(mcp_gate, qubits)
+            mcp_gate = std_ops.PGate(phi).control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
+            append_operation(mcp_gate, qubits)
 
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
+            if ctrl_state[-1] == "0":
+                x(qubits[-1])
 
-    elif method == "balauca":
-        _balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
+        case "balauca":
+            _balauca_mcp(phi, qubits, ctrl_state=ctrl_state)
 
-    elif method == "khattar":
-        khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
+        case "khattar":
+            khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
 
-    elif method == "auto":
-        with control(n < _MCP_AUTO_BALAUCA_MIN_QUBITS):
-            mcp(phi, qubits, method="gray", ctrl_state=ctrl_state)
-        with control(n >= _MCP_AUTO_BALAUCA_MIN_QUBITS):
-            mcp(phi, qubits, method="balauca", ctrl_state=ctrl_state)
-    else:
-        raise ValueError(f"Don't know method {method}")
+        case "auto":
+            with control(n < _MCP_AUTO_BALAUCA_MIN_QUBITS):
+                mcp(phi, qubits, method="gray", ctrl_state=ctrl_state)
+            with control(n >= _MCP_AUTO_BALAUCA_MIN_QUBITS):
+                mcp(phi, qubits, method="balauca", ctrl_state=ctrl_state)
+
+        case _:
+            raise ValueError(f"Don't know method {method}")
 
 
 def _jasp_mcp(
@@ -1219,37 +1220,40 @@ def _jasp_mcp(
     if method == "auto":
         method = "balauca"
 
-    if method in ("gray", "gray_pt"):
-        # The gray-code gate is built for a fixed number of qubits and control state.
-        static_ctrl_state = isinstance(ctrl_state, (int, np.integer, str))
-        if not isinstance(qubits, list) or not static_ctrl_state:
-            requirement = "a list of qubits and a static control state"
-            raise TypeError(f"mcp method {method} needs {requirement} in Jasp mode")
-        n = len(qubits)
-        ctrl_state = _ctrl_state_string(ctrl_state, n)
-
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
-
-        p_gate = std_ops.PGate(_PARAM_SYMBOLS[0])
-        mcp_gate = p_gate.control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
-        append_operation(mcp_gate, qubits, param_tracers=[phi])
-
-        if ctrl_state[-1] == "0":
-            x(qubits[-1])
-        return
-
-    if isinstance(ctrl_state, str):
+    # The gray-code methods read a string control state as in static mode, the other
+    # methods convert it with int(ctrl_state, 2).
+    gray_code = method in ("gray", "gray_pt")
+    if not gray_code and isinstance(ctrl_state, str):
         ctrl_state = int(ctrl_state, 2)
 
-    if method == "balauca":
-        jasp_balauca_mcp(phi, qubits, ctrl_state)
+    match method:
+        case "gray" | "gray_pt":
+            # The gray-code gate is built for a fixed number of qubits and control state.
+            static_ctrl_state = isinstance(ctrl_state, (int, np.integer, str))
+            if not isinstance(qubits, list) or not static_ctrl_state:
+                requirement = "a list of qubits and a static control state"
+                raise TypeError(f"mcp method {method} needs {requirement} in Jasp mode")
+            n = len(qubits)
+            ctrl_state = _ctrl_state_string(ctrl_state, n)
 
-    elif method == "khattar":
-        khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
+            if ctrl_state[-1] == "0":
+                x(qubits[-1])
 
-    else:
-        raise ValueError(f"Don't know method {method}")
+            p_gate = std_ops.PGate(_PARAM_SYMBOLS[0])
+            mcp_gate = p_gate.control(n - 1, ctrl_state=ctrl_state[:-1], method=method)
+            append_operation(mcp_gate, qubits, param_tracers=[phi])
+
+            if ctrl_state[-1] == "0":
+                x(qubits[-1])
+
+        case "balauca":
+            jasp_balauca_mcp(phi, qubits, ctrl_state)
+
+        case "khattar":
+            khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
+
+        case _:
+            raise ValueError(f"Don't know method {method}")
 
 
 def mcp(
@@ -1708,12 +1712,13 @@ def measure(qubits: QuantumOperand) -> Any:
     if not isinstance(qs, TracingQuantumSession):
         # One new Clbit per qubit, or a single Clbit for a single qubit. The qubits of
         # a QuantumArray are counted with convert_to_qb_list, like append_operation does.
-        if isinstance(qubits, QuantumArray):
-            clbits = [qs.add_clbit() for _ in convert_to_qb_list(qubits)]
-        elif hasattr(qubits, "__len__"):
-            clbits = [qs.add_clbit() for _ in qubits]
-        else:
-            clbits = qs.add_clbit()
+        match qubits:
+            case QuantumArray():
+                clbits = [qs.add_clbit() for _ in convert_to_qb_list(qubits)]
+            case _ if hasattr(qubits, "__len__"):
+                clbits = [qs.add_clbit() for _ in qubits]
+            case _:
+                clbits = qs.add_clbit()
         append_operation(std_ops.Measurement(), [qubits], [clbits])
         return clbits
 
@@ -1722,13 +1727,14 @@ def measure(qubits: QuantumOperand) -> Any:
     if qs.abs_qst._trace is not jax.core.trace_ctx.trace:
         raise RuntimeError(_LOST_TRACK_MESSAGE)
 
-    if isinstance(qubits, (DynamicQubitArray, QuantumVariable, QuantumArray)):
-        return qubits.measure()
-    if isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, _QUBIT_AVALS):
-        result, qs.abs_qst = Measurement_p.bind(qubits, qs.abs_qst)
-        return result
-
-    raise TypeError(f"Tried to measure type {type(qubits)}")
+    match qubits:
+        case DynamicQubitArray() | QuantumVariable() | QuantumArray():
+            return qubits.measure()
+        case jax.core.Tracer(aval=AbstractQubitArray() | AbstractQubit()):
+            result, qs.abs_qst = Measurement_p.bind(qubits, qs.abs_qst)
+            return result
+        case _:
+            raise TypeError(f"Tried to measure type {type(qubits)}")
 
 
 def measure_to_big_integer(qv: QuantumVariable, size: int) -> BigInteger:
@@ -1779,19 +1785,20 @@ def reset(qubits: QuantumOperand) -> None:
         append_operation(std_ops.Reset(), [qubits])
         return
 
-    if isinstance(qubits, QuantumVariable):
-        abs_qst = reset_p.bind(qubits.reg.tracer, qs.abs_qst)
-    elif isinstance(qubits, QuantumArray):
-        flattened_qa = qubits.flatten()
-        for i in jrange(qubits.size):
-            reset(flattened_qa[i])
-        return
-    elif isinstance(qubits, DynamicQubitArray):
-        abs_qst = reset_p.bind(qubits.tracer, qs.abs_qst)
-    elif isinstance(qubits, jax.core.Tracer) and isinstance(qubits.aval, _QUBIT_AVALS):
-        abs_qst = reset_p.bind(qubits, qs.abs_qst)
-    else:
-        raise TypeError(f"Tried to reset type {type(qubits.aval)}")
+    match qubits:
+        case QuantumVariable():
+            abs_qst = reset_p.bind(qubits.reg.tracer, qs.abs_qst)
+        case QuantumArray():
+            flattened_qa = qubits.flatten()
+            for i in jrange(qubits.size):
+                reset(flattened_qa[i])
+            return
+        case DynamicQubitArray():
+            abs_qst = reset_p.bind(qubits.tracer, qs.abs_qst)
+        case jax.core.Tracer(aval=AbstractQubitArray() | AbstractQubit()):
+            abs_qst = reset_p.bind(qubits, qs.abs_qst)
+        case _:
+            raise TypeError(f"Tried to reset type {type(qubits.aval)}")
 
     qs.abs_qst = abs_qst
 
