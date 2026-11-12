@@ -1748,7 +1748,9 @@ def measure_to_big_integer(qv: QuantumVariable, size: int) -> BigInteger:
     qv : QuantumVariable
         The variable to measure.
     size : int
-        The number of 32-bit digits of the returned BigInteger.
+        The number of 32-bit digits of the returned BigInteger. It must be at least
+        ``ceil(qv.size / 32)``: the digits of qubits beyond ``32 * size`` are dropped
+        without an error.
 
     Returns
     -------

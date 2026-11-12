@@ -27,6 +27,33 @@ from qrisp.misc.utility import bin_rep
 
 # Ancilla supported multi controlled X gates from https://arxiv.org/pdf/1508.03273.pdf
 def maslov_mcx(n, ctrl_state: int | str = -1):
+    """Return a multi-controlled X gate built with the construction of Maslov.
+
+    For 3 and 4 controls, the gate acts on one more qubit, placed between the controls
+    and the target.
+
+    Parameters
+    ----------
+    n : int
+        The number of controls, at most 4.
+    ctrl_state : int or str, optional
+        The control state. Character ``i`` of a string is the state of control ``i``.
+        An integer is written in binary with its most significant digit first, so its
+        last binary digit is the state of the last control, the reverse of
+        :func:`~qrisp.mcx`. The default is ``-1``, all controls in state 1.
+
+    Returns
+    -------
+    Operation
+        The gate, acting on the controls, the extra qubit (for 3 and 4 controls) and
+        the target.
+
+    Raises
+    ------
+    Exception
+        If there are more than 4 controls.
+
+    """
     if not isinstance(ctrl_state, str):
         if ctrl_state == -1:
             ctrl_state += 2**n
