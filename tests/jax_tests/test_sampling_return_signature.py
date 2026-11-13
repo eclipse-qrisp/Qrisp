@@ -37,7 +37,7 @@ array-valued leaf              ✓        ✓          —          —
 QuantumArray                   ✓        ✓          ✓          ✓
 nested quantum values          ✓        ✓          —          —
 post_processor (struct-pres)   ✓        ✓          —          ✓
-post_processor (struct-change) ✓        ✓          —          —
+post_processor (struct-change) ✓        ✓          ✓          —
 zero shots                     ✓        —          —          ✓
 dynamic kernel args            ✓        —          —          ✓
 user-defined pytree (error)    ✓        —          —          —
@@ -836,6 +836,18 @@ class TestPostProcessor:
         assert res.shape == (100,)
         assert set(np.asarray(res).tolist()) <= {0.0, 1.0}
 
+    def test_post_processor_non_jit(self):
+        """Outside of Jasp the post_processor is applied as well."""
+
+        def kernel():
+            qf = QuantumFloat(2)
+            h(qf)
+            return qf
+
+        res = sample(kernel, shots=100, post_processor=lambda v: v % 2)()
+        assert set(res) <= {0.0, 1.0}
+        assert sum(res.values()) == 100
+
 
 # =============================================================================
 # 9. Edge cases
@@ -1209,6 +1221,7 @@ class TestQuantumArrayReturns:
         res = sample(_encoded_qa, shots=0)()
         ((outcome, probability),) = res.items()
         assert np.array_equal(outcome, _ENCODED)
+        assert type(probability) is float
         assert probability == pytest.approx(1)
 
     @pytest.mark.parametrize("terminal", [False, True])

@@ -16,49 +16,10 @@
 
 """Implements sample, drawing measurement samples from a quantum sampling kernel."""
 
-import math
-
 import jax
-import jax.numpy as jnp
-from jax.tree_util import tree_flatten, tree_leaves, tree_structure, tree_unflatten
 
-from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
-
-
-@jax.jit
-def _backend_shots_marker(val):
-    """Identity marker for the shot count.
-
-    Allows ``backend_sampler`` to reliably locate the shot count inside a traced
-    ``sampling_eval_function`` Jaxpr.
-    """
-    return val
-
-
-# The following function implements the sample feature.
-
-# The basic functionality would be relatively straightforward to implement,
-# however there are some complications. The reason for that is that the resulting
-# jaxpr should be "readable" by the terminal sampling interpreter.
-# Terminal sampling means that instead of performing the simulations "shots"-times
-# it is performed once and the shots are then sampled from that distribution.
-# Naturally this implies a massive performance increase, which is why a lot
-# of effort is spent to realize a smooth implementation.
-
-# The underlying idea to make the feature easily "readable" by the terminal
-# sampling interpreter is to structure one iteration of sampling into three
-# steps.
-
-# 1. Evaluating the user function, which generates the distribution.
-# 2. Sampling from that distribution via the "measure" function.
-# 3. Decoding and postprocessing the measurement results.
-
-# For the final two steps we deploy some custom logic to realize the terminal
-# sampling behavior. To simplify the automatic processing of these steps,
-# we capture each into individual pjit calls.
-
-# The terminal sampling interpreter then identifies each steps via the
-# eqn.params["name"] attribute and executes the custom logic.
+from qrisp.jasp.program_control._sampling_core import _sampling_procedure
+from qrisp.jasp.tracing_logic import check_for_tracing_mode
 
 
 def sample(sampling_kernel=None, shots=0, post_processor=None):
@@ -265,9 +226,6 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         with a mixed-returns kernel will raise an error.
 
     """
-    from qrisp.core import QuantumVariable, measure
-    from qrisp.jasp import qache
-
     if isinstance(sampling_kernel, int):
         shots = sampling_kernel
         sampling_kernel = None
@@ -275,227 +233,12 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     if sampling_kernel is None:
         return lambda x: sample(x, shots, post_processor=post_processor)
 
-    if post_processor is None:
-
-        def identity(*args):
-            if len(args) == 1:
-                return args[0]
-            return args
-
-        post_processor = identity
-
     if isinstance(shots, jax.core.Tracer):
         raise Exception("Tried to sample with dynamic shots value (static integer required)")
     elif not isinstance(shots, int):
         raise Exception(f"Tried to sample with shots value of non-integer type {type(shots)}")
 
-    # Qache the user function
-    @qache
-    def user_func(*args):
-        return sampling_kernel(*args)
-
-    # This function evaluates the sampling process
-    @jax.jit
-    def sampling_eval_function(*args, tracerized_shots=0):
-
-        for arg in args:
-            if isinstance(arg, QuantumVariable):
-                raise Exception("Tried to sample from sampling kernel taking a quantum value")
-
-        # Marker: allows backend_sampler to locate the shot count in the
-        # traced Jaxpr without fragile position-based extraction.
-        _backend_shots_marker(tracerized_shots)
-
-        # -----------------------------------------------------------------
-        # Typed pytree accumulator strategy
-        # -----------------------------------------------------------------
-        # The user's sampling kernel may return a single value or any
-        # JAX-supported pytree container — flat tuple, nested tuple,
-        # list, dict, or combinations thereof (e.g.
-        # ``{'x': (a, b), 'y': c}``).  We want the final result to mirror
-        # that structure, with each leaf replaced by a 1D JAX array of
-        # length *shots* preserving the leaf's native dtype.
-        #
-        # To avoid forcing all return values into a single flat 2D
-        # accumulator (which would coerce everything to float64), we
-        # build a **tuple of typed 1D accumulators** — one per leaf.
-        # The pytree structure is captured on the first iteration via
-        # ``tree_structure`` / ``tree_leaves`` and stored in
-        # ``return_amount``.  An ``_MultiReturnDetected`` then restarts the loop
-        # with the correctly-shaped accumulator tuple.
-        #
-        # On every iteration each leaf accumulator is updated
-        # independently with the corresponding decoded value, so
-        # ``bool`` stays ``bool``, ``int`` stays ``int``, etc.
-        # After the loop ``tree_unflatten`` rebuilds the original
-        # nested shape from the accumulator tuple — no post-hoc
-        # slicing or dtype casting needed.
-        #
-        # The two tiny helpers below encapsulate this logic so that
-        # the main loop body stays focused on quantum operations.
-        # -----------------------------------------------------------------
-
-        def _update_acc(acc, i, decoded_values, return_amount):
-            """Update *acc* at index *i* with *decoded_values*.
-
-            For pytree containers (``tuple``, ``list``, ``dict``) this
-            captures the structure and per-leaf dtypes/shapes on the first
-            iteration, raises :class:`_MultiReturnDetected` if *acc* is still a
-            plain 1D array, and updates a tuple of typed per-leaf
-            accumulators.  Each leaf accumulator has shape
-            ``(shots, *leaf_shape)`` so that array-valued leaves (e.g. a
-            ``(3,)`` array inside a tuple) naturally become
-            ``(shots, 3)`` in the result.
-            User-defined pytree types are rejected with a clear error.
-
-            A single, non-container return is the same mechanism with one
-            leaf: it too gets a typed accumulator, and differs from an
-            array leaf only in having an empty leaf shape.
-            """
-            struct = tree_structure(decoded_values)
-            if struct.num_nodes > 1:  # pytree container
-                if not isinstance(decoded_values, (tuple, list, dict)):
-                    raise TypeError(
-                        f"Unsupported return type {type(decoded_values).__name__!r}. "
-                        f"sample() supports tuple, list, and dict containers. "
-                        f"Convert the return value to one of these types."
-                    )
-                flat_values = tree_leaves(decoded_values)
-
-                if not return_amount:
-                    # A leaf may be a raw Python scalar rather than a JAX
-                    # array -- a literal returned by a post_processor, say --
-                    # and then carries no dtype or shape of its own.
-                    # ``asarray`` supplies both, so an int literal stays
-                    # integral and a complex one stays complex.
-                    leaves = [jnp.asarray(v) for v in flat_values]
-                    leaf_dtypes = [leaf.dtype for leaf in leaves]
-                    leaf_shapes = [leaf.shape for leaf in leaves]
-                    return_amount.append((struct, leaf_dtypes, leaf_shapes))
-
-                if not isinstance(acc, tuple):
-                    raise _MultiReturnDetected()
-
-                return tuple(a.at[i].set(v) for a, v in zip(acc, flat_values))
-
-            # ----------------------------------------------------------
-            # Single leaf (scalar or array — not a container).  Both need
-            # a typed accumulator, so both capture dtype/shape and retry;
-            # a scalar is just the empty-shape case.
-            # ----------------------------------------------------------
-            if not isinstance(acc, tuple):
-                if not return_amount:
-                    leaf = jnp.asarray(decoded_values)
-                    return_amount.append((struct, [leaf.dtype], [leaf.shape]))
-                raise _MultiReturnDetected()
-
-            # Second pass: acc is a 1-tuple of typed accumulators
-            return tuple(a.at[i].set(v) for a, v in zip(acc, [decoded_values]))
-
-        def _make_init_acc(shots, leaf_dtypes, leaf_shapes):
-            """Build a tuple of typed zero-arrays, one per leaf.
-
-            Each accumulator has shape ``(shots, *leaf_shape)`` so that
-            array-valued leaves are stacked along the leading dimension.
-            """
-            return tuple(
-                jnp.zeros((shots,) + shape, dtype=dt) if dt is not None else jnp.zeros((shots,) + shape)
-                for dt, shape in zip(leaf_dtypes, leaf_shapes)
-            )
-
-        # We now construct a loop to collect the samples by
-        # inserting the postprocessed measurement result into an array.
-        # The following function is the loop body, which is kernelized.
-        @quantum_kernel
-        def sampling_body_func(i, args):
-
-            acc = args[0]
-
-            # Evaluate the user function
-            result = user_func(*args[1:])
-
-            # Flatten the return value as a pytree and separate the registers
-            # to measure from the classical leaves.  A QuantumArray
-            # contributes one register per element.
-            layout, qv_tuple, classical_tuple = _split_kernel_returns(result)
-
-            if qv_tuple:
-                # ----------------------------------------------------------
-                # Stage 2: measure quantum registers only.
-                # ----------------------------------------------------------
-                @qache
-                def sampling_helper_1(*args):
-                    res_list = [measure(reg) for reg in args]
-                    return tuple(res_list)
-
-                measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
-
-                # ----------------------------------------------------------
-                # Stage 3: decode quantum, interleave with classical values,
-                # apply post-processing.  Classical values are passed as
-                # explicit arguments (before measurement ints).  When present
-                # the helper is named sampling_helper_2_mixed so that the
-                # terminal-sampling guard in jaspification.py can detect it.
-                # ----------------------------------------------------------
-                if classical_tuple:
-
-                    def sampling_helper_2_mixed(*args):
-                        n_classical = len(classical_tuple)
-                        classical_vals = args[:n_classical]
-                        meas_ints = args[n_classical:]
-
-                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
-
-                        return post_processor(*_assemble_kernel_returns(layout, decoded_q, classical_vals))
-
-                    sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
-                else:
-
-                    def sampling_helper_2(*meas_ints):
-                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
-
-                        return post_processor(*_assemble_kernel_returns(layout, decoded_q, ()))
-
-                    sampling_helper_2 = jax.jit(sampling_helper_2)
-
-                decoded_values = sampling_helper_2(*classical_tuple, *measurement_ints)
-
-            else:
-                # ----------------------------------------------------------
-                # No quantum returns — pure classical.  No measurement or
-                # decoding needed; just apply post-processing directly.
-                # ----------------------------------------------------------
-                decoded_values = post_processor(*_assemble_kernel_returns(layout, (), classical_tuple))
-
-            # Update the accumulator (handles scalar / tuple / list /
-            # nested returns transparently via typed per-leaf arrays).
-            acc = _update_acc(acc, i, decoded_values, return_amount)
-
-            return (acc, *args[1:])
-
-        # On the first iteration the pytree structure and leaf dtypes of
-        # the return values are captured.  _MultiReturnDetected triggers a retry
-        # with a tuple of typed 1D accumulators.  After the loop the
-        # accumulator tuple is reconstructed into the original nested
-        # shape via tree_unflatten.
-
-        return_amount = []
-
-        try:
-            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
-            return loop_res[0]
-        except _MultiReturnDetected:
-            struct, leaf_dtypes, leaf_shapes = return_amount[0]
-            init_acc = _make_init_acc(shots, leaf_dtypes, leaf_shapes)
-            loop_res = jax.lax.fori_loop(
-                0,
-                tracerized_shots,
-                sampling_body_func,
-                (init_acc, *args),
-            )
-            return tree_unflatten(struct, loop_res[0])
-
-    from qrisp.jasp import terminal_sampling
+    sampling_eval_function = _sampling_procedure(sampling_kernel, post_processor, "sample", static_shots=shots)
 
     def return_function(*args):
 
@@ -504,7 +247,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             # non-positive count has no meaningful result and would otherwise
             # fail obscurely while indexing the zero-length accumulator.
             # Outside tracing mode shots=0 is legitimate -- it selects the exact
-            # probabilities via terminal_sampling -- so the branch below is
+            # probabilities via terminal sampling -- so the branch below is
             # deliberately left unguarded.
             if shots < 1:
                 raise ValueError(
@@ -512,94 +255,10 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                     "(at least one shot is required). A shot count of 0 returns exact "
                     "probabilities, which is only available outside of tracing mode."
                 )
-            return sampling_eval_function(*args, tracerized_shots=shots)
+            return sampling_eval_function(*args, shots=shots)
         else:
-            return terminal_sampling(sampling_kernel, shots)(*args)
+            from qrisp.jasp.evaluation_tools.terminal_sampling import _terminal_sampling
+
+            return _terminal_sampling(sampling_kernel, shots, post_processor)(*args)
 
     return return_function
-
-
-def _split_kernel_returns(result):
-    """Split a sampling kernel's return value into registers and classical values.
-
-    The return value is flattened as a JAX pytree in which every
-    QuantumVariable and QuantumArray is kept as a leaf, so quantum values may
-    sit anywhere inside nested ``tuple``, ``list`` and ``dict`` containers.
-
-    Parameters
-    ----------
-    result : object
-        The kernel's return value.
-
-    Returns
-    -------
-    layout : tuple
-        ``(treedef, leaf_kinds)``: the pytree structure of *result* and, per
-        leaf, ``"qv"`` for a QuantumVariable, the shape of a QuantumArray, or
-        ``"classical"``.  :func:`_assemble_kernel_returns` uses it to rebuild
-        the return value after decoding.
-    qv_tuple : tuple of QuantumVariable
-        The QuantumVariables to measure.  A QuantumArray contributes its
-        elements in C order, one QuantumVariable each.
-    classical_tuple : tuple
-        The classical leaves.
-
-    """
-    from qrisp.core import QuantumArray, QuantumVariable
-
-    leaves, treedef = tree_flatten(result, is_leaf=lambda v: isinstance(v, (QuantumVariable, QuantumArray)))
-
-    leaf_kinds = []
-    qvs = []
-    classical = []
-    for leaf in leaves:
-        if isinstance(leaf, QuantumVariable):
-            leaf_kinds.append("qv")
-            qvs.append(leaf)
-        elif isinstance(leaf, QuantumArray):
-            leaf_kinds.append(leaf.shape)
-            flat_qa = leaf.flatten()
-            qvs.extend(flat_qa[i] for i in range(flat_qa.size))
-        else:
-            leaf_kinds.append("classical")
-            classical.append(leaf)
-
-    return (treedef, leaf_kinds), tuple(qvs), tuple(classical)
-
-
-def _assemble_kernel_returns(layout, decoded_q, classical_vals):
-    """Rebuild the kernel's return value from decoded and classical leaves.
-
-    The inverse of :func:`_split_kernel_returns`: the decoded elements of a
-    QuantumArray are stacked into an array of the QuantumArray's shape.
-
-    Returns
-    -------
-    list
-        The arguments for the post-processor: the elements of a returned
-        tuple, or the return value itself otherwise.
-
-    """
-    treedef, leaf_kinds = layout
-    q_iter = iter(decoded_q)
-    c_iter = iter(classical_vals)
-
-    leaves = []
-    for kind in leaf_kinds:
-        if kind == "qv":
-            leaves.append(next(q_iter))
-        elif kind == "classical":
-            leaves.append(next(c_iter))
-        else:
-            elements = [next(q_iter) for _ in range(math.prod(kind))]
-            leaves.append(jnp.stack(elements).reshape(kind))
-
-    result = tree_unflatten(treedef, leaves)
-    return list(result) if isinstance(result, tuple) else [result]
-
-
-class _MultiReturnDetected(Exception):
-    """Internal signal raised when the post-processor returns multiple values (a tuple) instead of a single scalar.
-
-    This triggers a retry of the sampling loop with a multi-dimensional accumulator of the correct shape.
-    """

@@ -374,7 +374,8 @@ def _outcome_sort_key(item):
 
 def _to_python_weight(v):
     """Turn a count or probability into a plain Python ``int`` or ``float``."""
-    if isinstance(v, (int, float)):
+    # An exact type check: np.float64 subclasses float, but should be converted.
+    if type(v) in (int, float):
         return v
     if v.dtype in (np.float64, np.float32):
         return float(v.item())

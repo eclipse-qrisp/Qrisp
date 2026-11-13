@@ -74,10 +74,6 @@ Tracing a simple kernel that applies a Hadamard to a 3-qubit
         b:f64[500] = pjit[
           name=sampling_eval_function          ← intercept ① (outer, in evaluation_tools)
           jaxpr={ lambda ; d:f64[500] e:i64[]. let
-              _:i64[] = pjit[
-                name=_backend_shots_marker
-                jaxpr={ lambda ; e:i64[]. let in (e,) }
-              ] e
               ...
               _:i64[] _:i64[] f:f64[500] = while[
                 body_jaxpr={ lambda ; g:i64[] h:f64[500] i:QuantumState. let

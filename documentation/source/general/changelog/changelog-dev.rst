@@ -33,7 +33,11 @@ New Features
   **Breaking change:** Multi-value returns are now tuples of arrays instead
   of a single 2D array.  Code that indexed ``res[:, i]`` must use
   ``res[i]``.  The same applies to ``expectation_value()`` which now returns
-  a tuple of scalars for multi-value kernels.
+  a tuple of scalars for multi-value kernels.  The first parameter of
+  ``expectation_value()`` is renamed from ``state_prep`` to
+  ``sampling_kernel``, matching ``sample()``, and its undocumented
+  ``return_dict`` parameter, which only served
+  :func:`~qrisp.jasp.terminal_sampling` internally, is removed.
   (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_)
 
 - **sample() and expectation_value() now accept arbitrary return values**
@@ -137,6 +141,10 @@ Bug Fixes
   :func:`~qrisp.jasp.sample` when distinct measurement results decode to the
   same value (e.g. under a ``post_processor`` that is not injective). The
   counts of such outcomes are now summed instead of overwritten
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_).
+
+* Fixed :func:`~qrisp.jasp.sample` ignoring its ``post_processor`` when
+  called outside of a Jasp-traced function
   (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_).
 
 * Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
