@@ -20,6 +20,7 @@ import jax.numpy as jnp
 import pytest
 
 from qrisp import (
+    QuantumArray,
     QuantumBool,
     QuantumFloat,
     QuantumVariable,
@@ -33,7 +34,7 @@ from qrisp import (
     ry,
     x,
 )
-from qrisp.jasp import backend_sampler, jaspify, q_cond, sample
+from qrisp.jasp import backend_sampler, expectation_value, jaspify, q_cond, sample
 
 # ===========================================================================
 # Helpers
@@ -482,6 +483,44 @@ def test_default_backend():
 
     res = main()
     assert res.shape == (30,)
+
+
+def test_quantum_array_return():
+    """A QuantumArray is decoded element-wise, correlated with a QuantumBool."""
+
+    def kernel():
+        b = QuantumBool()
+        h(b)
+        qa = QuantumArray(QuantumBool(), shape=(2,))
+        cx(b, qa[0])
+        cx(b, qa[1])
+        x(qa[1])
+        return b, qa
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return sample(kernel, shots=50)()
+
+    res_b, res_qa = main()
+    assert res_qa.shape == (50, 2)
+    assert jnp.all(res_qa[:, 0] == res_b)
+    assert jnp.all(res_qa[:, 1] == ~res_b)
+
+
+def test_quantum_array_expectation_value():
+    """expectation_value of a QuantumArray gives element-wise means."""
+
+    def kernel():
+        qa = QuantumArray(QuantumFloat(2), shape=(2,))
+        qa[0][:] = 1
+        qa[1][:] = 3
+        return qa
+
+    @backend_sampler(backend=_get_backend())
+    def main():
+        return expectation_value(kernel, shots=20)()
+
+    assert jnp.allclose(main(), jnp.array([1.0, 3.0]))
 
 
 # ===========================================================================

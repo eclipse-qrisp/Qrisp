@@ -23,7 +23,11 @@ New Features
   ``expectation_value()`` does not preserve leaf dtypes: an expectation
   value is a mean, so every leaf comes back floating point (complex leaves
   stay complex).  User-defined JAX pytree types raise a descriptive
-  ``TypeError``.
+  ``TypeError``.  Kernels may also return a :ref:`QuantumArray`, which is
+  measured element-wise and decoded into an array of its own shape, also
+  under terminal sampling and ``@backend_sampler``.  QuantumVariables and
+  QuantumArrays may sit anywhere inside nested ``tuple``, ``list`` and
+  ``dict`` returns.
   (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_)
 
   **Breaking change:** Multi-value returns are now tuples of arrays instead
@@ -128,6 +132,12 @@ Other New Features
 
 Bug Fixes
 ---------
+
+* Fixed terminal sampling returning fewer than ``shots`` samples from
+  :func:`~qrisp.jasp.sample` when distinct measurement results decode to the
+  same value (e.g. under a ``post_processor`` that is not injective). The
+  counts of such outcomes are now summed instead of overwritten
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_).
 
 * Fixed the precision of :meth:`get_unitary <qrisp.QuantumCircuit.get_unitary>`.
   Unitary matrices are now computed in ``complex128`` precision, removing the

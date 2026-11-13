@@ -16,9 +16,11 @@
 
 """Implements sample, drawing measurement samples from a quantum sampling kernel."""
 
+import math
+
 import jax
 import jax.numpy as jnp
-from jax.tree_util import tree_leaves, tree_structure, tree_unflatten
+from jax.tree_util import tree_flatten, tree_leaves, tree_structure, tree_unflatten
 
 from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
 
@@ -65,7 +67,8 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     The ``sample`` function allows to take samples from a quantum computation
     specified by a *sampling kernel* — a Python function that receives only
     classical arguments and returns arbitrary values.  Any
-    :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
+    :ref:`QuantumVariables <QuantumVariable>` and
+    :ref:`QuantumArrays <QuantumArray>` in the return are automatically
     measured and decoded.
 
     The samples are returned in the form of a
@@ -99,7 +102,9 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     sampling_kernel : callable
         A sampling kernel — a function receiving only classical arguments and
         returning one or more :ref:`QuantumVariables <QuantumVariable>`,
-        classical measurement results, or a mixture of both.
+        :ref:`QuantumArrays <QuantumArray>`, classical measurement results,
+        or a mixture of these, also nested inside ``tuple``, ``list`` and
+        ``dict`` containers.
         The function must **not** receive quantum arguments because a quantum
         value would need to be copied for each sampling iteration, which is
         prohibited by the no-cloning theorem.
@@ -129,6 +134,8 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         ``shots``, and a ``(3,)`` leaf gives a ``(shots, 3)`` array.
         Containers (``tuple``, ``list``, ``dict``, and nested combinations
         thereof) are preserved — e.g. ``{'a': bool_array, 'b': float_array}``.
+        A returned :ref:`QuantumArray` is decoded into an array of its own
+        shape, so it gives a leaf of shape ``(shots, *qa.shape)``.
 
     Examples
     --------
@@ -204,6 +211,30 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         # Each entry is either 0 or 10 with 50% probability each. The exact
         # order of entries is random and varies between runs.
 
+    **Sampling kernels returning QuantumArrays**
+
+    A :ref:`QuantumArray` is measured element-wise.  Each sample is an array
+    of the QuantumArray's shape, and a post-processor receives it as such:
+
+    ::
+
+        def array_kernel():
+            qa = QuantumArray(QuantumFloat(2), shape=(2,))
+            h(qa)
+            return qa
+
+        @jaspify
+        def main():
+            return sample(array_kernel, shots=5)()
+
+        print(main())
+        # Yields e.g. (an array of shape (5, 2))
+        # [[1. 3.]
+        #  [0. 2.]
+        #  [3. 3.]
+        #  [2. 0.]
+        #  [1. 1.]]
+
     **Sampling kernels returning classical values**
 
     A sampling kernel may also return classical values from mid-circuit
@@ -269,7 +300,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
         for arg in args:
             if isinstance(arg, QuantumVariable):
-                raise Exception("Tried to sample from state preparation function taking a quantum value")
+                raise Exception("Tried to sample from sampling kernel taking a quantum value")
 
         # Marker: allows backend_sampler to locate the shot count in the
         # traced Jaxpr without fragile position-based extraction.
@@ -381,17 +412,12 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             acc = args[0]
 
             # Evaluate the user function
-            result_tuple = user_func(*args[1:])
+            result = user_func(*args[1:])
 
-            if not isinstance(result_tuple, tuple):
-                result_tuple = (result_tuple,)
-
-            # Build a per-position mask: QuantumVariable -> True, classical -> False.
-            is_quantum = [isinstance(x, QuantumVariable) for x in result_tuple]
-
-            # Separate quantum and classical returns.
-            qv_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if is_q)
-            classical_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if not is_q)
+            # Flatten the return value as a pytree and separate the registers
+            # to measure from the classical leaves.  A QuantumArray
+            # contributes one register per element.
+            layout, qv_tuple, classical_tuple = _split_kernel_returns(result)
 
             if qv_tuple:
                 # ----------------------------------------------------------
@@ -420,12 +446,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
                         decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        q_iter = iter(decoded_q)
-                        c_iter = iter(classical_vals)
-
-                        full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
-
-                        return post_processor(*full)
+                        return post_processor(*_assemble_kernel_returns(layout, decoded_q, classical_vals))
 
                     sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
                 else:
@@ -433,7 +454,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                     def sampling_helper_2(*meas_ints):
                         decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
 
-                        return post_processor(*decoded_q)
+                        return post_processor(*_assemble_kernel_returns(layout, decoded_q, ()))
 
                     sampling_helper_2 = jax.jit(sampling_helper_2)
 
@@ -444,7 +465,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                 # No quantum returns — pure classical.  No measurement or
                 # decoding needed; just apply post-processing directly.
                 # ----------------------------------------------------------
-                decoded_values = post_processor(*classical_tuple)
+                decoded_values = post_processor(*_assemble_kernel_returns(layout, (), classical_tuple))
 
             # Update the accumulator (handles scalar / tuple / list /
             # nested returns transparently via typed per-leaf arrays).
@@ -496,6 +517,85 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             return terminal_sampling(sampling_kernel, shots)(*args)
 
     return return_function
+
+
+def _split_kernel_returns(result):
+    """Split a sampling kernel's return value into registers and classical values.
+
+    The return value is flattened as a JAX pytree in which every
+    QuantumVariable and QuantumArray is kept as a leaf, so quantum values may
+    sit anywhere inside nested ``tuple``, ``list`` and ``dict`` containers.
+
+    Parameters
+    ----------
+    result : object
+        The kernel's return value.
+
+    Returns
+    -------
+    layout : tuple
+        ``(treedef, leaf_kinds)``: the pytree structure of *result* and, per
+        leaf, ``"qv"`` for a QuantumVariable, the shape of a QuantumArray, or
+        ``"classical"``.  :func:`_assemble_kernel_returns` uses it to rebuild
+        the return value after decoding.
+    qv_tuple : tuple of QuantumVariable
+        The QuantumVariables to measure.  A QuantumArray contributes its
+        elements in C order, one QuantumVariable each.
+    classical_tuple : tuple
+        The classical leaves.
+
+    """
+    from qrisp.core import QuantumArray, QuantumVariable
+
+    leaves, treedef = tree_flatten(result, is_leaf=lambda v: isinstance(v, (QuantumVariable, QuantumArray)))
+
+    leaf_kinds = []
+    qvs = []
+    classical = []
+    for leaf in leaves:
+        if isinstance(leaf, QuantumVariable):
+            leaf_kinds.append("qv")
+            qvs.append(leaf)
+        elif isinstance(leaf, QuantumArray):
+            leaf_kinds.append(leaf.shape)
+            flat_qa = leaf.flatten()
+            qvs.extend(flat_qa[i] for i in range(flat_qa.size))
+        else:
+            leaf_kinds.append("classical")
+            classical.append(leaf)
+
+    return (treedef, leaf_kinds), tuple(qvs), tuple(classical)
+
+
+def _assemble_kernel_returns(layout, decoded_q, classical_vals):
+    """Rebuild the kernel's return value from decoded and classical leaves.
+
+    The inverse of :func:`_split_kernel_returns`: the decoded elements of a
+    QuantumArray are stacked into an array of the QuantumArray's shape.
+
+    Returns
+    -------
+    list
+        The arguments for the post-processor: the elements of a returned
+        tuple, or the return value itself otherwise.
+
+    """
+    treedef, leaf_kinds = layout
+    q_iter = iter(decoded_q)
+    c_iter = iter(classical_vals)
+
+    leaves = []
+    for kind in leaf_kinds:
+        if kind == "qv":
+            leaves.append(next(q_iter))
+        elif kind == "classical":
+            leaves.append(next(c_iter))
+        else:
+            elements = [next(q_iter) for _ in range(math.prod(kind))]
+            leaves.append(jnp.stack(elements).reshape(kind))
+
+    result = tree_unflatten(treedef, leaves)
+    return list(result) if isinstance(result, tuple) else [result]
 
 
 class _MultiReturnDetected(Exception):

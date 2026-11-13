@@ -33,7 +33,9 @@ flat list                      ✓        —          —          ✓
 nested list                    ✓        —          —          —
 dict                           ✓        —          —          —
 mixed bool/float dtype         ✓        ✓          —          —
-array-valued leaf              ✓        —          —          —
+array-valued leaf              ✓        ✓          —          —
+QuantumArray                   ✓        ✓          ✓          ✓
+nested quantum values          ✓        ✓          —          —
 post_processor (struct-pres)   ✓        ✓          —          ✓
 post_processor (struct-change) ✓        ✓          —          —
 zero shots                     ✓        —          —          ✓
@@ -332,9 +334,8 @@ class TestFlatTupleReturns:
 class TestNestedTupleReturns:
     """``return a, (b, c)`` → ``(array_a, (array_b, array_c))``.
 
-    Nested tuples only work when the inner elements are classical
-    (already measured).  Undecoded QuantumVariables nested inside
-    tuples are not automatically measured — only top-level QVs are.
+    The inner elements here are classical (already measured).  Quantum
+    values nested inside containers are covered in section 11.
     """
 
     def test_tuple_of_tuple_jit(self):
@@ -668,6 +669,28 @@ class TestArrayValuedLeaves:
         assert res.shape == (SHOTS, 2, 2)
         assert jnp.all(res[0] == jnp.array([[1, 2], [3, 4]]))
 
+    def test_array_from_post_processor_terminal(self):
+        """Terminal sampling stacks an array-valued post-processor result
+        along the leading dimension, next to a scalar leaf."""
+
+        def kernel():
+            qf = QuantumFloat(2)
+            h(qf)
+            return qf
+
+        def post_processor(v):
+            return jnp.array([v, v + 1]), v
+
+        @jaspify(terminal_sampling=True)
+        def main():
+            return sample(kernel, shots=SHOTS, post_processor=post_processor)()
+
+        res_array, res_scalar = main()
+        assert res_array.shape == (SHOTS, 2)
+        assert res_scalar.shape == (SHOTS,)
+        assert jnp.all(res_array[:, 0] == res_scalar)
+        assert jnp.all(res_array[:, 1] == res_scalar + 1)
+
 
 # =============================================================================
 # 8. Post-processor
@@ -795,6 +818,23 @@ class TestPostProcessor:
 
         res = main()
         assert res.shape == (SHOTS,)
+
+    def test_non_injective_post_processor_terminal(self):
+        """Distinct measurement results decoding to the same value must not
+        lose shots under terminal sampling."""
+
+        def kernel():
+            qf = QuantumFloat(2)
+            h(qf)
+            return qf
+
+        @jaspify(terminal_sampling=True)
+        def main():
+            return sample(kernel, shots=100, post_processor=lambda v: v % 2)()
+
+        res = main()
+        assert res.shape == (100,)
+        assert set(np.asarray(res).tolist()) <= {0.0, 1.0}
 
 
 # =============================================================================
@@ -1064,3 +1104,133 @@ class TestStress:
         assert isinstance(res["b"], dict)
         assert res["b"]["c"].shape == (SHOTS,)
         assert res["b"]["d"].shape == (SHOTS,)
+
+
+# =============================================================================
+# 11. QuantumArray and nested quantum returns
+# =============================================================================
+
+_ENCODED = np.arange(6).reshape(2, 3)
+
+
+def _encoded_qa():
+    """Return a (2, 3) QuantumArray holding the values 0..5 in C order."""
+    qa = QuantumArray(QuantumFloat(3), shape=(2, 3))
+    for i in range(2):
+        for j in range(3):
+            qa[i, j][:] = 3 * i + j
+    return qa
+
+
+def _correlated_kernel():
+    """Return a random QuantumBool ``b`` and a QuantumArray holding ``[b, not b]``."""
+    b = QuantumBool()
+    h(b)
+    qa = QuantumArray(QuantumBool(), shape=(2,))
+    cx(b, qa[0])
+    cx(b, qa[1])
+    x(qa[1])
+    return b, qa
+
+
+class TestQuantumArrayReturns:
+    """A returned QuantumArray is measured element-wise and decoded into an
+    array of its own shape."""
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    @pytest.mark.parametrize(
+        ("view", "expected"),
+        [
+            (lambda qa: qa, _ENCODED),
+            (lambda qa: qa.transpose(), _ENCODED.T),
+            (lambda qa: qa[:, 1], _ENCODED[:, 1]),
+        ],
+        ids=["full", "transpose", "column"],
+    )
+    def test_element_order(self, terminal, view, expected):
+        def kernel():
+            return view(_encoded_qa())
+
+        @jaspify(terminal_sampling=terminal)
+        def main():
+            return sample(kernel, shots=SHOTS)()
+
+        res = main()
+        assert res.shape == (SHOTS, *expected.shape)
+        assert np.all(np.asarray(res) == expected)
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    def test_correlated_with_quantum_variable(self, terminal):
+        @jaspify(terminal_sampling=terminal)
+        def main():
+            return sample(_correlated_kernel, shots=SHOTS)()
+
+        res_b, res_qa = main()
+        res_b, res_qa = np.asarray(res_b), np.asarray(res_qa)
+        assert res_qa.dtype == np.bool_
+        assert res_qa.shape == (SHOTS, 2)
+        assert np.all(res_qa[:, 0] == res_b)
+        assert np.all(res_qa[:, 1] == ~res_b)
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    def test_post_processor_receives_array(self, terminal):
+        def post_processor(a):
+            return a.shape[0] * 100 + jnp.sum(a)
+
+        @jaspify(terminal_sampling=terminal)
+        def main():
+            return sample(_encoded_qa, shots=SHOTS, post_processor=post_processor)()
+
+        res = main()
+        assert res.shape == (SHOTS,)
+        assert jnp.all(res == 215)
+
+    def test_mixed_with_classical_jit(self):
+        def kernel():
+            qa = _encoded_qa()
+            return qa, measure(qa[0, 1])
+
+        @jaspify(terminal_sampling=False)
+        def main():
+            return sample(kernel, shots=SHOTS)()
+
+        res_qa, res_classical = main()
+        assert res_qa.shape == (SHOTS, 2, 3)
+        assert np.all(np.asarray(res_qa) == _ENCODED)
+        assert jnp.all(res_classical == 1)
+
+    def test_non_jit_dict(self):
+        res = sample(_correlated_kernel, shots=SHOTS)()
+        assert sum(res.values()) == SHOTS
+        for b, qa in res:
+            assert np.array_equal(qa, [b, not b])
+
+    def test_non_jit_probabilities(self):
+        res = sample(_encoded_qa, shots=0)()
+        ((outcome, probability),) = res.items()
+        assert np.array_equal(outcome, _ENCODED)
+        assert probability == pytest.approx(1)
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    def test_nested_quantum_values(self, terminal):
+        """QuantumVariables and QuantumArrays inside nested containers are
+        measured in place and the structure is preserved."""
+
+        def kernel():
+            qf = QuantumFloat(2)
+            qf[:] = 3
+            b = QuantumBool()
+            x(b)
+            return {"qf": qf, "rest": [_encoded_qa(), b]}
+
+        @jaspify(terminal_sampling=terminal)
+        def main():
+            return sample(kernel, shots=SHOTS)()
+
+        res = main()
+        assert isinstance(res, dict) and isinstance(res["rest"], list)
+        assert jnp.all(res["qf"] == 3)
+        assert res["rest"][0].shape == (SHOTS, 2, 3)
+        assert np.all(np.asarray(res["rest"][0]) == _ENCODED)
+        assert res["rest"][1].dtype == jnp.bool_
+        assert jnp.all(res["rest"][1])

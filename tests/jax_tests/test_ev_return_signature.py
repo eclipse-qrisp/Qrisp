@@ -19,9 +19,9 @@ r"""Comprehensive tests for the pytree-aware return signature of
 
 .. note::
 
-    Only **top-level** :class:`~qrisp.QuantumVariable` instances are
-    automatically decoded.  QVs nested inside containers must be
-    measured explicitly (``measure(qv)``) to appear as classical leaves.
+    :class:`~qrisp.QuantumVariable` and :class:`~qrisp.QuantumArray`
+    instances are decoded wherever they sit inside the returned
+    ``tuple`` / ``list`` / ``dict`` structure.
 
     Because ``expectation_value`` *accumulates* (sums) values, ``bool``
     leaves promote to ``int64`` or ``float64`` in the result.
@@ -207,47 +207,56 @@ class TestNestedReturns:
         assert isinstance(res, tuple) and len(res) == 2
         assert isinstance(res[1], tuple) and len(res[1]) == 1
 
-    def test_nested_undecoded_qv_raises_jit(self):
+    def test_nested_qv_jit(self):
+        """A QuantumVariable nested in a tuple is decoded in place."""
+
         def kernel():
             a = QuantumFloat(3)
             b = QuantumFloat(3)
             h(a[0])
+            x(b[1])
             return a, (b,)
 
         @jaspify
         def main():
             return expectation_value(kernel, shots=SHOTS)()
 
-        with pytest.raises(Exception):
-            main()
+        res = main()
+        assert isinstance(res, tuple) and len(res) == 2
+        assert isinstance(res[1], tuple) and len(res[1]) == 1
+        assert jnp.allclose(res[1][0], 2.0)
 
-    def test_list_of_undecoded_qv_raises_jit(self):
+    def test_list_of_qv_jit(self):
         def kernel():
             a = QuantumFloat(3)
             b = QuantumFloat(3)
             h(a[0])
+            x(b[1])
             return [a, b]
 
         @jaspify
         def main():
             return expectation_value(kernel, shots=SHOTS)()
 
-        with pytest.raises(Exception):
-            main()
+        res = main()
+        assert isinstance(res, list) and len(res) == 2
+        assert jnp.allclose(res[1], 2.0)
 
-    def test_dict_of_undecoded_qv_raises_jit(self):
+    def test_dict_of_qv_jit(self):
         def kernel():
             a = QuantumFloat(3)
             b = QuantumFloat(3)
             h(a[0])
+            x(b[1])
             return {"val": a, "aux": b}
 
         @jaspify
         def main():
             return expectation_value(kernel, shots=SHOTS)()
 
-        with pytest.raises(Exception):
-            main()
+        res = main()
+        assert isinstance(res, dict) and set(res) == {"val", "aux"}
+        assert jnp.allclose(res["aux"], 2.0)
 
     def test_mixed_qv_classical_nested_jit(self):
         def kernel():
@@ -562,3 +571,70 @@ class TestStress:
             return expectation_value(kernel, shots=SHOTS)()
 
         assert isinstance(main(), tuple) and len(main()) == N
+
+
+# =============================================================================
+# 9. QuantumArray and nested quantum returns
+# =============================================================================
+
+
+class TestQuantumArrayReturns:
+    """A returned QuantumArray gives element-wise means with its own shape."""
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    def test_element_wise_means(self, terminal):
+        def kernel():
+            qa = QuantumArray(QuantumFloat(3), shape=(2, 3))
+            for i in range(2):
+                for j in range(3):
+                    qa[i, j][:] = 3 * i + j
+            return qa
+
+        @jaspify(terminal_sampling=terminal)
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
+        res = main()
+        assert res.shape == (2, 3)
+        assert jnp.allclose(res, jnp.arange(6).reshape(2, 3))
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    def test_next_to_quantum_variable(self, terminal):
+        """Leaves of different shapes each get their own mean."""
+
+        def kernel():
+            qf = QuantumFloat(2)
+            qf[:] = 3
+            qa = QuantumArray(QuantumFloat(2), shape=(2,))
+            qa[0][:] = 1
+            qa[1][:] = 2
+            return qa, qf
+
+        @jaspify(terminal_sampling=terminal)
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
+        res_qa, res_qf = main()
+        assert res_qa.shape == (2,)
+        assert jnp.allclose(res_qa, jnp.array([1.0, 2.0]))
+        assert res_qf.shape == ()
+        assert jnp.allclose(res_qf, 3.0)
+
+    @pytest.mark.parametrize("terminal", [False, True])
+    def test_nested_quantum_values(self, terminal):
+        def kernel():
+            qf = QuantumFloat(2)
+            qf[:] = 3
+            qa = QuantumArray(QuantumFloat(2), shape=(2,))
+            qa[0][:] = 1
+            qa[1][:] = 2
+            return {"qf": qf, "rest": [qa]}
+
+        @jaspify(terminal_sampling=terminal)
+        def main():
+            return expectation_value(kernel, shots=SHOTS)()
+
+        res = main()
+        assert isinstance(res, dict) and isinstance(res["rest"], list)
+        assert jnp.allclose(res["qf"], 3.0)
+        assert jnp.allclose(res["rest"][0], jnp.array([1.0, 2.0]))
