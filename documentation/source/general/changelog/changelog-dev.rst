@@ -162,6 +162,13 @@ Improvements
   unsupported or mixed controls
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
+- Refactored :func:`jrange <qrisp.jasp.jrange>`. It now has type hints and
+  dedicated tests. Together with the refactoring of ``control`` and
+  ``measure``, pyright now reports 1538 errors instead of 1747 across
+  ``src/qrisp``, mostly because the loop variable of ``jrange`` now has a
+  precise type
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
+
 - **Faster resource estimation of modular multiplications in Jasp**
   The classical constants of the multiplication of a
   :class:`~qrisp.QuantumModulus` by a classical factor are now computed by
@@ -546,6 +553,11 @@ Bug Fixes
   still not accepted as controls
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
+* In Jasp mode, :func:`jrange <qrisp.jasp.jrange>` now accepts as a bound a
+  concrete JAX array created outside of the traced function, and
+  ``make_tracer`` no longer fails on complex numbers
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
+
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
   (``qm *= X`` and ``qm * X``, and ``QuantumArray @ matrix``) now chooses the
   Montgomery shift from the number of qubits of the register, as the Montgomery
@@ -664,6 +676,11 @@ Compatibility
   ``except Exception:`` is unaffected
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
+* ``make_tracer`` now raises a ``TypeError`` for unsupported types, instead of
+  a generic ``Exception``. The message is unchanged, and code using
+  ``except Exception:`` is unaffected
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
+
 * :ref:`IQPE <IQPE>` returns the phase instead of twice the phase modulo 1
   (see Bug Fixes). It raises a ``TypeError`` for a precision that is not an
   integer and, unless the precision is traced, a ``ValueError`` for a precision
@@ -701,6 +718,10 @@ New Tutorials/ Updated Documentation
   :ref:`ControlEnvironment <ControlEnvironment>` page, and rewrote its
   docstring with examples that run under doctest
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
+* Rewrote the docstring of :func:`jrange <qrisp.jasp.jrange>` with examples
+  that run under doctest
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 
 
@@ -923,6 +944,12 @@ Development
   in the control environment modules moved to module level, except one that
   would be circular, which is commented
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
+* Consolidated the tests of ``jrange``, ``JRangeIterator``, ``make_tracer`` and
+  ``jlen`` into ``test_jrange.py``, which replaces
+  ``test_control_flow_capturing.py``. Most of them run with
+  ``boolean_simulation`` instead of the full simulator
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 Dependency Upgrades
 -------------------
