@@ -1739,7 +1739,7 @@ def get_sympy_state(qs, decimals):
 
         if len(state_kets) == 1:
             ket_expr *= state_kets[0]
-        else:
+        elif len(state_kets) > 1:
             ket_expr *= TensorProduct(*state_kets)
 
         res += ket_expr
