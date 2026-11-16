@@ -16,6 +16,9 @@
 
 """Tests for the type aliases defined in qrisp.typing."""
 
+import typing
+from collections.abc import Sequence
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -26,11 +29,15 @@ from sympy import Symbol
 
 from qrisp.circuit.clbit import Clbit
 from qrisp.circuit.qubit import Qubit
+from qrisp.core.quantum_array import QuantumArray
+from qrisp.core.quantum_variable import QuantumVariable
+from qrisp.jasp.tracing_logic.dynamic_qubit_array import DynamicQubitArray
 from qrisp.typing import (
     ArrayLike,
     ClbitLike,
     FloatLike,
     NDArrayLike,
+    QuantumOperand,
     QubitLike,
     ScalarLike,
 )
@@ -47,6 +54,25 @@ class TestQubitLike:
     def test_integer_index(self, index):
         """Integer indices are valid qubit specifiers."""
         assert isinstance(index, QubitLike)  # type: ignore[arg-type]
+
+
+class TestQuantumOperand:
+    """Tests for the QuantumOperand type alias."""
+
+    def test_forward_reference_resolves_to_the_quantum_types(self):
+        """The forward reference names a single quantum operand or a sequence of them."""
+        operand_types = [Qubit, Tracer, QuantumVariable, QuantumArray, DynamicQubitArray]
+        namespace = {cls.__name__: cls for cls in operand_types}
+        namespace.update(Sequence=Sequence, QuantumOperand=QuantumOperand)
+
+        def gate(qubits: QuantumOperand) -> None:
+            """Stand in for a gate function annotated with QuantumOperand."""
+
+        resolved = typing.get_type_hints(gate, globalns=namespace)["qubits"]
+        members = set(typing.get_args(resolved))
+        sequences = {member for member in members if typing.get_origin(member) is Sequence}
+        assert members - sequences == set(operand_types)
+        assert len(sequences) == 1
 
 
 class TestClbitLike:
