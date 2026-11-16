@@ -16,8 +16,6 @@
 
 """Defines gate application functions (cx, h, mcx, rz, measure, ...) that append operations to circuits."""
 
-from typing import Any
-
 import jax
 import jax.core
 import sympy
@@ -1171,7 +1169,7 @@ def unitary(unitary_array, qubits):
     gphase(gphase_angle, qubits)
 
 
-def measure(qubits: Any) -> Any:
+def measure(qubits):
     """Measure qubits in the computational basis.
 
     In static mode, the measurement is appended to the circuit and the classical
@@ -1232,6 +1230,8 @@ def measure(qubits: Any) -> Any:
     if not isinstance(qs, TracingQuantumSession):
         # One new Clbit per qubit, or a single Clbit for a single qubit. The qubits of
         # a QuantumArray are counted with convert_to_qb_list, like append_operation does.
+        # TODO: Other inputs with several qubits per item, such as a list of
+        # QuantumVariables, still fail. Count the qubits of every input this way.
         if isinstance(qubits, QuantumArray):
             clbits = [qs.add_clbit() for _ in convert_to_qb_list(qubits)]
         elif hasattr(qubits, "__len__"):
