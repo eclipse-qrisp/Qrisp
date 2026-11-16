@@ -15,6 +15,7 @@ build:
     # NVIDIA libraries; conf.py mocks cudaq for autodoc, and its xdsl
     # dependency comes from the xdsl extra below.
     post_install:
+      - python -m pip install --upgrade pip
       - python -m pip install --no-deps --group docs-cudaq
 
 sphinx:
