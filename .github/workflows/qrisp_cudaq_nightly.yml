@@ -1,4 +1,4 @@
-name: qrisp-cudaq nightly
+name: CUDA-Q compatibility
 
 # Runs the qrisp-cudaq test suite against Qrisp main, so that Qrisp changes
 # that break the CUDA-Q interface show up before the next Qrisp release.
@@ -75,6 +75,6 @@ jobs:
           existing=$(gh issue list --state open --label qrisp-cudaq-nightly --json number --jq '.[0].number')
           if [ -z "$existing" ]; then
             gh issue create --label qrisp-cudaq-nightly \
-              --title "qrisp-cudaq nightly failed" \
+              --title "CUDA-Q compatibility check failed" \
               --body "The nightly run failed: $RUN_URL"
           fi
