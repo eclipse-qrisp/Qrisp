@@ -56,3 +56,25 @@ jobs:
 
       - name: Test with pytest
         run: pytest qrisp-cudaq/tests
+
+  report-failure:
+    name: Open an issue for the failed nightly
+    needs: qrisp-cudaq
+    if: ${{ always() && needs.qrisp-cudaq.result == 'failure' && github.event_name == 'schedule' && github.repository == 'eclipse-qrisp/Qrisp' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      # Repeated failures do not open a second issue while one is still open.
+      - name: Open an issue unless one is already open
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          existing=$(gh issue list --state open --label qrisp-cudaq-nightly --json number --jq '.[0].number')
+          if [ -z "$existing" ]; then
+            gh issue create --label qrisp-cudaq-nightly \
+              --title "qrisp-cudaq nightly failed" \
+              --body "The nightly run failed: $RUN_URL"
+          fi
