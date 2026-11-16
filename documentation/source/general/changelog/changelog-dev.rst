@@ -157,6 +157,11 @@ Improvements
   docstring, more specific exceptions and dedicated tests
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
+- Refactored :func:`control <qrisp.control>`. It now has type hints and
+  dedicated tests, accepts a tuple of controls and raises a ``TypeError`` for
+  unsupported or mixed controls
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
 - **Faster resource estimation of modular multiplications in Jasp**
   The classical constants of the multiplication of a
   :class:`~qrisp.QuantumModulus` by a classical factor are now computed by
@@ -526,6 +531,21 @@ Bug Fixes
   several qubits. Every qubit of the array now gets its own classical bit
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
+* :func:`control <qrisp.control>` now honors ``invert=True`` for classical
+  control outside of Jasp mode and for quantum control in Jasp mode, where it
+  was ignored. In Jasp mode, the condition of several controls is computed
+  into a helper qubit, which is uncomputed afterwards
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
+* In Jasp mode, :func:`control <qrisp.control>` negated Python booleans and
+  traced integers bitwise, so ``invert=True`` and a ``0`` in ``ctrl_state`` had no
+  effect on them (``~True`` is ``-2``), and several traced integer controls were
+  combined with a bitwise AND, so two controls with the values ``1`` and ``2`` did
+  not hold. These controls are now converted to booleans before they are negated
+  or combined: a traced integer holds if it is not ``0``. Python integers are
+  still not accepted as controls
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
   (``qm *= X`` and ``qm * X``, and ``QuantumArray @ matrix``) now chooses the
   Montgomery shift from the number of qubits of the register, as the Montgomery
@@ -676,6 +696,11 @@ New Tutorials/ Updated Documentation
 * Rewrote the docstring of :func:`measure <qrisp.measure>` with examples that
   run under doctest
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
+* Documented :func:`control <qrisp.control>` on the
+  :ref:`ControlEnvironment <ControlEnvironment>` page, and rewrote its
+  docstring with examples that run under doctest
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
 
 
@@ -889,6 +914,15 @@ Development
   the rest of the test suite. Several function-level imports in
   ``gate_application_functions.py`` moved to module level
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
+* Consolidated the tests of ``control`` into dedicated files, split into static
+  and Jasp mode like the rest of the test suite. The tests of
+  ``test_control_compilation.py`` and the classical control test of
+  ``test_control_flow_capturing.py`` moved there, mostly running with
+  ``boolean_simulation`` instead of the full simulator. Function-level imports
+  in the control environment modules moved to module level, except one that
+  would be circular, which is commented
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
 Dependency Upgrades
 -------------------
