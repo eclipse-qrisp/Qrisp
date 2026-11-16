@@ -153,8 +153,8 @@ Improvements
   generation to QuantumSession in a central place.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
-- Refactored :func:`measure <qrisp.measure>`. It now has type hints and
-  dedicated tests
+- Refactored :func:`measure <qrisp.measure>`. It now has an accurate
+  docstring, more specific exceptions and dedicated tests
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
 - **Faster resource estimation of modular multiplications in Jasp**
@@ -638,8 +638,8 @@ Compatibility
   generic ``Exception``. Code using ``except Exception:`` is unaffected
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
-* :func:`measure <qrisp.measure>` now raises a ``TypeError`` for unsupported
-  inputs and a ``RuntimeError`` when the quantum state is lost in Jasp mode,
+* In Jasp mode, :func:`measure <qrisp.measure>` now raises a ``TypeError`` for
+  unsupported inputs and a ``RuntimeError`` when the quantum state is lost,
   instead of a generic ``Exception``. The messages are unchanged, and code using
   ``except Exception:`` is unaffected
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
