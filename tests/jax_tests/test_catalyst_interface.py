@@ -163,6 +163,67 @@ def test_catalyst_interface():
     qir_str = jaspr.to_qir()
 
 
+def test_reset_catalyst():
+    """Test reset on a single qubit and on a whole QubitArray under qjit."""
+
+    @qjit
+    def single_qubit_reset():
+        qf = QuantumFloat(2)
+        x(qf)
+        reset(qf[0])
+        return measure(qf)
+
+    assert single_qubit_reset() == 2
+
+    @qjit
+    def array_reset():
+        qf = QuantumFloat(2)
+        x(qf)
+        reset(qf)
+        return measure(qf)
+
+    assert array_reset() == 0
+
+
+def test_sx_catalyst():
+    """SX is lowered to RX(pi/2) since Catalyst has no native SX gate."""
+    try:
+        import catalyst
+    except ModuleNotFoundError:
+        return
+
+    # SX * SX = X
+    @qjit
+    def sx_squared():
+        qv = QuantumVariable(1)
+        sx(qv[0])
+        sx(qv[0])
+        return measure(qv)
+
+    assert sx_squared() == 1
+
+    # SX_DG * SX = I
+    @qjit
+    def sx_then_sx_dg():
+        qv = QuantumVariable(1)
+        sx(qv[0])
+        sx_dg(qv[0])
+        return measure(qv)
+
+    assert sx_then_sx_dg() == 0
+
+    # SX|0> ~ |0> - i|1>, which S maps to |+> and H to |0>. SX_DG would give |1> instead.
+    @qjit
+    def sx_s_h():
+        qv = QuantumVariable(1)
+        sx(qv[0])
+        s(qv[0])
+        h(qv[0])
+        return measure(qv)
+
+    assert sx_s_h() == 0
+
+
 def test_parity_catalyst():
     """Test parity primitive with catalyst interface."""
 

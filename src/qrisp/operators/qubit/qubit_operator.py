@@ -43,7 +43,7 @@ from qrisp import (
     invert,
     merge,
     s,
-    sx_dg,
+    sx,
 )
 from qrisp.jasp import check_for_tracing_mode, jrange, q_switch
 from qrisp.misc.exceptions import QrispDeprecationWarning
@@ -1133,7 +1133,7 @@ class QubitOperator(Hamiltonian):
         """
         # Assuming all terms of self commute qubit-wise,
         # the basis change for Pauli factor is trivial:
-        # Z stays the same, for X we apply an h gate and for Y and s_dg.
+        # Z stays the same, for X we apply an h gate and for Y an SX gate.
 
         # For ladder operators, the situation is more intricate.
 
@@ -1243,7 +1243,7 @@ class QubitOperator(Hamiltonian):
                             h(qarg[j])
 
                         if factor_dict[j] == "Y":
-                            sx_dg(qarg[j])
+                            sx(qarg[j])
 
                     new_factor_dict[j] = "Z"
 
