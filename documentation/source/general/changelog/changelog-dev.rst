@@ -70,6 +70,23 @@ New Features
   * Raises ``ValueError`` for a non-positive shot count — including a
     dynamic one, which only becomes concrete once the backend runs.
 
+* **Recording and replaying backend runs.**
+  :class:`~qrisp.interface.BackendRecorder` records every job a backend runs
+  inside a ``with`` block. Its ``recording`` is a
+  :class:`~qrisp.interface.ReplayBackend` that answers the same calls with the
+  recorded results, without the device, so an experiment run once on hardware
+  can be rerun offline, e.g. with a different decoder.
+
+  * Recordings are saved with ``to_file`` and loaded with ``from_file`` as JSON,
+    gzipped for ``.gz`` names, together with the backend's options and its
+    hardware data from the start of the recording.
+  * Replay checks that each call matches the recorded one (circuit count,
+    clbits, shots and, with ``strict=True``, the circuit itself) and raises
+    otherwise.
+  * :func:`~qrisp.jasp.backend_sampler` takes a ``seed`` for the order of the
+    shots it expands from the counts, so a replay gives the same shots in the
+    same order.
+
 Improvements
 ------------
 
@@ -949,6 +966,10 @@ Dependency Upgrades
   ``iqm-client`` releases require ``packaging<25``, and ``pip install
   ".[all]"`` resolved to ``iqm-client`` 15.3
   (`PR #995 <https://github.com/eclipse-qrisp/Qrisp/pull/995>`_).
+
+* Added ``typing_extensions>=4.4.0`` as a direct dependency, for
+  ``typing_extensions.override`` on Python 3.11 (``typing.override`` exists
+  only from Python 3.12).
 
 .. Add dependency upgrades above this line
 

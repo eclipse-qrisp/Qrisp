@@ -15,6 +15,7 @@
 ********************************************************************************
 """
 
+import numpy as np
 import jax
 import jax.numpy as jnp
 import pytest
@@ -964,3 +965,63 @@ def test_captured_int_scalar_does_not_shadow_loop_index():
     # A uniform superposition over 3 qubits: collapsing to a single repeated
     # shot is the failure mode this guards against.
     assert len(set(float(value) for value in result)) > 1
+
+
+# ===========================================================================
+# Shot order and the seed argument
+# ===========================================================================
+
+
+class FixedCountsBackend:
+    """Backend that returns the same counts on every run, so only the shot order can vary."""
+
+    def run(self, qc, shots=None):
+        return {"00": 10, "01": 10, "10": 10, "11": 10}
+
+
+def _sample_fixed(seed=None):
+    """Sample a 2-qubit kernel through ``_FixedCountsBackend`` and return the shots as a NumPy array."""
+
+    def kernel():
+        return measure(QuantumFloat(2))
+
+    @backend_sampler(backend=FixedCountsBackend(), seed=seed)
+    def main():
+        return sample(kernel, shots=40)()
+
+    return np.asarray(main())
+
+
+def test_seed_makes_shot_order_reproducible():
+    first = _sample_fixed(seed=1234)
+    np.testing.assert_array_equal(_sample_fixed(seed=1234), first)
+    assert not np.array_equal(_sample_fixed(seed=4321), first)
+    # Only the order changes, never the shots themselves.
+    np.testing.assert_array_equal(np.sort(_sample_fixed(seed=4321)), np.sort(first))
+
+
+def test_seeded_calls_continue_one_stream():
+    def kernel():
+        return measure(QuantumFloat(2))
+
+    def decorate():
+        @backend_sampler(backend=FixedCountsBackend(), seed=7)
+        def main():
+            return sample(kernel, shots=40)()
+
+        return main
+
+    main = decorate()
+    first, second = np.asarray(main()), np.asarray(main())
+    assert not np.array_equal(first, second)
+
+    main = decorate()
+    np.testing.assert_array_equal(np.asarray(main()), first)
+    np.testing.assert_array_equal(np.asarray(main()), second)
+
+
+def test_unseeded_uses_global_numpy_state():
+    np.random.seed(99)
+    first = _sample_fixed()
+    np.random.seed(99)
+    np.testing.assert_array_equal(_sample_fixed(), first)
