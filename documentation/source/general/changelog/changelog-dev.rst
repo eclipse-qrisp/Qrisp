@@ -231,7 +231,8 @@ Bug Fixes
   or higher raised an ``OverflowError``, and in Jasp mode without terminal
   sampling the results of registers with 54 or more qubits lost bits.
   Measurement outcomes and the masks of the terms are now split into chunks of
-  53 qubits. Only the qubits the operator acts on are measured
+  53 qubits. The qubits from index 0 up to the highest qubit index of the
+  operator are measured
   (`PR #871 <https://github.com/eclipse-qrisp/Qrisp/pull/871>`_).
 
 * Fixed the lowering of unsigned integers by

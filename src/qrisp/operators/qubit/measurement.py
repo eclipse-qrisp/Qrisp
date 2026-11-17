@@ -22,7 +22,8 @@ The expectation value is estimated with the ``MeasurementPlan`` of the operator 
 1. Circuit: the state preparation is compiled once per evaluation, or ``precompiled_qc``
    is used, and the abstract parameters are bound with ``subs_dic``.
 2. Measurement: for each group, the group's change-of-basis gate is appended to a copy of
-   the circuit, and the first ``plan.num_qubits`` qubits, the ones the operator acts on,
+   the circuit, and the first ``plan.num_qubits`` qubits, from index 0 up to the highest
+   qubit index of the operator,
    are measured with the group's number of shots. The backend returns the distinct
    outcomes with their probabilities. A ``BatchedBackend`` receives all circuits at once.
 3. Outcomes: the outcomes are integers with one bit per measured qubit. They are split
@@ -107,7 +108,7 @@ def _expectation_value_helper(  # noqa: PLR0912, PLR0913
 
     qc = qc.transpile()
 
-    # Only the qubits the operator acts on are measured.
+    # The qubits from index 0 up to the highest qubit index of the operator are measured.
     qubits = [qubit_list[j] for j in range(plan.num_qubits)]
 
     results = []

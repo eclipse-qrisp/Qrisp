@@ -23,7 +23,8 @@ while tracing:
 
 1. Sampling: for each group, a sampling kernel prepares the state with ``state_prep``,
    applies the group's change of basis, and returns the first ``plan.num_qubits`` qubits,
-   the ones the operator acts on, as views of the register in chunks of ``_CHUNK_SIZE``
+   from index 0 up to the highest qubit index of the operator, as views of the register
+   in chunks of ``_CHUNK_SIZE``
    qubits. The views are constructed from a template of a plain ``QuantumVariable``,
    whose decoder returns the measured integer, so ``sample`` yields the measured bits
    whatever the type of the prepared variable. All chunks of a shot come from the same
