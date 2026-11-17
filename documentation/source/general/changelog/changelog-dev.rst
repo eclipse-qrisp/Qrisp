@@ -607,6 +607,19 @@ Bug Fixes
 * Fixed ``reset`` on a single qubit, such as ``reset(qv[0])``, failing to
   compile with :ref:`qjit <qjit>`. Resetting a whole QuantumVariable was not
   affected (`PR #941 <https://github.com/eclipse-qrisp/Qrisp/pull/941>`_).
+* Fixed the matrices of several standard gates and their conversions:
+
+  - ``RGate(theta, phi)`` now implements ``RZ(phi) RX(theta) RZ(-phi)``,
+    matching the standard R gate. Its PennyLane conversion is now
+    ``qml.Rot(pi/2 - phi, theta, phi - pi/2)``.
+  - ``SXGate`` and ``SXDGGate`` now carry the global phase ``±pi/4``, so they
+    are the exact square roots of ``X`` instead of ``RX(±pi/2)``. This phase is
+    also kept when they are controlled. They are now converted to ``qml.SX``
+    in PennyLane.
+  - ``U1Gate`` now converts to Qiskit's ``RZGate`` instead of ``PhaseGate``,
+    since Qrisp's ``U1`` is an RZ rotation.
+
+  (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
 
 Compatibility
 -------------
@@ -628,6 +641,14 @@ Compatibility
   above 63, for which the number of calls of the unitary overflowed a 64-bit
   integer
   (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
+
+* ``RGate`` and ``QuantumCircuit.r`` are deprecated in favor of the identical
+  ``PRXGate`` and the new ``QuantumCircuit.prx``. Both still work but emit a
+  ``QrispDeprecationWarning``. ``RGate(theta, phi)`` now builds a
+  ``PRXGate(theta, phi)``, so the resulting operation is named ``"prx"`` instead
+  of ``"r"`` and stores its angles as ``alpha`` and ``beta``. ``PRXGate`` can now
+  also be imported from ``qrisp.circuit.standard_operations``
+  (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
 
 .. Add compatibility notes above this line
 

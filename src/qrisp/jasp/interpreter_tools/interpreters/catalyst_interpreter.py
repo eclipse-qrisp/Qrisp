@@ -327,6 +327,8 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
 
         param_list = [lambdify(greek_letters[: len(op.abstract_params)], expr)(*jax_values) for expr in op.params]
 
+        # Catalyst has no native SX gate. SX = RX(pi/2) up to a global phase,
+        # which is dropped here anyway (see gphase above).
         if op_name == "sx":
             op_name = "rx"
             param_list = [jnp.pi / 2]
