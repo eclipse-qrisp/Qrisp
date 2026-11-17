@@ -650,6 +650,13 @@ Compatibility
   also be imported from ``qrisp.circuit.standard_operations``
   (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
 
+* The QCLA adder (``qcla``, ``cq_qcla`` and ``qq_qcla``) is deprecated and will
+  be removed in Qrisp v0.12. Calling any of these still works but emits a
+  ``QrispDeprecationWarning``. Removing it is part of the plan to introduce a
+  new quantum adder interface that will provide a single, unified way to select
+  an in-place adder
+  (`PR #1028 <https://github.com/eclipse-qrisp/Qrisp/pull/1028>`_).
+
 .. Add compatibility notes above this line
 
 New Tutorials/ Updated Documentation

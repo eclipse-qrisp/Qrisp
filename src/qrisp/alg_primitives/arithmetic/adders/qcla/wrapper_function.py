@@ -28,8 +28,10 @@ from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 def qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None):
-    r"""Implementation of the higher radix quantum carry lookahead adder (QCLA) as described
-    `here <https://arxiv.org/abs/2304.02921>`__. This adder stands out for having logarithmic
+    r"""Implementation of the higher radix quantum carry lookahead adder (QCLA).
+
+    This adder is described
+    `here <https://arxiv.org/abs/2304.02921>`__. It stands out for having logarithmic
     T-depth like `Drapers QCLA <https://arxiv.org/abs/quant-ph/0406142>`_. Compared to Drapers
     QCLA, the higher radix QCLA allows a more dynamic structure and the use of customizable
     "sub-adders" which enables this adder to beat Drapers QCLA in terms of speed (ie. T-depth).
@@ -86,6 +88,8 @@ def qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None
     t_depth_reduction : bool, optional
         A compilation option that reduces T-depth but in turn weakens CNOT depth
         to linear scaling. The default is True.
+    ctrl : Qubit, optional
+        A control qubit for the addition. The default is None.
 
     Raises
     ------
