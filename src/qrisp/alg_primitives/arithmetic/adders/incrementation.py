@@ -212,8 +212,7 @@ def increment_arbitrary_constant_qubit_list(qs, qubit_list, c):
 # This function also needs a linear amount of ancilla qubits.
 def lin_incr(a, c_in=None, c_out=None):
     warnings.warn(
-        "lin_incr is only used by the deprecated QCLA adder and will be removed together "
-        "with it in Qrisp v0.12.",
+        "lin_incr is only used by the deprecated QCLA adder and will be removed together with it in Qrisp v0.12.",
         QrispDeprecationWarning,
         stacklevel=2,
     )
