@@ -16,12 +16,15 @@
 
 """Defines the public qcla adder, dispatching to classical-quantum or quantum-quantum QCLA implementations."""
 
+import warnings
+
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_carry_path import *  # noqa: F403
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_qcla_adder import *
 from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path import *
 from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_carry_path import *
 from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_qcla_adder import *
 from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_sum_path import *
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 def qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None):
@@ -30,6 +33,13 @@ def qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None
     T-depth like `Drapers QCLA <https://arxiv.org/abs/quant-ph/0406142>`_. Compared to Drapers
     QCLA, the higher radix QCLA allows a more dynamic structure and the use of customizable
     "sub-adders" which enables this adder to beat Drapers QCLA in terms of speed (ie. T-depth).
+
+    .. deprecated:: 0.10
+
+        The QCLA adder is deprecated and will be removed in Qrisp v0.12. Removing it is part
+        of the plan to introduce a new quantum adder interface that will provide a single,
+        unified way to select an in-place adder. Calling ``qcla`` emits a
+        :class:`QrispDeprecationWarning <qrisp.misc.exceptions.QrispDeprecationWarning>`.
 
     In Python syntax, this function performs the inplace addition:
 
@@ -144,6 +154,14 @@ def qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None
     {42: 1.0}
 
     """
+    warnings.warn(
+        "The QCLA adder (qcla) is deprecated and will be removed in Qrisp v0.12. "
+        "Removing it is part of the plan to introduce a new quantum adder interface, "
+        "which will provide a single, unified way to select an in-place adder.",
+        QrispDeprecationWarning,
+        stacklevel=2,
+    )
+
     if isinstance(a, (int, str)):
         return cq_qcla(
             a,

@@ -24,7 +24,10 @@
 # For this we implement the Brent-Kung-Tree in a recursive manner. See:
 # https://web.stanford.edu/class/archive/ee/ee371/ee371.1066/lectures/lect_04.pdf Page 13
 
+import warnings
+
 from qrisp import *
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 # Returns the PROPAGATE status of a group of entries
@@ -281,6 +284,13 @@ def anc_gate(method="gray"):
 # The overall radix can be specified as an exponential of the form
 # R = radix_base**radix_exponent
 def qcla(a, b, radix_base=2, radix_exponent=0, reduce_t_depth=True):
+    warnings.warn(
+        "The QCLA adder (qcla) is deprecated and will be removed in Qrisp v0.12. "
+        "Removing it is part of the plan to introduce a new quantum adder interface, "
+        "which will provide a single, unified way to select an in-place adder.",
+        QrispDeprecationWarning,
+        stacklevel=2,
+    )
 
     if len(a) > len(b):
         raise Exception("Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision")
