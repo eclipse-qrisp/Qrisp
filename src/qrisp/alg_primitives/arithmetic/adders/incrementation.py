@@ -14,15 +14,42 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Implements in-place incrementation of QuantumFloats and qubit lists by constant classical values."""
+"""Implements in-place incrementation of QuantumFloats and qubit lists by constant classical values.
+
+.. deprecated:: 0.10
+
+    The incrementation functionality in this module is deprecated and will be removed in
+    Qrisp v0.12.
+
+"""
+
+import warnings
 
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import cx, mcx, x
 from qrisp.misc import gate_wrap
+from qrisp.misc.exceptions import QrispDeprecationWarning
 
 
 @gate_wrap(is_qfree=True)
 def increment(qf, amount):
+    r"""Increment a QuantumFloat in place by a classical value.
+
+    .. deprecated:: 0.10
+
+        ``increment`` is deprecated and will be removed in Qrisp v0.12. It is
+        equivalent to classical-quantum in-place addition; use ``qf += value``
+        instead.
+
+    """
+    warnings.warn(
+        "The increment function (and QuantumFloat.incr) is deprecated and will be removed in "
+        "Qrisp v0.12. It is equivalent to classical-quantum in-place addition; use "
+        "qf += value instead.",
+        QrispDeprecationWarning,
+        stacklevel=4,
+    )
+
     if amount == 0:
         return
 
@@ -208,6 +235,11 @@ def increment_arbitrary_constant_qubit_list(qs, qubit_list, c):
 # https://algassert.com/circuits/2015/06/12/Constructing-Large-Increment-Gates.html
 # This function also needs a linear amount of ancilla qubits.
 def lin_incr(a, c_in=None, c_out=None):
+    warnings.warn(
+        "lin_incr is part of the deprecated incrementation functionality and will be removed in Qrisp v0.12.",
+        QrispDeprecationWarning,
+        stacklevel=2,
+    )
 
     if c_out is not None:
         a = list(a) + [c_out]
