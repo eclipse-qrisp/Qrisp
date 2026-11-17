@@ -17,6 +17,7 @@
 """Defines the VQEProblem class encapsulating a Hamiltonian, ansatz, and VQE optimization routines."""
 
 import time
+import warnings
 
 import jax
 import jax.numpy as jnp
@@ -27,6 +28,7 @@ from sympy import Symbol
 from qrisp.algorithms.vqe.vqe_benchmark_data import VQEBenchmark
 from qrisp.jasp import QuantumVariableTemplate, check_for_tracing_mode
 from qrisp.jasp.optimization_tools.optimize import minimize as jasp_minimize
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators.fermionic import FermionicOperator
 
 
@@ -519,14 +521,16 @@ class VQEProblem:
         self,
         qarg,
         depth_range,
-        precision_range,
-        iter_range,
-        optimal_energy,
+        precision_range=None,
+        iter_range=None,
+        optimal_energy=None,
         repetitions=1,
         mes_kwargs={},
         init_type="random",
         optimizer="COBYLA",
         options={},
+        atol_range=None,
+        rtol_range=None,
     ):
         r"""This method enables convenient data collection regarding performance of the implementation.
 
@@ -538,12 +542,8 @@ class VQEProblem:
             to which the VQE circuit is applied.
         depth_range : list[int]
             A list of integers indicating, which depth parameters should be explored. Depth means the amount of VQE ansatz layers.
-        precision_range : list[float]
-            A list of floats indicating, which precision parameters should be explored.
-            Each value is passed as the absolute tolerance ``atol`` to
-            :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`, i.e., the targeted
-            standard deviation of each evaluation of the Hamiltonian. The number of shots the backend performs per
-            iteration scales quadratically with the inverse precision.
+        precision_range : list[float], optional
+            Deprecated. Use ``atol_range``, which has the same meaning.
         iter_range : list[int]
             A list of integers indicating, what iterations parameter should be explored. Iterations means the amount of backend calls, the optimizer is allowed to do.
         optimal_energy : float
@@ -560,6 +560,19 @@ class VQEProblem:
             Available are, e.g., ``COBYLA``, ``COBYQA``, ``Nelder-Mead``. The Default is ``COBYLA``.
         options : dict
             A dictionary of solver options.
+        atol_range : list[float], optional
+            A list of floats indicating, which absolute tolerances should be explored.
+            Each value is passed as ``atol`` to
+            :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`, i.e., the targeted
+            standard deviation of each evaluation of the Hamiltonian. The number of shots the backend performs per
+            iteration scales quadratically with the inverse tolerance. Exactly one of ``atol_range`` and
+            ``rtol_range`` must be given.
+        rtol_range : list[float], optional
+            A list of floats indicating, which relative tolerances should be explored.
+            Each value is passed as ``rtol`` to
+            :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`, i.e., the targeted
+            standard deviation relative to the sum of the absolute values of the Pauli coefficients of the
+            Hamiltonian. Cannot be combined with ``atol_range``.
 
         Returns
         -------
@@ -584,7 +597,7 @@ class VQEProblem:
 
             benchmark_data = vqe.benchmark(QuantumVariable(5),
                                 depth_range = [1,2,3],
-                                precision_range = [0.02,0.01],
+                                atol_range = [0.02,0.01],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
                                 repetitions = 2
@@ -602,6 +615,25 @@ class VQEProblem:
         you drawing conclusions from the collected data. Make sure to check them out!
 
         """
+        if iter_range is None or optimal_energy is None:
+            raise TypeError("benchmark requires iter_range and optimal_energy.")
+
+        if precision_range is not None:
+            if atol_range is not None or rtol_range is not None:
+                raise ValueError("Specify only one of precision_range, atol_range and rtol_range.")
+            warnings.warn(
+                "precision_range is deprecated; use atol_range, which has the same meaning, "
+                "or rtol_range for a tolerance relative to the size of the Hamiltonian.",
+                QrispDeprecationWarning,
+                stacklevel=2,
+            )
+            atol_range = precision_range
+
+        if (atol_range is None) == (rtol_range is None):
+            raise ValueError("Specify exactly one of atol_range and rtol_range.")
+
+        tolerance_name, tolerance_range = ("atol", atol_range) if atol_range is not None else ("rtol", rtol_range)
+
         if callable(qarg):
             qarg_prep = qarg
         elif isinstance(qarg, QuantumVariableTemplate):
@@ -619,14 +651,15 @@ class VQEProblem:
             "layer_depth": [],
             "circuit_depth": [],
             "qubit_amount": [],
-            "precision": [],
+            "atol": [],
+            "rtol": [],
             "iterations": [],
             "runtime": [],
             "energy": [],
         }
 
         for p in depth_range:
-            for s in precision_range:
+            for s in tolerance_range:
                 for it in iter_range:
                     for k in range(repetitions):
                         start_time = time.time()
@@ -634,7 +667,7 @@ class VQEProblem:
                         temp_mes_kwargs = {
                             key: value for key, value in mes_kwargs.items() if key not in ("atol", "rtol", "precision")
                         }
-                        temp_mes_kwargs["atol"] = s
+                        temp_mes_kwargs[tolerance_name] = s
 
                         energy = self.run(
                             qarg_prep,
@@ -653,7 +686,8 @@ class VQEProblem:
                         data_dict["layer_depth"].append(p)
                         data_dict["circuit_depth"].append(compiled_qc.depth())
                         data_dict["qubit_amount"].append(compiled_qc.num_qubits())
-                        data_dict["precision"].append(s)
+                        data_dict["atol"].append(s if tolerance_name == "atol" else None)
+                        data_dict["rtol"].append(s if tolerance_name == "rtol" else None)
                         data_dict["iterations"].append(it)
                         data_dict["energy"].append(energy)
                         data_dict["runtime"].append(final_time)

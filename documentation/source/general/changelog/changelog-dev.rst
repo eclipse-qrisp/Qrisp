@@ -722,6 +722,14 @@ API Changes
   takes ``atol`` or ``rtol``. Its ``precision`` argument is deprecated in
   favor of ``atol``, which has the same meaning.
 
+  :meth:`VQEProblem.benchmark <qrisp.vqe.VQEProblem.benchmark>` takes
+  ``atol_range`` or ``rtol_range`` instead of ``precision_range``, which is
+  deprecated in favor of ``atol_range``. :ref:`VQEBenchmark` stores the
+  tolerances in the attributes ``atol`` and ``rtol`` (``None`` for the one
+  not used), and its run data has the entries ``atol`` and ``rtol``. The
+  attribute ``precision`` and the run data entry ``precision`` are
+  deprecated. Both emit a ``QrispDeprecationWarning``.
+
   ``precision`` is deprecated in favor of ``atol``, which has the same
   meaning, and ``diagonalisation_method`` is deprecated in favor of
   ``diagonalization_method``. Both emit a ``QrispDeprecationWarning``. All

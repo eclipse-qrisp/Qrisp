@@ -77,3 +77,42 @@ def test_vqe_accepts_deprecated_measurement_kwargs(mes_kwargs, message):
 
     with pytest.warns(QrispDeprecationWarning, match=message):
         vqe.run(QuantumVariable(2), depth=1, max_iter=2, mes_kwargs=mes_kwargs)
+
+
+def _benchmark(vqe, **kwargs):
+    return vqe.benchmark(
+        QuantumVariable(2), depth_range=[1], iter_range=[2], optimal_energy=-1.0, repetitions=2, **kwargs
+    )
+
+
+def test_vqe_benchmark_tolerances():
+    vqe = heisenberg_problem(nx.path_graph(2), 1, 0)
+
+    benchmark = _benchmark(vqe, atol_range=[0.1])
+    assert benchmark.atol == [0.1, 0.1]
+    assert benchmark.rtol == [None, None]
+    cost_data, _ = benchmark.evaluate()
+    assert all(c > 0 for c in cost_data)
+    assert benchmark.rank(average_repetitions=True)[0]["atol"] == 0.1
+
+    benchmark = _benchmark(vqe, rtol_range=[0.1])
+    assert benchmark.atol == [None, None]
+    assert benchmark.rtol == [0.1, 0.1]
+    assert all(c > 0 for c in benchmark.evaluate()[0])
+
+    with pytest.warns(QrispDeprecationWarning, match="VQEBenchmark.precision is deprecated"):
+        assert benchmark.precision == [0.1, 0.1]
+    with pytest.warns(QrispDeprecationWarning, match="run data is deprecated"):
+        benchmark.evaluate(cost_metric=lambda run_data: run_data["precision"])
+
+
+def test_vqe_benchmark_precision_range_deprecated():
+    vqe = heisenberg_problem(nx.path_graph(2), 1, 0)
+
+    with pytest.warns(QrispDeprecationWarning, match="precision_range is deprecated"):
+        benchmark = _benchmark(vqe, precision_range=[0.1])
+    assert benchmark.atol == [0.1, 0.1]
+
+    for kwargs in ({}, {"atol_range": [0.1], "rtol_range": [0.1]}, {"precision_range": [0.1], "rtol_range": [0.1]}):
+        with pytest.raises(ValueError, match="Specify"):
+            _benchmark(vqe, **kwargs)
