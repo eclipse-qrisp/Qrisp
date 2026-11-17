@@ -128,7 +128,7 @@ def _semiclassical_phase_estimation(
             digits = digits.at[limb].set(digits[limb] | (jnp.asarray(bit, dtype=DTYPE) << shift))
         return ((phase + bit) / 2, args, digits)
 
-    initial = (jnp.asarray(0.0), args, jnp.zeros(num_limbs, dtype=DTYPE))
+    initial = (jnp.float64(0.0), args, jnp.zeros(num_limbs, dtype=DTYPE) if num_limbs else None)
     phase, _, digits = q_fori_loop(0, precision, step, initial)
     return phase, digits
 
