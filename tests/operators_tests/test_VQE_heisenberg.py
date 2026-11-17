@@ -104,6 +104,9 @@ def test_vqe_benchmark_tolerances():
         assert benchmark.precision == [0.1, 0.1]
     with pytest.warns(QrispDeprecationWarning, match="run data is deprecated"):
         benchmark.evaluate(cost_metric=lambda run_data: run_data["precision"])
+    with pytest.warns(QrispDeprecationWarning, match="run data is deprecated"):
+        benchmark.evaluate(cost_metric=lambda run_data: run_data.get("precision", 1))
+    benchmark.evaluate(cost_metric=lambda run_data: run_data.get("other", 1))
 
 
 def test_vqe_benchmark_precision_range_deprecated():

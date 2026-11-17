@@ -32,10 +32,16 @@ class _RunData(dict):
             warnings.warn(
                 "The precision entry of the run data is deprecated; use atol or rtol.",
                 QrispDeprecationWarning,
-                stacklevel=2,
+                stacklevel=3,
             )
             return self["atol"] if self["atol"] is not None else self["rtol"]
         raise KeyError(key)
+
+    def get(self, key, default=None):
+        # dict.get does not call __missing__
+        if key == "precision" and key not in self and "atol" in self:
+            return self[key]
+        return super().get(key, default)
 
 
 class VQEBenchmark:
@@ -84,6 +90,7 @@ class VQEBenchmark:
         self.hamiltonian = hamiltonian
 
     def __setstate__(self, state):
+        """Restore a pickled benchmark, mapping the deprecated ``precision`` to ``atol``."""
         # Benchmarks saved before atol and rtol existed stored the absolute tolerance as precision.
         if "precision" in state and "atol" not in state:
             state = dict(state)
@@ -93,6 +100,7 @@ class VQEBenchmark:
 
     @property
     def precision(self):
+        """Deprecated. Use ``atol`` or ``rtol``."""
         warnings.warn(
             "VQEBenchmark.precision is deprecated; use atol or rtol.",
             QrispDeprecationWarning,
@@ -449,9 +457,7 @@ class VQEBenchmark:
         for i, run_data in enumerate(run_data_list):
             oqv = sci_notation(overall_quantum_volume(run_data), 4)
             metric_value = sci_notation(run_data["metric"], 3)
-            tolerance = (
-                f"atol={run_data['atol']}" if run_data["atol"] is not None else f"rtol={run_data['rtol']}"
-            )
+            tolerance = f"atol={run_data['atol']}" if run_data["atol"] is not None else f"rtol={run_data['rtol']}"
 
             row = [
                 i,
