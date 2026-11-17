@@ -357,7 +357,9 @@ class VQEBenchmark:
         ::
 
             print(benchmark_data.rank()[0])
-            #Yields: {'layer_depth': 3, 'circuit_depth': 69, 'qubit_amount': 5, 'atol': 0.01, 'rtol': None, 'iterations': 50, 'runtime': 1.996392011642456, 'optimal_energy': -7.711545013271988, 'energy': -7.572235160661036, 'metric': 0.9819348973038227}
+            #Yields: {'layer_depth': 3, 'circuit_depth': 69, 'qubit_amount': 5, 'atol': 0.01, 'rtol': None,
+            #          'iterations': 50, 'runtime': 1.996392011642456, 'optimal_energy': -7.711545013271988,
+            #          'energy': -7.572235160661036, 'metric': 0.9819348973038227}
 
         """
         if isinstance(metric, str):
