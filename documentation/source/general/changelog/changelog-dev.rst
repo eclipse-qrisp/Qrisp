@@ -87,6 +87,8 @@ New Features
     shots it expands from the counts, so a replay gives the same shots in the
     same order.
 
+  (`PR #1025 <https://github.com/eclipse-qrisp/Qrisp/pull/1025>`_).
+
 Improvements
 ------------
 
@@ -969,7 +971,8 @@ Dependency Upgrades
 
 * Added ``typing_extensions>=4.4.0`` as a direct dependency, for
   ``typing_extensions.override`` on Python 3.11 (``typing.override`` exists
-  only from Python 3.12).
+  only from Python 3.12)
+  (`PR #1025 <https://github.com/eclipse-qrisp/Qrisp/pull/1025>`_).
 
 .. Add dependency upgrades above this line
 
