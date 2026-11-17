@@ -814,6 +814,13 @@ Development
   `PR #727 <https://github.com/eclipse-qrisp/Qrisp/pull/727>`_,
   `PR #983 <https://github.com/eclipse-qrisp/Qrisp/pull/983>`_).
 
+* Standardized the license headers across all tracked Python files, added
+  headers to files that were missing them, updated outdated copyright years,
+  and removed the unused ``src/qrisp/operators/test.py``. The changelog
+  workflow now also fails when a changed Python file outside ``documentation/``
+  does not start with the expected license header
+  (`PR #1031 <https://github.com/eclipse-qrisp/Qrisp/pull/1031>`_).
+
 * Added pip dependency caching to the CI test workflow
   (`PR #685 <https://github.com/eclipse-qrisp/Qrisp/pull/685>`_).
 
