@@ -133,6 +133,7 @@ Operation application methods
    QuantumCircuit.id
    QuantumCircuit.crx
    QuantumCircuit.barrier
+   QuantumCircuit.prx
    QuantumCircuit.r
 
   
