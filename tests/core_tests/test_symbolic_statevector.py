@@ -19,8 +19,9 @@
 import numpy as np
 import sympy
 from sympy import symbols
-from sympy.physics.quantum import OrthogonalKet
+from sympy.physics.quantum import OrthogonalKet, TensorProduct
 
+from qrisp import QuantumSession
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import cx, h, rx
 
@@ -71,6 +72,29 @@ class TestSymbolicStatevector:
         # rx(pi) maps |0> to -I|1>, so only the |1000> term survives.
         flipped = sympy.simplify(state.subs({phi: sympy.pi, theta: 0}))
         assert flipped == -sympy.I * OrthogonalKet("1000")
+
+    def test_statevector_multi_quantumvariable_uses_tensor_product(self):
+        """Multiple ``QuantumVariable`` objects are joined with ``TensorProduct``.
+
+        Regression test: SymPy 1.14 forbids multiplying two kets directly, so
+        the kets of several ``QuantumVariable`` objects must be combined via
+        ``TensorProduct`` instead.
+        """
+        phi = symbols("phi")
+        qs = QuantumSession()
+        a = QuantumVariable(1, qs=qs)
+        b = QuantumVariable(1, qs=qs)
+        h(a[0])
+        rx(phi, b[0])
+
+        state = qs.statevector()
+
+        assert state.has(TensorProduct)
+
+        # Every tensor product must join both QuantumVariables' kets.
+        tensor_products = list(state.atoms(TensorProduct))
+        assert tensor_products
+        assert all(len(tp.args) > 1 for tp in tensor_products)
 
     def test_statevector_array_symbolic_matches_numeric_after_substitution(self):
         """Binding the symbols reproduces the numeric session's statevector."""
