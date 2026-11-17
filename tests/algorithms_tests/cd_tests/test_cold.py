@@ -27,6 +27,7 @@ from qrisp import h as had_gate
 from qrisp import z as z_gate
 from qrisp.algorithms.cold import DCQOProblem, create_COLD_instance, solve_QUBO
 from qrisp.interface.provider_backends.qiskit_backend import QiskitBackend
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators.qubit import QubitOperator, X, Y, Z
 from qrisp.operators.qubit.qubit_term import QubitTerm
 
@@ -158,12 +159,30 @@ def test_cold_expvalue_method_backend():
         "T": 1.0,
         "objective": "exp_value",
         "N_opt": 1,
-        "precision": 0.1,
+        "rtol": 0.1,
         "exp_value_backend": backend,
     }
     res = solve_QUBO(Q, problem_args=problem_args, run_args=run_args)
     assert isinstance(res, dict)
     assert len(res) > 0
+
+
+def test_cold_precision_deprecated():
+    """``precision`` still works as ``atol`` but warns, and cannot be combined with ``atol`` or ``rtol``."""
+    np.random.seed(42)  # Deterministic for reproducible test results
+    Q = np.array([[-1.2, 0.40, 0.0, 0.0], [0.40, 0.30, 0.20, 0.0], [0.0, 0.20, -1.1, 0.30], [0.0, 0.0, 0.30, -0.80]])
+    problem_args = {"method": "COLD", "uniform": True}
+    run_args = {"N_steps": 4, "T": 1.0, "objective": "exp_value", "N_opt": 1, "exp_value_backend": QiskitBackend()}
+
+    with pytest.warns(QrispDeprecationWarning, match="precision is deprecated"):
+        res = solve_QUBO(Q, problem_args=problem_args, run_args={**run_args, "precision": 0.1})
+    assert isinstance(res, dict)
+    assert len(res) > 0
+
+    with pytest.raises(ValueError, match="Specify only one"):
+        solve_QUBO(Q, problem_args=problem_args, run_args={**run_args, "precision": 0.1, "rtol": 0.1})
+    with pytest.raises(ValueError, match="Specify only one"):
+        solve_QUBO(Q, problem_args=problem_args, run_args={**run_args, "atol": 0.1, "rtol": 0.1})
 
 
 def test_cold_full_example():

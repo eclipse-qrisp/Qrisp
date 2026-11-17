@@ -556,9 +556,10 @@ API Changes
   to keep the previous accuracy. The same default applies to
   :meth:`VQEProblem.run <qrisp.vqe.VQEProblem.run>` and
   :meth:`VQEProblem.train_function <qrisp.vqe.VQEProblem.train_function>`
-  unless ``atol`` or ``rtol`` is passed in ``mes_kwargs``. The ``precision``
-  argument of :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>` is now
-  passed as ``rtol`` as well.
+  unless ``atol`` or ``rtol`` is passed in ``mes_kwargs``. The same default
+  applies to :meth:`DCQOProblem.run <qrisp.cold.DCQOProblem.run>`, which
+  takes ``atol`` or ``rtol``. Its ``precision`` argument is deprecated in
+  favor of ``atol``, which has the same meaning.
 
   ``precision`` is deprecated in favor of ``atol``, which has the same
   meaning, and ``diagonalisation_method`` is deprecated in favor of
