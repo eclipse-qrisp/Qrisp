@@ -16,6 +16,8 @@
 
 """Implements the quantum-quantum higher-radix quantum carry-lookahead adder (qq_qcla)."""
 
+import warnings
+
 import numpy as np
 
 from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
@@ -29,6 +31,7 @@ from qrisp.alg_primitives.arithmetic.adders.qcla.quantum_quantum.qq_sum_path imp
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import cx, x
 from qrisp.environments import QuantumEnvironment, invert
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.misc.utility import redirect_qfunction
 
 verify_manual_uncomputations = np.zeros(1)
@@ -40,6 +43,13 @@ verify_manual_uncomputations = np.zeros(1)
 # The overall radix can be specified as an exponential of the form
 # R = radix_base**radix_exponent
 def qq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True):
+    warnings.warn(
+        "qq_qcla is part of the deprecated QCLA adder and will be removed in Qrisp v0.12. "
+        "Removing it is part of the plan to introduce a new quantum adder interface, "
+        "which will provide a single, unified way to select an in-place adder.",
+        QrispDeprecationWarning,
+        stacklevel=2,
+    )
 
     if len(a) > len(b):
         raise Exception("Tried to add QuantumFloat of higher precision onto QuantumFloat of lower precision")
