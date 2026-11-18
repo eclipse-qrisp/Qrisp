@@ -45,12 +45,7 @@ jobs:
 
       - name: Check license headers
         run: |
-          files=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }}...HEAD -- '*.py' | \
-                  grep -v '^documentation/' || true)
-          for f in $files; do
-            head -n 2 "$f" | grep -q '^# \* Copyright (c) 2026 the Qrisp authors$' || {
-              echo "::error file=$f::Missing or incorrect license header. Expected header:"
-              cat <<'HEADER'
+          expected=$(cat <<'HEADER'
           # ********************************************************************************
           # * Copyright (c) 2026 the Qrisp authors
           # *
@@ -67,6 +62,13 @@ jobs:
           # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
           # ********************************************************************************
           HEADER
+          )
+          files=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }}...HEAD -- '*.py' | \
+                  grep -v '^documentation/' || true)
+          for f in $files; do
+            if ! head -n 15 "$f" | diff -q - <(printf '%s\n' "$expected") > /dev/null; then
+              echo "::error file=$f::Missing or incorrect license header. Expected header:"
+              printf '%s\n' "$expected"
               exit 1
-            }
+            fi
           done
