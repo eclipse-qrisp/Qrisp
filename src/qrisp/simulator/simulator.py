@@ -51,12 +51,36 @@ def _progress_enabled():
     return iostream is not None and isinstance(sys.stdout, iostream.OutStream)
 
 
-def _clear_progress_line():
-    if not _progress_enabled():
-        return
+def _create_progress_bar(desc, delay):
+    # disable=True is only passed when the check fails, so that the TQDM_DISABLE
+    # environment variable still works (explicit arguments take precedence over it).
+    progress_kwargs = {} if _progress_enabled() else {"disable": True}
+    progress_bar = tqdm(
+        desc=desc,
+        bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
+        ncols=min(85, shutil.get_terminal_size().columns),
+        leave=False,
+        delay=delay,
+        position=0,
+        smoothing=1,
+        file=sys.stdout,
+        **progress_kwargs,
+    )
 
-    width = min(85, shutil.get_terminal_size().columns)
-    print("\r" + (" " * width), end="\r")
+    if not progress_bar.disable:
+        progress_bar.display()
+
+    return progress_bar
+
+
+def _close_progress_bar(progress_bar):
+    # tqdm sets disable=True when closing, so the flag is read first.
+    enabled = not progress_bar.disable
+    progress_bar.close()
+
+    if enabled:
+        width = min(85, shutil.get_terminal_size().columns)
+        print("\r" + (" " * width), end="\r")
 
 
 # Decides which operations are dissolved into their definition before simulation.
@@ -79,20 +103,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
     if shots == 0:
         return {}
 
-    progress_bar = tqdm(
-        desc=f"Simulating {len(qc.qubits)} qubits..",
-        bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
-        ncols=min(85, shutil.get_terminal_size().columns),
-        leave=False,
-        delay=0.1,
-        position=0,
-        smoothing=1,
-        file=sys.stdout,
-        disable=not _progress_enabled(),
-    )
-
-    if not progress_bar.disable:
-        progress_bar.display()
+    progress_bar = _create_progress_bar(f"Simulating {len(qc.qubits)} qubits..", delay=0.1)
 
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
@@ -105,8 +116,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
         measurement_amount = _count_measurements_and_treat_alloc(qc, insert_reset=insert_reset)
 
         if measurement_amount == 0:
-            progress_bar.close()
-            _clear_progress_line()
+            _close_progress_bar(progress_bar)
             return {"": 1.0}
 
         # Apply circuit preprocessing more
@@ -190,8 +200,7 @@ def run(qc, shots, token="", iqs=None, insert_reset=True) -> dict:
             outcome_list, cl_prob = iqs.multi_measure(mes_qubit_indices[::-1], return_res_states=False)
             mes_qubit_indices = []
 
-        progress_bar.close()
-        _clear_progress_line()
+        _close_progress_bar(progress_bar)
 
         # Prepare result dictionary
         # The iqs object contains the outcome bitstrings in the attribute .outcome_list
@@ -252,22 +261,8 @@ def gen_res_dict(samples):
 
 def statevector_sim(qc):
 
-    progress_bar = tqdm(
-        desc=f"Simulating {len(qc.qubits)} qubits..",
-        bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
-        ncols=min(85, shutil.get_terminal_size().columns),
-        # ascii = " >#",
-        leave=False,
-        delay=0.2,
-        position=0,
-        smoothing=1,
-        file=sys.stdout,
-        disable=not _progress_enabled(),
-        # colour = "green"
-    )
+    progress_bar = _create_progress_bar(f"Simulating {len(qc.qubits)} qubits..", delay=0.2)
 
-    if not progress_bar.disable:
-        progress_bar.display()
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
     # tolerant regarding inputs.
@@ -293,8 +288,7 @@ def statevector_sim(qc):
             res = np.zeros(2 ** len(qc.qubits), dtype=np.complex64)
             res[0] = 1
 
-            progress_bar.close()
-            _clear_progress_line()
+            _close_progress_bar(progress_bar)
 
             return res
 
@@ -322,8 +316,7 @@ def statevector_sim(qc):
 
         res = qs.eval().tensor_array.to_array()
 
-        progress_bar.close()
-        _clear_progress_line()
+        _close_progress_bar(progress_bar)
 
         # Deactivate the fast append mode
         QuantumCircuit.fast_append = False
@@ -489,20 +482,7 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
             if allocated_qubits > max_req_qubits:
                 max_req_qubits += 1
 
-    progress_bar = tqdm(
-        desc=f"Simulating {max_req_qubits - allocation_amount} qubits..",
-        bar_format="{desc} |{bar}| [{percentage:3.0f}%]",
-        ncols=min(85, shutil.get_terminal_size().columns),
-        leave=False,
-        delay=0.2,
-        position=0,
-        smoothing=1,
-        file=sys.stdout,
-        disable=not _progress_enabled(),
-    )
-
-    if not progress_bar.disable:
-        progress_bar.display()
+    progress_bar = _create_progress_bar(f"Simulating {max_req_qubits - allocation_amount} qubits..", delay=0.2)
 
     # This command enables fast appending. Fast appending means that the .append method
     # of the QuantumCircuit class checks much less validity conditions and is also less
@@ -559,7 +539,6 @@ def advance_quantum_state(qc, quantum_state, deallocated_qubits, qubit_to_index_
             else:
                 quantum_state.apply_operation(instr.op, qubit_indices)
 
-        progress_bar.close()
-        _clear_progress_line()
+        _close_progress_bar(progress_bar)
 
         return quantum_state

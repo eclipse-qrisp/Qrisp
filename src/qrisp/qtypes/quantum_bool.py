@@ -112,7 +112,11 @@ class QuantumBool(QuantumVariable):
 
     Note that there is only a single QuantumBool listed in the "Live QuantumVariables"
     section, because the QuantumBool of the comparison
-    ``qf == 10`` (called ``cond_env``) has been uncomputed.
+    ``qf == 10`` (called ``cond_env``) has been uncomputed. The same can be checked
+    programmatically:
+
+    >>> print([type(qv).__name__ for qv in qf.qs.qv_list])
+    ['QuantumFloat', 'QuantumBool']
 
     """
 
