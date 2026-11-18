@@ -214,6 +214,19 @@ Other New Features
   without simulating it
   (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
+- **QubitOperators know how many qubits they act on**
+  :class:`~qrisp.operators.QubitOperator` has a new ``num_qubits`` attribute:
+  one plus the largest qubit index of any factor the operator was built from.
+  The new identity factor ``I(k)`` contributes to it without changing the
+  operator, so ``X(3)*X(4)*I(9)`` is a Pauli string on ten qubits. Arithmetic
+  and the methods that return operators carry it along, the constructor
+  accepts it as ``num_qubits=``, and
+  :meth:`~qrisp.operators.QubitOperator.to_array` and
+  :meth:`~qrisp.operators.QubitOperator.to_sparse_matrix` use it as their
+  default size, so an operator keeps the qubits it is the identity on.
+  ``find_minimal_qubit_amount`` returns the same values as before, in linear
+  instead of quadratic time.
+
 .. Add other new features above this line
 
 Bug Fixes
