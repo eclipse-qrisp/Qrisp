@@ -33,7 +33,7 @@ updates:
           - "version-update:semver-minor"
           - "version-update:semver-patch"
 
-  # Bump the qrisp-cudaq version pinned for the Read the Docs build
+  # Bump the qrisp-cudaq version pinned for the docs build
   - package-ecosystem: "pip"
     directory: "/documentation"
     schedule:

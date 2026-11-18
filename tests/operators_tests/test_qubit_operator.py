@@ -14,9 +14,13 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests that multiplying a QubitOperator by zero produces an operator with an empty terms dict."""
+"""Tests for QubitOperator."""
 
-from qrisp.operators.qubit import X
+import numpy as np
+import pytest
+
+from qrisp import QuantumVariable
+from qrisp.operators.qubit import X, Y, Z
 
 
 def test_qubit_operator_mul_by_zero():
@@ -35,3 +39,18 @@ def test_qubit_operator_mul_by_zero():
     op *= 0
     assert op.terms_dict == {}
     assert not op.find_minimal_qubit_amount()
+
+
+@pytest.mark.parametrize(
+    "operator",
+    [Y(0), X(0) * Y(1), Y(0) * Z(1) + 0.5 * Y(0), Y(0) * Y(1) * X(2)],
+)
+def test_change_of_basis_reconstructs_operator(operator):
+    """The gates U applied by change_of_basis and the returned diagonal operator D
+    satisfy U^dg D U = operator, so measuring D after U measures the operator.
+    """
+    n = operator.find_minimal_qubit_amount()
+    qv = QuantumVariable(n)
+    diagonal_operator = operator.change_of_basis(qv)
+    U = qv.qs.compile().get_unitary()
+    assert np.allclose(U.conj().T @ diagonal_operator.to_array(n) @ U, operator.to_array(n))

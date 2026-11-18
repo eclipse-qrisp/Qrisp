@@ -19,7 +19,9 @@
 import numpy as np
 import sympy
 from sympy import symbols
+from sympy.physics.quantum import OrthogonalKet, TensorProduct
 
+from qrisp import QuantumSession
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import cx, h, rx
 
@@ -36,8 +38,8 @@ class TestSymbolicStatevector:
     def test_statevector_sympy_retains_free_symbols(self):
         """The ket expression keeps the unbound parameters.
 
-        ``free_symbols`` also contains the basis-state kets, so the parameters
-        are checked for as a subset.
+        ``free_symbols`` also contains extra basis-state symbols, so the
+        parameters are checked for as a subset.
         """
         phi, theta = symbols("phi theta")
         qv = QuantumVariable(2)
@@ -63,16 +65,36 @@ class TestSymbolicStatevector:
         assert {phi, theta}.issubset(state.free_symbols)
 
         # rx(0) (x) rx(0) is the identity, so the state collapses to |0000>
-        # with amplitude 1 and only the ket symbol survives.
+        # with amplitude 1.
         collapsed = sympy.simplify(state.subs({phi: 0, theta: 0}))
-        (ground_ket,) = collapsed.free_symbols
-        assert sympy.simplify(collapsed / ground_ket) == 1
+        assert collapsed == OrthogonalKet("0000")
 
         # rx(pi) maps |0> to -I|1>, so only the |1000> term survives.
         flipped = sympy.simplify(state.subs({phi: sympy.pi, theta: 0}))
-        (flipped_ket,) = flipped.free_symbols
-        assert flipped_ket != ground_ket
-        assert sympy.simplify(flipped / flipped_ket) == -sympy.I
+        assert flipped == -sympy.I * OrthogonalKet("1000")
+
+    def test_statevector_multi_quantumvariable_uses_tensor_product(self):
+        """Multiple ``QuantumVariable`` objects are joined with ``TensorProduct``.
+
+        Regression test: SymPy 1.14 forbids multiplying two kets directly, so
+        the kets of several ``QuantumVariable`` objects must be combined via
+        ``TensorProduct`` instead.
+        """
+        phi = symbols("phi")
+        qs = QuantumSession()
+        a = QuantumVariable(1, qs=qs)
+        b = QuantumVariable(1, qs=qs)
+        h(a[0])
+        rx(phi, b[0])
+
+        state = qs.statevector()
+
+        assert state.has(TensorProduct)
+
+        # Every tensor product must join both QuantumVariables' kets.
+        tensor_products = list(state.atoms(TensorProduct))
+        assert tensor_products
+        assert all(len(tp.args) > 1 for tp in tensor_products)
 
     def test_statevector_array_symbolic_matches_numeric_after_substitution(self):
         """Binding the symbols reproduces the numeric session's statevector."""
