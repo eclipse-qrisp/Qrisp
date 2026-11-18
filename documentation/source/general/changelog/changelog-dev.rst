@@ -17,6 +17,36 @@ changelog enforcement.
 New Features
 ------------
 
+- **Pytree-aware return signatures for** ``sample()`` **and**
+  ``expectation_value()``
+  The return structure now mirrors the structure of the sampling kernel's
+  return value.  For example ``return a, b, c`` from a kernel produces
+  ``(array_a, array_b, array_c)`` — a tuple of three 1D arrays — instead of
+  a single flat ``(shots, 3)`` array.  Nested tuples, lists, and dicts are
+  preserved (e.g. ``[ (a,b), c ]`` → ``[ (array_a, array_b), array_c ]``).
+  In ``sample()`` each leaf retains its native dtype (``bool`` stays
+  ``bool``, ``int`` stays ``int``) and array-valued leaves naturally stack
+  along the leading dimension (``(3,)`` → ``(shots, 3)``).
+  ``expectation_value()`` does not preserve leaf dtypes: an expectation
+  value is a mean, so every leaf comes back floating point (complex leaves
+  stay complex).  User-defined JAX pytree types raise a descriptive
+  ``TypeError``.  Kernels may also return a :ref:`QuantumArray`, which is
+  measured element-wise and decoded into an array of its own shape, also
+  under terminal sampling and ``@backend_sampler``.  QuantumVariables and
+  QuantumArrays may sit anywhere inside nested ``tuple``, ``list`` and
+  ``dict`` returns.
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_)
+
+  **Breaking change:** Multi-value returns are now tuples of arrays instead
+  of a single 2D array.  Code that indexed ``res[:, i]`` must use
+  ``res[i]``.  The same applies to ``expectation_value()`` which now returns
+  a tuple of scalars for multi-value kernels.  The first parameter of
+  ``expectation_value()`` is renamed from ``state_prep`` to
+  ``sampling_kernel``, matching ``sample()``, and its undocumented
+  ``return_dict`` parameter, which only served
+  :func:`~qrisp.jasp.terminal_sampling` internally, is removed.
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_)
+
 * **CUDA-Q interface.** Qrisp programs can now be compiled to and run on
   `CUDA-Q <https://nvidia.github.io/cuda-quantum/>`_, NVIDIA's platform for
   hybrid quantum-classical computing. The interface ships as the separate
@@ -218,6 +248,16 @@ Other New Features
 
 Bug Fixes
 ---------
+
+* Fixed terminal sampling returning fewer than ``shots`` samples from
+  :func:`~qrisp.jasp.sample` when distinct measurement results decode to the
+  same value (e.g. under a ``post_processor`` that is not injective). The
+  counts of such outcomes are now summed instead of overwritten
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_).
+
+* Fixed :func:`~qrisp.jasp.sample` ignoring its ``post_processor`` when
+  called outside of a Jasp-traced function
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_).
 
 * Fixed the lowering of unsigned integers by
   :meth:`Jaspr.to_mlir <qrisp.jasp.Jaspr.to_mlir>` with

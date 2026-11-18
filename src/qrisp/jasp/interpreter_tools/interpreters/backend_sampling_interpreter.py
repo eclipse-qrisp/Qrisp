@@ -74,10 +74,6 @@ Tracing a simple kernel that applies a Hadamard to a 3-qubit
         b:f64[500] = pjit[
           name=sampling_eval_function          ← intercept ① (outer, in evaluation_tools)
           jaxpr={ lambda ; d:f64[500] e:i64[]. let
-              _:i64[] = pjit[
-                name=_backend_shots_marker
-                jaxpr={ lambda ; e:i64[]. let in (e,) }
-              ] e
               ...
               _:i64[] _:i64[] f:f64[500] = while[
                 body_jaxpr={ lambda ; g:i64[] h:f64[500] i:QuantumState. let
@@ -453,7 +449,21 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         # ``expectation_value_eval_function`` Jaxpr).  This runs the
         # while-loop and extracts the final result — the Jaspr itself
         # owns all accumulator typing and indexing logic.
-        return jax.jit(eval_jaxpr(inner_jaxpr, eqn_evaluator=loop_eqn_evaluator))(*invals)
+        result = jax.jit(eval_jaxpr(inner_jaxpr, eqn_evaluator=loop_eqn_evaluator))(*invals)
+
+        # The result may now be a nested pytree (tuple/list of arrays)
+        # from the post-loop restructuring in sampling_eval_function.
+        # Flatten to a plain tuple so that the io_callback (which expects
+        # a flat sequence when given multiple result shapes) can consume it.
+        # (list is registered as a pytree node in sampling.py, so
+        # tree_leaves recurses into lists as well as tuples.)
+        #
+        # A lone output arrives here already unpacked by eval_jaxpr, so
+        # *result* is a bare array in that case rather than a one-element
+        # container -- nothing to flatten.
+        if isinstance(result, (tuple, list)):
+            return tuple(jax.tree_util.tree_leaves(result))
+        return result
 
     return backend_sampling_fn
 

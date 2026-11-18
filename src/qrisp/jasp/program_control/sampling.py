@@ -17,45 +17,9 @@
 """Implements sample, drawing measurement samples from a quantum sampling kernel."""
 
 import jax
-import jax.numpy as jnp
 
-from qrisp.jasp.tracing_logic import check_for_tracing_mode, quantum_kernel
-
-
-@jax.jit
-def _backend_shots_marker(val):
-    """Identity marker for the shot count.
-
-    Allows ``backend_sampler`` to reliably locate the shot count inside a traced
-    ``sampling_eval_function`` Jaxpr.
-    """
-    return val
-
-
-# The following function implements the sample feature.
-
-# The basic functionality would be relatively straightforward to implement,
-# however there are some complications. The reason for that is that the resulting
-# jaxpr should be "readable" by the terminal sampling interpreter.
-# Terminal sampling means that instead of performing the simulations "shots"-times
-# it is performed once and the shots are then sampled from that distribution.
-# Naturally this implies a massive performance increase, which is why a lot
-# of effort is spent to realize a smooth implementation.
-
-# The underlying idea to make the feature easily "readable" by the terminal
-# sampling interpreter is to structure one iteration of sampling into three
-# steps.
-
-# 1. Evaluating the user function, which generates the distribution.
-# 2. Sampling from that distribution via the "measure" function.
-# 3. Decoding and postprocessing the measurement results.
-
-# For the final two steps we deploy some custom logic to realize the terminal
-# sampling behavior. To simplify the automatic processing of these steps,
-# we capture each into individual pjit calls.
-
-# The terminal sampling interpreter then identifies each steps via the
-# eqn.params["name"] attribute and executes the custom logic.
+from qrisp.jasp.program_control._sampling_core import _sampling_procedure
+from qrisp.jasp.tracing_logic import check_for_tracing_mode
 
 
 def sample(sampling_kernel=None, shots=0, post_processor=None):
@@ -64,7 +28,8 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     The ``sample`` function allows to take samples from a quantum computation
     specified by a *sampling kernel* — a Python function that receives only
     classical arguments and returns arbitrary values.  Any
-    :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
+    :ref:`QuantumVariables <QuantumVariable>` and
+    :ref:`QuantumArrays <QuantumArray>` in the return are automatically
     measured and decoded.
 
     The samples are returned in the form of a
@@ -98,7 +63,9 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     sampling_kernel : callable
         A sampling kernel — a function receiving only classical arguments and
         returning one or more :ref:`QuantumVariables <QuantumVariable>`,
-        classical measurement results, or a mixture of both.
+        :ref:`QuantumArrays <QuantumArray>`, classical measurement results,
+        or a mixture of these, also nested inside ``tuple``, ``list`` and
+        ``dict`` containers.
         The function must **not** receive quantum arguments because a quantum
         value would need to be copied for each sampling iteration, which is
         prohibited by the no-cloning theorem.
@@ -121,8 +88,15 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     Returns
     -------
     callable
-        A classical, Jax traceable function returning a jax array containing
-        the measurement results of each shot.
+        A classical, Jax traceable function.  The result mirrors the
+        structure of the kernel's return value, with every leaf replaced by
+        an array of shape ``(shots, *leaf_shape)`` that keeps the leaf's
+        native dtype.  A scalar leaf therefore gives a 1D array of length
+        ``shots``, and a ``(3,)`` leaf gives a ``(shots, 3)`` array.
+        Containers (``tuple``, ``list``, ``dict``, and nested combinations
+        thereof) are preserved — e.g. ``{'a': bool_array, 'b': float_array}``.
+        A returned :ref:`QuantumArray` is decoded into an array of its own
+        shape, so it gives a leaf of shape ``(shots, *qa.shape)``.
 
     Examples
     --------
@@ -166,20 +140,13 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
         print(main(3))
 
-        # Yields e.g.
-        # [[3. 3.]
-        #  [0. 0.]
-        #  [0. 0.]
-        #  [3. 3.]
-        #  [0. 0.]
-        #  [0. 0.]
-        #  [3. 3.]
-        #  [3. 3.]
-        #  [0. 0.]
-        #  [0. 0.]]
+        # Yields e.g. (a tuple of two 1D arrays)
+        # (Array([3., 0., 0., 3., 0., 0., 3., 3., 0., 0.], dtype=float64),
+        #  Array([3., 0., 0., 3., 0., 0., 3., 3., 0., 0.], dtype=float64))
         #
-        # Each row is either [0, 0] or [3, 3] with 50% probability each.
-        # The exact order of rows is random and varies between runs.
+        # Both arrays agree entry by entry: every shot gives either 0 or 3
+        # with 50% probability each. The exact order of the entries is random
+        # and varies between runs.
 
     To demonstrate the post processing feature, we write a simple post
     processing function:
@@ -205,6 +172,30 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         # Each entry is either 0 or 10 with 50% probability each. The exact
         # order of entries is random and varies between runs.
 
+    **Sampling kernels returning QuantumArrays**
+
+    A :ref:`QuantumArray` is measured element-wise.  Each sample is an array
+    of the QuantumArray's shape, and a post-processor receives it as such:
+
+    ::
+
+        def array_kernel():
+            qa = QuantumArray(QuantumFloat(2), shape=(2,))
+            h(qa)
+            return qa
+
+        @jaspify
+        def main():
+            return sample(array_kernel, shots=5)()
+
+        print(main())
+        # Yields e.g. (an array of shape (5, 2))
+        # [[1. 3.]
+        #  [0. 2.]
+        #  [3. 3.]
+        #  [2. 0.]
+        #  [1. 1.]]
+
     **Sampling kernels returning classical values**
 
     A sampling kernel may also return classical values from mid-circuit
@@ -224,11 +215,9 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             return sample(mixed_kernel, shots=20)()
 
         print(main())
-        # Yields e.g.:
-        # [[0. 0.]
-        #  [0. 0.]
-        #  [1. 0.]
-        #  ...]
+        # Yields e.g. (a tuple of two 1D arrays):
+        # (Array([0., 0., 1., ...], dtype=float64),
+        #  Array([0., 0., 0., ...], dtype=float64))
 
     .. note::
 
@@ -237,9 +226,6 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
         with a mixed-returns kernel will raise an error.
 
     """
-    from qrisp.core import QuantumVariable, measure
-    from qrisp.jasp import qache
-
     if isinstance(sampling_kernel, int):
         shots = sampling_kernel
         sampling_kernel = None
@@ -247,156 +233,12 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
     if sampling_kernel is None:
         return lambda x: sample(x, shots, post_processor=post_processor)
 
-    if post_processor is None:
-
-        def identity(*args):
-            if len(args) == 1:
-                return args[0]
-            return args
-
-        post_processor = identity
-
     if isinstance(shots, jax.core.Tracer):
         raise Exception("Tried to sample with dynamic shots value (static integer required)")
     elif not isinstance(shots, int):
         raise Exception(f"Tried to sample with shots value of non-integer type {type(shots)}")
 
-    # Qache the user function
-    @qache
-    def user_func(*args):
-        return sampling_kernel(*args)
-
-    # This function evaluates the sampling process
-    @jax.jit
-    def sampling_eval_function(*args, tracerized_shots=0):
-
-        for arg in args:
-            if isinstance(arg, QuantumVariable):
-                raise Exception("Tried to sample from state preparation function taking a quantum value")
-
-        # Marker: allows backend_sampler to locate the shot count in the
-        # traced Jaxpr without fragile position-based extraction.
-        _backend_shots_marker(tracerized_shots)
-
-        # We now construct a loop to collect the samples by
-        # inserting the postprocessed measurement result into an array.
-        # The following function is the loop body, which is kernelized.
-        @quantum_kernel
-        def sampling_body_func(i, args):
-
-            acc = args[0]
-
-            # Evaluate the user function
-            result_tuple = user_func(*args[1:])
-
-            if not isinstance(result_tuple, tuple):
-                result_tuple = (result_tuple,)
-
-            # Build a per-position mask: QuantumVariable -> True, classical -> False.
-            is_quantum = [isinstance(x, QuantumVariable) for x in result_tuple]
-
-            # Separate quantum and classical returns.
-            qv_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if is_q)
-            classical_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if not is_q)
-
-            if qv_tuple:
-                # ----------------------------------------------------------
-                # Stage 2: measure quantum registers only.
-                # ----------------------------------------------------------
-                @qache
-                def sampling_helper_1(*args):
-                    res_list = [measure(reg) for reg in args]
-                    return tuple(res_list)
-
-                measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
-
-                # ----------------------------------------------------------
-                # Stage 3: decode quantum, interleave with classical values,
-                # apply post-processing.  Classical values are passed as
-                # explicit arguments (before measurement ints).  When present
-                # the helper is named sampling_helper_2_mixed so that the
-                # terminal-sampling guard in jaspification.py can detect it.
-                # ----------------------------------------------------------
-                if classical_tuple:
-
-                    def sampling_helper_2_mixed(*args):
-                        n_classical = len(classical_tuple)
-                        classical_vals = args[:n_classical]
-                        meas_ints = args[n_classical:]
-
-                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
-
-                        q_iter = iter(decoded_q)
-                        c_iter = iter(classical_vals)
-
-                        full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
-
-                        result = post_processor(*full)
-
-                        if isinstance(result, tuple):
-                            return_amount.append(len(result))
-                            if len(acc.shape) == 1:
-                                raise _MultiReturnDetected()
-                        return result
-
-                    sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
-                else:
-
-                    def sampling_helper_2(*meas_ints):
-                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
-
-                        result = post_processor(*decoded_q)
-
-                        if isinstance(result, tuple):
-                            return_amount.append(len(result))
-                            if len(acc.shape) == 1:
-                                raise _MultiReturnDetected()
-                        return result
-
-                    sampling_helper_2 = jax.jit(sampling_helper_2)
-
-                decoded_values = sampling_helper_2(*classical_tuple, *measurement_ints)
-
-            else:
-                # ----------------------------------------------------------
-                # No quantum returns — pure classical.  No measurement or
-                # decoding needed; just apply post-processing directly.
-                # ----------------------------------------------------------
-                result = post_processor(*classical_tuple)
-
-                if isinstance(result, tuple):
-                    return_amount.append(len(result))
-                    if len(acc.shape) == 1:
-                        raise _MultiReturnDetected()
-                decoded_values = result
-
-            # Insert into the accumulating array
-            acc = acc.at[i].set(decoded_values)
-
-            return (acc, *args[1:])
-
-        # This list captures the amount of return values. The strategy here is
-        # to initially assume only one QuantumVariable is returned, which is then
-        # added to the expectation value accumulator. If more than one is returned,
-        # the amount is saved in this list and an exception is raised, which
-        # subsequently causes another call but this time with the correct accumulator
-        # dimension.
-
-        return_amount = []
-
-        try:
-            loop_res = jax.lax.fori_loop(0, tracerized_shots, sampling_body_func, (jnp.zeros(shots), *args))
-            return loop_res[0]
-        except _MultiReturnDetected:
-            loop_res = jax.lax.fori_loop(
-                0,
-                tracerized_shots,
-                sampling_body_func,
-                (jnp.zeros((shots, return_amount[0])), *args),
-            )
-            return loop_res[0]
-
-    from qrisp.jasp import terminal_sampling
+    sampling_eval_function = _sampling_procedure(sampling_kernel, post_processor, "sample", static_shots=shots)
 
     def return_function(*args):
 
@@ -405,7 +247,7 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
             # non-positive count has no meaningful result and would otherwise
             # fail obscurely while indexing the zero-length accumulator.
             # Outside tracing mode shots=0 is legitimate -- it selects the exact
-            # probabilities via terminal_sampling -- so the branch below is
+            # probabilities via terminal sampling -- so the branch below is
             # deliberately left unguarded.
             if shots < 1:
                 raise ValueError(
@@ -413,15 +255,10 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
                     "(at least one shot is required). A shot count of 0 returns exact "
                     "probabilities, which is only available outside of tracing mode."
                 )
-            return sampling_eval_function(*args, tracerized_shots=shots)
+            return sampling_eval_function(*args, shots=shots)
         else:
-            return terminal_sampling(sampling_kernel, shots)(*args)
+            from qrisp.jasp.evaluation_tools.terminal_sampling import _terminal_sampling
+
+            return _terminal_sampling(sampling_kernel, shots, post_processor)(*args)
 
     return return_function
-
-
-class _MultiReturnDetected(Exception):
-    """Internal signal raised when the post-processor returns multiple values (a tuple) instead of a single scalar.
-
-    This triggers a retry of the sampling loop with a multi-dimensional accumulator of the correct shape.
-    """

@@ -16,54 +16,17 @@
 
 """Implements expectation_value, estimating expectation values via repeated quantum kernel sampling."""
 
-import jax
-import jax.numpy as jnp
-
-from qrisp.jasp.tracing_logic import quantum_kernel
+from qrisp.jasp.program_control._sampling_core import _sampling_procedure
 
 
-@jax.jit
-def _backend_shots_marker(val):
-    """Identity marker for the shot count.
-
-    Allows ``backend_sampler`` to reliably locate the shot count inside a traced
-    expectation_value Jaxpr.
-    """
-    return val
-
-
-# The following function implements the expectation_value feature.
-# The basic functionality would be relatively straightforward to implement,
-# however there are some complications. The reason for that is that the resulting
-# jaxpr should be "readable" by the terminal sampling interpreter.
-# Terminal sampling means that instead of performing the simulations "shots"-times
-# it is performed once and the shots are then sampled from that distribution.
-# Naturally this implies a massive performance increase, which is why a lot
-# of effort is spent to realize a smooth implementation.
-
-# The underlying idea to make the feature easily "readable" by the terminal
-# sampling interpreter is to structure one iteration of sampling into three
-# steps.
-
-# 1. Evaluating the user function, which generates the distribution.
-# 2. Sampling from that distribution via the "measure" function.
-# 3. Decoding and postprocessing the measurement results.
-
-# For the final two steps we deploy some custom logic to realize the terminal
-# sampling behavior. To simplify the automatic processing of these steps,
-# we capture each into individual pjit calls.
-
-# The terminal sampling interpreter then identifies each steps via the
-# eqn.params["name"] attribute and executes the custom logic.
-
-
-def expectation_value(state_prep, shots, return_dict=False, post_processor=None):
+def expectation_value(sampling_kernel, shots, post_processor=None):
     r"""Estimates the expectation value from a sampling kernel.
 
     The ``expectation_value`` function allows to estimate the expectation value
     from a *sampling kernel* — a Python function that receives only classical
     arguments and returns arbitrary values.  Any
-    :ref:`QuantumVariables <QuantumVariable>` in the return are automatically
+    :ref:`QuantumVariables <QuantumVariable>` and
+    :ref:`QuantumArrays <QuantumArray>` in the return are automatically
     measured and decoded; classical values are interleaved in-place.
 
     .. note::
@@ -81,7 +44,9 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     sampling_kernel : callable
         A sampling kernel — a function receiving only classical arguments and
         returning one or more :ref:`QuantumVariables <QuantumVariable>`,
-        classical measurement results, or a mixture of both.
+        :ref:`QuantumArrays <QuantumArray>`, classical measurement results,
+        or a mixture of these, also nested inside ``tuple``, ``list`` and
+        ``dict`` containers.
         The function must **not** receive quantum arguments because a quantum
         value would need to be copied for each sampling iteration, which is
         prohibited by the no-cloning theorem.
@@ -99,7 +64,16 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     Returns
     -------
     callable
-        A function returning a Jax array containing the expectation value.
+        A function returning the expectation value.  For a kernel returning a
+        single value the result is a scalar ``jax.Array``.  For a kernel
+        returning a container (``tuple``, ``list``, ``dict``, or nested
+        combinations thereof) the container structure is preserved and every
+        leaf is replaced by its mean.  Since an expectation value is a mean,
+        each leaf is floating point regardless of the kernel's own dtype
+        (complex leaves stay complex) -- unlike :func:`~qrisp.jasp.sample`,
+        which preserves the native dtype of every leaf.  A returned
+        :ref:`QuantumArray` gives an array of element-wise means with the
+        QuantumArray's shape.
 
     Examples
     --------
@@ -159,7 +133,7 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
         @jaspify
         def main(k):
 
-            ev_function = expectation_value(state_prep, shots = 50,
+            ev_function = expectation_value(sampling_kernel, shots = 50,
                                              post_processor = post_processor)
 
             return ev_function(k)
@@ -179,141 +153,14 @@ def expectation_value(state_prep, shots, return_dict=False, post_processor=None)
     expectation from run to run because of shot noise.
 
     """
-    from qrisp.core import QuantumVariable, measure
-    from qrisp.jasp import make_tracer, qache
+    from qrisp.jasp import make_tracer
 
     if isinstance(shots, int):
         shots = make_tracer(shots)
 
-    if post_processor is None:
-
-        def identity(*args):
-            return args
-
-        post_processor = identity
-
-    # Qache the user function
-    @qache
-    def user_func(*args):
-        return state_prep(*args)
-
-    # This function performs the logic to evaluate the expectation value
-    def expectation_value_eval_function(*args, shots=0):
-
-        for arg in args:
-            if isinstance(arg, QuantumVariable):
-                raise Exception("Tried to sample from state preparation function taking a quantum value")
-
-        # Marker: allows backend_sampler to locate the shot count in the
-        # traced Jaxpr without fragile position-based extraction.
-        _backend_shots_marker(shots)
-
-        # We now construct a loop to evaluate the expectation value via adding
-        # the decoded and postprocessed measurement result into an accumulator.
-        # The following function is the loop body, which is kernelized.
-        @quantum_kernel
-        def sampling_body_func(i, args):
-
-            # Evaluate the user function
-            acc = args[0]
-            result_tuple = user_func(*args[1:])
-
-            if not isinstance(result_tuple, tuple):
-                result_tuple = (result_tuple,)
-
-            # Build a per-position mask: QuantumVariable -> True, classical -> False.
-            is_quantum = [isinstance(x, QuantumVariable) for x in result_tuple]
-
-            # Separate quantum and classical returns.
-            qv_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if is_q)
-            classical_tuple = tuple(x for x, is_q in zip(result_tuple, is_quantum) if not is_q)
-
-            if qv_tuple:
-                # Measure quantum registers only.
-                @qache
-                def sampling_helper_1(*args):
-                    res_list = [measure(reg) for reg in args]
-                    return tuple(res_list)
-
-                measurement_ints = sampling_helper_1(*[qv.reg for qv in qv_tuple])
-
-                # Decode quantum, interleave with classical values, apply
-                # post-processing.  Classical values are passed as explicit
-                # arguments (before measurement ints).  When present the
-                # helper is named sampling_helper_2_mixed for detection.
-                if classical_tuple:
-
-                    def sampling_helper_2_mixed(*args):
-                        n_classical = len(classical_tuple)
-                        classical_vals = args[:n_classical]
-                        meas_ints = args[n_classical:]
-
-                        decoded_q = [qv.jdecoder(meas_int) for qv, meas_int in zip(qv_tuple, meas_ints)]
-
-                        q_iter = iter(decoded_q)
-                        c_iter = iter(classical_vals)
-
-                        full = [next(q_iter) if is_q else next(c_iter) for is_q in is_quantum]
-
-                        return post_processor(*full)
-
-                    sampling_helper_2 = jax.jit(sampling_helper_2_mixed)
-                else:
-
-                    def sampling_helper_2(*meas_ints):
-                        res_list = [qv.jdecoder(meas) for qv, meas in zip(qv_tuple, meas_ints)]
-                        return post_processor(*res_list)
-
-                    sampling_helper_2 = jax.jit(sampling_helper_2)
-
-                decoded_values = sampling_helper_2(*classical_tuple, *measurement_ints)
-
-            else:
-                # Pure classical — just apply post-processing directly.
-                decoded_values = post_processor(*classical_tuple)
-
-            if isinstance(decoded_values, tuple) and len(decoded_values) != 1:
-                # Save the return amount (for more details check the comment of the)
-                # initialization command of return_amount
-                return_amount.append(len(decoded_values))
-                if acc.shape[0] == 1:
-                    raise _MultiReturnDetected()
-
-            # Turn into jax array and add to the accumulator
-            meas_res = jnp.array(decoded_values)
-            acc += meas_res
-
-            # Return the updated accumulator for the next loop iteration.
-            return (acc, *args[1:])
-
-        # This list captures the amount of return values. The strategy here is
-        # to initially assume only one QuantumVariable is returned, which is then
-        # added to the expectation value accumulator. If more than one is returned,
-        # the amount is saved in this list and an exception is raised, which
-        # subsequently causes another call but this time with the correct accumulator
-        # dimension.
-
-        return_amount = []
-
-        try:
-            # loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jax.lax.broadcast(0., (1,)), *args))
-            loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(1), *args))
-            return loop_res[0][0] / shots
-        except _MultiReturnDetected:
-            loop_res = jax.lax.fori_loop(0, shots, sampling_body_func, (jnp.zeros(return_amount), *args))
-            return loop_res[0] / shots
-
-    if return_dict:
-        expectation_value_eval_function.__name__ = "dict_sampling_eval_function"
+    expectation_value_eval_function = _sampling_procedure(sampling_kernel, post_processor, "ev")
 
     def return_function(*args):
-        return jax.jit(expectation_value_eval_function)(*args, shots=shots)
+        return expectation_value_eval_function(*args, shots=shots)
 
     return return_function
-
-
-class _MultiReturnDetected(Exception):
-    """Internal signal raised when the post-processor returns multiple values (a tuple) instead of a single scalar.
-
-    This triggers a retry of the sampling loop with a multi-dimensional accumulator of the correct shape.
-    """
