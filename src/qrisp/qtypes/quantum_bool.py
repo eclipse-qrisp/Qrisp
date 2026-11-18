@@ -61,7 +61,7 @@ class QuantumBool(QuantumVariable):
     >>> q_ch[:] = {"g" : 1, "l" : -1}
     >>> q_bool_2 = (q_ch == "g")
     >>> q_bool_2.qs.statevector()
-    sqrt(2)*(|g>*|True> - |l>*|False>)/2
+    sqrt(2)*(|g>x|True> - |l>x|False>)/2
 
     For :ref:`QuantumFloats <QuantumFloat>`, numeric comparison is also possible:
 

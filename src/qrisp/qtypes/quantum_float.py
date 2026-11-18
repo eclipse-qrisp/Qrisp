@@ -313,7 +313,7 @@ class QuantumFloat(QuantumVariable):
     >>> b[:] = 4
     >>> comparison_qbl_1 = (a == b)
     >>> comparison_qbl_1.qs.statevector()
-    sqrt(2)*(|0>*|True>*|4>*|False> + |4>*|False>*|4>*|True>)/2
+    sqrt(2)*(|0>x|True>x|4>x|False> + |4>x|False>x|4>x|True>)/2
 
     The first tensor factor containing a boolean value corresponds to
     ``comparison_qbl_0`` and the second one is ``comparison_qbl_1``.
@@ -1302,7 +1302,7 @@ class QuantumFloat(QuantumVariable):
         >>> with qbl:
         ...     qf.quantum_bit_shift(2)
         >>> print(qf.qs.statevector())
-        sqrt(2)*(|1>*|False> + |4>*|True>)/2
+        sqrt(2)*(|1>x|False> + |4>x|True>)/2
 
         """
         # NOTE: Local import to avoid a circular import (qrisp.alg_primitives.arithmetic imports from qrisp.qtypes).
