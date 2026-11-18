@@ -66,6 +66,7 @@ Architecture
     result = main(1)  # JAX array, shape (100,), routed through backend
 """
 
+import numpy as np
 from jax import ShapeDtypeStruct, jit
 from jax.experimental import io_callback
 from jax.tree_util import tree_flatten
@@ -95,7 +96,7 @@ __all__ = ["backend_sampler"]
 # ===========================================================================
 
 
-def _make_backend_eqn_evaluator(backend, error_box):
+def _make_backend_eqn_evaluator(backend, error_box, shuffle):
     """Return an ``eqn_evaluator`` that swaps the eval functions for ``io_callback`` calls.
 
     Intercepts ``sampling_eval_function`` and
@@ -121,6 +122,9 @@ def _make_backend_eqn_evaluator(backend, error_box):
     an ``XlaRuntimeError`` carrying the Python traceback in its message,
     so the caller in :func:`_make_backend_sampler_wrapper` uses the boxed
     exception to restore the type and message the sampler reported.
+
+    *shuffle* is passed on to the sampling functions; see
+    :func:`_make_backend_sampler_wrapper`.
     """
 
     def eqn_evaluator(eqn, context_dic, eqn_evaluator=None):
@@ -152,7 +156,7 @@ def _make_backend_eqn_evaluator(backend, error_box):
             invalues = extract_invalues(eqn, context_dic)
             inner_jaxpr = eqn.params.get("jaxpr") or eqn.params.get("call_jaxpr")
 
-            fn = _make_backend_sampling_fn(inner_jaxpr, name, backend)
+            fn = _make_backend_sampling_fn(inner_jaxpr, name, backend, shuffle)
 
             # Both eval functions return a single array today, but declare a
             # shape per outvar so an additional return value would flow
@@ -188,7 +192,7 @@ def _make_backend_eqn_evaluator(backend, error_box):
 # ===========================================================================
 
 
-def backend_sampler(backend):
+def backend_sampler(backend, seed=None):
     r"""Route :func:`~qrisp.jasp.sample` and :func:`~qrisp.jasp.expectation_value` to a backend.
 
     Calls to these functions are executed on a real backend instead of the
@@ -228,6 +232,12 @@ def backend_sampler(backend):
     backend : :ref:`BackendInterface`
         The backend to execute on.  See the :ref:`Backend Interface
         <BackendInterface>` documentation for available backends.
+    seed : int, optional
+        Seed for shuffling the shots expanded from the backend's counts, so
+        that replaying a :class:`~qrisp.interface.ReplayBackend` gives the
+        same shot order.  Each decorated function draws from its own random
+        stream, starting at the seed.  Without a seed, the global NumPy
+        random state is used.
 
     Returns
     -------
@@ -330,7 +340,7 @@ def backend_sampler(backend):
         # Each call is independently routed through the backend.
 
     """
-    return lambda func: _make_backend_sampler_wrapper(func, backend)
+    return lambda func: _make_backend_sampler_wrapper(func, backend, seed)
 
 
 # ===========================================================================
@@ -366,8 +376,12 @@ _CONTROL_FLOW_HANDLERS = {
 }
 
 
-def _make_backend_sampler_wrapper(func, backend):
+def _make_backend_sampler_wrapper(func, backend, seed):
     """Return a callable that wraps *func* with backend-sampling."""
+    # One generator per decorated function, so successive calls continue one
+    # stream instead of reusing the same permutation.  Without a seed, the
+    # global NumPy state is used, so np.random.seed still applies.
+    shuffle = np.random.shuffle if seed is None else np.random.default_rng(seed).shuffle
 
     def wrapper(*args, **kwargs):
         # ── Trace the decorated function ────────────────────────────
@@ -390,7 +404,7 @@ def _make_backend_sampler_wrapper(func, backend):
         # XlaRuntimeError; error_box carries the original exception so it
         # can be restored below.
         error_box = []
-        be_evaluator = _make_backend_eqn_evaluator(backend, error_box)
+        be_evaluator = _make_backend_eqn_evaluator(backend, error_box, shuffle)
 
         # Use a factory to avoid parameter-name shadowing:
         # the inner function captures itself via closure, so nested

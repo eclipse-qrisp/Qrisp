@@ -555,7 +555,7 @@ class Backend(ABC):
     # ------------------------------------------------------------------
 
     @property
-    def health(self):
+    def health(self) -> object:
         """Current health status or diagnostics of the backend.
 
         This may include uptime statistics or other backend-specific health
@@ -566,7 +566,7 @@ class Backend(ABC):
         return None
 
     @property
-    def info(self):
+    def info(self) -> object:
         """General information about the backend.
 
         This may include backend version, provider details, or other
@@ -577,7 +577,7 @@ class Backend(ABC):
         return None
 
     @property
-    def queue(self):
+    def queue(self) -> object:
         """Current queue status or job backlog of the backend.
 
         This may include estimated wait times, number of pending jobs, or
@@ -592,7 +592,7 @@ class Backend(ABC):
     # ------------------------------------------------------------------
 
     @property
-    def num_qubits(self):
+    def num_qubits(self) -> int | None:
         """Total number of physical qubits the backend exposes.
 
         This reflects the full physical qubit count of the device, not a
@@ -629,7 +629,7 @@ class Backend(ABC):
         return None
 
     @property
-    def connectivity(self):
+    def connectivity(self) -> object:
         """Currently executable qubit connectivity for the backend.
 
         This property describes which qubit pairs currently
@@ -658,7 +658,7 @@ class Backend(ABC):
         return None
 
     @property
-    def gate_set(self):
+    def gate_set(self) -> object:
         """Native gate set supported by the backend.
 
         This property describes which operations the backend can execute
@@ -684,7 +684,7 @@ class Backend(ABC):
         return None
 
     @property
-    def error_rates(self):
+    def error_rates(self) -> object:
         """Error rates or calibration-related information for the backend.
 
         This property is calibration-dependent: the values it exposes are

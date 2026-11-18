@@ -348,7 +348,7 @@ def _find_sampling_loop_index(jaxpr):
     raise RuntimeError("Could not locate the sampling while loop inside the eval function Jaxpr")
 
 
-def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
+def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend, shuffle):
     """Return ``fn(*kernel_args, shots) → result`` for a given eval Jaxpr.
 
     **Phase 1 (static)** — extract the flat quantum circuit via
@@ -362,6 +362,9 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
     loop-carried *i* and *acc* values, then feeds the pre-computed
     measurement bits for that shot.  All accumulator typing, indexing,
     and update logic is handled by the Jaspr itself.
+
+    *shuffle* shuffles the expanded shot rows in place, along the first axis;
+    the decorator chooses it so a ``seed`` makes the per-shot order reproducible.
     """
     body_jaxpr = _find_named_jaxpr(inner_jaxpr.jaxpr, "sampling_body_func")
     if body_jaxpr is None:
@@ -431,7 +434,7 @@ def _make_backend_sampling_fn(inner_jaxpr, eval_name, backend):
         if sum(counts):
             unique_bits = np.array([[c == "1" for c in bitstring] for bitstring, _ in items], dtype=np.bool_)
             expanded_bits = np.repeat(unique_bits, counts, axis=0)
-            np.random.shuffle(expanded_bits)
+            shuffle(expanded_bits)
             meas_results_array = jnp.asarray(expanded_bits)
         else:
             meas_results_array = jnp.array([], dtype=jnp.bool_)

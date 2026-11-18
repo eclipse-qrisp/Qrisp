@@ -25,6 +25,7 @@ from qrisp.interface.measurement_result import (
 from qrisp.interface.converter import *
 from qrisp.interface.backend import *
 from qrisp.interface.job import *
+from qrisp.interface.recording import *
 from qrisp.interface.simulators import *
 from qrisp.interface.virtual_backend import *
 from qrisp.interface.provider_backends import *
