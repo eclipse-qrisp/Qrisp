@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests for U3Gate and its named variants in qrisp.circuit.standard_operations."""
 
 import numpy as np
 import pytest
@@ -36,6 +37,7 @@ from qrisp.circuit.standard_operations import (
     RYGate,
     RZGate,
     SGate,
+    SXDGGate,
     SXGate,
     TGate,
 )
@@ -523,6 +525,8 @@ class TestU3GateNamedVariantControl:
             ("rz", RZGate, (2.0,)),
             ("rx", RXGate, (1.2,)),
             ("ry", RYGate, (0.8,)),
+            ("sx", SXGate, ()),
+            ("sx_dg", SXDGGate, ()),
         ],
     )
     def test_named_variant_controlled_unitary_vs_transpiled(self, name, gate_factory, args):

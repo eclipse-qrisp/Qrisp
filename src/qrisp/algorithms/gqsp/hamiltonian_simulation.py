@@ -229,12 +229,6 @@ def hamiltonian_simulation(
     )
 
 
-# Apply the qache decorator with the workaround in order to show in documentation
-# temp_docstring = hamiltonian_simulation.__doc__
-# hamiltonian_simulation = qache(static_argnames=["H", "N"])(hamiltonian_simulation)
-# hamiltonian_simulation.__doc__ = temp_docstring
-
-
 @jax.jit
 def jax_jv(m: "ArrayLike", x: "ArrayLike", M: int = 1000):
     r"""Pure JAX implementation of the Bessel function of the first kind, J_m(x), for integer orders m.

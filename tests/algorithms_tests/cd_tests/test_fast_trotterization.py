@@ -1,0 +1,125 @@
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+import numpy as np
+import sympy as sp
+from scipy.linalg import expm, norm
+
+from qrisp import QuantumBool, QuantumVariable, control, h
+from qrisp.algorithms.cold._fast_trotterization import fast_trotterization, is_flat_ising_operator
+from qrisp.operators.qubit import A, C, P0, X, Y, Z
+from qrisp.operators.qubit.qubit_operator import QubitOperator
+from qrisp.operators.qubit.qubit_term import QubitTerm
+
+
+def _up_to_global_phase_close(sv1, sv2, tol=1e-6):
+    overlap = np.vdot(sv1, sv2)
+    return abs(abs(overlap) - 1.0) < tol
+
+
+def test_is_flat_ising_operator():
+    """is_flat_ising_operator accepts identity/single-qubit/Z*Z-only operators and rejects everything else."""
+    N = 4
+    assert is_flat_ising_operator(sum(X(i) for i in range(N)))
+    assert is_flat_ising_operator(sum(Y(i) for i in range(N)))
+    assert is_flat_ising_operator(sum(Z(i) for i in range(N)))
+    assert is_flat_ising_operator(
+        sum(Z(i) * Z(j) for i in range(N) for j in range(i + 1, N)) + sum(Z(i) for i in range(N))
+    )
+    # Not eligible: ladder operators
+    assert not is_flat_ising_operator(A(0) * C(1))
+    # Not eligible: projector
+    assert not is_flat_ising_operator(P0(0) * Z(1))
+    # Not eligible: 3-qubit term
+    assert not is_flat_ising_operator(X(0) * Y(1) * Z(2))
+    # Not eligible: X*X cross term
+    assert not is_flat_ising_operator(X(0) * X(1))
+
+
+def test_fast_trotterization_matches_general_path():
+    """fast_trotterization produces the same evolved state as QubitOperator.trotterization() for eligible operators."""
+    N = 4
+    np.random.seed(0)
+    cx_, cy_, cz_ = (np.random.uniform(-1, 1, N) for _ in range(3))
+    J = np.random.uniform(-1, 1, (N, N))
+    J = (J + J.T) / 2
+
+    hamiltonians = [
+        sum(cx_[i] * X(i) for i in range(N)),
+        sum(cy_[i] * Y(i) for i in range(N)),
+        sum(cz_[i] * Z(i) for i in range(N)),
+        sum(J[i][j] * Z(i) * Z(j) for i in range(N) for j in range(i + 1, N)) + sum(cz_[i] * Z(i) for i in range(N)),
+    ]
+
+    for H in hamiltonians:
+        assert is_flat_ising_operator(H)
+        for forward_evolution in [True, False]:
+            for steps in [1, 3]:
+                U_fast = fast_trotterization(H, forward_evolution=forward_evolution)
+                U_general = H.trotterization(forward_evolution=forward_evolution)
+
+                qv_fast = QuantumVariable(N)
+                h(qv_fast)
+                U_fast(qv_fast, t=0.31, steps=steps)
+                sv_fast = qv_fast.qs.statevector_array()
+
+                qv_general = QuantumVariable(N)
+                h(qv_general)
+                U_general(qv_general, t=0.31, steps=steps)
+                sv_general = qv_general.qs.statevector_array()
+
+                assert _up_to_global_phase_close(sv_fast, sv_general)
+
+
+def test_fast_trotterization_identity_term_observable_under_control():
+    """An identity term's global phase becomes an observable relative phase under control(), so it must not be dropped."""
+    H = QubitOperator({QubitTerm({}): 0.7}) + X(0)
+    assert is_flat_ising_operator(H)
+
+    U_fast = fast_trotterization(H)
+    U_general = H.trotterization()
+
+    ctrl_fast = QuantumBool()
+    h(ctrl_fast)
+    qv_fast = QuantumVariable(1)
+    with control(ctrl_fast[0]):
+        U_fast(qv_fast, t=0.5)
+    sv_fast = ctrl_fast.qs.statevector_array()
+
+    ctrl_general = QuantumBool()
+    h(ctrl_general)
+    qv_general = QuantumVariable(1)
+    with control(ctrl_general[0]):
+        U_general(qv_general, t=0.5)
+    sv_general = ctrl_general.qs.statevector_array()
+
+    assert np.allclose(sv_fast, sv_general, atol=1e-8)
+
+
+def test_fast_trotterization_falls_back_correctly():
+    """fast_trotterization matches .trotterization() exactly for an ineligible (ladder-operator) Hamiltonian."""
+    H = A(0) * C(1) * Z(2) + 0.5 * Y(3)
+    assert not is_flat_ising_operator(H)
+
+    U_fast = fast_trotterization(H)
+    U_general = H.trotterization()
+
+    qv_fast = QuantumVariable(4)
+    U_fast(qv_fast, t=0.5)
+    qv_general = QuantumVariable(4)
+    U_general(qv_general, t=0.5)
+
+    assert np.allclose(qv_fast.qs.statevector_array(), qv_general.qs.statevector_array(), atol=1e-8)

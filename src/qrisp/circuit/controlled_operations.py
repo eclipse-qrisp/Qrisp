@@ -64,27 +64,20 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         if ctrl_state[i] == "0":
             qc.x(qc.qubits[i])
 
+    # Once controlled, the global phase becomes a phase on the states where all controls
+    # are on. The branches for diagonal unitaries add it to both target phases, the others synthesize
+    # it on the control qubits only.
+    gp = u3_gate.global_phase
+
     # If the U3 gate is an rx , ry, rz or p gate, we can use gray phase synthesis on the
     # target qubit and wrap this in the corresponding gates
     # (for instance H for rx because RX = H RZ H)
-    if u3_gate.name in ["p", "t", "s", "t_dg", "s_dg"]:
-        # Synthesize phases using gray synthesis
+    if u3_gate.name in ["p", "t", "s", "t_dg", "s_dg", "rz"]:
+        # Since theta = 0, U3 is diag(e^(i*gp), e^(i*(gp + phi + lam)))
         gray_phase_synth_qb_list(
             qc,
             qc.qubits,
-            (2 ** (control_amount + 1) - 1) * [0] + [u3_gate.lam + u3_gate.phi],
-            phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
-        )
-
-        if method == "gray_pt_inv":
-            qc = qc.inverse()
-
-    elif u3_gate.name == "rz":
-        # Make sure to account for the possible global phase of rz
-        gray_phase_synth_qb_list(
-            qc,
-            qc.qubits,
-            (2 ** (control_amount + 1) - 2) * [0] + [-u3_gate.params[0] / 2, u3_gate.params[0] / 2],
+            (2 ** (control_amount + 1) - 2) * [0] + [gp, gp + u3_gate.phi + u3_gate.lam],
             phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
         )
 
@@ -97,7 +90,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         gray_phase_synth_qb_list(
             qc,
             qc.qubits,
-            (2 ** (control_amount + 1) - 2) * [0] + [-u3_gate.theta / 2, u3_gate.theta / 2],
+            (2 ** (control_amount + 1) - 2) * [0] + [gp - u3_gate.theta / 2, gp + u3_gate.theta / 2],
             phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
         )
         qc.h(target_qubit)
@@ -112,7 +105,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         gray_phase_synth_qb_list(
             qc,
             qc.qubits,
-            (2 ** (control_amount + 1) - 2) * [0] + [u3_gate.theta / 2, -u3_gate.theta / 2],
+            (2 ** (control_amount + 1) - 2) * [0] + [gp + u3_gate.theta / 2, gp - u3_gate.theta / 2],
             phase_tolerant=method in ["gray_pt", "gray_pt_inv"],
         )
         qc.h(target_qubit)
@@ -121,7 +114,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
         if method == "gray_pt_inv":
             qc = qc.inverse()
 
-    elif u3_gate.phi == 0 and u3_gate.lam == 0 and u3_gate.theta == 0 and u3_gate.global_phase == 0:
+    elif u3_gate.phi == 0 and u3_gate.lam == 0 and u3_gate.theta == 0 and gp == 0:
         pass
 
     elif u3_gate.phi == 0 and u3_gate.lam == 0 and u3_gate.theta == 0:
@@ -130,7 +123,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
             gray_phase_synth_qb_list(
                 qc,
                 qc.qubits[:-1],
-                (2 ** (control_amount) - 1) * [0] + [u3_gate.global_phase],
+                (2 ** (control_amount) - 1) * [0] + [gp],
             )
 
     # Treat pauli gates
@@ -182,7 +175,7 @@ def multi_controlled_u3_circ(u3_gate, control_amount, ctrl_state, method=None):
             gray_phase_synth_qb_list(
                 qc,
                 qc.qubits[:-1],
-                (2 ** (control_amount) - 1) * [0] + [u3_gate.global_phase + (alpha + beta) / 2],
+                (2 ** (control_amount) - 1) * [0] + [gp + (alpha + beta) / 2],
             )
 
         qc.append(A.to_gate("A"), [qc.qubits[-1]])

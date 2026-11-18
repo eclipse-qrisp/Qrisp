@@ -44,7 +44,7 @@ from qrisp.jasp.primitives import (
 
 
 def jaspify(func: Callable | bool | None = None, terminal_sampling: bool = False) -> Callable:
-    """This simulator is the established Qrisp simulator linked to the Jasp infrastructure.
+    """Qrisp's built-in Jasp simulator: interprets a traced program equation-by-equation in Python.
 
     Among a variety of simulation tricks, the simulator can leverage state sparsity,
     allowing simulations with up to hundreds of qubits!
@@ -72,67 +72,44 @@ def jaspify(func: Callable | bool | None = None, terminal_sampling: bool = False
 
     Examples
     --------
-    We simulate a function creating a simple GHZ state:
+    We simulate a function creating a simple GHZ state, which collapses to
+    either ``0`` or ``31`` upon measurement:
 
-    ::
-
-        from qrisp import *
-        from qrisp.jasp import *
-
-        @jaspify
-        def main():
-
-            qf = QuantumFloat(5)
-
-            h(qf[0])
-
-            for i in range(1, 5):
-                cx(qf[0], qf[i])
-
-            return measure(qf)
-
-        print(main())
-        # Yields either 0 or 31
+    >>> from qrisp import *
+    >>> from qrisp.jasp import *
+    >>> @jaspify
+    ... def main():
+    ...     qf = QuantumFloat(5)
+    ...     h(qf[0])
+    ...     for i in range(1, 5):
+    ...         cx(qf[0], qf[i])
+    ...     return measure(qf)
+    >>> main()  # doctest: +SKIP
+    31
 
     To highlight the speed of the terminal sampling feature, we :ref:`sample` from a
-    uniform superposition
+    uniform superposition:
 
-    ::
+    >>> def state_prep():
+    ...     qf = QuantumFloat(5)
+    ...     h(qf)
+    ...     return qf
+    >>> @jaspify
+    ... def without_terminal_sampling():
+    ...     sampling_func = sample(state_prep, shots=10000)
+    ...     return sampling_func()
+    >>> @jaspify(terminal_sampling=True)
+    ... def with_terminal_sampling():
+    ...     sampling_func = sample(state_prep, shots=10000)
+    ...     return sampling_func()
 
-        def state_prep():
-            qf = QuantumFloat(5)
-            h(qf)
-            return qf
+    Benchmarking the two shows the difference (illustrative, machine-dependent):
 
-        @jaspify
-        def without_terminal_sampling():
-            sampling_func = sample(state_prep, shots = 10000)
-            return sampling_func()
-
-        @jaspify(terminal_sampling = True)
-        def with_terminal_sampling():
-            sampling_func = sample(state_prep, shots = 10000)
-            return sampling_func()
-
-
-    Benchmark the time difference:
-
-    ::
-
-        import time
-
-        t0 = time.time()
-        res = without_terminal_sampling()
-        print(time.time() - t0)
-        # Yields
-        # 43.78982925
-
-        t0 = time.time()
-        res = with_terminal_sampling()
-        print(time.time() - t0)
-        # Yields
-        # 0.550775527
-
+    >>> import time
+    >>> t0 = time.time(); res = without_terminal_sampling(); time.time() - t0  # doctest: +SKIP
+    43.78982925
+    >>> t0 = time.time(); res = with_terminal_sampling(); time.time() - t0  # doctest: +SKIP
+    0.550775527
 
     """
     if isinstance(func, bool):
@@ -166,10 +143,12 @@ def jaspify(func: Callable | bool | None = None, terminal_sampling: bool = False
 
 
 def stimulate(func: Callable) -> Callable:
-    """This function leverages the
-    `Stim simulator <https://github.com/quantumlib/Stim?tab=readme-ov-file>`_
-    to evaluate a Jasp-traceable function containing only Clifford gates.
-    Stim is a popular tool to simulate quantum error correction codes.
+    """Evaluate a Jasp-traceable function containing only Clifford gates, using the `Stim simulator <https://github.com/quantumlib/Stim?tab=readme-ov-file>`_.
+
+    Stim is a popular tool to simulate quantum error correction codes. Using
+    a non-Clifford gate raises an exception rather than an incorrect result.
+    Internally, this calls ``simulate_jaspr`` with ``simulator="stim"``, so
+    the same equation-by-equation execution model applies.
 
     .. note::
 
@@ -188,49 +167,34 @@ def stimulate(func: Callable) -> Callable:
 
     Examples
     --------
-    We simulate a function creating a simple GHZ state:
+    We simulate a function creating a simple GHZ state, which collapses to
+    either ``0`` or ``31`` upon measurement:
 
-    ::
-
-        from qrisp import *
-        from qrisp.jasp import *
-
-        @stimulate
-        def main():
-
-            qf = QuantumFloat(5)
-
-            h(qf[0])
-
-            for i in range(1, 5):
-                cx(qf[0], qf[i])
-
-            return measure(qf)
-
-        print(main())
-        # Yields either 0 or 31
+    >>> from qrisp import *
+    >>> from qrisp.jasp import *
+    >>> @stimulate
+    ... def main():
+    ...     qf = QuantumFloat(5)
+    ...     h(qf[0])
+    ...     for i in range(1, 5):
+    ...         cx(qf[0], qf[i])
+    ...     return measure(qf)
+    >>> main()  # doctest: +SKIP
+    31
 
     The ``stimulate`` decorator can also simulate real-time features:
 
-    ::
-
-        @stimulate
-        def main():
-
-            qf = QuantumFloat(5)
-
-            h(qf[0])
-
-            cl_bl = measure(qf[0])
-
-            with control(cl_bl):
-                for i in range(1, 5):
-                    x(qf[i])
-
-            return measure(qf)
-
-        print(main())
-        # Yields either 0 or 31
+    >>> @stimulate
+    ... def main_with_feedback():
+    ...     qf = QuantumFloat(5)
+    ...     h(qf[0])
+    ...     cl_bl = measure(qf[0])
+    ...     with control(cl_bl):
+    ...         for i in range(1, 5):
+    ...             x(qf[i])
+    ...     return measure(qf)
+    >>> main_with_feedback()  # doctest: +SKIP
+    31
 
     """
 
@@ -261,6 +225,19 @@ def _try_terminal_sampling(
     jaxpr: Jaxpr,
 ) -> bool:
     """Handle eqn via the terminal-sampling evaluator, if function_name names one.
+
+    Parameters
+    ----------
+    eqn : JaxprEqn
+        The "jit" call equation being processed.
+    context_dic : ContextDict
+        The interpreter's current variable bindings.
+    eqn_evaluator : callable
+        The eqn_evaluator to hand off to the terminal-sampling evaluator.
+    function_name : str
+        The name of the jitted sub-function (``eqn.params["name"]``).
+    jaxpr : Jaxpr
+        The sub-jaxpr traced for that sub-function.
 
     Returns
     -------
@@ -298,6 +275,18 @@ def _process_jit_equation(
     Subgraphs whose signature is purely classical (no quantum state/qubits
     crossing the boundary) are compiled and executed via jax.jit. Everything
     else is replayed equation-by-equation using the same eqn_evaluator.
+
+    Parameters
+    ----------
+    eqn : JaxprEqn
+        The "jit" call equation being processed.
+    context_dic : ContextDict
+        The interpreter's current variable bindings.
+    eqn_evaluator : callable
+        The eqn_evaluator passed through to any nested equation-by-equation
+        replay (``eval_jaxpr``) and to :func:`_try_terminal_sampling`.
+    terminal_sampling : bool
+        Whether to attempt the terminal-sampling fast path first.
 
     Returns
     -------
@@ -376,8 +365,29 @@ def simulate_jaspr(
 ) -> Any:
     """Simulate a jaspr by replaying it equation-by-equation.
 
-    Purely classical "jit" subgraphs are compiled and executed via jax.jit;
-    quantum operations are interpreted directly against a BufferedQuantumState.
+    This is the evaluation backend behind :func:`jaspify`.
+    Purely classical "jit" subgraphs are compiled and executed
+    via ``jax.jit``.
+
+    Parameters
+    ----------
+    jaxpr : ClosedJaxpr or Jaspr
+        The traced program to simulate.
+    *args
+        The arguments to call the jaspr with.
+    terminal_sampling : bool, optional
+        Whether to leverage the terminal sampling strategy. The default is False.
+    simulator : {"qrisp", "stim"}, optional
+        Which state backend to use. The default is "qrisp".
+    return_gate_counts : bool, optional
+        If True, return the accumulated gate counts instead of the jaspr's
+        own return value. The default is False.
+
+    Returns
+    -------
+    Any
+        The jaspr's return value (or its gate counts, if
+        ``return_gate_counts`` is True).
 
     """
     if len(jaxpr.jaxpr.outvars) == 1 and isinstance(jaxpr.jaxpr.outvars[0].aval, AbstractQuantumState):
@@ -418,8 +428,13 @@ def simulate_jaspr(
 def compile_cl_func(jaxpr: Jaxpr, function_name: str) -> tuple[Callable, list[bool]]:
     """Compile a purely classical sub-jaxpr via jax.jit, caching the result.
 
-    function_name is not used in the body but is part of the lru_cache key,
-    keeping cache entries for distinctly-named functions separate.
+    Parameters
+    ----------
+    jaxpr : Jaxpr
+        The purely classical sub-jaxpr to compile. Part of the lru_cache key.
+    function_name : str
+        Not used in the body but part of the lru_cache key, keeping cache
+        entries for distinctly-named functions separate.
 
     Returns
     -------

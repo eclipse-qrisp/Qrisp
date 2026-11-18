@@ -706,12 +706,12 @@ class QubitTerm:
         a = self.factor_dict
         b = other.factor_dict
 
-        keys = set()
-        keys.update(set(a.keys()))
-        keys.update(set(b.keys()))
+        if len(a) > len(b):
+            a, b = b, a
 
-        for key in keys:
-            if not PAULI_TABLE[a.get(key, "I"), b.get(key, "I")] == PAULI_TABLE[b.get(key, "I"), a.get(key, "I")]:
+        for key, factor_a in a.items():
+            factor_b = b.get(key, "I")
+            if PAULI_TABLE[factor_a, factor_b] != PAULI_TABLE[factor_b, factor_a]:
                 return False
         return True
 

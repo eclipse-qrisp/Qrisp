@@ -16,6 +16,8 @@
 
 """Implements automatic uncomputation of QuantumVariables via the auto_uncompute decorator."""
 
+import functools
+
 import numpy as np
 
 from qrisp.circuit import fast_append
@@ -38,6 +40,7 @@ def auto_uncompute(*args, recompute=False):
 # Decorator for auto uncomputed function
 def auto_uncompute_inner(function):
     # Create auto uncomputed function
+    @functools.wraps(function)
     def auto_uncomputed_function(*args, **kwargs):
         from qrisp.core import (
             QuantumVariable,
@@ -76,8 +79,8 @@ def auto_uncompute_inner(function):
 
         return result
 
+    # functools.wraps already copied __doc__; keep the distinguishing name suffix.
     auto_uncomputed_function.__name__ = function.__name__ + "_auto_uncomputed"
-    auto_uncomputed_function.__doc__ = function.__doc__
     # Return result
     return auto_uncomputed_function
 

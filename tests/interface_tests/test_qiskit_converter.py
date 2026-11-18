@@ -1,25 +1,25 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
 
 """Tests for the Qiskit ↔ Qrisp converter."""
 
 import numpy as np
 import pytest
 from qiskit import QuantumCircuit as QiskitQC
+from qiskit.circuit.library import SXGate, U1Gate
 from qiskit.quantum_info import Operator
 
 from qrisp import QuantumCircuit
@@ -247,6 +247,22 @@ class TestQiskitToQrispRoundtrip:
         assert len(prx_ops) == 1, f"Expected 1 PRXGate, got {len(prx_ops)}"
         assert abs(prx_ops[0].alpha - theta) < 1e-10
         assert abs(prx_ops[0].beta - phi) < 1e-10
+
+    @pytest.mark.parametrize("gate", [U1Gate(0.7), SXGate()], ids=["u1", "sx"])
+    @pytest.mark.parametrize("num_ctrl_qubits", [0, 1])
+    def test_global_phase_survives_transpile(self, gate, num_ctrl_qubits):
+        """Qiskit's u1 and sx keep their exact unitary, global phase included, through Qrisp.
+
+        Controlling a gate turns its global phase into a relative phase. The circuit is
+        transpiled in Qrisp before converting back, so the conversion goes through the gates'
+        definitions rather than relying only on their names.
+        """
+        if num_ctrl_qubits:
+            gate = gate.control(num_ctrl_qubits)
+        qc = QiskitQC(2)
+        qc.append(gate, list(range(gate.num_qubits)))
+        qc_rt = convert_to_qiskit(convert_from_qiskit(qc).transpile())
+        assert_unitary_equal(qc, qc_rt)
 
     def test_cx(self):
         qc = QiskitQC(2)
