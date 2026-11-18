@@ -642,6 +642,10 @@ Compatibility
   integer
   (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
+* Qrisp now supports SymPy 1.14. Multi-``QuantumVariable`` statevectors are
+  built with ``TensorProduct``, which SymPy 1.14 requires, and the dependency
+  bound is now ``sympy>=1.13,<1.15``
+  (`PR #590 <https://github.com/eclipse-qrisp/Qrisp/pull/590>`_).
 * ``RGate`` and ``QuantumCircuit.r`` are deprecated in favor of the identical
   ``PRXGate`` and the new ``QuantumCircuit.prx``. Both still work but emit a
   ``QrispDeprecationWarning``. ``RGate(theta, phi)`` now builds a
