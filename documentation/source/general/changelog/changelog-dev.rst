@@ -153,6 +153,10 @@ Improvements
   generation to QuantumSession in a central place.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
+- Refactored :func:`measure <qrisp.measure>`. It now has an accurate
+  docstring, more specific exceptions and dedicated tests
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
 - **Faster resource estimation of modular multiplications in Jasp**
   The classical constants of the multiplication of a
   :class:`~qrisp.QuantumModulus` by a classical factor are now computed by
@@ -510,6 +514,18 @@ Bug Fixes
 
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* Under :func:`~qrisp.jasp.boolean_simulation`, measuring a single qubit
+  returned a ``uint64`` instead of a boolean, so ``~measure(qb)``, and
+  ``invert=True`` or ``ctrl_state=0`` on measured booleans, gave wrong
+  results. Measured qubits are now booleans, as with
+  :func:`~qrisp.jasp.jaspify`
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
+* Outside of Jasp mode, :func:`measure <qrisp.measure>` raised a
+  ``ValueError`` for a :class:`~qrisp.QuantumArray` whose elements have
+  several qubits. Every qubit of the array now gets its own classical bit
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
   (``qm *= X`` and ``qm * X``, and ``QuantumArray @ matrix``) now chooses the
   Montgomery shift from the number of qubits of the register, as the Montgomery
@@ -635,6 +651,12 @@ Compatibility
   generic ``Exception``. Code using ``except Exception:`` is unaffected
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+* In Jasp mode, :func:`measure <qrisp.measure>` now raises a ``TypeError`` for
+  unsupported inputs and a ``RuntimeError`` when the quantum state is lost,
+  instead of a generic ``Exception``. The messages are unchanged, and code using
+  ``except Exception:`` is unaffected
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
 * :ref:`IQPE <IQPE>` returns the phase instead of twice the phase modulo 1
   (see Bug Fixes). It raises a ``TypeError`` for a precision that is not an
   integer and, unless the precision is traced, a ``ValueError`` for a precision
@@ -686,6 +708,10 @@ New Tutorials/ Updated Documentation
 
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
+
+* Rewrote the docstring of :func:`measure <qrisp.measure>` with examples that
+  run under doctest
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
 
 
@@ -901,6 +927,11 @@ Development
 * Removed the duplicate PyPI badge from the README, keeping a single
   version badge linked to the PyPI project page
   (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
+
+* Added dedicated tests for ``measure``, split into static and Jasp mode like
+  the rest of the test suite. Several function-level imports in
+  ``gate_application_functions.py`` moved to module level
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
 Dependency Upgrades
 -------------------
