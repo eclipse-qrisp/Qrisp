@@ -1,4 +1,4 @@
-name: Qrisp unit tests via Pytest Windows and macOS
+name: Qrisp unit tests via Pytest on Windows and macOS
 
 on:
   push:
