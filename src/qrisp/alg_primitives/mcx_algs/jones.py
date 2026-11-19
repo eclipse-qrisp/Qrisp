@@ -69,7 +69,7 @@ def jones_toffoli(ctrl, target, ctrl_state="11"):
     jones_ancilla = QuantumVariable(
         2,
         qs=ctrl[0].qs(),
-        name="jones_ancilla_" + str(int(QuantumVariable.creation_counter[0])),
+        name="jones_ancilla_" + str(QuantumVariable.creation_counter),
     )
 
     target.qs().append(JonesToffoli(ctrl_state), list(ctrl) + [target] + list(jones_ancilla))

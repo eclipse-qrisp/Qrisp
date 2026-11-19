@@ -1,19 +1,22 @@
-"""********************************************************************************
-* Copyright (c) 2024 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2024 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests QubitOperator trotterization, ground state energy, and QPE-based Hamiltonian simulation."""
+
+from unittest.mock import patch
 
 import numpy as np
 from scipy.linalg import expm, norm
@@ -103,3 +106,38 @@ def test_qubit_hamiltonian_simulation():
                     verify_trotterization(H, "commuting_qw")
                     verify_trotterization(H, "commuting")
                     counter += 1
+
+
+def test_trotterization_group_up_caching():
+    """Regression test for #798: the returned trotterization callable must not
+    recompute the intersect-group split (QubitOperator.group_up) on every
+    Trotter step/call -- only once per qw/commuting group, cached thereafter.
+    """
+    H = X(0) * X(1) + Y(0) * Y(1) + Z(0) * Z(1)
+
+    for method in ["commuting_qw", "commuting"]:
+        U = H.trotterization(method=method)
+        qv = QuantumVariable(2)
+
+        original_group_up = QubitOperator.group_up
+        call_count = {"n": 0}
+
+        def counting_group_up(self, group_denominator, original_group_up=original_group_up):
+            call_count["n"] += 1
+            return original_group_up(self, group_denominator)
+
+        with patch.object(QubitOperator, "group_up", counting_group_up):
+            # First call populates the cache.
+            U(qv, steps=1)
+            count_after_first_call = call_count["n"]
+            assert count_after_first_call > 0
+
+            # Repeated steps within one call, and a second call on the same
+            # qarg, must both hit the cache -- no further group_up calls.
+            U(qv, steps=5)
+            U(qv)
+
+        assert call_count["n"] == count_after_first_call, (
+            f"group_up was recomputed on repeated invocation for method={method!r}: "
+            f"{call_count['n']} total calls vs {count_after_first_call} after the first call."
+        )

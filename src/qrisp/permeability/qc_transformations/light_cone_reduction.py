@@ -26,7 +26,7 @@ from qrisp.permeability.qc_transformations.memory_management import topological_
 
 # Intended measurements has to be a list of qubits
 
-# The strategy is similar to the one presented in reorder_circuit:
+# The strategy is similar to the one presented in _reorder_circuit:
 # We bring the circuit in the dag representation and perform a topological sort with
 # the intended measurement as prefered instructions
 

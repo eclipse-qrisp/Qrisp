@@ -132,7 +132,7 @@ def dicke_state(
         _apply_dicke_unitary(qv[:n1], n1, k)
         _apply_dicke_unitary(qv[n1:], n2, k)
 
-        q_cond(large_k, x, lambda qv: qv, qv)  # Equivalent to: `if large_k: x(qv)`
+        q_cond(large_k, x, lambda qv: None, qv)  # Equivalent to: `if large_k: x(qv)`
 
     else:
         assert_never(method)

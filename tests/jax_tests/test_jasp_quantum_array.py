@@ -1,19 +1,20 @@
-"""********************************************************************************
-* Copyright (c) 2026 the Qrisp authors
-*
-* This program and the accompanying materials are made available under the
-* terms of the Eclipse Public License 2.0 which is available at
-* http://www.eclipse.org/legal/epl-2.0.
-*
-* This Source Code may also be made available under the following Secondary
-* Licenses when the conditions for such availability set forth in the Eclipse
-* Public License, v. 2.0 are satisfied: GNU General Public License, version 2
-* with the GNU Classpath Exception which is
-* available at https://www.gnu.org/software/classpath/license.html.
-*
-* SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-********************************************************************************
-"""
+# ********************************************************************************
+# * Copyright (c) 2026 the Qrisp authors
+# *
+# * This program and the accompanying materials are made available under the
+# * terms of the Eclipse Public License 2.0 which is available at
+# * http://www.eclipse.org/legal/epl-2.0.
+# *
+# * This Source Code may also be made available under the following Secondary
+# * Licenses when the conditions for such availability set forth in the Eclipse
+# * Public License, v. 2.0 are satisfied: GNU General Public License, version 2
+# * with the GNU Classpath Exception which is
+# * available at https://www.gnu.org/software/classpath/license.html.
+# *
+# * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+# ********************************************************************************
+
+"""Tests QuantumArray indexing, slicing, and element-wise arithmetic under Jasp tracing."""
 
 import operator
 
@@ -140,6 +141,18 @@ def test_error_matmul_invalid_qtype():
         NotImplementedError,
         match="Matrix multiplication between QuantumArrays of QuantumFloat in tracing mode is not supported",
     ):
+        main()
+
+
+def test_error_get_measurement_in_tracing_mode():
+    """Test that a TracingModeError is raised when calling get_measurement on a QuantumArray in tracing mode"""
+
+    @jaspify
+    def main():
+        qa = QuantumArray(QuantumFloat(2), shape=(2,))
+        qa.get_measurement()
+
+    with pytest.raises(TracingModeError, match="Tried to get_measurement from QuantumArray in tracing mode"):
         main()
 
 
@@ -270,10 +283,6 @@ instances = [
 @pytest.mark.parametrize("instance", instances)
 def test_quantum_array_element_wise_ops_qm(op, rhs_type, instance):
     """Test element-wise operations on QuantumArrays of QuantumModulus against their classical counterparts."""
-    if op == operator.mul and rhs_type == "quantum":
-        # qq multiplication fixed in separate pull request, but for now we skip this test to avoid CI failures
-        pytest.skip("Quantum-quantum multiplication for QuantumModulus is currently unsupported in Jasp.")
-
     a_c, b_c, modulus = instance
 
     @jaspify
