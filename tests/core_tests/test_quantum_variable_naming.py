@@ -18,6 +18,7 @@
 
 import subprocess
 import sys
+from collections import Counter
 
 import pytest
 
@@ -38,20 +39,19 @@ def _make_unnamed_qv(qs: QuantumSession):
 def _isolated_quantum_variable_naming_state():
     """Save, reset, and restore QuantumVariable's naming class state around each test.
 
-    name_tracker, live_qvs and creation_counter live on the QuantumVariable class
-    itself, shared process-wide across every QuantumSession, so without this a
-    test's result depends on what other tests happened to run first.
+    name_tracker and creation_counter live on the QuantumVariable class itself,
+    shared process-wide across every QuantumSession, so without this a test's
+    result depends on what other tests happened to run first.
     """
     original_name_tracker = QuantumVariable.name_tracker
-    original_live_qvs = QuantumVariable.live_qvs
     original_creation_counter = QuantumVariable.creation_counter
-    QuantumVariable.name_tracker = {}
-    QuantumVariable.live_qvs = []
+    QuantumVariable.name_tracker = Counter()
     QuantumVariable.creation_counter = 0
-    yield
-    QuantumVariable.name_tracker = original_name_tracker
-    QuantumVariable.live_qvs = original_live_qvs
-    QuantumVariable.creation_counter = original_creation_counter
+    try:
+        yield
+    finally:
+        QuantumVariable.name_tracker = original_name_tracker
+        QuantumVariable.creation_counter = original_creation_counter
 
 
 class TestRequestedName:
@@ -209,22 +209,19 @@ class TestFallbackName:
         assert second_qv.name == f"qv_{next_number + 1}"
         assert second_qv.is_fixed_name is False
 
-    # On collision, get_unique_name() appends "_0" to the colliding candidate
-    # rather than incrementing a numerical suffix.
+    # get_unique_name() doesn't know about names taken in the session; generate_name's
+    # outer retry calls it again until the name is free, getting the next number.
     def test_name_generation_falls_back_retries_past_a_live_variables_name(self):
         qs = QuantumSession()
         next_number = QuantumVariable.name_tracker.get("qv", 0)
-        colliding_name = f"qv_{next_number}"
-        _ = QuantumVariable(1, qs=qs, name=colliding_name)
+        _ = QuantumVariable(1, qs=qs, name=f"qv_{next_number}")
         placeholder = QuantumVariable(1, qs=qs)
         name, is_fixed_name = qs.generate_name(None, placeholder, 0)
-        assert name == f"{colliding_name}_0"
+        assert name == f"qv_{next_number + 1}"
         assert is_fixed_name is False
 
-    # .delete() drops the name from live_qvs (global) but keeps it in
-    # deleted_qv_list (session-local), so get_unique_name() alone can miss it.
-    # generate_name's outer retry then calls get_unique_name() again, getting a
-    # plain increment instead of the nested suffix from the test above.
+    # Names of deleted variables stay taken in the session (deleted_qv_list), so the
+    # retry also skips them.
     def test_name_generation_falls_back_retries_past_a_deleted_variables_name(self):
         qs = QuantumSession()
         next_number = QuantumVariable.name_tracker.get("qv", 0)

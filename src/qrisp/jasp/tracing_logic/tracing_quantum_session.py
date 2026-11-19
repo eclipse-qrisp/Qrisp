@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-import weakref
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
@@ -303,7 +302,6 @@ class TracingQuantumSession:
         self.qv_list.append(qv)
         qv.qs = self
 
-        QuantumVariable.live_qvs.append(weakref.ref(qv))
         qv.creation_time = QuantumVariable.creation_counter
         QuantumVariable.creation_counter += 1
 

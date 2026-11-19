@@ -59,7 +59,7 @@ def qompiler(
     compile_mcm=False,
     gate_speed=None,
     use_dirty_anc_for_mcx_recomp=True,
-):
+) -> QuantumCircuit:
     if len(qs.data) == 0:
         return QuantumCircuit(0)
 

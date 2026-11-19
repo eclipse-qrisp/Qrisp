@@ -27,14 +27,9 @@ def _dealloc_count(qv: QuantumVariable) -> int:
     return sum(instr.op.name == "qb_dealloc" and instr.qubits[0] in qv.reg for instr in qv.qs.data)
 
 
-def _is_live(qv: QuantumVariable) -> bool:
-    return any(ref() is qv for ref in QuantumVariable.live_qvs)
-
-
 def _assert_not_deleted(qv: QuantumVariable) -> None:
     assert qv.name in [existing.name for existing in qv.qs.qv_list]
     assert qv.name not in [existing.name for existing in qv.qs.deleted_qv_list]
-    assert _is_live(qv)
     if isinstance(qv.qs, QuantumSession):
         assert not qv.is_deleted()
         assert all(qb.allocated for qb in qv.reg)
@@ -44,24 +39,10 @@ def _assert_not_deleted(qv: QuantumVariable) -> None:
 def _assert_deleted(qv: QuantumVariable) -> None:
     assert qv.name not in [existing.name for existing in qv.qs.qv_list]
     assert qv.name in [existing.name for existing in qv.qs.deleted_qv_list]
-    assert not _is_live(qv)
     if isinstance(qv.qs, QuantumSession):
         assert qv.is_deleted()
         assert all(not qb.allocated for qb in qv.reg)
         assert _dealloc_count(qv) == len(qv.reg)
-
-
-@pytest.fixture(autouse=True)
-def _isolated_live_qvs():
-    """Give each test an empty QuantumVariable.live_qvs and restore it afterwards.
-
-    live_qvs lives on the QuantumVariable class and is shared process-wide, so
-    without this, variables left over from other tests would leak into the checks.
-    """
-    original_live_qvs = QuantumVariable.live_qvs
-    QuantumVariable.live_qvs = []
-    yield
-    QuantumVariable.live_qvs = original_live_qvs
 
 
 class TestDelete:
@@ -89,7 +70,7 @@ class TestDelete:
         to_be_deleted.delete()
         _assert_not_deleted(kept)
         _assert_deleted(to_be_deleted)
-        assert len(QuantumVariable.live_qvs) == 1
+        assert len(qs.qv_list) == 1 and qs.qv_list[0] is kept
 
     def test_delete_leaves_same_named_variable_in_other_session_untouched(self):
         kept = QuantumVariable(1, name="anc")
@@ -114,12 +95,12 @@ class TestDeleteTwice:
         qs = QuantumSession()
         qv = QuantumVariable(2, qs=qs)
         qv.delete()
-        live_after_first_delete = list(QuantumVariable.live_qvs)
+        names_after_first_delete = [existing.name for existing in qs.qv_list]
         qv.delete()
 
         _assert_deleted(qv)
         assert sum(existing.name == qv.name for existing in qs.deleted_qv_list) == 1
-        assert QuantumVariable.live_qvs == live_after_first_delete
+        assert [existing.name for existing in qs.qv_list] == names_after_first_delete
 
     # In tracing mode is_deleted() cannot be evaluated, so delete() has no early
     # return and the second call fails to find the variable in the session.
@@ -129,12 +110,12 @@ class TestDeleteTwice:
             qv = QuantumVariable(2)
             qs = qv.qs
             qv.delete()
-            live_after_first_delete = list(QuantumVariable.live_qvs)
+            names_after_first_delete = [existing.name for existing in qs.qv_list]
             with pytest.raises(Exception, match="non existent quantum variable"):
                 qv.delete()
             _assert_deleted(qv)
             assert sum(existing.name == qv.name for existing in qs.deleted_qv_list) == 1
-            assert QuantumVariable.live_qvs == live_after_first_delete
+            assert [existing.name for existing in qs.qv_list] == names_after_first_delete
             return 0
 
         main()
@@ -266,3 +247,39 @@ class TestMissingSize:
 
         with pytest.raises(ValueError, match="no size given"):
             main()
+
+
+_CUSTOM_LABELS = ["a", (1, 2), None, 3.5, frozenset({1})]
+
+
+class TestSetItemEncoding:
+    """Test that qv[:] = value encodes labels the decoder supports and raises for the rest."""
+
+    @pytest.mark.parametrize("label", _CUSTOM_LABELS)
+    def test_custom_label_is_encoded(self, label):
+        qv = QuantumVariable.custom(_CUSTOM_LABELS)
+        qv[:] = label
+        assert dict(qv.get_measurement()) == {label: 1.0}
+
+    @pytest.mark.parametrize("value", ["b", (2, 1), 4.5, frozenset({2})])
+    def test_unsupported_custom_label_raises(self, value):
+        qv = QuantumVariable.custom(_CUSTOM_LABELS)
+        with pytest.raises(Exception, match="not supported by encoder"):
+            qv[:] = value
+
+    @pytest.mark.parametrize("value", [0, 1, 4, 9])
+    def test_custom_decoder_output_is_encoded(self, value):
+        qv = QuantumVariable.custom(list(range(4)), decoder=lambda i: i**2)
+        qv[:] = value
+        assert dict(qv.get_measurement()) == {value: 1.0}
+
+    @pytest.mark.parametrize("value", [2, 3, 16])
+    def test_value_outside_custom_decoder_raises(self, value):
+        qv = QuantumVariable.custom(list(range(4)), decoder=lambda i: i**2)
+        with pytest.raises(Exception, match="not supported by encoder"):
+            qv[:] = value
+
+    def test_none_without_none_label_raises(self):
+        qv = QuantumVariable(2)
+        with pytest.raises(Exception, match="Value None not supported by encoder"):
+            qv[:] = None
