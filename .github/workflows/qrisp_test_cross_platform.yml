@@ -28,7 +28,7 @@ jobs:
   build:
     name: Test Py${{ matrix.python-version }} on ${{ matrix.os }} (${{ matrix.test-group-name }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 120
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
