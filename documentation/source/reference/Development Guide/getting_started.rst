@@ -31,18 +31,13 @@ For development you will also want the test and documentation dependencies:
 **Windows**
 
 .. note::
-    The ``dev`` dependency group includes ``pyscf``, which is not supported on Windows. Windows users must install the compatible dependencies individually:
+    The ``dev`` dependency group includes ``pyscf``, which is not supported on Windows.
+    Windows users should install ``dev-windows`` instead. It contains the same test and
+    code-style tools as ``dev``, without ``pyscf``:
 
 .. code-block:: bash
 
-    # Install optional dependency groups (excluding dev)
-    pip install -e ".[docs,iqm,xdsl,aqt,qiskit]"
-
-    # Install Windows-compatible testing framework tools
-    pip install pytest qiskit-aer cirq pytest-httpx stim
-
-    # Install tqecd from source
-    python -m pip install git+https://github.com/tqec/tqecd.git
+    pip install -e ".[dev-windows,docs]"
 
 .. list-table:: Optional dependency groups
    :header-rows: 1
@@ -51,11 +46,14 @@ For development you will also want the test and documentation dependencies:
    * - Group
      - What it installs
    * - ``dev``
-     - Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf *(Not supported on Windows)*)
+     - Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf)
+   * - ``dev-windows``
+     - Same as ``dev`` but without pyscf, for Windows
    * - ``docs``
      - Sphinx and related extensions for building the documentation
    * - ``aqt``
-     - Client for AQT quantum hardware
+     - Client for AQT quantum hardware. Its pytest plugin only loads when
+       ``pytest-httpx`` is installed, so install that as well if you run the tests
    * - ``qiskit``
      - Qiskit Aer simulator and IBM Quantum Runtime hardware
    * - ``iqm``
@@ -68,6 +66,9 @@ For development you will also want the test and documentation dependencies:
      - Everything except ``aqt``: the base install plus ``dev``, ``docs``, and
        every backend/client/compiler extra (``qiskit``, ``iqm``, ``catalyst``,
        ``xdsl``) for a complete development environment
+   * - ``all-windows``
+     - Windows version of ``all``: the base install plus ``dev-windows``, ``docs``,
+       ``qiskit`` and  ``iqm``. Like ``all``, it leaves out ``aqt``
 
 Include the groups you need in brackets, either at install time or later:
 
@@ -75,6 +76,9 @@ Include the groups you need in brackets, either at install time or later:
 
     # Everything (base install plus every optional group) (Linux/macOS)
     pip install -e ".[all]"
+
+    # Everything that is supported on Windows
+    pip install -e ".[all-windows]"
 
     # Or individual groups after the base install
     pip install -e ".[dev]"

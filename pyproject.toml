@@ -106,6 +106,12 @@ dev-windows = [
 all = [
     "qrisp[qiskit,iqm,catalyst,xdsl,docs,dev]",
 ]
+# Windows counterpart of `all`: catalyst is left out because pennylane-catalyst
+# ships no Windows wheels, and dev-windows replaces dev because pyscf does not
+# support Windows. aqt and cudaq stay out for the same reasons as in `all`.
+all-windows = [
+    "qrisp[qiskit,iqm,xdsl,docs,dev-windows]",
+]
 
 [project.urls]
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
