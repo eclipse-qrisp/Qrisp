@@ -84,7 +84,7 @@ dev-testing-windows = [
 ]
 dev-testing = [
     "qrisp[dev-testing-windows]",
-    "pyscf",
+    "pyscf==2.14.0",
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
