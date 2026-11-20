@@ -4,6 +4,16 @@ on:
   push:
     branches:
       - main
+  # TEMPORARY: run on pull requests so the Windows/macOS setup can be checked
+  # before merging. Remove this trigger before the PR is merged.
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -41,11 +51,15 @@ jobs:
           # Inject specific pytest flags for Windows test groups
           - os: windows-latest
             test-group-name: core
-            # Exclude tests that are not supported on Windows due to platform-specific issues
+            # pennylane-catalyst ships no Windows wheels, so qjit cannot run here,
+            # and most tests in these two files call qjit without checking that
+            # catalyst is installed. -k also matches module names, so this
+            # deselects every test in both files, not just the two named ones.
             pytest-flags: '-k "not test_catalyst_interface and not test_qubit_array_fusion"'          
           - os: windows-latest
-            # Exclude tests that are not supported on Windows due to platform-specific issues
             test-group-name: algorithms-and-integrations
+            # This module imports pennylane at the top, and pennylane is only
+            # installed through the catalyst extra, which Windows cannot use.
             pytest-flags: '--ignore=tests/interface_tests/test_converter_qrisp_to_qml.py'
             
     steps:  
