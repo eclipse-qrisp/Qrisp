@@ -176,6 +176,22 @@ Improvements
   operations instead of a single ``reflection`` gate. Jasp mode is unaffected
   (`PR #947 <https://github.com/eclipse-qrisp/Qrisp/pull/947>`_).
 
+- **Refactored Qiskit converter**
+  The converter behind :meth:`~qrisp.QuantumCircuit.to_qiskit` and
+  :meth:`~qrisp.QuantumCircuit.from_qiskit` was restructured into small helpers
+  in both directions.
+
+  * Qiskit ``IfElseOp``\ s convert to classically controlled Qrisp operations.
+    Loops, switches and other unsupported control flow raise
+    ``NotImplementedError`` instead of being silently approximated.
+  * Classically controlled Qrisp operations convert to Qiskit ``IfElseOp``\ s
+    for any number of control clbits and any control state.
+  * The fourth parameter ``gamma`` of Qiskit's ``CUGate`` is no longer
+    dropped, and a Qrisp ``U3Gate`` with a global phase keeps it when
+    converted to Qiskit.
+
+  (`PR #1027 <https://github.com/eclipse-qrisp/Qrisp/pull/1027>`_).
+
 Other New Features
 ------------------
 
