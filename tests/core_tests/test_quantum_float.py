@@ -592,6 +592,30 @@ class TestUtilityMethods:
         # correlated with qbl: unshifted (1) when False, shifted (4) when True.
         assert multi_measurement([qf, qbl]) == {(1, False): 0.5, (4, True): 0.5}
 
+    def test_pow_preserves_exponent_and_signedness(self):
+        """Test that __pow__ preserves the base exponent and signedness."""
+        qf = QuantumFloat(3, exponent=-1)
+        qf[:] = 1.5
+
+        squared = qf**2
+        assert squared.exponent == -2
+        assert squared.signed is False
+        assert squared.get_measurement() == {2.25: 1.0}
+
+        # Test with signed QuantumFloat
+        qf_signed = QuantumFloat(3, exponent=-1, signed=True)
+        qf_signed[:] = 1.5
+        squared_signed = qf_signed**2
+        assert squared_signed.exponent == -2
+        assert squared_signed.signed is True
+        assert squared_signed.get_measurement() == {2.25: 1.0}
+
+        # Test power = 1
+        first_power = qf**1
+        assert first_power.exponent == -1
+        assert first_power.signed is False
+        assert first_power.get_measurement() == {1.5: 1.0}
+
 
 class TestModuleLevelHelpers:
     """Tests for quantum_float.py's module-level helper functions."""
