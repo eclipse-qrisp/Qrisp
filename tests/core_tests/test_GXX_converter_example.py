@@ -24,6 +24,8 @@ import numpy as np
 from qrisp import QuantumVariable, cp, p
 from qrisp.misc.GMS_tools import GXX_converter
 
+rng = random.Random(42)
+
 
 def test_GMS_converter_example():
     n = 8
@@ -33,11 +35,11 @@ def test_GMS_converter_example():
     # Generate random phase-only circuit
     for i in range(n):
         for j in range(n):
-            if random.randint(0, 1):
+            if rng.randint(0, 1):
                 if i == j:
-                    p(np.pi / 2 ** random.randint(0, 3), qv[i])
+                    p(np.pi / 2 ** rng.randint(0, 3), qv[i])
                 else:
-                    cp(np.pi / 2 ** random.randint(0, 3), qv[i], qv[j])
+                    cp(np.pi / 2 ** rng.randint(0, 3), qv[i], qv[j])
 
     print(qv.qs)
 
