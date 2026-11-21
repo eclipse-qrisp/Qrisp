@@ -94,10 +94,6 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     return terms
 
 
-def _identity_lcu_branch(*args: QuantumVariable) -> None:
-    """Pad the SELECT to a power of two; selected only for zero-amplitude indices."""
-
-
 def _make_lcu_branch(
     child_unitary: Callable[..., None],
     layout: _AncillaLayout,
@@ -284,9 +280,6 @@ class LinearCombinationBlockEncoding(BlockEncoding):
                         applies_phase,
                     )
                 )
-
-            # TODO: Remove after fixing padding in q_switch implementation (PR #880).
-            branches += [_identity_lcu_branch] * ((1 << self._lcu_selector_size) - len(branches))
 
             with conjugate(prepare)(selector, self._lcu_amplitudes):
                 q_switch(selector, branches, *args)
