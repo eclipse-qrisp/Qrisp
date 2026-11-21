@@ -50,6 +50,16 @@ from qrisp.operators.qubit.qubit_term import QubitTerm
 
 threshold = 1e-9
 
+
+def _qubit_amount(terms_dict: dict) -> int:
+    """One plus the largest qubit index any term of ``terms_dict`` has a factor on, or 0 if there is none."""
+    amount = 0
+    for term in terms_dict:
+        if term.factor_dict:
+            amount = max(amount, max(term.factor_dict) + 1)
+    return amount
+
+
 #
 # QubitOperator
 #
@@ -121,6 +131,17 @@ class QubitOperator(Hamiltonian):
     This idea is deeply integrated into the Operators module of Qrisp. For an
     example circuit see below.
 
+    Every operator also carries the amount of qubits it acts on,
+    :attr:`num_qubits`: one plus the largest qubit index of any factor it was
+    built from. The identity factor ``I(k)`` contributes to it like any other
+    factor, but leaves the operator itself unchanged. That way a Pauli string
+    on ten qubits, which acts non-trivially on only two of them, is
+
+    >>> from qrisp.operators import I, X
+    >>> P = X(3)*X(4)*I(9)
+    >>> P.num_qubits
+    10
+
     Examples
     --------
     A QubitOperator can be specified conveniently in terms of arithmetic 
@@ -189,8 +210,28 @@ class QubitOperator(Hamiltonian):
 
     """
 
-    def __init__(self, terms_dict={}):
+    def __init__(self, terms_dict={}, num_qubits=None):
+        """Initializes the operator from its terms.
+
+        Parameters
+        ----------
+        terms_dict : dict, optional
+            Maps each :class:`QubitTerm` to its coefficient. The default is the
+            zero operator.
+        num_qubits : int, optional
+            The amount of qubits the operator acts on, see :attr:`num_qubits`.
+            By default, the amount the terms act on.
+
+        """
         self.terms_dict = dict(terms_dict)
+        if num_qubits is None:
+            num_qubits = _qubit_amount(self.terms_dict)
+        elif type(num_qubits) is not int:
+            if not isinstance(num_qubits, np.integer):
+                raise ValueError(f"num_qubits must be an integer, not {num_qubits!r}")
+            num_qubits = int(num_qubits)
+        # Arithmetic passes this on (by maximum), see the num_qubits property.
+        self._num_qubits = num_qubits
 
     def len(self):
         return len(self.terms_dict)
@@ -272,14 +313,16 @@ class QubitOperator(Hamiltonian):
 
         """
         res_terms_dict = {}
+        num_qubits = 0
         for op in operators:
+            num_qubits = max(num_qubits, op._num_qubits)
             for term, coeff in op.terms_dict.items():
                 new_coeff = res_terms_dict.get(term, 0) + coeff
                 if abs(new_coeff) < threshold:
                     res_terms_dict.pop(term, None)
                 else:
                     res_terms_dict[term] = new_coeff
-        return cls(res_terms_dict)
+        return cls(res_terms_dict, num_qubits=num_qubits)
 
     def __pow__(self, e):
         res = 1
@@ -302,7 +345,7 @@ class QubitOperator(Hamiltonian):
 
         """
         if isinstance(other, (int, float, complex)):
-            other = QubitOperator({QubitTerm(): other})
+            other = QubitOperator({QubitTerm(): other}, num_qubits=0)
         if not isinstance(other, QubitOperator):
             raise TypeError("Cannot add QubitOperator and " + str(type(other)))
 
@@ -318,8 +361,7 @@ class QubitOperator(Hamiltonian):
             if abs(res_terms_dict[term]) < threshold:
                 del res_terms_dict[term]
 
-        result = QubitOperator(res_terms_dict)
-        return result
+        return QubitOperator(res_terms_dict, num_qubits=max(self._num_qubits, other._num_qubits))
 
     def __sub__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the difference of the operator self and other.
@@ -336,7 +378,7 @@ class QubitOperator(Hamiltonian):
 
         """
         if isinstance(other, (int, float, complex)):
-            other = QubitOperator({QubitTerm(): other})
+            other = QubitOperator({QubitTerm(): other}, num_qubits=0)
         if not isinstance(other, QubitOperator):
             raise TypeError("Cannot substract QubitOperator and " + str(type(other)))
 
@@ -352,8 +394,7 @@ class QubitOperator(Hamiltonian):
             if abs(res_terms_dict[term]) < threshold:
                 del res_terms_dict[term]
 
-        result = QubitOperator(res_terms_dict)
-        return result
+        return QubitOperator(res_terms_dict, num_qubits=max(self._num_qubits, other._num_qubits))
 
     def __rsub__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the difference of the operator other and self.
@@ -370,7 +411,7 @@ class QubitOperator(Hamiltonian):
 
         """
         if isinstance(other, (int, float, complex)):
-            other = QubitOperator({QubitTerm(): other})
+            other = QubitOperator({QubitTerm(): other}, num_qubits=0)
         if not isinstance(other, QubitOperator):
             raise TypeError("Cannot substract QubitOperator and " + str(type(other)))
 
@@ -386,8 +427,7 @@ class QubitOperator(Hamiltonian):
             if abs(res_terms_dict[term]) < threshold:
                 del res_terms_dict[term]
 
-        result = QubitOperator(res_terms_dict)
-        return result
+        return QubitOperator(res_terms_dict, num_qubits=max(self._num_qubits, other._num_qubits))
 
     def __mul__(self, other: "int | float | complex | QubitOperator") -> "QubitOperator":
         """Returns the product of the operator self and other.
@@ -404,7 +444,7 @@ class QubitOperator(Hamiltonian):
 
         """
         if isinstance(other, (int, float, complex)):
-            other = QubitOperator({QubitTerm(): other})
+            other = QubitOperator({QubitTerm(): other}, num_qubits=0)
         if not isinstance(other, QubitOperator):
             raise TypeError("Cannot multipliy QubitOperator and " + str(type(other)))
 
@@ -416,8 +456,7 @@ class QubitOperator(Hamiltonian):
                 res_terms_dict[curr_term] = res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
 
         res_terms_dict = {term: coeff for term, coeff in res_terms_dict.items() if abs(coeff) >= threshold}
-        result = QubitOperator(res_terms_dict)
-        return result
+        return QubitOperator(res_terms_dict, num_qubits=max(self._num_qubits, other._num_qubits))
 
     __radd__ = __add__
     __rmul__ = __mul__
@@ -445,6 +484,7 @@ class QubitOperator(Hamiltonian):
             self.terms_dict[term] = self.terms_dict.get(term, 0) + coeff
             if abs(self.terms_dict[term]) < threshold:
                 del self.terms_dict[term]
+        self._num_qubits = max(self._num_qubits, other._num_qubits)
         return self
 
     def __isub__(self, other):
@@ -466,6 +506,7 @@ class QubitOperator(Hamiltonian):
             self.terms_dict[term] = self.terms_dict.get(term, 0) - coeff
             if abs(self.terms_dict[term]) < threshold:
                 del self.terms_dict[term]
+        self._num_qubits = max(self._num_qubits, other._num_qubits)
         return self
 
     def __imul__(self, other):
@@ -498,6 +539,7 @@ class QubitOperator(Hamiltonian):
 
         res_terms_dict = {term: coeff for term, coeff in res_terms_dict.items() if abs(coeff) >= threshold}
         self.terms_dict = res_terms_dict
+        self._num_qubits = max(self._num_qubits, other._num_qubits)
         return self
 
     #
@@ -522,17 +564,55 @@ class QubitOperator(Hamiltonian):
             curr_term, curr_coeff = term.subs(subs_dict)
             res_terms_dict[curr_term] = res_terms_dict.get(curr_term, 0) + curr_coeff * coeff
 
-        return QubitOperator(res_terms_dict)
+        return QubitOperator(res_terms_dict, num_qubits=self._num_qubits)
 
     #
     # Miscellaneous
     #
 
     def find_minimal_qubit_amount(self):
-        indices = sum([list(term.factor_dict.keys()) for term in self.terms_dict.keys()], [])
-        if len(indices) == 0:
-            return 0
-        return max(indices) + 1
+        """Returns the amount of qubits the terms of the operator act on.
+
+        Unlike :attr:`num_qubits`, this only looks at the current terms: it
+        ignores identity factors and shrinks when terms cancel.
+
+        Returns
+        -------
+        int
+            One plus the largest qubit index any term has a factor on, or 0.
+
+        """
+        return _qubit_amount(self.terms_dict)
+
+    @property
+    def num_qubits(self) -> int:
+        r"""The amount of qubits the operator acts on.
+
+        This is one plus the largest qubit index of any factor the operator
+        was built from, including the identity factor ``I(k)``. Arithmetic
+        takes the maximum over the operands, so unlike
+        :meth:`find_minimal_qubit_amount` it does not shrink when terms cancel.
+        It can also be given explicitly as ``QubitOperator(terms_dict,
+        num_qubits=n)``, and :meth:`from_matrix` sets it from the matrix
+        dimension. It is never less than :meth:`find_minimal_qubit_amount`.
+
+        Returns
+        -------
+        int
+            The amount of qubits.
+
+        Examples
+        --------
+        >>> from qrisp.operators import I, X
+        >>> P = X(3)*X(4)*I(9)
+        >>> P.num_qubits, P.find_minimal_qubit_amount()
+        (10, 5)
+        >>> (X(9)*X(9)).num_qubits
+        10
+
+        """
+        # The terms are scanned as well, in case terms_dict was edited directly.
+        return max(self._num_qubits, _qubit_amount(self.terms_dict))
 
     def commutator(self, other):
         """Computes the commutator.
@@ -563,7 +643,7 @@ class QubitOperator(Hamiltonian):
 
 
         """
-        res = 0
+        res = QubitOperator({}, num_qubits=max(self._num_qubits, other._num_qubits))
 
         for term_self, coeff_self in self.terms_dict.items():
             for term_other, coeff_other in other.terms_dict.items():
@@ -592,7 +672,7 @@ class QubitOperator(Hamiltonian):
                 delete_list.append(term)
         for term in delete_list:
             del new_terms_dict[term]
-        return QubitOperator(new_terms_dict)
+        return QubitOperator(new_terms_dict, num_qubits=self._num_qubits)
 
     @classmethod
     def from_numpy_array(cls, numpy_array, threshold=np.inf):
@@ -621,6 +701,9 @@ class QubitOperator(Hamiltonian):
 
             H += (coefficient / 2 ** (n)) * temp_H
 
+        if isinstance(H, QubitOperator):
+            # The qubits the matrix is the identity on carry no term, but still count.
+            H = QubitOperator(H.terms_dict, num_qubits=max(H._num_qubits, n))
         return H
 
     @classmethod
@@ -683,7 +766,7 @@ class QubitOperator(Hamiltonian):
         rows, cols = new_matrix.nonzero()
         values = new_matrix.data
 
-        O = QubitOperator({})
+        res = QubitOperator({}, num_qubits=n)
         for row, col, value in zip(rows, cols, values):
             factor_dict = {}
             for k in range(n):
@@ -694,8 +777,8 @@ class QubitOperator(Hamiltonian):
                 else:
                     factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
 
-            O.terms_dict[QubitTerm(factor_dict)] = value
-        return O
+            res.terms_dict[QubitTerm(factor_dict)] = value
+        return res
 
     def to_sparse_matrix(self, factor_amount: int | None = None) -> "sp_sparse.csr_matrix":
         r"""Returns a scipy matrix representing the operator
@@ -711,7 +794,7 @@ class QubitOperator(Hamiltonian):
         factor_amount : int, optional
             The amount of factors $n$ to represent this matrix. The matrix will have
             the dimension $2^n \times 2^n$, where n is the amount of factors.
-            By default the minimal number $n$ is chosen.
+            By default :attr:`num_qubits` is chosen.
 
         Returns
         -------
@@ -750,9 +833,8 @@ class QubitOperator(Hamiltonian):
             participating_indices = participating_indices.union(term.non_trivial_indices())
 
         if factor_amount is None:
-            if len(participating_indices):
-                factor_amount = max(participating_indices) + 1
-            else:
+            factor_amount = self.num_qubits
+            if not factor_amount:
                 res = 1
                 M = sp_sparse.csr_matrix((1, 1))
                 for coeff in coeffs:
@@ -786,7 +868,7 @@ class QubitOperator(Hamiltonian):
         factor_amount : int, optional
             The amount of factors $n$ to represent this matrix. The matrix will have
             the dimension $2^n \times 2^n$, where n is the amount of factors.
-            By default the minimal number $n$ is chosen.
+            By default :attr:`num_qubits` is chosen.
 
         Returns
         -------
@@ -828,9 +910,10 @@ class QubitOperator(Hamiltonian):
         res = 0
         for term, coeff in self.terms_dict.items():
             res += coeff * term.to_pauli()
-        if isinstance(res, (float, int)):
-            return QubitOperator({QubitTerm({}): res})
-        return res
+        if not isinstance(res, QubitOperator):
+            # Only identity terms: the sum stayed a scalar.
+            return QubitOperator({QubitTerm({}): res}, num_qubits=self._num_qubits)
+        return QubitOperator(res.terms_dict, num_qubits=max(res._num_qubits, self._num_qubits))
 
     def _to_pauli_dict(self) -> dict:
         r"""Return the Pauli expansion of this :class:`QubitOperator` as a dictionary.
@@ -911,7 +994,7 @@ class QubitOperator(Hamiltonian):
         new_terms_dict = {}
         for term, coeff in self.terms_dict.items():
             new_terms_dict[term.adjoint()] = np.conjugate(coeff)
-        return QubitOperator(new_terms_dict)
+        return QubitOperator(new_terms_dict, num_qubits=self._num_qubits)
 
     def hermitize(self):
         r"""Returns the hermitian part of self.
@@ -941,7 +1024,7 @@ class QubitOperator(Hamiltonian):
             else:
                 new_terms_dict[term] = coeff
 
-        return QubitOperator(new_terms_dict).apply_threshold(0)
+        return QubitOperator(new_terms_dict, num_qubits=self._num_qubits).apply_threshold(0)
 
     def ground_state_energy(self) -> float:
         """Calculates the ground state energy (i.e., the minimum eigenvalue) of the operator classically.
@@ -1004,7 +1087,7 @@ class QubitOperator(Hamiltonian):
                         group.terms_dict[term] = coeff
                         break
             if len(groups) == 0 or not commute_bool:
-                groups.append(QubitOperator({term: coeff}))
+                groups.append(QubitOperator({term: coeff}, num_qubits=self._num_qubits))
 
         return groups
 
@@ -1031,7 +1114,7 @@ class QubitOperator(Hamiltonian):
             return [self]
         groups = []
         for term_group in term_groups:
-            H = QubitOperator({term: self.terms_dict[term] for term in term_group})
+            H = QubitOperator({term: self.terms_dict[term] for term in term_group}, num_qubits=self._num_qubits)
             groups.append(H)
 
         return groups
@@ -1058,7 +1141,7 @@ class QubitOperator(Hamiltonian):
         if use_graph_coloring:
             term_groups = group_up_iterable(list(self.terms_dict.keys()), lambda a, b: a.commute_qw(b))
             for term_group in term_groups:
-                H = QubitOperator({term: self.terms_dict[term] for term in term_group})
+                H = QubitOperator({term: self.terms_dict[term] for term in term_group}, num_qubits=self._num_qubits)
                 groups.append(H)
 
                 if show_bases:
@@ -1090,7 +1173,7 @@ class QubitOperator(Hamiltonian):
                         groups[i].terms_dict[term] = coeff
                         break
             if len(groups) == 0 or not commute_bool:
-                groups.append(QubitOperator({term: coeff}))
+                groups.append(QubitOperator({term: coeff}, num_qubits=self._num_qubits))
                 bases.append(term.copy())
 
         if show_bases:
@@ -1385,7 +1468,7 @@ class QubitOperator(Hamiltonian):
             new_term = QubitTerm(new_factor_dict)
             new_terms_dict[new_term] = prefactor * self.terms_dict[term]
 
-        return QubitOperator(new_terms_dict)
+        return QubitOperator(new_terms_dict, num_qubits=self._num_qubits)
 
     def get_conjugation_circuit(self):
         # This method returns a QuantumCircuit that should be applied
@@ -1516,7 +1599,7 @@ class QubitOperator(Hamiltonian):
                 # Execute the H-gate
                 qc.h(anchor_factor[0])
 
-        return qc, QubitOperator(self.terms_dict)
+        return qc, QubitOperator(self.terms_dict, num_qubits=self._num_qubits)
 
     def get_operator_variance(self, n=1):
         """Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.

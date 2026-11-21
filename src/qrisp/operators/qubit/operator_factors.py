@@ -14,7 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Defines factory functions X, Y, Z, A, C, P0, P1 for single-qubit QubitOperator terms."""
+"""Defines factory functions X, Y, Z, A, C, P0, P1, I for single-qubit QubitOperator terms."""
 
 from qrisp.operators.qubit.qubit_operator import QubitOperator
 from qrisp.operators.qubit.qubit_term import QubitTerm
@@ -35,7 +35,7 @@ def X(arg: int) -> QubitOperator:
 
     """
     if isinstance(arg, int):
-        return QubitOperator({QubitTerm({arg: "X"}): 1})
+        return QubitOperator({QubitTerm({arg: "X"}): 1}, num_qubits=arg + 1)
     raise TypeError("Cannot initialize operator from type " + str(type(arg)))
 
 
@@ -54,7 +54,7 @@ def Y(arg: int) -> QubitOperator:
 
     """
     if isinstance(arg, int):
-        return QubitOperator({QubitTerm({arg: "Y"}): 1})
+        return QubitOperator({QubitTerm({arg: "Y"}): 1}, num_qubits=arg + 1)
     raise TypeError("Cannot initialize operator from type " + str(type(arg)))
 
 
@@ -73,7 +73,7 @@ def Z(arg: int) -> QubitOperator:
 
     """
     if isinstance(arg, int):
-        return QubitOperator({QubitTerm({arg: "Z"}): 1})
+        return QubitOperator({QubitTerm({arg: "Z"}): 1}, num_qubits=arg + 1)
     raise TypeError("Cannot initialize operator from type " + str(type(arg)))
 
 
@@ -91,7 +91,7 @@ def A(arg: int) -> QubitOperator:
         The operator $A_{\text{arg}}$.
 
     """
-    return QubitOperator({QubitTerm({arg: "A"}): 1})
+    return QubitOperator({QubitTerm({arg: "A"}): 1}, num_qubits=arg + 1)
 
 
 def C(arg: int) -> QubitOperator:
@@ -108,7 +108,7 @@ def C(arg: int) -> QubitOperator:
         The operator $C_{\text{arg}}$.
 
     """
-    return QubitOperator({QubitTerm({arg: "C"}): 1})
+    return QubitOperator({QubitTerm({arg: "C"}): 1}, num_qubits=arg + 1)
 
 
 def P0(arg: int) -> QubitOperator:
@@ -125,7 +125,7 @@ def P0(arg: int) -> QubitOperator:
         The operator $P^0_{\text{arg}}$.
 
     """
-    return QubitOperator({QubitTerm({arg: "P0"}): 1})
+    return QubitOperator({QubitTerm({arg: "P0"}): 1}, num_qubits=arg + 1)
 
 
 def P1(arg: int) -> QubitOperator:
@@ -142,4 +142,40 @@ def P1(arg: int) -> QubitOperator:
         The operator $P^1_{\text{arg}}$.
 
     """
-    return QubitOperator({QubitTerm({arg: "P1"}): 1})
+    return QubitOperator({QubitTerm({arg: "P1"}): 1}, num_qubits=arg + 1)
+
+
+# Named like the other factor functions, despite the ambiguity E743 warns about.
+def I(arg: int) -> QubitOperator:  # noqa: E743
+    r"""Returns a QubitOperator representing the identity operator on qubit ``arg``.
+
+    As an operator this is the identity, so multiplying by it changes nothing
+    but :attr:`~QubitOperator.num_qubits`, which becomes at least ``arg + 1``.
+    That specifies the amount of qubits an operator acts on beyond the ones
+    its other factors touch.
+
+    Parameters
+    ----------
+    arg : int
+        The index of the qubit the operator acts on.
+
+    Returns
+    -------
+    QubitOperator
+        The operator $I_{\text{arg}}$.
+
+    Examples
+    --------
+    A Pauli string on ten qubits, which acts non-trivially on qubits 3 and 4:
+
+    >>> from qrisp.operators import I, X
+    >>> P = X(3)*X(4)*I(9)
+    >>> P
+    X(3)*X(4)
+    >>> P.num_qubits
+    10
+
+    """
+    if isinstance(arg, int):
+        return QubitOperator({QubitTerm(): 1}, num_qubits=arg + 1)
+    raise TypeError("Cannot initialize operator from type " + str(type(arg)))
