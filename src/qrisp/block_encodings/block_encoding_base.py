@@ -29,6 +29,7 @@ from jax.tree_util import register_pytree_node_class
 from jax.typing import ArrayLike
 
 from qrisp.alg_primitives.reflection import reflection
+from qrisp.block_encodings.predicates import _is_static_scalar, _validate_scalar
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import h, measure, reset, x
 from qrisp.environments import conjugate, control, invert
@@ -51,8 +52,8 @@ if TYPE_CHECKING:
 
     # The pytree (children, aux_data) shapes produced/consumed by
     # tree_flatten/tree_unflatten below.
-    PyTreeChildren = tuple[ArrayLike, list[QuantumVariableTemplate]]
-    PyTreeAuxData = tuple[Callable[..., None], int, bool]
+    PyTreeChildren = tuple[list[QuantumVariableTemplate]] | tuple[ArrayLike, list[QuantumVariableTemplate]]
+    PyTreeAuxData = tuple[Any, Callable[..., None], int, bool]
 
 
 @register_pytree_node_class
@@ -266,7 +267,7 @@ class BlockEncoding:
         num_ops: int = 1,
         is_hermitian: bool = False,
     ) -> None:
-        self.alpha = alpha
+        self.alpha = _validate_scalar(alpha, "alpha")
         # Templates for the ancilla variables.
         self._anc_templates: list[QuantumVariableTemplate] = [
             anc.template() if isinstance(anc, QuantumVariable) else anc for anc in ancillas
@@ -280,42 +281,28 @@ class BlockEncoding:
     def tree_flatten(self) -> tuple[PyTreeChildren, PyTreeAuxData]:
         """PyTree flatten for JAX.
 
-        Returns
-        -------
-        tuple
-            A pair `(children, aux_data)` where `children` is a tuple containing
-            the digits array, and `aux_data` is `None`.
-
+        Static Python/NumPy scalar ``alpha`` values are placed in ``aux_data`` so
+        they remain concrete across JIT/qache boundaries; ``jax.Array`` and traced
+        ``alpha`` values stay in ``children``.
         """
-        children = (
-            self.alpha,
-            self._anc_templates,
-        )
-        aux_data = (
-            self.unitary,
-            self.num_ops,
-            self.is_hermitian,
-        )
+        if _is_static_scalar(self.alpha):
+            children: PyTreeChildren = (self._anc_templates,)
+            aux_data: PyTreeAuxData = (self.alpha, self.unitary, self.num_ops, self.is_hermitian)
+        else:
+            children = (self.alpha, self._anc_templates)
+            aux_data = (None, self.unitary, self.num_ops, self.is_hermitian)
         return (children, aux_data)
 
     @classmethod
     def tree_unflatten(cls: type[BlockEncoding], aux_data: PyTreeAuxData, children: PyTreeChildren) -> BlockEncoding:
-        """PyTree unflatten for JAX.
-
-        Parameters
-        ----------
-        aux_data : Any
-            Auxiliary data (unused, expected `None`).
-        children : tuple
-            Tuple containing the digits array.
-
-        Returns
-        -------
-        BigInteger
-            Reconstructed instance.
-
-        """
-        return cls(*children, *aux_data)
+        """PyTree unflatten for JAX."""
+        static_alpha, unitary, num_ops, is_hermitian = aux_data
+        if static_alpha is None:
+            alpha, anc_templates = children
+        else:
+            alpha = static_alpha
+            (anc_templates,) = children
+        return cls(alpha, anc_templates, unitary, num_ops, is_hermitian)
 
     #
     # Utilities

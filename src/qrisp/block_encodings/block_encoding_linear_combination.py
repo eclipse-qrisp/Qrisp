@@ -42,7 +42,13 @@ from qrisp.block_encodings.ancilla_layout import (
     _qf_template,
 )
 from qrisp.block_encodings.block_encoding_base import BlockEncoding, _LCUTerm, _LCUTerms
-from qrisp.block_encodings.predicates import _as_static_size, _is_non_negative_real, _is_real
+from qrisp.block_encodings.predicates import (
+    _as_static_size,
+    _is_non_negative_real,
+    _is_real,
+    _is_static_scalar,
+    _validate_scalar,
+)
 from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import gphase
 from qrisp.environments import conjugate
@@ -75,13 +81,7 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     for coefficient, block_encoding in terms:
         if not isinstance(block_encoding, BlockEncoding):
             raise TypeError(f"Expected every item to be a BlockEncoding, but got {type(block_encoding).__name__}.")
-        if isinstance(coefficient, Sequence):
-            raise ValueError(f"Expected every coefficient to be a scalar, but got a {type(coefficient).__name__}.")
-        if getattr(coefficient, "ndim", 0) != 0:
-            raise ValueError(
-                f"Expected every coefficient to be a scalar, but got an array of shape {coefficient.shape}."
-            )
-        detached = coefficient.item() if isinstance(coefficient, np.ndarray) else coefficient
+        detached = _validate_scalar(coefficient, "every coefficient")
         checked.append((detached, block_encoding))
 
     terms = tuple(checked)
@@ -319,17 +319,26 @@ class LinearCombinationBlockEncoding(BlockEncoding):
     def _get_lcu_terms(self) -> _LCUTerms:
         return self.terms
 
-    def tree_flatten(self) -> tuple[tuple[ArrayLike | BlockEncoding, ...], int]:
-        """Flatten only the authoritative terms for JAX pytree handling."""
-        children = tuple(value for term in self.terms for value in term)
-        return children, len(self.terms)
+    def tree_flatten(self) -> tuple[tuple[Any, ...], tuple[Any, ...]]:
+        """Flatten dynamic coefficients and child encodings; keep static scalars in aux_data."""
+        children: list[Any] = []
+        static_coeffs: list[Any] = []
+        for coefficient, block_encoding in self.terms:
+            if _is_static_scalar(coefficient):
+                static_coeffs.append(coefficient)
+            else:
+                static_coeffs.append(None)
+                children.append(coefficient)
+            children.append(block_encoding)
+        return tuple(children), tuple(static_coeffs)
 
     @classmethod
     def tree_unflatten(
         cls: type[LinearCombinationBlockEncoding],
-        aux_data: int,
-        children: tuple[ArrayLike | BlockEncoding, ...],
+        aux_data: tuple[Any, ...],
+        children: tuple[Any, ...],
     ) -> LinearCombinationBlockEncoding:
         """Reconstruct a linear combination from flattened terms."""
-        terms = tuple((children[index], children[index + 1]) for index in range(0, 2 * aux_data, 2))
+        it = iter(children)
+        terms = tuple((next(it) if static_coeff is None else static_coeff, next(it)) for static_coeff in aux_data)
         return cls(terms)

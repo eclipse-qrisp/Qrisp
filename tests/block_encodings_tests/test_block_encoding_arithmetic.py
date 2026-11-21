@@ -851,6 +851,24 @@ def test_an_invalid_child_is_reported_as_a_type_error():
         LinearCombinationBlockEncoding([(1, "not a block encoding")])
 
 
+def test_block_encoding_alpha_must_be_scalar_and_detaches_zero_d_numpy_array():
+    """BlockEncoding rejects non-scalar alpha values and detaches 0-d NumPy arrays."""
+    unitary = lambda operand: x(operand[0])
+
+    with pytest.raises(ValueError, match="scalar"):
+        BlockEncoding([1.0, 2.0], [], unitary)
+
+    with pytest.raises(ValueError, match="scalar"):
+        BlockEncoding(np.array([1.0, 2.0]), [], unitary)
+
+    mutable_alpha = np.array(2.5)
+    encoding = BlockEncoding(mutable_alpha, [], unitary)
+    mutable_alpha[...] = 9.0
+
+    assert encoding.alpha == 2.5
+    assert not isinstance(encoding.alpha, np.ndarray)
+
+
 @pytest.mark.parametrize(
     "name, build",
     [

@@ -26,11 +26,35 @@ The module holds no block-encoding types and imports nothing from the package, s
 any module in it can use these without regard to import order.
 """
 
+from collections.abc import Sequence
 from typing import Any
 
 import jax
 import jax.numpy as jnp
 import numpy as np
+
+
+def _is_static_scalar(value: Any) -> bool:
+    """Return whether ``value`` is a concrete, hashable Python or NumPy scalar.
+
+    Static scalars are kept in JAX pytree ``aux_data`` so they remain concrete
+    across JIT/qache boundaries; ``jax.Array`` and ``jax.core.Tracer`` values
+    stay dynamic leaves in ``children``.
+    """
+    return isinstance(value, (int, float, complex, np.number))
+
+
+def _validate_scalar(value: Any, label: str = "value") -> Any:
+    """Validate that ``value`` is a scalar and detach 0-d NumPy arrays.
+
+    Objects without ``ndim`` (other than sequences) are passed through so plain
+    scalars and JAX pytree metadata placeholders remain accepted.
+    """
+    if isinstance(value, Sequence):
+        raise ValueError(f"Expected {label} to be a scalar, but got a {type(value).__name__}.")
+    if getattr(value, "ndim", 0) != 0:
+        raise ValueError(f"Expected {label} to be a scalar, but got an array of shape {value.shape}.")
+    return value.item() if isinstance(value, np.ndarray) else value
 
 
 def _is_real(value: Any) -> bool:

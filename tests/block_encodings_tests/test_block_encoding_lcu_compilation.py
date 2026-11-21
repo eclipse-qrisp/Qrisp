@@ -268,27 +268,57 @@ def test_linear_combination_compiles_to_few_equations():
     assert len(_traced_equations(encoding).eqns) < 100
 
 
+def test_pytree_boundary_preserves_static_scalars_for_prepare(monkeypatch):
+    """Passing a concrete linear combination through a pytree boundary keeps prepare_qiskit."""
+    from qrisp.alg_primitives.state_preparation import prepare_func
+
+    methods = []
+
+    def record(name, implementation):
+        def wrapper(*args, **kwargs):
+            methods.append(name)
+            return implementation(*args, **kwargs)
+
+        return wrapper
+
+    monkeypatch.setattr(prepare_func, "prepare_qiskit", record("qiskit", prepare_func.prepare_qiskit))
+    monkeypatch.setattr(prepare_func, "prepare_qswitch", record("qswitch", prepare_func.prepare_qswitch))
+
+    encoding = 2 * BlockEncoding.from_eye(0) - BlockEncoding.from_eye(1) - BlockEncoding.from_eye(-1)
+    observed = {}
+
+    def main(block_encoding):
+        observed["alpha"] = block_encoding.alpha
+        observed["coefficients"] = block_encoding._lcu_coefficients
+        operand = QuantumFloat(3)
+        block_encoding.apply(operand)
+        return operand
+
+    make_jaspr(main)(encoding)
+
+    assert not isinstance(observed["alpha"], jax.core.Tracer)
+    assert not isinstance(observed["coefficients"], jax.core.Tracer)
+    assert methods and "qswitch" not in methods
+
+
 #
 # The traced fallback stays available and correct
 #
 
 
 def test_traced_coefficients_fall_back_to_the_symbolic_path():
-    """Coefficients that only exist at runtime must still produce a valid encoding.
-
-    Passing the block encoding through a jit boundary as a pytree turns its
-    coefficients into tracers, which is exactly when the ``jnp`` derivation and the
-    symbolic state preparation are the correct choice.
-    """
+    """Dynamic JAX-array coefficients become tracers across a pytree boundary and stay accurate."""
     operator = 0.5 * X(0) + 0.7 * Y(0) + 0.3 * Z(1)
     encoding = BlockEncoding.from_operator(operator)
-    combination = encoding + BlockEncoding.from_operator(Z(0))
+    combination = jnp.array(1.0) * encoding + jnp.array(1.0) * BlockEncoding.from_operator(Z(0))
     reference = BlockEncoding.from_operator(operator + Z(0))
 
     qubit_amount = (operator + Z(0)).find_minimal_qubit_amount()
 
     @terminal_sampling
     def main(block_encoding):
+        if isinstance(block_encoding, LinearCombinationBlockEncoding):
+            assert block_encoding._has_traced_coefficients
         return block_encoding.apply_rus(lambda: QuantumVariable(qubit_amount))()
 
     combination_result = main(combination)
