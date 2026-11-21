@@ -44,17 +44,25 @@ def _is_static_scalar(value: Any) -> bool:
     return isinstance(value, (int, float, complex, np.number))
 
 
-def _validate_scalar(value: Any, label: str = "value") -> Any:
+def _validate_scalar(value: Any, label: str = "value", *, real_only: bool = False) -> Any:
     """Validate that ``value`` is a scalar and detach 0-d NumPy arrays.
 
     Objects without ``ndim`` (other than sequences) are passed through so plain
-    scalars and JAX pytree metadata placeholders remain accepted.
+    scalars and JAX pytree metadata placeholders remain accepted. When
+    ``real_only`` is True, complex scalar types and complex-dtype arrays/tracers
+    are rejected.
     """
     if isinstance(value, Sequence):
         raise ValueError(f"Expected {label} to be a scalar, but got a {type(value).__name__}.")
     if getattr(value, "ndim", 0) != 0:
         raise ValueError(f"Expected {label} to be a scalar, but got an array of shape {value.shape}.")
-    return value.item() if isinstance(value, np.ndarray) else value
+    detached = value.item() if isinstance(value, np.ndarray) else value
+    if real_only and (
+        isinstance(detached, (complex, np.complexfloating))
+        or (hasattr(detached, "dtype") and jnp.issubdtype(detached.dtype, jnp.complexfloating))
+    ):
+        raise ValueError(f"Expected {label} to be a real scalar, but got complex {type(detached).__name__}.")
+    return detached
 
 
 def _is_real(value: Any) -> bool:

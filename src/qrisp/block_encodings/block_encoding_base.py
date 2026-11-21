@@ -267,7 +267,7 @@ class BlockEncoding:
         num_ops: int = 1,
         is_hermitian: bool = False,
     ) -> None:
-        self.alpha = _validate_scalar(alpha, "alpha")
+        self.alpha = _validate_scalar(alpha, "alpha", real_only=True)
         # Templates for the ancilla variables.
         self._anc_templates: list[QuantumVariableTemplate] = [
             anc.template() if isinstance(anc, QuantumVariable) else anc for anc in ancillas

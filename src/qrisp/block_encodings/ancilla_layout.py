@@ -62,9 +62,9 @@ class _AncillaLayout:
     Sizes that are known at build time are kept as plain Python ints rather than
     as JAX arrays. Inside a trace, even ``jnp.add`` of two compile-time constants
     returns a tracer, so deriving the sizes with ``jnp`` would make the layout
-    depend on the surrounding trace. Static sizes keep the layout reusable across
-    traces (see ``LinearCombinationBlockEncoding``, which caches its layouts) and
-    let ``construct_views`` emit static slices instead of dynamic ones.
+    depend on the surrounding trace. Static sizes keep the layout independent of
+    the surrounding trace and let ``construct_views`` emit static slices instead
+    of dynamic ones.
     """
 
     templates: tuple[QuantumVariableTemplate, ...]

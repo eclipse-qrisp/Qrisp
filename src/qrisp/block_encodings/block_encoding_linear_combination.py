@@ -49,11 +49,17 @@ from qrisp.block_encodings.predicates import (
     _is_static_scalar,
     _validate_scalar,
 )
-from qrisp.core import QuantumVariable
 from qrisp.core.gate_application_functions import gphase
 from qrisp.environments import conjugate
 from qrisp.jasp import q_switch
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
+
+
+def _conj(value: ArrayLike) -> ArrayLike:
+    """Return the complex conjugate of a scalar while preserving Python/NumPy scalar types."""
+    if isinstance(value, (jax.core.Tracer, jax.Array)):
+        return jnp.conj(value)
+    return value.conjugate()
 
 
 def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
@@ -71,9 +77,8 @@ def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
     the check.
 
     A NumPy array coefficient is also detached here. The terms are the
-    authoritative representation and everything else is derived from them and
-    cached, so a coefficient the caller can still write to would leave those
-    derived values describing a combination that no longer exists. Only NumPy
+    authoritative immutable representation, so detaching 0-d NumPy arrays
+    prevents later in-place writes from mutating the combination. Only NumPy
     arrays need this: the other scalars that pass the checks, tracers included,
     are immutable.
     """
@@ -160,7 +165,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
     def __setattr__(self, name: str, value: Any) -> None:
         """Prevent reassignment of the authoritative term representation."""
         if name in {"_terms", "unitary"} and hasattr(self, name):
-            raise AttributeError("Linear-combination terms are immutable.")
+            raise AttributeError("Linear-combination representation is immutable.")
         object.__setattr__(self, name, value)
 
     @property
@@ -254,9 +259,9 @@ class LinearCombinationBlockEncoding(BlockEncoding):
                 _apply_qached(block_encoding.unitary, *args)
                 effective_coefficient = coefficient * block_encoding.alpha
                 if isinstance(effective_coefficient, jax.core.Tracer):
-                    gphase(jnp.angle(effective_coefficient), args[0][0])
+                    gphase(jnp.angle(effective_coefficient), args[-1][0])
                 elif not _is_non_negative_real(effective_coefficient):
-                    gphase(float(np.angle(effective_coefficient)), args[0][0])
+                    gphase(float(np.angle(effective_coefficient)), args[-1][0])
 
             return unitary
 
@@ -311,6 +316,12 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
     def _get_lcu_terms(self) -> _LCUTerms:
         return self.terms
+
+    def dagger(self) -> LinearCombinationBlockEncoding:
+        """Return the linear-combination dagger with conjugated coefficients and child encodings."""
+        return LinearCombinationBlockEncoding(
+            tuple((_conj(coefficient), block_encoding.dagger()) for coefficient, block_encoding in self.terms)
+        )
 
     def tree_flatten(self) -> tuple[tuple[Any, ...], tuple[Any, ...]]:
         """Flatten dynamic coefficients and child encodings; keep static scalars in aux_data."""

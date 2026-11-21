@@ -852,7 +852,7 @@ def test_an_invalid_child_is_reported_as_a_type_error():
 
 
 def test_block_encoding_alpha_must_be_scalar_and_detaches_zero_d_numpy_array():
-    """BlockEncoding rejects non-scalar alpha values and detaches 0-d NumPy arrays."""
+    """BlockEncoding rejects non-scalar and complex alpha values and detaches 0-d NumPy arrays."""
     unitary = lambda operand: x(operand[0])
 
     with pytest.raises(ValueError, match="scalar"):
@@ -861,12 +861,46 @@ def test_block_encoding_alpha_must_be_scalar_and_detaches_zero_d_numpy_array():
     with pytest.raises(ValueError, match="scalar"):
         BlockEncoding(np.array([1.0, 2.0]), [], unitary)
 
+    for complex_alpha in (1 + 2j, np.complex128(2.0), jnp.array(1 + 2j)):
+        with pytest.raises(ValueError, match="real scalar"):
+            BlockEncoding(complex_alpha, [], unitary)
+
     mutable_alpha = np.array(2.5)
     encoding = BlockEncoding(mutable_alpha, [], unitary)
     mutable_alpha[...] = 9.0
 
     assert encoding.alpha == 2.5
     assert not isinstance(encoding.alpha, np.ndarray)
+
+
+def test_linear_combination_dagger_conjugates_terms_and_flattens():
+    """LinearCombinationBlockEncoding.dagger conjugates coefficients and child encodings."""
+    A = BlockEncoding.from_operator(X(0))
+    B = BlockEncoding.from_operator(Y(0))
+    C = BlockEncoding.from_operator(Z(0))
+
+    combo = (1 + 2j) * A + 3.0 * B
+    dag = combo.dagger()
+
+    assert isinstance(dag, LinearCombinationBlockEncoding)
+    assert [coeff for coeff, _ in dag.terms] == [1 - 2j, 3.0]
+    assert np.isclose(dag.alpha, combo.alpha)
+    assert len((dag + C).terms) == 3
+
+    # Verify numerically on a non-Hermitian combination of non-Hermitian shift operators.
+    U = BlockEncoding.from_eye(1)
+    V = BlockEncoding.from_eye(-1)
+    non_herm = (1 + 1j) * U + 2.0 * V
+    expected = (1 - 1j) * U.dagger() + 2.0 * V.dagger()
+
+    @terminal_sampling
+    def main(be):
+        return be.apply_rus(lambda: QuantumFloat(2))()
+
+    res_dag = main(non_herm.dagger())
+    res_exp = main(expected)
+    for state in range(4):
+        assert np.isclose(res_dag.get(state, 0), res_exp.get(state, 0))
 
 
 @pytest.mark.parametrize(
