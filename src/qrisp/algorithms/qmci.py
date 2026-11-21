@@ -83,7 +83,7 @@ def QMCI(qargs, function, distribution=None, mes_kwargs={}):
     A detailed explanation of QMCI and its implementation in Qrisp can be found in the `QMCI tutorial <https://www.qrisp.eu/general/tutorial/QMCItutorial.html>`_.
 
     """
-    if distribution == None:
+    if distribution is None:
         distribution = uniform
 
     # dupl_args = [arg.duplicate() for arg in qargs]

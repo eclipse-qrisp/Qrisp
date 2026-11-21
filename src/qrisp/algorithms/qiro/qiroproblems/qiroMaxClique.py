@@ -58,7 +58,7 @@ def create_max_clique_replacement_routine(res, problem_updated):
     # get the max_edge and eval the sum and sign
 
     max_item, sign = find_max(orig_nodes, orig_edges, res, solutions)
-    if max_item == None:
+    if max_item is None:
         return graph, solutions, 0, exclusions
 
     new_graph = copy.deepcopy(graph)

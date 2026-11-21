@@ -169,7 +169,7 @@ def inner_LCU(operand_prep, state_prep, unitaries, num_unitaries=None, oaa_iter=
         if not isinstance(unitaries, list):
             raise TypeError("unitaries must be callable or list[callable].")
         num_unitaries = len(unitaries)
-    elif num_unitaries == None:
+    elif num_unitaries is None:
         raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
 
     # Specify the QunatumVariable that indicates which case to execute
@@ -484,7 +484,7 @@ def view_LCU(operand_prep, state_prep, unitaries, num_unitaries=None):
         if not isinstance(unitaries, list):
             raise TypeError("unitaries must be callable or list[callable].")
         num_unitaries = len(unitaries)
-    elif num_unitaries == None:
+    elif num_unitaries is None:
         raise ValueError("The number of unitiaries must be specified if unitaries is callable.")
 
     jaspr = make_jaspr(inner_LCU)(operand_prep, state_prep, unitaries, num_unitaries)
