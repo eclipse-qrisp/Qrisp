@@ -28,6 +28,7 @@ from qrisp.environments.iteration_environment import IterationEnvironment
 from qrisp.environments.quantum_environments import QuantumEnvironment
 from qrisp.jasp import (
     AbstractQubit,
+    bind_variant_to_jit_call,
     check_for_tracing_mode,
     get_last_equation,
     make_jaspr,
@@ -249,7 +250,9 @@ def custom_control(*func, **cusc_kwargs):
             # Retrieve the pjit equation
             jit_eqn = get_last_equation()
 
-            if not jit_eqn.params["jaxpr"].ctrl_jaspr:
+            forward_jaspr = jit_eqn.params["jaxpr"]
+
+            if not forward_jaspr.ctrl_jaspr:
                 # Trace the controlled version
 
                 # Make sure the inv keyword argument is treated as a static argument
@@ -275,8 +278,18 @@ def custom_control(*func, **cusc_kwargs):
 
                 controlled_jaspr = make_jaspr(ammended_func, **cusc_kwargs)(*ammended_args, **kwargs)
 
+                # make_jaspr leaves what the controlled version captured from the
+                # surrounding code in its consts, while jit_eqn passes what the
+                # uncontrolled version captured as leading operands. Bind the
+                # former to the latter, behind the control qubit (invars[0], see
+                # ammended_args above), so the controlled version can replace the
+                # callee of jit_eqn.
+                controlled_jaspr = bind_variant_to_jit_call(
+                    controlled_jaspr, jit_eqn, func.__name__, "controlled version", n_leading=1
+                )
+
                 # Store controlled version
-                jit_eqn.params["jaxpr"].ctrl_jaspr = controlled_jaspr
+                forward_jaspr.ctrl_jaspr = controlled_jaspr
 
         return res
 
