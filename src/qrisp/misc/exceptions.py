@@ -1,5 +1,5 @@
 # ********************************************************************************
-# * Copyright (c) 2025-2026 Contributors to the Eclipse Foundation
+# * Copyright (c) 2023, 2025, 2026 Contributors to the Eclipse Foundation
 # *
 # * See the NOTICE file(s) distributed with this work for additional
 # * information regarding copyright ownership.
