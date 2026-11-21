@@ -226,24 +226,6 @@ class BosonicOperator(Hamiltonian):
         """Return the number of terms."""
         return len(self.terms_dict)
 
-    def coeffs(self):
-        """Return the coefficients of the operator.
-
-        Returns
-        -------
-        ndarray
-            The coefficients.
-
-        Examples
-        --------
-        >>> from qrisp.operators import a_b, c_b
-        >>> O = a_b(0)*c_b(1)+a_b(1)*c_b(0)+0.5*a_b(1)+0.5*c_b(1)
-        >>> O.coeffs()
-        array([1. , 1. , 0.5, 0.5])
-
-        """
-        return np.array(list(self.terms_dict.values()))
-
     #
     # Printing
     #
@@ -886,7 +868,7 @@ def get_bosonic_encoding_qubit_number(truncation, binary_encoding):
 
 
 def prepare_bosonic_fock_state(n: int | list[int], truncation: int = 8, binary_encoding: str = "gray_code"):
-    """Return a QuantumVariable with a bosonic Fock state prepared on it.
+    r"""Return a QuantumVariable with a bosonic Fock state prepared on it.
 
     Parameters
     ----------

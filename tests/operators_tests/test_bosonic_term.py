@@ -153,12 +153,6 @@ def test_len():
     assert len(O) == 2
 
 
-def test_coeffs():
-    O = 5 * c(0) * a(0) + 7 * c(1) * a(1)
-
-    assert all(O.coeffs() == [5, 7])
-
-
 def test_latex():
     assert (c(0) * a(0))._repr_latex_() == "$c_{0} a_{0}$"
 
