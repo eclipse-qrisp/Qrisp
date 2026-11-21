@@ -638,6 +638,18 @@ Qiskit Runtime service and supports both single-job and session execution modes:
        channel="ibm_cloud",
    )
 
+If you already hold an ``IBMBackend`` from an authenticated runtime service,
+pass it directly instead. It is already bound to the service that authenticated
+it, so no ``api_token`` is needed:
+
+.. code-block:: python
+
+   from qiskit_ibm_runtime import QiskitRuntimeService
+   from qrisp.interface import QiskitRuntimeBackend
+
+   service = QiskitRuntimeService(token="YOUR_IBM_CLOUD_TOKEN", instance="YOUR_INSTANCE_CRN")
+   backend = QiskitRuntimeBackend(backend=service.backend("ibm_fez"))
+
 
 :doc:`IQMBackend <Hardware Backends/IQMBackend>`
 ------------------------------------------------

@@ -89,6 +89,12 @@ Improvements
   rather than a guarantee
   (`PR #806 <https://github.com/eclipse-qrisp/Qrisp/pull/806>`_).
 
+- :class:`~qrisp.interface.QiskitRuntimeBackend` now accepts an ``IBMBackend``
+  instance as ``backend``. The instance is used as-is, so no ``api_token`` is
+  needed: it is already bound to the runtime service that authenticated it.
+  Passing ``api_token`` or ``instance`` alongside an instance raises a
+  ``TypeError``; looking a backend up by name still requires ``api_token``.
+
 - Updated docstrings for ``sample()``, ``expectation_value()``, and
   ``terminal_sampling()`` to use "sampling kernel" terminology and document
   the new arbitrary-return-value capability.
