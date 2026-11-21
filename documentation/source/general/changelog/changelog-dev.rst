@@ -902,6 +902,12 @@ Development
   version badge linked to the PyPI project page
   (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
 
+* Switched to generic Eclipse copyright headers: the per-file copyright
+  line now reads "Contributors to the Eclipse Foundation" with a reference
+  to the ``NOTICE.md`` file, which lists the individual copyright holders
+  and their contribution periods. The license block is unchanged
+  (`PR #1040 <https://github.com/eclipse-qrisp/Qrisp/pull/1040>`_).
+
 Dependency Upgrades
 -------------------
 

@@ -1,5 +1,8 @@
 # ********************************************************************************
-# * Copyright (c) 2026 the Qrisp authors
+# * Copyright (c) 2025-2026 Contributors to the Eclipse Foundation
+# *
+# * See the NOTICE file(s) distributed with this work for additional
+# * information regarding copyright ownership.
 # *
 # * This program and the accompanying materials are made available under the
 # * terms of the Eclipse Public License 2.0 which is available at
@@ -12,7 +15,7 @@
 # * available at https://www.gnu.org/software/classpath/license.html.
 # *
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-# ********************************************************************************/
+# ********************************************************************************
 
 """Tests remaud_adder correctness and its ladder synthesis helpers (ladder1_synth_jax, ladder2_synth_jax)."""
 
