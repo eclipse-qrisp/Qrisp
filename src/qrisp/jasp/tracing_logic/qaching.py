@@ -242,9 +242,12 @@ def qache_helper(func, jax_kwargs):
         arg_qvs += [qa.qtype for qa in recursive_qa_search(args)]
 
         flattened_qvs = []
+        static_qv_values = []
         for qv in arg_qvs:
             tr_qs.register_qv(qv, None)
-            flattened_qvs.extend(list(flatten_qv(qv)[0]))
+            children, aux_values = flatten_qv(qv)
+            flattened_qvs.extend(children)
+            static_qv_values.append(aux_values[1:])
 
         # Execute the function
         res = func(*args, **kwargs)
@@ -257,9 +260,11 @@ def qache_helper(func, jax_kwargs):
 
         res_qvs += [qa.qtype for qa in recursive_qa_search(res)]
 
-        # Check whether there have been in-place modifications of traced attributes of QuantumVariables.
+        # Check whether there have been in-place modifications of traced or static attributes of QuantumVariables.
         for qv in arg_qvs:
-            flat_qv = list(flatten_qv(qv)[0])
+            flat_qv, aux_values = flatten_qv(qv)
+            if aux_values[1:] != static_qv_values.pop(0):
+                raise Exception(f"Found in-place parameter modification of QuantumVariable {qv.name}")
             for i in range(len(flat_qv)):
                 if flat_qv[i] is not flattened_qvs.pop(0):
                     raise Exception(f"Found in-place parameter modification of QuantumVariable {qv.name}")
