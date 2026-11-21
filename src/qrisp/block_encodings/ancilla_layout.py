@@ -18,16 +18,36 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+import copy
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-import jax
 import jax.numpy as jnp
 
 from qrisp.block_encodings.predicates import _as_static_size
 from qrisp.core import QuantumVariable
+from qrisp.jasp import qache
 from qrisp.jasp.tracing_logic import QuantumVariableTemplate
+from qrisp.qtypes import QuantumFloat
+
+# Built once outside any tracing session so _qf_template never allocates
+# throwaway qubits in TracingQuantumSession or captures a traced qv_size.
+_QF_PROTOTYPE = QuantumFloat(1).template()
+
+
+@qache(static_argnums=0)
+def _apply_qached(unitary: Callable[..., None], *args: Any) -> None:
+    """Invoke ``unitary`` behind a qache boundary keyed on ``unitary`` identity."""
+    unitary(*args)
+
+
+def _qf_template(size: Any) -> QuantumVariableTemplate:
+    """Return a QuantumFloat template of ``size`` without allocating qubits."""
+    template = copy.copy(_QF_PROTOTYPE)
+    template.qv = copy.copy(_QF_PROTOTYPE.qv)
+    template.qv_size = size
+    return template
 
 
 @dataclass(frozen=True)
@@ -95,28 +115,3 @@ def _maximum_layout_size(layouts: list[_AncillaLayout] | tuple[_AncillaLayout, .
     for layout in layouts:
         maximum_size = jnp.maximum(maximum_size, layout.total_size)
     return maximum_size
-
-
-def _template_of_size(quantum_variable: QuantumVariable, size: Any) -> QuantumVariableTemplate:
-    """Return a template for ``quantum_variable`` that records ``size`` statically.
-
-    A template records the size of the register it constructs, and it reads that
-    size off the variable, which inside a Jasp trace is a tracer. A template built
-    that way cannot be reused outside the trace that produced it: handing it to a
-    later transformation raises an UnexpectedTracerError. Whenever the size is
-    already known as a plain int, recording that int instead keeps the template
-    independent of any trace, and therefore cacheable.
-    """
-    template = quantum_variable.template()
-    if isinstance(size, int):
-        template.qv_size = size
-    return template
-
-
-def _is_trace_independent(templates: Sequence[QuantumVariableTemplate]) -> bool:
-    """Return whether ancilla templates can be reused outside the trace that built them.
-
-    Templates whose size is a tracer belong to the trace that built them and must
-    not be cached; see :func:`_template_of_size`.
-    """
-    return all(not isinstance(template.qv_size, jax.core.Tracer) for template in templates)

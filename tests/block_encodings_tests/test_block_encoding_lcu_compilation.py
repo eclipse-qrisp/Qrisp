@@ -64,8 +64,8 @@ def _traced_equations(encoding, operand_size=3):
 #
 
 
-def test_derived_state_is_cached():
-    """The unitary, branches, layouts and templates must be built exactly once.
+def test_derived_unitary_identity_is_stable():
+    """The unitary must have a stable object identity across accesses.
 
     Jasp's caches (``qache``, and therefore ``jax.jit``) are keyed on object
     identity. Handing out a fresh unitary on every access silently disables them.
@@ -73,8 +73,42 @@ def test_derived_state_is_cached():
     encoding = BlockEncoding.from_eye(0) + BlockEncoding.from_eye(1)
 
     assert encoding.unitary is encoding.unitary
-    assert encoding._lcu_layouts is encoding._lcu_layouts
-    assert all(first is second for first, second in zip(encoding._anc_templates, encoding._anc_templates))
+
+
+def test_ancilla_templates_do_not_allocate_qubits_while_tracing():
+    """Inspecting ``_anc_templates`` inside a trace must not emit create_qubits."""
+    encoding = BlockEncoding.from_eye(0) + BlockEncoding.from_eye(1)
+
+    def circuit():
+        _ = encoding._anc_templates
+
+    jaspr = make_jaspr(circuit)()
+    assert not any(eqn.primitive.name == "jasp.create_qubits" for eqn in jaspr.eqns)
+
+
+def test_nested_traced_sum_applied_repeatedly():
+    """A nested linear combination with traced coefficients works across repeated calls."""
+    executions = []
+
+    def counted(operand):
+        executions.append(None)
+        x(operand[0])
+
+    base = BlockEncoding(1, [], counted)
+    other = BlockEncoding(1, [], lambda operand: x(operand[1]))
+
+    def circuit(scale):
+        inner = scale * base + other
+        outer = inner + (scale * other)
+        operand = QuantumFloat(3)
+        outer.apply(operand)
+        outer.apply(operand)
+        return operand
+
+    make_jaspr(circuit)(0.5)
+    assert len(executions) == 1
+    # Re-tracing with a fresh call must not leak tracers from the first trace.
+    make_jaspr(circuit)(0.25)
 
 
 def test_ancilla_templates_are_not_shared_mutable_state():
