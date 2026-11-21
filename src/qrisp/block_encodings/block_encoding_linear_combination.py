@@ -14,14 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Implements the block encoding of a linear combination of block encodings.
-
-A ``LinearCombinationBlockEncoding`` holds the terms it was built from and derives
-everything else -- the selector width, the ancilla layouts, the coefficients and
-the normalization -- from them. The arithmetic that produces one lives in
-block_encoding_arithmetic.py, which imports this module; the dependency runs one
-way only, so this module knows nothing about the operators that build it.
-"""
+"""Implements the block encoding of a linear combination of block encodings."""
 
 from __future__ import annotations
 
@@ -63,25 +56,7 @@ def _conj(value: ArrayLike) -> ArrayLike:
 
 
 def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
-    """Check the terms as supplied, and reject the ones that describe no encoding.
-
-    The terms are taken as written. ``A - A`` builds the two-term combination it
-    reads as, rather than being recognized as the zero operator and simplified
-    away, so that what is applied is what was asked for.
-
-    The shape check reads ``ndim`` instead of testing for a NumPy array, so that a
-    JAX array or a traced one is rejected the same way rather than silently giving
-    the derived amplitudes an extra axis. Sequences have no ``ndim`` and are
-    rejected explicitly. Other objects without ``ndim`` are left alone, which keeps
-    plain scalars and the placeholders JAX builds its argument metadata from out of
-    the check.
-
-    A NumPy array coefficient is also detached here. The terms are the
-    authoritative immutable representation, so detaching 0-d NumPy arrays
-    prevents later in-place writes from mutating the combination. Only NumPy
-    arrays need this: the other scalars that pass the checks, tracers included,
-    are immutable.
-    """
+    """Validate LCU ``(coefficient, block_encoding)`` pairs and detach 0-d NumPy scalars."""
     checked: list[_LCUTerm] = []
     for coefficient, block_encoding in terms:
         if not isinstance(block_encoding, BlockEncoding):
@@ -135,7 +110,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
     ``sum(abs(coefficient * child.alpha))``.
 
     The child ancillas are packed into one shared workspace after one
-    selector register. The workspace is sized to the largest child layout,
+    selector variable. The workspace is sized to the largest child layout,
     and each selected branch reconstructs its typed ancillas as views into
     that workspace. Since the selector chooses exactly one child unitary,
     nested sums are lowered to one preparation/select/preparation sequence.
@@ -193,12 +168,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
     @property
     def _lcu_coefficients(self) -> ArrayLike:
-        r"""Return $\alpha_i c_i$ for every term, i.e. the LCU coefficients of the child unitaries.
-
-        The result stays a concrete NumPy array whenever no coefficient or child
-        normalization is a JAX tracer, so :func:`qrisp.prepare` takes the concrete
-        ``prepare_qiskit`` path instead of falling back to symbolic ``prepare_qswitch``.
-        """
+        r"""Return $\alpha_i c_i$ as a NumPy array when concrete, or a JAX array when traced."""
         if self._has_traced_coefficients:
             return jnp.array(
                 [coefficient * block_encoding.alpha for coefficient, block_encoding in self.terms],
@@ -212,12 +182,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
     @property
     def _lcu_amplitudes(self) -> ArrayLike:
-        """Return the PREP amplitudes, padded to the selector dimension.
-
-        These are magnitudes only: a term's argument is applied by its SELECT
-        branch instead, which keeps PREP real and non-negative whatever the
-        coefficients are. See :attr:`_lcu_phases`.
-        """
+        """Return magnitude-only PREP amplitudes padded to the selector dimension."""
         coefficients = self._lcu_coefficients
         xp = np if isinstance(coefficients, np.ndarray) else jnp
 
@@ -303,15 +268,7 @@ class LinearCombinationBlockEncoding(BlockEncoding):
 
     @property
     def is_hermitian(self) -> bool:
-        """Return whether the block-encoding unitary is known to be Hermitian.
-
-        The attribute describes the unitary, not the encoded operator. PREP acts on
-        magnitudes and SELECT applies each term's argument, so the unitary is
-        ``PREP† (D SELECT) PREP`` with ``D`` the diagonal of those arguments. That
-        is Hermitian when SELECT is, which needs Hermitian children, and when ``D``
-        is real, which needs real coefficients. A sign is allowed; a genuine complex
-        phase is not.
-        """
+        """Return whether the LCU unitary is known to be Hermitian (real coefficients and Hermitian children)."""
         return all(_is_real(coefficient) and block_encoding.is_hermitian for coefficient, block_encoding in self.terms)
 
     def _get_lcu_terms(self) -> _LCUTerms:

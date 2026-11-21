@@ -14,21 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Implements the arithmetic operators of block encodings.
-
-``BlockEncoding`` in block_encoding_base.py defines what a block encoding *is*,
-together with the ``_get_lcu_terms`` protocol by which an encoding reports how it
-should be flattened into a linear combination. This module defines how block
-encodings *combine*: the operators, and the factories that build the composite
-encodings they produce.
-
-The composite encodings themselves live beside this module, one per kind, and are
-imported from here. That keeps the package acyclic: the arithmetic needs them in
-order to build them, and they need ``BlockEncoding`` in order to subclass it, so
-the dependency runs one way only. The operators are attached to ``BlockEncoding``
-in block_encoding.py, exactly as the constructors in constructors/ and the
-transformations in transformations/ already are.
-"""
+"""Implements arithmetic operators and factories for block encodings."""
 
 from __future__ import annotations
 
@@ -42,12 +28,7 @@ from qrisp.block_encodings.block_encoding_linear_combination import LinearCombin
 from qrisp.block_encodings.block_encoding_product import ProductBlockEncoding
 
 
-# The functions below are written as methods but defined at module level, and
-# block_encoding.py attaches them to BlockEncoding. pydocstyle only exempts a
-# receiver argument for functions written inside a class body, so it reports the
-# self and cls of each one as an undocumented parameter; the noqa markers below
-# suppress that. Sphinx renders them as bound methods, so the receiver never
-# reaches the reader and documenting it would only add noise.
+# Attached as methods on BlockEncoding in block_encoding.py; noqa: D417 omits self/cls from docstrings.
 def build_linear_combination(  # noqa: D417
     cls,
     block_encodings: list[BlockEncoding],

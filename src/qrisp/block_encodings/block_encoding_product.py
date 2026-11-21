@@ -14,16 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Implements the block encoding of a product of block encodings.
-
-A ProductBlockEncoding stores its factors in mathematical order, which is
-opposite to the order in which they are applied. For example, the product
-``A @ B`` is stored as ``(A, B)`` but applies ``B`` first and then ``A``.
-Everything else is derived from this factor sequence. The arithmetic that
-produces a product lives in block_encoding_arithmetic.py, which imports this
-module; the dependency runs one way only, so this module knows nothing about
-the operators that build it.
-"""
+"""Implements the block encoding of a product of block encodings."""
 
 from __future__ import annotations
 
@@ -144,12 +135,7 @@ class ProductBlockEncoding(BlockEncoding):
 
     @property
     def _uses_shared_workspace(self) -> bool:
-        """Return whether the factor ancillas are packed into one workspace with a counter.
-
-        For factors owning at most one QuantumBool each, the choice depends on their
-        number alone. Unlike the ancilla sizes, which are traced once the product is
-        passed to a traced function, this number is always known statically.
-        """
+        """Return whether factor ancillas are packed into a shared workspace with a counter."""
         num_factors_with_ancillas = self._num_factors_with_ancillas
         if self.strategy != "qubit_efficient" or num_factors_with_ancillas <= 1:
             return False

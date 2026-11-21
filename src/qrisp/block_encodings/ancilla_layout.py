@@ -52,19 +52,10 @@ def _qf_template(size: Any) -> QuantumVariableTemplate:
 
 @dataclass(frozen=True)
 class _AncillaLayout:
-    """Describe typed ancillas packed consecutively into one register.
+    """Describes typed ancillas packed consecutively into a shared workspace variable.
 
-    A layout stores the original templates and their individual register sizes.
-    It can then reconstruct typed views into a shared workspace. The sizes may be
-    traced JAX values, which keeps the same implementation usable in static and
-    Jasp execution.
-
-    Sizes that are known at build time are kept as plain Python ints rather than
-    as JAX arrays. Inside a trace, even ``jnp.add`` of two compile-time constants
-    returns a tracer, so deriving the sizes with ``jnp`` would make the layout
-    depend on the surrounding trace. Static sizes keep the layout independent of
-    the surrounding trace and let ``construct_views`` emit static slices instead
-    of dynamic ones.
+    Static sizes are kept as plain Python ints (so ``construct_views`` emits
+    static slices); traced JAX sizes are preserved as-is for Jasp execution.
     """
 
     templates: tuple[QuantumVariableTemplate, ...]
@@ -103,11 +94,7 @@ class _AncillaLayout:
 
 
 def _maximum_layout_size(layouts: list[_AncillaLayout] | tuple[_AncillaLayout, ...]) -> Any:
-    """Return the largest total workspace size across the supplied layouts.
-
-    The result is a plain Python int whenever every layout has static sizes, so
-    that the shared workspace is allocated with a statically known size.
-    """
+    """Return the largest total workspace size across ``layouts`` (Python int when all are static)."""
     if all(layout.has_static_sizes for layout in layouts):
         return max((layout.total_size for layout in layouts), default=0)
 

@@ -14,17 +14,7 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Build-time questions about the scalars a block encoding is built from.
-
-Coefficients, normalizations and register sizes decide which construction a block
-encoding uses, and that choice is made while tracing rather than while running. A
-traced value cannot be inspected for its value, only for its dtype, so every
-predicate here answers what is knowable at build time and errs towards the general
-construction when it is not.
-
-The module holds no block-encoding types and imports nothing from the package, so
-any module in it can use these without regard to import order.
-"""
+"""Build-time scalar predicates and validation helpers for block encodings."""
 
 from collections.abc import Sequence
 from typing import Any
@@ -35,23 +25,12 @@ import numpy as np
 
 
 def _is_static_scalar(value: Any) -> bool:
-    """Return whether ``value`` is a concrete, hashable Python or NumPy scalar.
-
-    Static scalars are kept in JAX pytree ``aux_data`` so they remain concrete
-    across JIT/qache boundaries; ``jax.Array`` and ``jax.core.Tracer`` values
-    stay dynamic leaves in ``children``.
-    """
+    """Return whether ``value`` is a hashable Python or NumPy scalar (kept in pytree ``aux_data``)."""
     return isinstance(value, (int, float, complex, np.number))
 
 
 def _validate_scalar(value: Any, label: str = "value", *, real_only: bool = False) -> Any:
-    """Validate that ``value`` is a scalar and detach 0-d NumPy arrays.
-
-    Objects without ``ndim`` (other than sequences) are passed through so plain
-    scalars and JAX pytree metadata placeholders remain accepted. When
-    ``real_only`` is True, complex scalar types and complex-dtype arrays/tracers
-    are rejected.
-    """
+    """Validate that ``value`` is a scalar, detach 0-d NumPy arrays, and optionally reject complex types."""
     if isinstance(value, Sequence):
         raise ValueError(f"Expected {label} to be a scalar, but got a {type(value).__name__}.")
     if getattr(value, "ndim", 0) != 0:
@@ -66,16 +45,7 @@ def _validate_scalar(value: Any, label: str = "value", *, real_only: bool = Fals
 
 
 def _is_real(value: Any) -> bool:
-    """Return whether a value is real, as far as is knowable at build time.
-
-    A traced value has no value yet, but it does have a dtype, and a dtype that is
-    not complex cannot carry an imaginary part. A complex dtype may still hold a
-    real value at run time; reporting that as possibly complex is the safe
-    direction, because the answer selects an implementation statically.
-
-    An array counts as real only if every entry does, matching
-    :func:`_is_non_negative_real`.
-    """
+    """Return whether ``value`` is known to be real (checking dtype for JAX tracers)."""
     if isinstance(value, jax.core.Tracer):
         return not jnp.issubdtype(value.dtype, jnp.complexfloating)
     try:
