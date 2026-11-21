@@ -16,8 +16,32 @@
 
 """Defines VQEBenchmark for evaluating, ranking, and visualizing VQE benchmarking results."""
 
+import warnings
+
 import dill as pickle
 import matplotlib.pyplot as plt
+
+from qrisp.misc.exceptions import QrispDeprecationWarning
+
+
+class _RunData(dict):
+    """Run data of one benchmark run, which still resolves the deprecated ``precision`` entry."""
+
+    def __missing__(self, key):
+        if key == "precision" and "atol" in self:
+            warnings.warn(
+                "The precision entry of the run data is deprecated; use atol or rtol.",
+                QrispDeprecationWarning,
+                stacklevel=3,
+            )
+            return self["atol"] if self["atol"] is not None else self["rtol"]
+        raise KeyError(key)
+
+    def get(self, key, default=None):
+        # dict.get does not call __missing__
+        if key == "precision" and key not in self and "atol" in self:
+            return self[key]
+        return super().get(key, default)
 
 
 class VQEBenchmark:
@@ -31,8 +55,14 @@ class VQEBenchmark:
         The depth of the compiled circuit of each run.
     qubit_amount : list[int]
         The amount of qubits of the compiled circuit of each run.
+    atol : list[float or None]
+        The absolute tolerance ``atol`` with which the expectation of the Hamiltonian is evaluated in each run.
+        ``None`` for runs that used ``rtol``.
+    rtol : list[float or None]
+        The relative tolerance ``rtol`` with which the expectation of the Hamiltonian is evaluated in each run.
+        ``None`` for runs that used ``atol``.
     precision : list[float]
-        The precision with which the expectation of the Hamiltonian is evaluated.
+        Deprecated. Use ``atol`` or ``rtol``.
     iterations : list[int]
         The amount of backend calls of each run.
     energy : list[dict]
@@ -51,12 +81,45 @@ class VQEBenchmark:
         self.layer_depth = benchmark_data["layer_depth"]
         self.circuit_depth = benchmark_data["circuit_depth"]
         self.qubit_amount = benchmark_data["qubit_amount"]
-        self.precision = benchmark_data["precision"]
+        self.atol = benchmark_data["atol"]
+        self.rtol = benchmark_data["rtol"]
         self.iterations = benchmark_data["iterations"]
         self.energy = benchmark_data["energy"]
         self.runtime = benchmark_data["runtime"]
         self.optimal_energy = optimal_energy
         self.hamiltonian = hamiltonian
+
+    def __setstate__(self, state):
+        """Restore a pickled benchmark, mapping the deprecated ``precision`` to ``atol``."""
+        # Benchmarks saved before atol and rtol existed stored the absolute tolerance as precision.
+        if "precision" in state and "atol" not in state:
+            state = dict(state)
+            state["atol"] = state.pop("precision")
+            state["rtol"] = [None] * len(state["atol"])
+        self.__dict__.update(state)
+
+    @property
+    def precision(self):
+        """Deprecated. Use ``atol`` or ``rtol``."""
+        warnings.warn(
+            "VQEBenchmark.precision is deprecated; use atol or rtol.",
+            QrispDeprecationWarning,
+            stacklevel=2,
+        )
+        return [a if a is not None else r for a, r in zip(self.atol, self.rtol)]
+
+    def _run_data(self, i):
+        """Return the data of run ``i``, without the energy and the runtime."""
+        return _RunData(
+            {
+                "layer_depth": self.layer_depth[i],
+                "circuit_depth": self.circuit_depth[i],
+                "qubit_amount": self.qubit_amount[i],
+                "atol": self.atol[i],
+                "rtol": self.rtol[i],
+                "iterations": self.iterations[i],
+            }
+        )
 
     def evaluate(self, cost_metric="oqv", gain_metric="approx_ratio"):
         r"""Evaluates the data in terms of a cost and a gain metric.
@@ -69,8 +132,10 @@ class VQEBenchmark:
 
             \text{OQV} = \text{circuit_depth} \times \text{qubits} \times \text{shots} \times \text{iterations}
 
-        where $\text{shots} = 1/\text{precision}^2$. The acutal number of shots exhibits a scaling factor that depends on the Hamiltonian.
-        For different Hamiltonians, the results for the OQV metric are not comparable.
+        where $\text{shots} = 1/\text{tol}^2$ and $\text{tol}$ is the ``atol`` or ``rtol`` of the run.
+        The acutal number of shots exhibits a scaling factor that depends on the Hamiltonian.
+        For different Hamiltonians, the results for the OQV metric are not comparable, and neither are
+        runs that used ``atol`` with runs that used ``rtol``.
 
         **Gain metric**
 
@@ -116,7 +181,7 @@ class VQEBenchmark:
 
             benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
                                 depth_range = [1,2,3],
-                                precision_range = [0.02,0.01],
+                                atol_range = [0.02,0.01],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
                                 repetitions = 2
@@ -148,7 +213,8 @@ class VQEBenchmark:
         * ``layer_depth``: The amount of layers
         * ``circuit_depth``: The depth of the compiled circuit as returned by :meth:`.depth <qrisp.QuantumCircuit.depth>` method.
         * ``qubit_amount``: The amount of qubits of the compiled circuit.
-        * ``precision``: The precision with which the expectation of the Hamiltonian is evaluated.
+        * ``atol``: The absolute tolerance with which the expectation of the Hamiltonian is evaluated, or ``None``.
+        * ``rtol``: The relative tolerance with which the expectation of the Hamiltonian is evaluated, or ``None``.
         * ``iterations``: The amount of backend calls, that the optimizer was allowed to do.
         * ``energy``: The energy of the problem Hamiltonian for the optimized ciruits for each run.
         * ``runtime``: The time (in seconds) that the ``run`` method of :ref:`VQEProblem` took.
@@ -171,16 +237,10 @@ class VQEBenchmark:
         gain_data = []
 
         for i in range(len(self.layer_depth)):
-            run_data = {
-                "layer_depth": self.layer_depth[i],
-                "circuit_depth": self.circuit_depth[i],
-                "qubit_amount": self.qubit_amount[i],
-                "precision": self.precision[i],
-                "iterations": self.iterations[i],
-                "energy": self.energy[i],
-                "runtime": self.runtime[i],
-                "optimal_energy": self.optimal_energy,
-            }
+            run_data = self._run_data(i)
+            run_data["energy"] = self.energy[i]
+            run_data["runtime"] = self.runtime[i]
+            run_data["optimal_energy"] = self.optimal_energy
 
             cost_data.append(cost_metric(run_data))
             gain_data.append(gain_metric(run_data))
@@ -215,7 +275,7 @@ class VQEBenchmark:
 
             benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
                                 depth_range = [1,2,3],
-                                precision_range = [0.02,0.01],
+                                atol_range = [0.02,0.01],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
                                 repetitions = 2
@@ -286,7 +346,7 @@ class VQEBenchmark:
 
             benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
                                 depth_range = [1,2,3],
-                                precision_range = [0.02,0.01],
+                                atol_range = [0.02,0.01],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
                                 repetitions = 2
@@ -297,7 +357,9 @@ class VQEBenchmark:
         ::
 
             print(benchmark_data.rank()[0])
-            #Yields: {'layer_depth': 3, 'circuit_depth': 69, 'qubit_amount': 5, 'precision': 0.01, 'iterations': 50, 'runtime': 1.996392011642456, 'optimal_energy': -7.711545013271988, 'energy': -7.572235160661036, 'metric': 0.9819348973038227}
+            #Yields: {'layer_depth': 3, 'circuit_depth': 69, 'qubit_amount': 5, 'atol': 0.01, 'rtol': None,
+            #          'iterations': 50, 'runtime': 1.996392011642456, 'optimal_energy': -7.711545013271988,
+            #          'energy': -7.572235160661036, 'metric': 0.9819348973038227}
 
         """
         if isinstance(metric, str):
@@ -315,23 +377,18 @@ class VQEBenchmark:
             average_dict = {}
 
         for i in range(len(self.layer_depth)):
-            run_data = {
-                "layer_depth": self.layer_depth[i],
-                "circuit_depth": self.circuit_depth[i],
-                "qubit_amount": self.qubit_amount[i],
-                "precision": self.precision[i],
-                "iterations": self.iterations[i],
-                "runtime": self.runtime[i],
-                "optimal_energy": self.optimal_energy,
-                "energy": self.energy[i],
-            }
+            run_data = self._run_data(i)
+            run_data["runtime"] = self.runtime[i]
+            run_data["optimal_energy"] = self.optimal_energy
+            run_data["energy"] = self.energy[i]
 
             run_data["metric"] = metric(run_data)
             if average_repetitions:
                 # Create a unique key based on the parameters
                 key = (
                     run_data["layer_depth"],
-                    run_data["precision"],
+                    run_data["atol"],
+                    run_data["rtol"],
                     run_data["iterations"],
                 )
 
@@ -351,7 +408,8 @@ class VQEBenchmark:
             for run_data in temp:
                 key = (
                     run_data["layer_depth"],
-                    run_data["precision"],
+                    run_data["atol"],
+                    run_data["rtol"],
                     run_data["iterations"],
                 )
 
@@ -390,17 +448,18 @@ class VQEBenchmark:
             "p",
             "QC depth",
             "QB count",
-            "Precision",
+            "Tolerance",
             "Iterations",
         ]
 
         # Print the header row
-        print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<7} {:<10}".format(*header))
-        print("============================================================================")
+        print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<12} {:<10}".format(*header))
+        print("================================================================================")
 
         for i, run_data in enumerate(run_data_list):
             oqv = sci_notation(overall_quantum_volume(run_data), 4)
             metric_value = sci_notation(run_data["metric"], 3)
+            tolerance = f"atol={run_data['atol']}" if run_data["atol"] is not None else f"rtol={run_data['rtol']}"
 
             row = [
                 i,
@@ -409,12 +468,12 @@ class VQEBenchmark:
                 run_data["layer_depth"],
                 run_data["circuit_depth"],
                 run_data["qubit_amount"],
-                run_data["precision"],
+                tolerance,
                 run_data["iterations"],
             ]
 
             # Print each row
-            print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<7} {:<10}".format(*row))
+            print("{:<5} {:<12} {:<12} {:<4} {:<10} {:<9} {:<12} {:<10}".format(*row))
 
     def save(self, filename):
         """Saves the data to the harddrive for later use.
@@ -442,7 +501,7 @@ class VQEBenchmark:
 
             benchmark_data = vqe.benchmark(qarg = QuantumVariable(5),
                                 depth_range = [1,2,3],
-                                precision_range = [0.02,0.01],
+                                atol_range = [0.02,0.01],
                                 iter_range = [25,50],
                                 optimal_energy = H.ground_state_energy(),
                                 repetitions = 2
@@ -504,9 +563,8 @@ class VQEBenchmark:
 
 
 def overall_quantum_volume(run_data):
-    return (
-        run_data["circuit_depth"] * run_data["qubit_amount"] * 1 / (run_data["precision"]) ** 2 * run_data["iterations"]
-    )
+    tolerance = run_data["atol"] if run_data["atol"] is not None else run_data["rtol"]
+    return run_data["circuit_depth"] * run_data["qubit_amount"] * 1 / tolerance**2 * run_data["iterations"]
 
 
 def approximation_ratio(energy, optimal_energy):

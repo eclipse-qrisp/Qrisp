@@ -16,6 +16,9 @@
 
 """Defines the DCQOProblem class for solving QUBOs via COLD/LCD counterdiabatic driving."""
 
+import functools
+import warnings
+
 import numpy as np
 import sympy as sp
 from scipy.optimize import Bounds, minimize
@@ -23,7 +26,26 @@ from scipy.optimize import Bounds, minimize
 from qrisp import h, z
 from qrisp.algorithms.cold._fast_trotterization import fast_trotterization
 from qrisp.algorithms.cold.AGP_params import _solve_alpha_gamma_chi
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.operators import QubitOperator
+from qrisp.operators.qubit.measurement_plan import _check_tolerance
+from qrisp.operators.qubit.measurement_plan import _resolve_tolerances as _resolve_atol_rtol
+
+
+def _resolve_tolerances(precision, atol, rtol):
+    """Return ``(atol, rtol)`` for the expectation values, mapping the deprecated ``precision`` to ``atol``."""
+    if precision is not None:
+        if atol is not None or rtol is not None:
+            raise ValueError("Specify only one of precision, atol and rtol.")
+        _check_tolerance("precision", precision)
+        warnings.warn(
+            "precision is deprecated; use atol, which has the same meaning, "
+            "or rtol for a tolerance relative to the size of the problem Hamiltonian.",
+            QrispDeprecationWarning,
+            stacklevel=3,
+        )
+        atol = precision
+    return _resolve_atol_rtol(atol, rtol)
 
 
 class DCQOProblem:
@@ -460,8 +482,10 @@ class DCQOProblem:
         options,
         objective,
         bounds,
-        precision=0.01,
+        precision=None,
         exp_value_backend=None,
+        atol=None,
+        rtol=None,
     ):
         """Subroutine for the optimization method used in COLD.
 
@@ -492,11 +516,19 @@ class DCQOProblem:
         bounds : tuple
             The parameter bounds for the optimizer. Default is (-2, 2).
         precision : float, optional
-            Precision for expectation value calculations. Default is 0.01.
+            Deprecated. Use ``atol``, which has the same meaning.
         exp_value_backend : BackendLike, optional
             Backend for expectation value calculations, if ``exp_value`` is used as objective function.
             If provided, uses measurement-based expectation value with this backend.
             If not provided, tries statevector first and falls back to measurement. Default is None.
+        atol : float, optional
+            Targeted standard deviation of the measured expectation values. Cannot be combined with ``rtol``.
+            It is passed to
+            :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
+        rtol : float, optional
+            Targeted standard deviation of the measured expectation values, relative to the sum of the absolute
+            values of the Pauli coefficients of the problem Hamiltonian. Cannot be combined with ``atol``.
+            If neither ``atol`` nor ``rtol`` is given, ``rtol=0.01`` is used.
 
         Returns
         -------
@@ -504,6 +536,8 @@ class DCQOProblem:
             The optimized parameters of the problem instance.
 
         """
+        atol, rtol = _resolve_tolerances(precision, atol, rtol)
+
         # Different objective functions: exp_value, agp coeffs magnitude
         if objective == "exp_value" and exp_value_backend is None:
             n_qubits = len(qarg)
@@ -529,41 +563,32 @@ class DCQOProblem:
                 if costs is None:
                     break
 
+        # Created on first use, because the statevector fast path and the agp_coeff_magnitude
+        # objective never measure the expectation value.
+        @functools.cache
+        def exp_value_function():
+            """Return the function measuring the expectation value of the problem Hamiltonian."""
+            return self.H_prob.expectation_value(
+                qarg, atol=atol, rtol=rtol, compile=False, precompiled_qc=qc, backend=exp_value_backend
+            )
+
         # Expectation value of the QUBO Hamiltonian
         def objective_exp(params, CRAB):
             """Expectation value of the problem Hamiltonian for the given optimization parameters."""
             # Dict to assign the optimization parameters
             subs_dic = {sp.Symbol("par_" + str(i)): params[i] for i in range(len(params))}
 
-            if exp_value_backend is not None:
-                # Use provided backend
-                exp_val = self.H_prob.expectation_value(
-                    qarg,
-                    precision=precision,
-                    compile=False,
-                    subs_dic=subs_dic,
-                    precompiled_qc=qc,
-                    backend=exp_value_backend,
-                )()
-            else:
-                # Try statevector first, fallback to measurement
+            if exp_value_backend is None:
+                # Try statevector first, fall back to measurement
                 try:
                     if costs is None:
                         raise ValueError("H_prob has non-diagonal terms; fast path unavailable")
-                    bound_qc = qc.bind_parameters(subs_dic)
-                    sv = bound_qc.statevector_array()
-                    probs = np.abs(sv) ** 2
-                    exp_val = float(np.dot(probs, costs))
+                    probs = np.abs(qc.bind_parameters(subs_dic).statevector_array()) ** 2
+                    return float(np.dot(probs, costs))
                 except (MemoryError, ValueError, RuntimeError):
-                    exp_val = self.H_prob.expectation_value(
-                        qarg,
-                        precision=precision,
-                        compile=False,
-                        subs_dic=subs_dic,
-                        precompiled_qc=qc,
-                    )()
+                    pass
 
-            return exp_val
+            return exp_value_function()(subs_dic=subs_dic)
 
         # Magnitude of the AGP coefficients (sum of absolute values over all timesteps)
         def objective_mag(params, CRAB):
@@ -649,8 +674,10 @@ class DCQOProblem:
         bounds=(),
         options={},
         mes_kwargs={},
-        precision=0.01,
+        precision=None,
         exp_value_backend=None,
+        atol=None,
+        rtol=None,
     ):
         """Run the DCQO problem instance with given quantum arguments, number of timesteps, evolution time and method.
 
@@ -692,11 +719,19 @@ class DCQOProblem:
         mes_kwargs : dict, optional
             The keyword arguments for the measurement function. Default is an empty dictionary.
         precision : float, optional
-            Precision for expectation value calculations. Default is 0.01.
+            Deprecated. Use ``atol``, which has the same meaning.
         exp_value_backend : BackendLike, optional
             Backend for expectation value calculations, if ``exp_value`` is used as objective function.
             If provided, uses measurement-based expectation value with this backend. Default is the Qrisp
             statevector simulator.
+        atol : float, optional
+            Targeted standard deviation of the measured expectation values. Cannot be combined with ``rtol``.
+            It is passed to
+            :meth:`expectation_value <qrisp.operators.qubit.QubitOperator.expectation_value>`.
+        rtol : float, optional
+            Targeted standard deviation of the measured expectation values, relative to the sum of the absolute
+            values of the Pauli coefficients of the problem Hamiltonian. Cannot be combined with ``atol``.
+            If neither ``atol`` nor ``rtol`` is given, ``rtol=0.01`` is used.
 
         Returns
         -------
@@ -705,6 +740,8 @@ class DCQOProblem:
             measurement results after applying the optimal DCQO circuit to the quantum argument.
 
         """
+        atol, rtol = _resolve_tolerances(precision, atol, rtol)
+
         # If no prep for qarg is specified, use uniform superposition state
         if self.qarg_prep is None:
 
@@ -749,8 +786,9 @@ class DCQOProblem:
                     options,
                     objective=objective,
                     bounds=bounds,
-                    precision=precision,
                     exp_value_backend=exp_value_backend,
+                    atol=atol,
+                    rtol=rtol,
                 )
                 if cost is None or cost_temp < cost:
                     opt_params = opt_params_temp

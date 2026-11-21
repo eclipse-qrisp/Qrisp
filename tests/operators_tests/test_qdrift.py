@@ -58,7 +58,7 @@ def test_qdrift_ising_chain():
     # Compute magnetization expectation values over time
     M_values = []
     for t in T_values:
-        ev_M = M.expectation_value(psi, precision=0.05)
+        ev_M = M.expectation_value(psi, atol=0.05)
         M_values.append(float(ev_M(t)))
 
     assert M_values[0] - M_values[-1] > 0.5
@@ -100,7 +100,7 @@ def test_jasp_qdrift_ising_chain():
 
         M_values = jnp.zeros(len(T_values))
         for i in range(len(T_values)):
-            ev_M = M.expectation_value(psi, precision=0.01)(T_values[i])
+            ev_M = M.expectation_value(psi, atol=0.01)(T_values[i])
             M_values = M_values.at[i].set(ev_M)
 
         return M_values

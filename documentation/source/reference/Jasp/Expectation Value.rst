@@ -41,7 +41,7 @@ And compute the expectation value of the Hamiltonian $H=Z_0Z_1$ for the state $\
             
         H = Z(0)*Z(1)
 
-        ev_function = H.expectation_value(state_prep, precision = 0.01)
+        ev_function = H.expectation_value(state_prep, atol=0.01)
 
         return ev_function(np.pi/2)
 
