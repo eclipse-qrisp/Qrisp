@@ -29,6 +29,8 @@ This submodule of Qrisp provides a collection of commonly used buildings blocks 
      - resource efficient quantum phase estimation
    * - :ref:`Quantum State Preparation <prepare>`
      - prepare a quantum state with given amplitudes
+   * - :ref:`Sparse Quantum State Preparation <prepare_sparse>`
+     - prepare a sparse quantum state with given amplitudes
    * - :ref:`Dicke state preparation <DickeStates>`
      - preparation of Dicke states, i.e., states with a given Hamming weight 
    * - :ref:`Unbalanced W State preparation <unbalanced_w_states>`
@@ -63,6 +65,7 @@ We encourage you to explore these algorithms, delve into their documentation, an
    IQAE
    IQPE
    prepare
+   prepare_sparse
    DickeStates
    unbalanced_w_states
    qswitch
