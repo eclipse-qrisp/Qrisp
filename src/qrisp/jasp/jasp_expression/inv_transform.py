@@ -118,6 +118,9 @@ def invert_jaspr(jaspr: "Jaspr") -> "Jaspr":
         The inverted/daggered Jaspr.
 
     """
+    if jaspr._inv_error is not None:
+        raise jaspr._inv_error
+
     # Flatten all environments in the jaspr
     jaspr = jaspr.flatten_environments()
     # We separate the equations into classes where one executes Operations and
@@ -207,6 +210,7 @@ def invert_jaspr(jaspr: "Jaspr") -> "Jaspr":
     #     eqns=non_op_eqs + op_eqs,
     # )
 
+    res._ctrl_error = jaspr._ctrl_error
     if jaspr.ctrl_jaspr:
         res.ctrl_jaspr = jaspr.ctrl_jaspr.inverse()
 

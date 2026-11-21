@@ -94,6 +94,10 @@ def rebuild_closed_jaxpr(base: "ClosedJaxpr | Jaspr", *, eqns=None, outvars=None
     return ClosedJaxpr(rebuild_jaxpr(base.jaxpr, eqns=eqns, outvars=outvars), base.consts)
 
 
+class VariantBindingError(Exception):
+    """Raised when a custom inverse or controlled variant cannot be bound to its forward jit call."""
+
+
 def bind_variant_to_jit_call(
     variant: "Jaspr", jit_eqn, func_name: str, variant_kind: str, n_leading: int = 0
 ) -> "Jaspr":
@@ -142,7 +146,7 @@ def bind_variant_to_jit_call(
     n_closure = len(forward.invars) - len(variant_args)
 
     if n_closure < 0 or not check_aval_equivalence(variant_args, forward.invars[n_closure:]):
-        raise Exception(
+        raise VariantBindingError(
             f"The custom {variant_kind} of {func_name} does not take the same arguments as {func_name} "
             f"itself.\n\n(argument types of the {variant_kind}: {[var.aval for var in variant_args]}, "
             f"of {func_name}: {[var.aval for var in forward.invars[max(n_closure, 0) :]]})"
@@ -172,7 +176,7 @@ def bind_variant_to_jit_call(
         # then serves every call site, while the arguments differ between them.
         position = next((i for i, op in enumerate(closure_operands) if op is operand), None)
         if position is None:
-            raise Exception(
+            raise VariantBindingError(
                 f"The custom {variant_kind} of {func_name} uses a traced value that it captures from the "
                 f"surrounding code, but {func_name} itself does not capture it, so the value cannot be passed "
                 f"on. Pass it to {func_name} as an argument and use that argument in the {variant_kind} "
@@ -201,6 +205,8 @@ def bind_variant_to_jit_call(
         isqfree=variant.isqfree,
         ctrl_jaspr=variant.ctrl_jaspr,
         inv_jaspr=variant.inv_jaspr,
+        _ctrl_error=variant._ctrl_error,
+        _inv_error=variant._inv_error,
     )
     res.envs_flattened = variant.envs_flattened
 

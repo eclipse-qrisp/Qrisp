@@ -27,6 +27,7 @@ from jax.extend.core import Jaxpr, JaxprEqn
 from qrisp import *
 from qrisp.alg_primitives.state_preparation import prepare
 from qrisp.jasp import *
+from qrisp.jasp import VariantBindingError
 
 
 def test_custom_inverse():
@@ -486,23 +487,33 @@ def test_custom_inverse_with_constant_capture():
 def test_custom_inverse_capturing_unused_value_raises():
     """An inverse cannot use a traced value that the forward version does not pass on."""
 
-    @make_jaspr
-    def main(a, b):
-        qv = QuantumFloat(1)
+    def build(inverted):
+        @make_jaspr
+        def main(a, b):
+            qv = QuantumFloat(1)
 
-        @custom_inversion
-        def f(qv, inv=False):
-            if not inv:
-                rx(a, qv[0])
+            @custom_inversion
+            def f(qv, inv=False):
+                if not inv:
+                    rx(a, qv[0])
+                else:
+                    rx(-a, qv[0])
+                    rz(b, qv[0])
+
+            if inverted:
+                with invert():
+                    f(qv)
             else:
-                rx(-a, qv[0])
-                rz(b, qv[0])
+                f(qv)
+            return measure(qv)
 
-        f(qv)
-        return measure(qv)
+        return main
 
-    with pytest.raises(Exception, match="does not capture it"):
-        main(0.3, 1.2)
+    # Never inverted: the unbindable inverse is never requested.
+    build(inverted=False)(0.3, 1.2)
+
+    with pytest.raises(VariantBindingError, match="does not capture it"):
+        build(inverted=True)(0.3, 1.2)
 
 
 def test_custom_variant_capturing_an_argument_raises():
@@ -514,40 +525,162 @@ def test_custom_variant_capturing_an_argument_raises():
     would make the variant read a different value at the others.
     """
 
-    @make_jaspr
-    def inverse_main(a):
-        qv = QuantumFloat(1)
+    def build_inverse(inverted):
+        @make_jaspr
+        def inverse_main(a):
+            qv = QuantumFloat(1)
 
-        @custom_inversion
-        def f(qv, theta, inv=False):
-            if not inv:
-                rx(theta, qv[0])
+            @custom_inversion
+            def f(qv, theta, inv=False):
+                if not inv:
+                    rx(theta, qv[0])
+                else:
+                    rx(-a, qv[0])
+
+            if inverted:
+                with invert():
+                    f(qv, a)
             else:
-                rx(-a, qv[0])
+                f(qv, a)
+            return measure(qv)
 
-        f(qv, a)
-        return measure(qv)
+        return inverse_main
 
-    with pytest.raises(Exception, match="custom inverse of f .* does not capture it"):
-        inverse_main(0.3)
+    build_inverse(inverted=False)(0.3)
+    with pytest.raises(VariantBindingError, match="custom inverse of f .* does not capture it"):
+        build_inverse(inverted=True)(0.3)
 
-    @make_jaspr
-    def control_main(a):
-        qv = QuantumFloat(1)
+    def build_control(controlled):
+        @make_jaspr
+        def control_main(a):
+            ctrl_qb = QuantumBool()
+            qv = QuantumFloat(1)
 
-        @custom_control
-        def f(qv, theta, ctrl=None):
-            if ctrl is None:
-                rx(theta, qv[0])
+            @custom_control
+            def f(qv, theta, ctrl=None):
+                if ctrl is None:
+                    rx(theta, qv[0])
+                else:
+                    with control(ctrl):
+                        rx(a, qv[0])
+
+            if controlled:
+                with control(ctrl_qb[0]):
+                    f(qv, a)
             else:
-                with control(ctrl):
-                    rx(a, qv[0])
+                f(qv, a)
+            return measure(qv)
 
-        f(qv, a)
-        return measure(qv)
+        return control_main
 
-    with pytest.raises(Exception, match="custom controlled version of f .* does not capture it"):
-        control_main(0.3)
+    build_control(controlled=False)(0.3)
+    with pytest.raises(VariantBindingError, match="custom controlled version of f .* does not capture it"):
+        build_control(controlled=True)(0.3)
+
+
+def test_custom_control_binding_error_deferred_until_requested():
+    """A binding failure on custom_control must only raise when control is applied."""
+
+    def run_gphase_like(mode):
+        @terminal_sampling
+        def main(phi):
+            ctrl_qb = QuantumBool()
+            ctrl_qb.flip()
+            qv = QuantumFloat(1)
+
+            @custom_control
+            def gphase_like(qv, ctrl=None):
+                if ctrl is None:
+                    x(qv[0])
+                else:
+                    with control(ctrl):
+                        x(qv[0])
+                    p(phi, ctrl)
+
+            @custom_control
+            def outer_wrapper(qv, ctrl=None):
+                if ctrl is None:
+                    gphase_like(qv)
+                else:
+                    with control(ctrl):
+                        gphase_like(qv)
+
+            if mode == "plain":
+                gphase_like(qv)
+            elif mode == "inverted":
+                with invert():
+                    gphase_like(qv)
+            elif mode == "conjugated":
+                with conjugate(h)(qv):
+                    gphase_like(qv)
+            elif mode == "nested_plain":
+                outer_wrapper(qv)
+            elif mode == "controlled":
+                with control(ctrl_qb[0]):
+                    gphase_like(qv)
+            elif mode == "controlled_inverted":
+                with control(ctrl_qb[0]):
+                    with invert():
+                        gphase_like(qv)
+            elif mode == "nested_controlled":
+                with control(ctrl_qb[0]):
+                    outer_wrapper(qv)
+            return qv
+
+        return main(0.5)
+
+    assert run_gphase_like("plain") == {1.0: pytest.approx(1.0)}
+    assert run_gphase_like("inverted") == {1.0: pytest.approx(1.0)}
+    assert run_gphase_like("conjugated") == {0.0: pytest.approx(1.0)}
+    assert run_gphase_like("nested_plain") == {1.0: pytest.approx(1.0)}
+
+    for mode in ("controlled", "controlled_inverted", "nested_controlled"):
+        with pytest.raises(
+            VariantBindingError, match="custom controlled version of gphase_like .* does not capture it"
+        ):
+            run_gphase_like(mode)
+
+
+def test_custom_inverse_binding_error_deferred_until_requested():
+    """A binding failure on custom_inversion must only raise when inversion is applied."""
+
+    def run_custom_inv(mode):
+        @terminal_sampling
+        def main(phi):
+            ctrl_qb = QuantumBool()
+            ctrl_qb.flip()
+            qv = QuantumFloat(1)
+
+            @custom_inversion
+            def flip_or_phase(qv, inv=False):
+                if not inv:
+                    x(qv[0])
+                else:
+                    p(phi, qv[0])
+                    x(qv[0])
+
+            if mode == "plain":
+                flip_or_phase(qv)
+            elif mode == "controlled":
+                with control(ctrl_qb[0]):
+                    flip_or_phase(qv)
+            elif mode == "inverted":
+                with invert():
+                    flip_or_phase(qv)
+            elif mode == "inverted_controlled":
+                with invert():
+                    with control(ctrl_qb[0]):
+                        flip_or_phase(qv)
+            return qv
+
+        return main(0.5)
+
+    assert run_custom_inv("plain") == {1.0: pytest.approx(1.0)}
+    assert run_custom_inv("controlled") == {1.0: pytest.approx(1.0)}
+
+    for mode in ("inverted", "inverted_controlled"):
+        with pytest.raises(VariantBindingError, match="custom inverse of flip_or_phase .* does not capture it"):
+            run_custom_inv(mode)
 
 
 def test_custom_control_binds_captures_by_identity():

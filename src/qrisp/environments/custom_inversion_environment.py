@@ -21,6 +21,7 @@ import functools
 import jax.numpy as jnp
 
 from qrisp.jasp import (
+    VariantBindingError,
     bind_variant_to_jit_call,
     check_for_tracing_mode,
     get_last_equation,
@@ -169,24 +170,27 @@ def custom_inversion(*func, **cusi_kwargs):
 
             forward_jaspr = jit_eqn.params["jaxpr"]
 
-            if not forward_jaspr.inv_jaspr:
+            if not forward_jaspr.inv_jaspr and forward_jaspr._inv_error is None:
                 # Trace the inverted version
 
                 def ammended_func(*args, **kwargs):
                     new_kwargs = dict(kwargs)
                     return func(*args, inv=True, **new_kwargs)
 
-                inverted_jaspr = make_jaspr(ammended_func)(*args, **kwargs)
+                try:
+                    inverted_jaspr = make_jaspr(ammended_func)(*args, **kwargs)
 
-                # make_jaspr leaves what the inverse captured from the surrounding
-                # code in its consts, while jit_eqn passes what the forward version
-                # captured as leading operands. Bind the former to the latter, so
-                # the inverse can replace the callee of jit_eqn.
-                inverted_jaspr = bind_variant_to_jit_call(inverted_jaspr, jit_eqn, func.__name__, "inverse")
-
-                # Store inverted version
-                forward_jaspr.inv_jaspr = inverted_jaspr
-                inverted_jaspr.inv_jaspr = forward_jaspr
+                    # make_jaspr leaves what the inverse captured from the surrounding
+                    # code in its consts, while jit_eqn passes what the forward version
+                    # captured as leading operands. Bind the former to the latter, so
+                    # the inverse can replace the callee of jit_eqn.
+                    inverted_jaspr = bind_variant_to_jit_call(inverted_jaspr, jit_eqn, func.__name__, "inverse")
+                except VariantBindingError as exc:
+                    forward_jaspr._inv_error = exc
+                else:
+                    # Store inverted version
+                    forward_jaspr.inv_jaspr = inverted_jaspr
+                    inverted_jaspr.inv_jaspr = forward_jaspr
 
         return res
 

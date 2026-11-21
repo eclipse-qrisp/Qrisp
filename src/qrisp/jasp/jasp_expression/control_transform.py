@@ -44,6 +44,9 @@ class ControlledJaspr(Jaspr):
 
     def __init__(self, base_jaspr: Jaspr, ctrl_state: str, stop_recursion: bool = False) -> None:
 
+        if base_jaspr._ctrl_error is not None:
+            raise base_jaspr._ctrl_error
+
         self.base_jaspr = base_jaspr
         self.ctrl_state = str(ctrl_state)
 
@@ -54,6 +57,7 @@ class ControlledJaspr(Jaspr):
 
         Jaspr.__init__(self, controlled_jaspr)
         self.envs_flattened = True
+        self._inv_error = base_jaspr._inv_error
 
         if self.base_jaspr.inv_jaspr and not stop_recursion:
             self.inv_jaspr = ControlledJaspr(base_jaspr.inv_jaspr, ctrl_state, stop_recursion=True)
@@ -230,6 +234,9 @@ def control_jaspr(jaspr: Jaspr) -> Jaspr:
 
     """
     from qrisp.jasp import AbstractQubit, Jaspr
+
+    if jaspr._ctrl_error is not None:
+        raise jaspr._ctrl_error
 
     ctrl_qubit_var = Var(aval=AbstractQubit())
     control_var_count[0] += 1

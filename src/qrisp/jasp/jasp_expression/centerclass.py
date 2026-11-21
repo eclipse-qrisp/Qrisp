@@ -126,6 +126,8 @@ class Jaspr(ClosedJaxpr):
         "hashvalue",
         "ctrl_jaspr",
         "inv_jaspr",
+        "_ctrl_error",
+        "_inv_error",
         "envs_flattened",
     )
 
@@ -136,6 +138,8 @@ class Jaspr(ClosedJaxpr):
         isqfree: bool | None = None,
         ctrl_jaspr: "Jaspr | None" = None,
         inv_jaspr: "Jaspr | None" = None,
+        _ctrl_error: Exception | None = None,
+        _inv_error: Exception | None = None,
         **kwargs,
     ) -> None:
         if len(args) == 2:
@@ -177,6 +181,8 @@ class Jaspr(ClosedJaxpr):
         self.isqfree = isqfree
         self.ctrl_jaspr = ctrl_jaspr
         self.inv_jaspr = inv_jaspr
+        self._ctrl_error = _ctrl_error
+        self._inv_error = _inv_error
         self.envs_flattened = False
 
         if not isinstance(self.invars[-1].aval, AbstractQuantumState):
@@ -229,6 +235,8 @@ class Jaspr(ClosedJaxpr):
             "permeability": self.permeability,
             "isqfree": self.isqfree,
             "ctrl_jaspr": ctrl_jaspr,
+            "_ctrl_error": self._ctrl_error,
+            "_inv_error": self._inv_error,
             "constvars": list(self.constvars),
             "invars": list(self.invars),
             "outvars": list(self.outvars),
@@ -342,6 +350,9 @@ class Jaspr(ClosedJaxpr):
         (``a`` and ``b``).
 
         """
+        if self._ctrl_error is not None:
+            raise self._ctrl_error
+
         if self.ctrl_jaspr is not None and num_ctrl == 1 and ctrl_state == -1:
             return self.ctrl_jaspr
 
@@ -588,6 +599,8 @@ class Jaspr(ClosedJaxpr):
 
         """
         res = flatten_environments(self)
+        res._ctrl_error = self._ctrl_error
+        res._inv_error = self._inv_error
         if self.ctrl_jaspr is not None:
             res.ctrl_jaspr = self.ctrl_jaspr.flatten_environments()
         if self.inv_jaspr is not None:

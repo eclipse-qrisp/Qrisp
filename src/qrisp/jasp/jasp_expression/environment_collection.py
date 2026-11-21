@@ -113,6 +113,8 @@ def collect_environments(closed_jaxpr: "ClosedJaxpr | Jaspr") -> "ClosedJaxpr | 
     if isinstance(closed_jaxpr, Jaspr):
         res = closed_jaxpr.update_eqns(new_eqn_list)
 
+        res._ctrl_error = closed_jaxpr._ctrl_error
+        res._inv_error = closed_jaxpr._inv_error
         if closed_jaxpr.ctrl_jaspr is not None:
             res.ctrl_jaspr = closed_jaxpr.ctrl_jaspr
         if closed_jaxpr.inv_jaspr is not None:
