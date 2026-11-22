@@ -19,15 +19,11 @@
 import jax.numpy as jnp
 import numpy as np
 import pytest
+from _helpers import compare_distributions, postselect_results, sample_postselected
 
 from qrisp import QuantumBool, QuantumFloat, QuantumVariable, h, terminal_sampling, x, z
 from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
-
-
-def _compare_results(res_dict_1, res_dict_2, n):
-    for k in range(2**n):
-        assert np.isclose(res_dict_1.get(k, 0), res_dict_2.get(k, 0))
 
 
 @pytest.mark.parametrize(
@@ -44,12 +40,9 @@ def test_block_encoding_addition(H1, H2):
     BE2 = BlockEncoding.from_operator(H2)
     BE_target = BlockEncoding.from_operator(H1 + H2)
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+    prep = lambda: QuantumVariable(n)  # noqa: E731
 
-    @terminal_sampling
-    def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
-
-    _compare_results(main(BE_target), main(BE1 + BE2), n)
+    compare_distributions(sample_postselected(BE_target, prep), sample_postselected(BE1 + BE2, prep), n)
 
 
 @pytest.mark.parametrize(
@@ -66,12 +59,9 @@ def test_block_encoding_subtraction(H1, H2):
     BE2 = BlockEncoding.from_operator(H2)
     BE_target = BlockEncoding.from_operator(H1 - H2)
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+    prep = lambda: QuantumVariable(n)  # noqa: E731
 
-    @terminal_sampling
-    def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
-
-    _compare_results(main(BE_target), main(BE1 - BE2), n)
+    compare_distributions(sample_postselected(BE_target, prep), sample_postselected(BE1 - BE2, prep), n)
 
 
 # Commuting Hermitian pairs ensure H1 * H2 is Hermitian for BlockEncoding.from_operator.
@@ -89,12 +79,9 @@ def test_block_encoding_multiplication(H1, H2):
     BE2 = BlockEncoding.from_operator(H2)
     BE_target = BlockEncoding.from_operator(H1 * H2)
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+    prep = lambda: QuantumVariable(n)  # noqa: E731
 
-    @terminal_sampling
-    def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
-
-    _compare_results(main(BE_target), main(BE1 @ BE2), n)
+    compare_distributions(sample_postselected(BE_target, prep), sample_postselected(BE1 @ BE2, prep), n)
 
 
 @pytest.mark.parametrize(
@@ -111,14 +98,11 @@ def test_block_encoding_scalar_multiplication(H1, H2, scalar):
     BE2 = BlockEncoding.from_operator(H2)
     BE_target = BlockEncoding.from_operator(scalar * H1 + H2)
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
+    prep = lambda: QuantumVariable(n)  # noqa: E731
 
-    @terminal_sampling
-    def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
-
-    res_target = main(BE_target)
-    _compare_results(res_target, main(scalar * BE1 + BE2), n)
-    _compare_results(res_target, main(BE1 * scalar + BE2), n)
+    res_target = sample_postselected(BE_target, prep)
+    compare_distributions(res_target, sample_postselected(scalar * BE1 + BE2, prep), n)
+    compare_distributions(res_target, sample_postselected(BE1 * scalar + BE2, prep), n)
 
 
 @pytest.mark.parametrize(
@@ -134,12 +118,9 @@ def test_block_encoding_negation(H1, H2):
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
     n = H1.find_minimal_qubit_amount()
+    prep = lambda: QuantumVariable(n)  # noqa: E731
 
-    @terminal_sampling
-    def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
-
-    _compare_results(main(BE2), main(-BE1), n)
+    compare_distributions(sample_postselected(BE2, prep), sample_postselected(-BE1, prep), n)
 
 
 @pytest.mark.parametrize(
@@ -156,19 +137,13 @@ def test_block_encoding_kron(H1, H2):
     n1 = H1.find_minimal_qubit_amount()
     n2 = H2.find_minimal_qubit_amount()
 
-    @terminal_sampling
-    def main_kron(BE):
-        return BE.apply_rus(lambda: (QuantumFloat(n1), QuantumFloat(n2)))()
+    res_kron = sample_postselected(BE1.kron(BE2), lambda: (QuantumFloat(n1), QuantumFloat(n2)))
+    res_1 = sample_postselected(BE1, lambda: QuantumFloat(n1))
+    res_2 = sample_postselected(BE2, lambda: QuantumFloat(n2))
 
-    @terminal_sampling
-    def main_sep(be1, be2):
-        return be1.apply_rus(lambda: QuantumFloat(n1))(), be2.apply_rus(lambda: QuantumFloat(n2))()
-
-    res_kron = main_kron(BE1.kron(BE2))
-    res_sep = main_sep(BE1, BE2)
     for k in range(2**n1):
         for m in range(2**n2):
-            assert np.isclose(res_kron.get((k, m), 0), res_sep.get((k, m), 0))
+            assert np.isclose(res_kron.get((k, m), 0), res_1.get(k, 0) * res_2.get(m, 0))
 
 
 def test_product_of_linear_combinations():
@@ -179,12 +154,9 @@ def test_product_of_linear_combinations():
         BlockEncoding.from_operator(Y(0)) + 0.25 * BlockEncoding.from_operator(Z(0))
     )
     reference = BlockEncoding.from_operator(H1) @ BlockEncoding.from_operator(H2)
+    prep = lambda: QuantumVariable(1)  # noqa: E731
 
-    @terminal_sampling
-    def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(1))()
-
-    _compare_results(main(composite), main(reference), 1)
+    compare_distributions(sample_postselected(composite, prep), sample_postselected(reference, prep), 1)
 
 
 @pytest.mark.parametrize(
@@ -209,16 +181,14 @@ def test_zero_scaled_nested_encoding_contributes_nothing(name, build):
     block_encoding, reference = build(0, A, B, C)
 
     @terminal_sampling
-    def main(BE):
-        return BE.apply_rus(operand_prep)()
-
-    @terminal_sampling
     def main_traced(c):
-        return build(c, A, B, C)[0].apply_rus(operand_prep)()
+        operand = operand_prep()
+        ancillas = build(c, A, B, C)[0].apply(operand)
+        return operand, *ancillas
 
-    res_ref = main(reference)
-    _compare_results(res_ref, main(block_encoding), 2)
-    _compare_results(res_ref, main_traced(0.0), 2)
+    res_ref = sample_postselected(reference, operand_prep)
+    compare_distributions(res_ref, sample_postselected(block_encoding, operand_prep), 2)
+    compare_distributions(res_ref, postselect_results(main_traced(0.0), num_ops=1), 2)
 
 
 def test_composite_ancillas_are_quantum_floats():

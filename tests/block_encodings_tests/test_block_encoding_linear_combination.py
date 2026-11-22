@@ -20,6 +20,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+from _helpers import compare_distributions, postselect_results, sample_postselected
 from jax.tree_util import tree_flatten, tree_unflatten
 
 from qrisp import (
@@ -41,11 +42,6 @@ from qrisp import (
 from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding
 from qrisp.jasp import count_ops
 from qrisp.operators import X, Y, Z
-
-
-def _compare_results(res_dict_1, res_dict_2, n):
-    for k in range(2**n):
-        assert np.isclose(res_dict_1.get(k, 0), res_dict_2.get(k, 0))
 
 
 def _trace_apply(encoding, operand_size=3):
@@ -92,14 +88,11 @@ def test_flattened_linear_combination_and_pytree():
     H_target = coefficients[0] * H1 + coefficients[1] * H2 + coefficients[2] * H3
     BE_target = BlockEncoding.from_operator(H_target)
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount(), H3.find_minimal_qubit_amount())
+    prep = lambda: QuantumVariable(n)  # noqa: E731
 
-    @terminal_sampling
-    def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
-
-    res_target = main(BE_target)
-    _compare_results(res_target, main(BE_chain), n)
-    _compare_results(res_target, main(BE_direct), n)
+    res_target = sample_postselected(BE_target, prep)
+    compare_distributions(res_target, sample_postselected(BE_chain, prep), n)
+    compare_distributions(res_target, sample_postselected(BE_direct, prep), n)
 
 
 def test_terms_are_kept_as_written():
@@ -187,12 +180,9 @@ def test_dagger_conjugates_terms_and_flattens():
     V = BlockEncoding.from_eye(-1)
     non_herm = (1 + 1j) * U + 2.0 * V
     expected = (1 - 1j) * U.dagger() + 2.0 * V.dagger()
+    prep = lambda: QuantumFloat(2)  # noqa: E731
 
-    @terminal_sampling
-    def main(be):
-        return be.apply_rus(lambda: QuantumFloat(2))()
-
-    _compare_results(main(non_herm.dagger()), main(expected), 2)
+    compare_distributions(sample_postselected(non_herm.dagger(), prep), sample_postselected(expected, prep), 2)
 
 
 #
@@ -376,13 +366,10 @@ def test_signed_sum_polynomial_matches_direct_encoding():
         BlockEncoding.from_operator(Z(0)) - BlockEncoding.from_operator(X(0)) + BlockEncoding.from_operator(Z(1))
     )
     reference = BlockEncoding.from_operator(operator**2)
+    prep = lambda: QuantumVariable(2)  # noqa: E731
 
-    @terminal_sampling
-    def main(block_encoding):
-        return block_encoding.apply_rus(lambda: QuantumVariable(2))()
-
-    from_combination = main(combination.poly(np.array([0.0, 0.0, 1.0])))
-    from_reference = main(reference)
+    from_combination = sample_postselected(combination.poly(np.array([0.0, 0.0, 1.0])), prep)
+    from_reference = sample_postselected(reference, prep)
 
     for state in (0, 1):
         assert np.isclose(from_combination.get(state, 0), from_reference.get(state, 0), atol=1e-3)
@@ -543,11 +530,14 @@ def test_traced_coefficients_fall_back_to_symbolic_prepare():
 
     @terminal_sampling
     def main(block_encoding):
-        if isinstance(block_encoding, LinearCombinationBlockEncoding):
-            assert block_encoding._has_traced_coefficients
-        return block_encoding.apply_rus(lambda: QuantumVariable(qubit_amount))()
+        assert block_encoding._has_traced_coefficients
+        operand = QuantumVariable(qubit_amount)
+        ancillas = block_encoding.apply(operand)
+        return operand, *ancillas
 
-    _compare_results(main(combination), main(reference), qubit_amount)
+    res_combo = postselect_results(main(combination), num_ops=1)
+    res_ref = sample_postselected(reference, lambda: QuantumVariable(qubit_amount))
+    compare_distributions(res_combo, res_ref, qubit_amount)
 
 
 @pytest.mark.parametrize(

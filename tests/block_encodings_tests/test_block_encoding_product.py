@@ -19,19 +19,15 @@
 import jax
 import numpy as np
 import pytest
+from _helpers import compare_distributions, sample_postselected
 from jax.tree_util import tree_flatten, tree_unflatten
 
-from qrisp import QuantumBool, QuantumFloat, QuantumVariable, make_jaspr, terminal_sampling, x, z
+from qrisp import QuantumBool, QuantumFloat, QuantumVariable, make_jaspr, x, z
 from qrisp.block_encodings import BlockEncoding, ProductBlockEncoding
 from qrisp.jasp import count_ops
 from qrisp.operators import X, Y, Z
 
 STRATEGIES = ["qubit_efficient", "separate"]
-
-
-def _compare_results(res_dict_1, res_dict_2, n):
-    for k in range(2**n):
-        assert np.isclose(res_dict_1.get(k, 0), res_dict_2.get(k, 0))
 
 
 def _counting_encoding(executions, qubit=0, num_ancillas=0):
@@ -174,12 +170,9 @@ def test_qubit_efficient_matches_separate_strategy(operators):
     separate = ProductBlockEncoding(factors, strategy="separate")
     qubit_efficient = ProductBlockEncoding(factors, strategy="qubit_efficient")
     n = max(op.find_minimal_qubit_amount() for op in operators)
+    prep = lambda: QuantumVariable(n)  # noqa: E731
 
-    @terminal_sampling
-    def main(block_encoding):
-        return block_encoding.apply_rus(lambda: QuantumVariable(n))()
-
-    _compare_results(main(separate), main(qubit_efficient), n)
+    compare_distributions(sample_postselected(separate, prep), sample_postselected(qubit_efficient, prep), n)
 
 
 def test_applies_factors_in_reverse_order():
