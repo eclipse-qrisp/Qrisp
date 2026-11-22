@@ -66,6 +66,12 @@ tutorial_authors = {
             "role": "Eclipse Qrisp Contributor",
             "linkedin": None,
         },
+        {
+            "name": "Pietropaolo Frisoni",
+            "affiliation": "IQM Quantum Computers",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
     ],
     "general/tutorial/CD": [
         {
@@ -76,6 +82,20 @@ tutorial_authors = {
         },
         {
             "name": "Sebastian Bock",
+            "affiliation": "Fraunhofer FOKUS",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
+    ],
+    "general/tutorial/CUDAQ": [
+        {
+            "name": "René Zander",
+            "affiliation": "Fraunhofer FOKUS",
+            "role": "Eclipse Qrisp Contributor",
+            "linkedin": None,
+        },
+        {
+            "name": "Matic Petrič",
             "affiliation": "Fraunhofer FOKUS",
             "role": "Eclipse Qrisp Contributor",
             "linkedin": None,

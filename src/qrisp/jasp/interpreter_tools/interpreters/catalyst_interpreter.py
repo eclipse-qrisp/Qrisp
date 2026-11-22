@@ -327,6 +327,8 @@ def exec_qrisp_op(op, catalyst_qbs, param_dict):
 
         param_list = [lambdify(greek_letters[: len(op.abstract_params)], expr)(*jax_values) for expr in op.params]
 
+        # Catalyst has no native SX gate. SX = RX(pi/2) up to a global phase,
+        # which is dropped here anyway (see gphase above).
         if op_name == "sx":
             op_name = "rx"
             param_list = [jnp.pi / 2]
@@ -614,6 +616,9 @@ reset_jaxpr = make_jaxpr(reset_qubit_array)(AbstractQubitArray(), AbstractQuantu
 def process_reset(eqn, context_dic):
 
     invalues = extract_invalues(eqn, context_dic)
+    if isinstance(eqn.invars[0].aval, AbstractQubit):
+        # The reset jaxpr is traced for a QubitArray, so wrap the single position.
+        invalues[0] = Jlist([invalues[0]])
     outvalues = eval_jaxpr(reset_jaxpr.jaxpr, eqn_evaluator=catalyst_eqn_evaluator)(*invalues)
     insert_outvalues(eqn, context_dic, outvalues)
 
