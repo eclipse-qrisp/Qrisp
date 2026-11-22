@@ -394,6 +394,35 @@ class TestControlledOperations:
         qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
         _assert_unitary_equal(qc, qc_rt)
 
+    @pytest.mark.parametrize("ctrl_state", ["11", "01", "10"])
+    def test_symbolic_multi_controlled_u3(self, ctrl_state):
+        """Qiskit exports this as an AnnotatedOperation, not a ControlledGate."""
+        import sympy
+
+        t = sympy.Symbol("t")
+        qc = QuantumCircuit(3)
+        qc.append(U3Gate(t, 0.5, 0.7).control(2, ctrl_state=ctrl_state), [0, 1, 2])
+
+        qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
+
+        assert qc_rt.data[0].op.ctrl_state == ctrl_state
+        _assert_unitary_equal(qc.bind_parameters({t: 0.3}), qc_rt.bind_parameters({t: 0.3}))
+
+    @pytest.mark.parametrize("ctrl_state", [0, 1, 2, 3])
+    def test_qiskit_annotated_control(self, ctrl_state):
+        qc = QiskitQC(3)
+        qc.append(UGate(0.3, 0.5, 0.7).control(2, ctrl_state=ctrl_state, annotated=True), [0, 1, 2])
+        qc_rt = convert_to_qiskit(convert_from_qiskit(qc))
+        _assert_unitary_equal(qc, qc_rt)
+
+    def test_qiskit_annotated_non_control_modifier_raises(self):
+        from qiskit.circuit import AnnotatedOperation, InverseModifier
+
+        qc = QiskitQC(1)
+        qc.append(AnnotatedOperation(UGate(0.3, 0.5, 0.7), [InverseModifier()]), [0])
+        with pytest.raises(NotImplementedError, match="annotated operations"):
+            convert_from_qiskit(qc)
+
 
 def _reverse_qubit_order(U: np.ndarray) -> np.ndarray:
     """Reverse qubit ordering: MSB-first (Qrisp) → LSB-first (Qiskit)."""

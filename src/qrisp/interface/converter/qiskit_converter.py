@@ -34,9 +34,11 @@ import qiskit.circuit.library.standard_gates as qsk_gates
 from qiskit import QiskitError
 from qiskit import QuantumCircuit as QiskitQuantumCircuit
 from qiskit.circuit import (
+    AnnotatedOperation,
     Barrier,
     ControlFlowOp,
     ControlledGate,
+    ControlModifier,
     IfElseOp,
     Measure,
     Parameter,
@@ -486,6 +488,20 @@ def _convert_operation_from_qiskit(qiskit_op: QiskitInstruction) -> Operation:
             base_operation=base_operation,
             num_ctrl_qubits=qiskit_op.num_ctrl_qubits,
             ctrl_state=bin_rep(qiskit_op.ctrl_state, qiskit_op.num_ctrl_qubits)[::-1],
+        )
+
+    # Qiskit's ``control()`` can return an AnnotatedOperation instead of a ControlledGate,
+    # e.g. for gates with symbolic parameters and two or more controls.
+    if isinstance(qiskit_op, AnnotatedOperation):
+        if len(qiskit_op.modifiers) != 1 or not isinstance(qiskit_op.modifiers[0], ControlModifier):
+            raise NotImplementedError(
+                f"Converting Qiskit annotated operations with modifiers {qiskit_op.modifiers} to Qrisp is not supported"
+            )
+        modifier = qiskit_op.modifiers[0]
+        return ControlledOperation(
+            base_operation=_convert_operation_from_qiskit(qiskit_op.base_op),
+            num_ctrl_qubits=modifier.num_ctrl_qubits,
+            ctrl_state=bin_rep(modifier.ctrl_state, modifier.num_ctrl_qubits)[::-1],
         )
 
     # The barrier in ``op_constructor_by_name`` is constructed with its default span of one
