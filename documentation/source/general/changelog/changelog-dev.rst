@@ -192,6 +192,8 @@ Improvements
   * Controlled gates that Qiskit represents as an ``AnnotatedOperation``, such
     as a ``U3Gate`` with symbolic parameters and two or more controls, convert
     to controlled Qrisp operations and no longer raise an error.
+  * A symbolic global phase on a Qiskit circuit is kept instead of raising
+    an error.
 
   (`PR #1027 <https://github.com/eclipse-qrisp/Qrisp/pull/1027>`_).
 
