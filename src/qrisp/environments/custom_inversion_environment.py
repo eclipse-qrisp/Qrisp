@@ -186,7 +186,7 @@ def custom_inversion(*func, **cusi_kwargs):
                     # the inverse can replace the callee of jit_eqn.
                     inverted_jaspr = bind_variant_to_jit_call(inverted_jaspr, jit_eqn, func.__name__, "inverse")
                 except VariantBindingError as exc:
-                    forward_jaspr._inv_error = exc
+                    forward_jaspr._inv_error = exc.args
                 else:
                     # Store inverted version
                     forward_jaspr.inv_jaspr = inverted_jaspr

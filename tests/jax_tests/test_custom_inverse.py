@@ -16,6 +16,7 @@
 
 """Tests the custom_inversion decorator combined with invert and control environments in Jasp."""
 
+import traceback
 from collections.abc import Iterator
 
 import jax.numpy as jnp
@@ -622,6 +623,10 @@ def test_custom_control_binding_error_deferred_until_requested():
                 with control(ctrl_qb[0]):
                     with invert():
                         gphase_like(qv)
+            elif mode == "controlled_conjugated":
+                with control(ctrl_qb[0]):
+                    with conjugate(h)(qv):
+                        gphase_like(qv)
             elif mode == "nested_controlled":
                 with control(ctrl_qb[0]):
                     outer_wrapper(qv)
@@ -634,7 +639,7 @@ def test_custom_control_binding_error_deferred_until_requested():
     assert run_gphase_like("conjugated") == {0.0: pytest.approx(1.0)}
     assert run_gphase_like("nested_plain") == {1.0: pytest.approx(1.0)}
 
-    for mode in ("controlled", "controlled_inverted", "nested_controlled"):
+    for mode in ("controlled", "controlled_inverted", "controlled_conjugated", "nested_controlled"):
         with pytest.raises(
             VariantBindingError, match="custom controlled version of gphase_like .* does not capture it"
         ):
@@ -719,3 +724,143 @@ def test_custom_control_binds_captures_by_identity():
     expected = reference(0.3, 1.2)
     for state in range(2):
         assert abs(expected.get(state, 0) - res.get(state, 0)) < 1e-6, f"{expected} vs {res}"
+
+
+def test_controlled_conjugation_ignores_conjugator_control_binding_error():
+    """Controlling U^dag V U only controls V, so an uncontrollable U must not fail."""
+
+    def run(ctrl_active, invert_block):
+        @terminal_sampling
+        def main(phi):
+            ctrl_qb = QuantumBool()
+            if ctrl_active:
+                ctrl_qb.flip()
+            qv = QuantumFloat(1)
+
+            @custom_control
+            def h_conjugator(qv, ctrl=None):
+                if ctrl is None:
+                    h(qv[0])
+                else:
+                    with control(ctrl):
+                        h(qv[0])
+                    p(phi, ctrl)
+
+            with control(ctrl_qb[0]):
+                if invert_block:
+                    with invert():
+                        with conjugate(h_conjugator)(qv):
+                            z(qv[0])
+                else:
+                    with conjugate(h_conjugator)(qv):
+                        z(qv[0])
+            return qv
+
+        return main(0.5)
+
+    assert run(ctrl_active=False, invert_block=False) == {0.0: pytest.approx(1.0)}
+    assert run(ctrl_active=True, invert_block=False) == {1.0: pytest.approx(1.0)}
+    assert run(ctrl_active=True, invert_block=True) == {1.0: pytest.approx(1.0)}
+
+
+@pytest.mark.parametrize("ctrl_outer", [True, False])
+def test_stacked_custom_control_and_inversion_defers_counterpart_error(ctrl_outer):
+    """Controlling alone or inverting alone must succeed when only (ctrl, inv) fails binding."""
+
+    def run(mode):
+        @terminal_sampling
+        def main(phi):
+            ctrl_qb = QuantumBool()
+            ctrl_qb.flip()
+            qv = QuantumFloat(1)
+
+            def body(qv, inv=False, ctrl=None):
+                if ctrl is None:
+                    x(qv[0])
+                elif not inv:
+                    with control(ctrl):
+                        x(qv[0])
+                else:
+                    with control(ctrl):
+                        x(qv[0])
+                    p(phi, ctrl)
+
+            f = custom_control(custom_inversion(body)) if ctrl_outer else custom_inversion(custom_control(body))
+
+            if mode == "plain":
+                f(qv)
+            elif mode == "controlled":
+                with control(ctrl_qb[0]):
+                    f(qv)
+            elif mode == "inverted":
+                with invert():
+                    f(qv)
+            elif mode == "controlled_inverted":
+                with control(ctrl_qb[0]):
+                    with invert():
+                        f(qv)
+            elif mode == "inverted_controlled":
+                with invert():
+                    with control(ctrl_qb[0]):
+                        f(qv)
+            return qv
+
+        return main(0.5)
+
+    assert run("plain") == {1.0: pytest.approx(1.0)}
+    assert run("controlled") == {1.0: pytest.approx(1.0)}
+    assert run("inverted") == {1.0: pytest.approx(1.0)}
+
+    for mode in ("controlled_inverted", "inverted_controlled"):
+        with pytest.raises(VariantBindingError, match="does not capture it"):
+            run(mode)
+
+
+def test_deferred_binding_error_does_not_retain_traceback_or_reuse_exception():
+    """Deferred binding errors must not store exception tracebacks or mutate across raises."""
+
+    def main(phi):
+        qv = QuantumFloat(1)
+
+        @custom_inversion
+        def bad_inv(qv, inv=False):
+            if not inv:
+                x(qv[0])
+            else:
+                p(phi, qv[0])
+
+        @custom_control
+        def bad_ctrl(qv, ctrl=None):
+            if ctrl is None:
+                x(qv[0])
+            else:
+                p(phi, ctrl)
+
+        bad_inv(qv)
+        bad_ctrl(qv)
+        return qv
+
+    jaspr = make_jaspr(main)(0.5)
+    callees = {eqn.params["name"]: eqn.params["jaxpr"] for eqn in _walk_jit_eqns(jaspr.jaxpr)}
+
+    assert isinstance(callees["bad_inv"]._inv_error, tuple)
+    assert isinstance(callees["bad_ctrl"]._ctrl_error, tuple)
+    assert all(isinstance(arg, str) for arg in callees["bad_inv"]._inv_error)
+    assert all(isinstance(arg, str) for arg in callees["bad_ctrl"]._ctrl_error)
+
+    with pytest.raises(VariantBindingError) as inv_exc_1:
+        callees["bad_inv"].inverse()
+    tb_len_1 = len(traceback.extract_tb(inv_exc_1.value.__traceback__))
+
+    with pytest.raises(VariantBindingError) as inv_exc_2:
+        callees["bad_inv"].inverse()
+    tb_len_2 = len(traceback.extract_tb(inv_exc_2.value.__traceback__))
+
+    assert inv_exc_1.value is not inv_exc_2.value
+    assert tb_len_1 == tb_len_2
+
+    with pytest.raises(VariantBindingError) as ctrl_exc_1:
+        callees["bad_ctrl"].control(1)
+    with pytest.raises(VariantBindingError) as ctrl_exc_2:
+        callees["bad_ctrl"].control(1)
+    assert ctrl_exc_1.value is not ctrl_exc_2.value

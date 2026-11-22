@@ -33,6 +33,7 @@ from qrisp.jasp import (
     flatten_environments,
 )
 from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
+from qrisp.jasp.jasp_expression.jaxpr_utils import VariantBindingError
 from qrisp.jasp.primitives import AbstractQuantumState
 
 
@@ -138,8 +139,8 @@ class Jaspr(ClosedJaxpr):
         isqfree: bool | None = None,
         ctrl_jaspr: "Jaspr | None" = None,
         inv_jaspr: "Jaspr | None" = None,
-        _ctrl_error: Exception | None = None,
-        _inv_error: Exception | None = None,
+        _ctrl_error: tuple | None = None,
+        _inv_error: tuple | None = None,
         **kwargs,
     ) -> None:
         if len(args) == 2:
@@ -351,7 +352,7 @@ class Jaspr(ClosedJaxpr):
 
         """
         if self._ctrl_error is not None:
-            raise self._ctrl_error
+            raise VariantBindingError(*self._ctrl_error)
 
         if self.ctrl_jaspr is not None and num_ctrl == 1 and ctrl_state == -1:
             return self.ctrl_jaspr

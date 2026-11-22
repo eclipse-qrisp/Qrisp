@@ -26,7 +26,7 @@ from sympy import lambdify
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp.interpreter_tools import copy_jaxpr_eqn, extract_invalues, insert_outvalues, reinterpret
-from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_closed_jaxpr
+from qrisp.jasp.jasp_expression.jaxpr_utils import VariantBindingError, rebuild_closed_jaxpr
 from qrisp.jasp.primitives import AbstractQuantumState, greek_letters, quantum_gate_p
 
 if TYPE_CHECKING:
@@ -119,7 +119,7 @@ def invert_jaspr(jaspr: "Jaspr") -> "Jaspr":
 
     """
     if jaspr._inv_error is not None:
-        raise jaspr._inv_error
+        raise VariantBindingError(*jaspr._inv_error)
 
     # Flatten all environments in the jaspr
     jaspr = jaspr.flatten_environments()
@@ -212,7 +212,10 @@ def invert_jaspr(jaspr: "Jaspr") -> "Jaspr":
 
     res._ctrl_error = jaspr._ctrl_error
     if jaspr.ctrl_jaspr:
-        res.ctrl_jaspr = jaspr.ctrl_jaspr.inverse()
+        try:
+            res.ctrl_jaspr = jaspr.ctrl_jaspr.inverse()
+        except VariantBindingError as exc:
+            res._ctrl_error = exc.args
 
     return res
 

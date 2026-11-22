@@ -24,7 +24,7 @@ from jax.extend.core import JaxprEqn, Var
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp import TracingQuantumSession
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
-from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_closed_jaxpr
+from qrisp.jasp.jasp_expression.jaxpr_utils import VariantBindingError, rebuild_closed_jaxpr
 from qrisp.jasp.primitives import AbstractQubit
 
 
@@ -45,7 +45,7 @@ class ControlledJaspr(Jaspr):
     def __init__(self, base_jaspr: Jaspr, ctrl_state: str, stop_recursion: bool = False) -> None:
 
         if base_jaspr._ctrl_error is not None:
-            raise base_jaspr._ctrl_error
+            raise VariantBindingError(*base_jaspr._ctrl_error)
 
         self.base_jaspr = base_jaspr
         self.ctrl_state = str(ctrl_state)
@@ -60,7 +60,10 @@ class ControlledJaspr(Jaspr):
         self._inv_error = base_jaspr._inv_error
 
         if self.base_jaspr.inv_jaspr and not stop_recursion:
-            self.inv_jaspr = ControlledJaspr(base_jaspr.inv_jaspr, ctrl_state, stop_recursion=True)
+            try:
+                self.inv_jaspr = ControlledJaspr(base_jaspr.inv_jaspr, ctrl_state, stop_recursion=True)
+            except VariantBindingError as exc:
+                self._inv_error = exc.args
 
     def control(self, num_ctrl: int, ctrl_state: int | str = -1) -> "ControlledJaspr":
 
@@ -75,6 +78,8 @@ class ControlledJaspr(Jaspr):
         return ControlledJaspr.from_cache(self.base_jaspr, ctrl_state + self.ctrl_state)
 
     def inverse(self) -> "ControlledJaspr":
+        if self._inv_error is not None:
+            raise VariantBindingError(*self._inv_error)
         return ControlledJaspr.from_cache(self.base_jaspr.inverse(), self.ctrl_state)
 
     # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
@@ -217,15 +222,18 @@ def control_eqn(eqn: JaxprEqn, ctrl_qubit_var: Var) -> JaxprEqn:
 
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
-def control_jaspr(jaspr: Jaspr) -> Jaspr:
+def control_jaspr(jaspr: Jaspr, uncontrolled_indices: tuple[int, ...] = ()) -> Jaspr:
     """Takes a Jaspr and returns a Jaspr that has an additional Qubit argument
     (located behind the QuantumState argument). The returned Jaspr is
     controlled on that Qubit argument.
 
     Parameters
     ----------
-    Jaspr : qrisp.jasp.Jaspr
+    jaspr : qrisp.jasp.Jaspr
         The Jaspr to control.
+    uncontrolled_indices : tuple[int, ...], optional
+        Equation indices in ``jaspr.eqns`` to leave uncontrolled (for example,
+        the boundary conjugators of a :class:`~qrisp.ConjugationEnvironment`).
 
     Returns
     -------
@@ -236,14 +244,16 @@ def control_jaspr(jaspr: Jaspr) -> Jaspr:
     from qrisp.jasp import AbstractQubit, Jaspr
 
     if jaspr._ctrl_error is not None:
-        raise jaspr._ctrl_error
+        raise VariantBindingError(*jaspr._ctrl_error)
 
     ctrl_qubit_var = Var(aval=AbstractQubit())
     control_var_count[0] += 1
 
     new_eqns = []
-    for eqn in jaspr.eqns:
-        if eqn.primitive.name == "jasp.quantum_gate" or eqn.primitive.name in [
+    for i, eqn in enumerate(jaspr.eqns):
+        if i in uncontrolled_indices:
+            new_eqns.append(eqn)
+        elif eqn.primitive.name == "jasp.quantum_gate" or eqn.primitive.name in [
             "jit",
             "while",
             "cond",

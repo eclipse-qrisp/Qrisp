@@ -22,7 +22,14 @@ from qrisp.circuit import Operation
 from qrisp.core.session_merging_tools import merge, recursive_qs_search
 from qrisp.environments import QuantumEnvironment, control
 from qrisp.environments.custom_control_environment import custom_control
-from qrisp.jasp import check_for_tracing_mode, get_last_equation
+from qrisp.jasp import (
+    VariantBindingError,
+    check_for_tracing_mode,
+    control_jaspr,
+    extract_invalues,
+    get_last_equation,
+    insert_outvalues,
+)
 from qrisp.misc import get_depth_dic
 
 
@@ -236,57 +243,27 @@ class ConjugationEnvironment(QuantumEnvironment):
         # to properly set the ctrl_jaspr attribute to reflect the
         # controlled version: U^\dagger cV U
 
-        from qrisp.jasp import VariantBindingError, copy_jaxpr_eqn, extract_invalues, insert_outvalues
-
         args = extract_invalues(eqn, context_dic)
         body_jaspr = eqn.params["jaspr"]
 
         flattened_jaspr = body_jaspr.flatten_environments()
 
-        # We now generate the controlled version.
-        # The implementation of the environment ensures that the conjugator,
-        # (i.e. U) is traced into a pjit primitive. This ensures that the
-        # first and last equation of the environments body corresponds to
-        # pjit calls of the conjugator.
-        # To generate the efficient conjugated version, we first generate the
-        # naively controlled version and subsequently replace the equations
-        # describing the controlled conjugators with their uncontrolled version.
-
+        # We now generate the controlled version U^\dagger cV U.
+        # The implementation of the environment ensures that the conjugator
+        # (i.e. U) and its inverse (U^\dagger) are traced into pjit primitives
+        # as the first and last equations of flattened_jaspr. Only the center
+        # equations V in between are controlled; the boundary conjugators stay
+        # uncontrolled.
         try:
-            controlled_flattened_jaspr = flattened_jaspr.control(1)
+            controlled_conj = control_jaspr(
+                flattened_jaspr,
+                uncontrolled_indices=(0, len(flattened_jaspr.eqns) - 1),
+            )
         except VariantBindingError as exc:
-            flattened_jaspr._ctrl_error = exc
+            flattened_jaspr._ctrl_error = exc.args
         else:
-            controlled_eqn_list = list(controlled_flattened_jaspr.eqns)
-
-            # Replace the controlled conjugators
-            controlled_eqn_list[0] = copy_jaxpr_eqn(controlled_flattened_jaspr.eqns[0])
-
-            # Remove the invar (control qubits are always added as the first arguments)
-            controlled_eqn_list[0].invars.pop(0)
-
-            new_params = controlled_eqn_list[0].params
-
-            # Replace the pjit body
-            new_params["jaxpr"] = flattened_jaspr.eqns[0].params["jaxpr"]
-
-            # We also need to update these parameters - otherwise Jax raises errors
-            # during MLIR lowering
-            new_params["in_shardings"] = new_params["in_shardings"][1:]
-            new_params["in_layouts"] = new_params["in_layouts"][1:]
-            new_params["donated_invars"] = new_params["donated_invars"][1:]
-
-            # Do the same for the last equation
-            controlled_eqn_list[-1] = copy_jaxpr_eqn(controlled_flattened_jaspr.eqns[-1])
-            controlled_eqn_list[-1].invars.pop(0)
-            new_params = controlled_eqn_list[-1].params
-            new_params["jaxpr"] = flattened_jaspr.eqns[-1].params["jaxpr"]
-            new_params["in_shardings"] = new_params["in_shardings"][1:]
-            new_params["in_layouts"] = new_params["in_layouts"][1:]
-            new_params["donated_invars"] = new_params["donated_invars"][1:]
-
-            # Set the ctrl_jaspr attribute to use enable custom control behavior
-            flattened_jaspr.ctrl_jaspr = controlled_flattened_jaspr.update_eqns(controlled_eqn_list)
+            controlled_conj.envs_flattened = True
+            flattened_jaspr.ctrl_jaspr = controlled_conj
 
         # Trace the jaxpr and subsequently update the equation (so it contains
         # the controlled version)

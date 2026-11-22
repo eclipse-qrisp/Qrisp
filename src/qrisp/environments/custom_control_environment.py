@@ -290,7 +290,7 @@ def custom_control(*func, **cusc_kwargs):
                         controlled_jaspr, jit_eqn, func.__name__, "controlled version", n_leading=1
                     )
                 except VariantBindingError as exc:
-                    forward_jaspr._ctrl_error = exc
+                    forward_jaspr._ctrl_error = exc.args
                 else:
                     # Store controlled version
                     forward_jaspr.ctrl_jaspr = controlled_jaspr
