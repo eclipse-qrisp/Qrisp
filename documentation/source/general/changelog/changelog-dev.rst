@@ -73,6 +73,18 @@ New Features
 Improvements
 ------------
 
+- **Efficient block-encoding arithmetic**
+  Block-encoding linear combinations now lower to a single LCU construction
+  (supporting real, complex, and traced coefficients) instead of recursively
+  nested binary combinations, and mutually exclusive LCU branches share one
+  ancilla workspace even for heterogeneous ancilla layouts. Products retain an
+  immutable flattened factor list and default to a qubit-efficient
+  shared-workspace construction using a logarithmic counter to separate
+  garbage between factors, while keeping the separate-ancilla strategy
+  available explicitly. Linear combinations can also be built directly via
+  :meth:`~qrisp.block_encodings.BlockEncoding.linear_combination`
+  (`PR #1041 <https://github.com/eclipse-qrisp/Qrisp/pull/1041>`_).
+
 - **Cheaper tracing for** :func:`q_switch <qrisp.q_switch>`
   The ``"tree"`` method resolves conditionals whose predicate is already known at
   trace time instead of tracing both arms and discarding one. The emitted circuit
@@ -639,6 +651,15 @@ Compatibility
   (``TypeError``, ``ValueError``, ``NotImplementedError``) instead of a
   generic ``Exception``. Code using ``except Exception:`` is unaffected
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
+
+* :meth:`BlockEncoding.dagger <qrisp.block_encodings.BlockEncoding.dagger>`
+  now guarantees only that the result encodes the Hermitian conjugate
+  :math:`A^\dagger` with the same normalization; its unitary is no longer
+  guaranteed to be the inverse of the original unitary. For products and
+  linear combinations, ``dagger()`` builds the structural dagger (reversed,
+  conjugated factors for products; conjugated coefficients and terms for
+  linear combinations)
+  (`PR #1041 <https://github.com/eclipse-qrisp/Qrisp/pull/1041>`_).
 
 * :ref:`IQPE <IQPE>` returns the phase instead of twice the phase modulo 1
   (see Bug Fixes). It raises a ``TypeError`` for a precision that is not an
