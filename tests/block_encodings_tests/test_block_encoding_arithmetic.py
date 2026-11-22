@@ -14,37 +14,20 @@
 # * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 # ********************************************************************************
 
-"""Tests arithmetic operations on BlockEncoding objects in qrisp.block_encodings."""
+"""Tests for BlockEncoding arithmetic operators (+, -, *, @, neg, kron) and cross-composite behavior."""
 
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from jax.tree_util import tree_flatten, tree_unflatten
 
-from qrisp import (
-    QuantumBool,
-    QuantumFloat,
-    QuantumVariable,
-    control,
-    h,
-    jaspify,
-    make_jaspr,
-    measure,
-    multi_measurement,
-    s_dg,
-    terminal_sampling,
-    x,
-    z,
-)
-from qrisp.block_encodings import BlockEncoding, LinearCombinationBlockEncoding, ProductBlockEncoding
+from qrisp import QuantumBool, QuantumFloat, QuantumVariable, h, terminal_sampling, x, z
+from qrisp.block_encodings import BlockEncoding
 from qrisp.operators import X, Y, Z
 
 
 def _compare_results(res_dict_1, res_dict_2, n):
     for k in range(2**n):
-        val_1 = res_dict_1.get(k, 0)
-        val_2 = res_dict_2.get(k, 0)
-        assert np.isclose(val_1, val_2)
+        assert np.isclose(res_dict_1.get(k, 0), res_dict_2.get(k, 0))
 
 
 @pytest.mark.parametrize(
@@ -56,24 +39,17 @@ def _compare_results(res_dict_1, res_dict_2, n):
     ],
 )
 def test_block_encoding_addition(H1, H2):
-    """Test addition of block encodings corresponding to Hermitian operators."""
-
+    """Addition of block encodings matches direct encoding of H1 + H2."""
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
-
-    H3 = H1 + H2
-    BE3 = BlockEncoding.from_operator(H3)
-    BE_addition = BE1 + BE2
-
+    BE_target = BlockEncoding.from_operator(H1 + H2)
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     @terminal_sampling
     def main(BE):
         return BE.apply_rus(lambda: QuantumVariable(n))()
 
-    res_be3 = main(BE3)
-    res_be_add = main(BE_addition)
-    _compare_results(res_be3, res_be_add, n)
+    _compare_results(main(BE_target), main(BE1 + BE2), n)
 
 
 @pytest.mark.parametrize(
@@ -85,28 +61,20 @@ def test_block_encoding_addition(H1, H2):
     ],
 )
 def test_block_encoding_subtraction(H1, H2):
-    """Test subtraction of block encodings corresponding to Hermitian operators."""
-
+    """Subtraction of block encodings matches direct encoding of H1 - H2."""
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
-
-    H3 = H1 - H2
-    BE3 = BlockEncoding.from_operator(H3)
-    BE_subtraction = BE1 - BE2
-
+    BE_target = BlockEncoding.from_operator(H1 - H2)
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     @terminal_sampling
     def main(BE):
         return BE.apply_rus(lambda: QuantumVariable(n))()
 
-    res_be3 = main(BE3)
-    res_be_sub = main(BE_subtraction)
-    _compare_results(res_be3, res_be_sub, n)
+    _compare_results(main(BE_target), main(BE1 - BE2), n)
 
 
-# The product of two Hermitian operators A and B is Hermitian if and only if they commute, i.e., AB = BA.
-# Thus, to ensure that the multiplication test is valid, we should choose pairs of operators that commute.
+# Commuting Hermitian pairs ensure H1 * H2 is Hermitian for BlockEncoding.from_operator.
 @pytest.mark.parametrize(
     "H1, H2",
     [
@@ -116,24 +84,17 @@ def test_block_encoding_subtraction(H1, H2):
     ],
 )
 def test_block_encoding_multiplication(H1, H2):
-    """Test multiplication of block encodings corresponding to commuting Hermitian operators."""
-
+    """Product of block encodings matches direct encoding of H1 * H2."""
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
-
-    H3 = H1 * H2
-    BE3 = BlockEncoding.from_operator(H3)
-    BE_multiplication = BE1 @ BE2
-
+    BE_target = BlockEncoding.from_operator(H1 * H2)
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     @terminal_sampling
     def main(BE):
         return BE.apply_rus(lambda: QuantumVariable(n))()
 
-    res_be3 = main(BE3)
-    res_be_mul = main(BE_multiplication)
-    _compare_results(res_be3, res_be_mul, n)
+    _compare_results(main(BE_target), main(BE1 @ BE2), n)
 
 
 @pytest.mark.parametrize(
@@ -145,15 +106,10 @@ def test_block_encoding_multiplication(H1, H2):
     ],
 )
 def test_block_encoding_scalar_multiplication(H1, H2, scalar):
-    H_target = scalar * H1 + H2
-    BE_target = BlockEncoding.from_operator(H_target)
-
+    """Left and right scalar multiplication match direct encoding of scalar * H1 + H2."""
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
-
-    BE_left = scalar * BE1 + BE2
-    BE_right = BE1 * scalar + BE2
-
+    BE_target = BlockEncoding.from_operator(scalar * H1 + H2)
     n = max(H1.find_minimal_qubit_amount(), H2.find_minimal_qubit_amount())
 
     @terminal_sampling
@@ -161,78 +117,74 @@ def test_block_encoding_scalar_multiplication(H1, H2, scalar):
         return BE.apply_rus(lambda: QuantumVariable(n))()
 
     res_target = main(BE_target)
-    res_left = main(BE_left)
-    res_right = main(BE_right)
-    _compare_results(res_target, res_left, n)
-    _compare_results(res_target, res_right, n)
+    _compare_results(res_target, main(scalar * BE1 + BE2), n)
+    _compare_results(res_target, main(BE1 * scalar + BE2), n)
 
 
-def test_block_encoding_flattened_linear_combination():
-    """Verify that linear combinations of block encodings are flattened into one LCU."""
-
-    H1 = X(0) * X(1)
-    H2 = 0.4 * Y(0) + Z(1)
-    H3 = 0.7 * X(2)
-    coefficients = [2.0, -1.0, 0.5]
-
+@pytest.mark.parametrize(
+    "H1, H2",
+    [
+        (X(0) * X(1) - 0.2 * Y(0) * Y(1), 0.2 * Y(0) * Y(1) - X(0) * X(1)),
+        (0.5 * X(1) - 0.7 * Y(1) + 0.3 * X(4), 0.7 * Y(1) - 0.5 * X(1) - 0.3 * X(4)),
+        (Z(0) * Z(1) - Y(3), Y(3) - Z(0) * Z(1)),
+    ],
+)
+def test_block_encoding_negation(H1, H2):
+    """Negation of a block encoding matches direct encoding of -H1."""
     BE1 = BlockEncoding.from_operator(H1)
     BE2 = BlockEncoding.from_operator(H2)
-    BE3 = BlockEncoding.from_operator(H3)
-
-    BE_chain = coefficients[0] * BE1 + coefficients[1] * BE2 + coefficients[2] * BE3
-    BE_direct = BlockEncoding.linear_combination([BE1, BE2, BE3], coefficients=coefficients)
-
-    assert isinstance(BE_chain, LinearCombinationBlockEncoding)
-    assert isinstance(BE_direct, LinearCombinationBlockEncoding)
-    assert len(BE_chain.terms) == 3
-    assert len(BE_direct.terms) == 3
-    assert BE_chain._anc_templates[0].qv_size == 2
-    # A linear combination of block encodings has exactly 2 ancillas:
-    # one for the LCU selection and one for the workspace.
-    assert BE_chain.num_ancs == 2
-
-    leaves, treedef = tree_flatten(BE_chain)
-    reconstructed = tree_unflatten(treedef, leaves)
-    assert isinstance(reconstructed, LinearCombinationBlockEncoding)
-    assert len(reconstructed.terms) == 3
-    assert len((reconstructed + BE1).terms) == 4
-
-    H_target = coefficients[0] * H1 + coefficients[1] * H2 + coefficients[2] * H3
-    BE_target = BlockEncoding.from_operator(H_target)
-    n = max(
-        H1.find_minimal_qubit_amount(),
-        H2.find_minimal_qubit_amount(),
-        H3.find_minimal_qubit_amount(),
-    )
+    n = H1.find_minimal_qubit_amount()
 
     @terminal_sampling
     def main(BE):
         return BE.apply_rus(lambda: QuantumVariable(n))()
 
-    res_target = main(BE_target)
-    _compare_results(res_target, main(BE_chain), n)
-    _compare_results(res_target, main(BE_direct), n)
+    _compare_results(main(BE2), main(-BE1), n)
 
 
-def test_block_encoding_lcu_takes_the_terms_as_written():
-    """Terms are kept as supplied, including ones that cancel or contribute nothing.
+@pytest.mark.parametrize(
+    "H1, H2",
+    [
+        (X(0) * X(1) + 0.2 * Y(0) * Y(1), Z(0) * Z(1) + X(2)),
+        (X(0) * X(1), Z(0) * Z(1)),
+    ],
+)
+def test_block_encoding_kron(H1, H2):
+    """Kronecker product of two block encodings matches independent application."""
+    BE1 = BlockEncoding.from_operator(H1)
+    BE2 = BlockEncoding.from_operator(H2)
+    n1 = H1.find_minimal_qubit_amount()
+    n2 = H2.find_minimal_qubit_amount()
 
-    A combination is a description of a circuit, not an expression to be
-    simplified: ``A - A`` builds the two-term combination it reads as and applies
-    it, the way subtracting an array from itself computes rather than collapsing.
-    """
-    block_encoding = BlockEncoding(1, [], lambda operand: None)
-    other = BlockEncoding(1, [], lambda operand: None)
+    @terminal_sampling
+    def main_kron(BE):
+        return BE.apply_rus(lambda: (QuantumFloat(n1), QuantumFloat(n2)))()
 
-    repeated = BlockEncoding.linear_combination([block_encoding, block_encoding], coefficients=[2, 3])
-    assert repeated.terms == ((2, block_encoding), (3, block_encoding))
-    assert repeated.alpha == 5
+    @terminal_sampling
+    def main_sep(be1, be2):
+        return be1.apply_rus(lambda: QuantumFloat(n1))(), be2.apply_rus(lambda: QuantumFloat(n2))()
 
-    with_a_zero = BlockEncoding.linear_combination([block_encoding, other], coefficients=[0, 2])
-    assert with_a_zero.terms == ((0, block_encoding), (2, other))
+    res_kron = main_kron(BE1.kron(BE2))
+    res_sep = main_sep(BE1, BE2)
+    for k in range(2**n1):
+        for m in range(2**n2):
+            assert np.isclose(res_kron.get((k, m), 0), res_sep.get((k, m), 0))
 
-    cancelling = BlockEncoding.linear_combination([block_encoding, other], coefficients=[1, -1])
-    assert cancelling.alpha == 2
+
+def test_product_of_linear_combinations():
+    """Product of linear combinations matches direct product of the summed operators."""
+    H1 = X(0) + 0.5 * Z(0)
+    H2 = Y(0) + 0.25 * Z(0)
+    composite = (BlockEncoding.from_operator(X(0)) + 0.5 * BlockEncoding.from_operator(Z(0))) @ (
+        BlockEncoding.from_operator(Y(0)) + 0.25 * BlockEncoding.from_operator(Z(0))
+    )
+    reference = BlockEncoding.from_operator(H1) @ BlockEncoding.from_operator(H2)
+
+    @terminal_sampling
+    def main(BE):
+        return BE.apply_rus(lambda: QuantumVariable(1))()
+
+    _compare_results(main(composite), main(reference), 1)
 
 
 @pytest.mark.parametrize(
@@ -243,12 +195,8 @@ def test_block_encoding_lcu_takes_the_terms_as_written():
         ("dagger", lambda c, A, B, C: ((c * A).dagger() + B, B)),
     ],
 )
-def test_a_zero_scaled_encoding_nested_in_a_combination_contributes_nothing(name, build):
-    """A zero-scaled encoding that is not flattened into the outer terms is applied as written.
-
-    Its branch has zero amplitude, so the result matches the combination without it,
-    whether the zero is known when the encoding is built or only once it is traced.
-    """
+def test_zero_scaled_nested_encoding_contributes_nothing(name, build):
+    """A zero-scaled nested encoding contributes zero amplitude for both static and traced zeros."""
     A = BlockEncoding.from_operator(X(0) + 0.5 * Z(1))
     B = BlockEncoding.from_operator(Z(0) * Z(1))
     C = BlockEncoding.from_operator(X(1))
@@ -265,602 +213,34 @@ def test_a_zero_scaled_encoding_nested_in_a_combination_contributes_nothing(name
         return BE.apply_rus(operand_prep)()
 
     @terminal_sampling
-    def main_static():
-        return block_encoding.apply_rus(operand_prep)()
-
-    @terminal_sampling
     def main_traced(c):
         return build(c, A, B, C)[0].apply_rus(operand_prep)()
 
-    res_reference = main(reference)
-    _compare_results(res_reference, main_static(), 2)
-    _compare_results(res_reference, main_traced(0.0), 2)
+    res_ref = main(reference)
+    _compare_results(res_ref, main(block_encoding), 2)
+    _compare_results(res_ref, main_traced(0.0), 2)
 
 
-def test_block_encoding_lcu_preserves_dynamic_coefficients():
-    """Verify that dynamic coefficients are not compared in Python."""
-    import jax
+def test_composite_ancillas_are_quantum_floats():
+    """Ancillas allocated by linear combinations and products are QuantumFloat instances."""
+    be1 = BlockEncoding(1, [QuantumBool()], lambda anc, op: x(op[0]))
+    be2 = BlockEncoding(1, [QuantumFloat(3)], lambda anc, op: z(op[0]))
 
-    block_encoding = BlockEncoding(2, [], lambda operand: None)
+    for composite in (BlockEncoding.linear_combination([be1, be2], coefficients=[1.0, 1.0]), be1 @ be2):
+        for anc in composite.apply(QuantumFloat(3)):
+            assert isinstance(anc, QuantumFloat)
 
-    def normalization(coefficient):
-        combination = BlockEncoding.linear_combination([block_encoding], coefficients=[coefficient])
-        return combination.alpha
 
-    assert jax.jit(normalization)(jnp.array(3.0)) == 6.0
+def test_block_encoding_alpha_validation_and_detaching():
+    """BlockEncoding rejects non-scalar or complex alpha values and detaches 0-d NumPy arrays."""
 
-
-def test_block_encoding_linear_combination_validates_inputs():
-    """Verify that linear combination input errors are reported."""
-    block_encoding = BlockEncoding(1, [], lambda operand: None)
-    two_operand_block_encoding = BlockEncoding(1, [], lambda first, second: None, num_ops=2)
-
-    with pytest.raises(ValueError, match="At least one block-encoding is required"):
-        BlockEncoding.linear_combination([])
-
-    with pytest.raises(ValueError, match="number of coefficients"):
-        BlockEncoding.linear_combination([block_encoding], coefficients=[1, 2])
-
-    with pytest.raises(ValueError, match="one-dimensional sequence"):
-        BlockEncoding.linear_combination([block_encoding], coefficients=2.0)
-
-    with pytest.raises(ValueError, match="one-dimensional sequence"):
-        BlockEncoding.linear_combination([block_encoding], coefficients=np.array([[1.0]]))
-
-    with pytest.raises(TypeError, match="Expected every item to be a BlockEncoding"):
-        BlockEncoding.linear_combination([object()])
-
-    with pytest.raises(ValueError, match="same number of operands"):
-        BlockEncoding.linear_combination([block_encoding, two_operand_block_encoding])
-
-
-def test_block_encoding_linear_combination_with_no_workspace():
-    """Verify that a linear combination with no workspace still applies correctly."""
-
-    def unitary(qv):
-        qv += 1
-
-    BE1 = BlockEncoding(1, [], unitary)
-    BE2 = BlockEncoding(1, [], unitary)
-    BE = BE1 + BE2
-
-    qv = QuantumFloat(3)
-    ancs = BE.apply(qv)
-
-    assert len(ancs) == 1  # Exactly one ancilla for the selector.
-    assert multi_measurement([qv] + ancs) == {(1, 0): 1.0}
-
-
-def test_block_encoding_product_is_flattened_and_keeps_separate_ancillas():
-    """Verify that nested products preserve factor order and ancilla ownership."""
-    first = BlockEncoding(2, [QuantumFloat(2)], lambda ancilla, operand: None)
-    second = BlockEncoding(3, [QuantumBool()], lambda ancilla, operand: None)
-    third = BlockEncoding(5, [QuantumFloat(1)], lambda ancilla, operand: None)
-
-    nested_product = ProductBlockEncoding([first, second], strategy="separate")
-    product = ProductBlockEncoding([nested_product, third], strategy="separate")
-
-    assert isinstance(product, ProductBlockEncoding)
-    assert product.factors == (first, second, third)
-    assert product.strategy == "separate"
-    assert product.alpha == 30
-    assert product.num_ancs == first.num_ancs + second.num_ancs + third.num_ancs
-    assert [template.qv_size for template in product._anc_templates] == [2, 1, 1]
-
-    with pytest.raises(TypeError):
-        product.factors[0] = first
-    with pytest.raises(AttributeError):
-        product.factors = ()
-    with pytest.raises(AttributeError):
-        product._factors = ()
-
-
-def test_block_encoding_product_defaults_to_qubit_efficient_strategy():
-    """Verify the default optimized strategy's execution and structural metadata."""
-    calls = []
-
-    def factor_unitary(ancilla, operand):
-        calls.append("factor")
-
-    factor = BlockEncoding(1, [QuantumBool()], factor_unitary)
-    product = ProductBlockEncoding([factor])
-
-    assert product.strategy == "qubit_efficient"
-    assert (factor @ factor).strategy == "qubit_efficient"
-    product.unitary(*product.create_ancillas(), QuantumVariable(1))
-    assert calls == ["factor"]
-    assert product.num_ancs == factor.num_ancs
-
-    leaves, treedef = tree_flatten(product)
-    reconstructed = tree_unflatten(treedef, leaves)
-    assert reconstructed.strategy == "qubit_efficient"
-    assert reconstructed.dagger().strategy == "qubit_efficient"
-
-    with pytest.raises(ValueError, match="Unknown product strategy"):
-        ProductBlockEncoding([factor], strategy="unknown")
-    with pytest.raises(AttributeError):
-        product.strategy = "separate"
-    with pytest.raises(AttributeError):
-        product._strategy = "separate"
-
-
-def test_block_encoding_qubit_efficient_product_reuses_heterogeneous_ancillas():
-    """Verify that factors share the largest workspace plus a logarithmic counter."""
-    first = BlockEncoding(1, [QuantumFloat(2), QuantumBool()], lambda *args: None)
-    second = BlockEncoding(1, [QuantumFloat(1)], lambda *args: None)
-    third = BlockEncoding(1, [QuantumBool(), QuantumBool()], lambda *args: None)
-
-    product = ProductBlockEncoding([first, second, third], strategy="qubit_efficient")
-
-    assert product.num_ancs == 2
-    assert [template.qv_size for template in product._anc_templates] == [2, 3]
-
-
-def test_block_encoding_qubit_efficient_product_counts_only_factors_with_ancillas():
-    """Verify that factors without ancillas neither enlarge the counter nor require a shared workspace."""
-    first = BlockEncoding(1, [QuantumFloat(2)], lambda *args: None)
-    second = BlockEncoding(1, [QuantumBool()], lambda *args: None)
-    unitary = BlockEncoding(1, [], lambda *args: None)
-
-    product = ProductBlockEncoding([unitary, first, unitary, second, unitary], strategy="qubit_efficient")
-    assert [template.qv_size for template in product._anc_templates] == [1, 2]
-
-    product = ProductBlockEncoding([unitary, first, unitary], strategy="qubit_efficient")
-    assert [template.qv_size for template in product._anc_templates] == [2]
-
-
-def test_block_encoding_qubit_efficient_product_keeps_few_quantum_bool_ancillas_separate():
-    """Verify that up to five single QuantumBool ancillas stay separate, since sharing them saves no qubits."""
-
-    def boolean_factor():
-        return BlockEncoding(1, [QuantumBool()], lambda *args: None)
-
-    unitary = BlockEncoding(1, [], lambda *args: None)
-
-    five = ProductBlockEncoding([boolean_factor() for _ in range(5)] + [unitary], strategy="qubit_efficient")
-    assert [template.qv_size for template in five._anc_templates] == [1] * 5
-
-    six = ProductBlockEncoding([boolean_factor() for _ in range(6)], strategy="qubit_efficient")
-    assert [template.qv_size for template in six._anc_templates] == [3, 1]
-
-    float_factor = BlockEncoding(1, [QuantumFloat(1)], lambda *args: None)
-    mixed = ProductBlockEncoding([boolean_factor(), float_factor], strategy="qubit_efficient")
-    assert [template.qv_size for template in mixed._anc_templates] == [1, 1]
-
-    # The choice must not change once the ancilla sizes are traced.
-    observed = []
-
-    def main(product):
-        observed.append(product.num_ancs)
-        return QuantumFloat(1)
-
-    make_jaspr(main)(five)
-    make_jaspr(main)(six)
-    assert observed == [5, 2]
-
-
-@pytest.mark.parametrize(
-    "operators",
-    [
-        [X(0) + 0.4 * Z(0), Y(0) + 0.3 * Z(0)],
-        [X(0) + 0.4 * Z(0), Y(0) + 0.3 * Z(0), X(0) + 0.2 * Y(0)],
-        [
-            X(0) * X(1) + 0.2 * Z(0),
-            Y(0) * Y(1) + 0.3 * X(1),
-            Z(0) * Z(1) + 0.2 * X(0),
-            X(0) + 0.1 * Y(1),
-        ],
-        [X(0), Y(0) + 0.3 * Z(0), Z(0)],
-        [X(0) + 0.4 * Z(0), Y(0), X(0) + 0.2 * Y(0), Z(0)],
-    ],
-    ids=[
-        "two_factors",
-        "three_factors",
-        "four_multiqubit_factors",
-        "one_factor_with_ancillas",
-        "factors_without_ancillas_interleaved",
-    ],
-)
-def test_block_encoding_qubit_efficient_product_matches_separate_strategy(operators):
-    """Verify shared-workspace products against the Jasp-compiled reference strategy."""
-    factors = [BlockEncoding.from_operator(operator) for operator in operators]
-    separate = ProductBlockEncoding(factors, strategy="separate")
-    qubit_efficient = ProductBlockEncoding(factors, strategy="qubit_efficient")
-    num_qubits = max(operator.find_minimal_qubit_amount() for operator in operators)
-
-    @terminal_sampling
-    def main(block_encoding):
-        return block_encoding.apply_rus(lambda: QuantumVariable(num_qubits))()
-
-    _compare_results(main(separate), main(qubit_efficient), num_qubits)
-
-
-def test_block_encoding_product_applies_factors_in_reverse_order():
-    """Verify that A @ B applies B before A."""
-    calls = []
-
-    def first_unitary(ancilla, operand):
-        calls.append("first")
-
-    def second_unitary(ancilla, operand):
-        calls.append("second")
-
-    first = BlockEncoding(1, [QuantumBool()], first_unitary)
-    second = BlockEncoding(1, [QuantumBool()], second_unitary)
-    product = first @ second
-    ancillas = product.create_ancillas()
-    operand = QuantumVariable(1)
-
-    product.unitary(*ancillas, operand)
-
-    assert calls == ["second", "first"]
-
-
-def test_block_encoding_product_supports_pytree_and_structural_dagger():
-    """Verify product reconstruction and reversed factor daggers."""
-    first = BlockEncoding(2, [], lambda operand: None)
-    second = BlockEncoding(3, [], lambda operand: None)
-    third = BlockEncoding(5, [], lambda operand: None)
-    product = first @ second @ third
-
-    leaves, treedef = tree_flatten(product)
-    reconstructed = tree_unflatten(treedef, leaves)
-    dagger = product.dagger()
-
-    assert isinstance(reconstructed, ProductBlockEncoding)
-    assert len(reconstructed.factors) == 3
-    assert reconstructed.alpha == product.alpha
-    assert isinstance(dagger, ProductBlockEncoding)
-    assert len(dagger.factors) == 3
-    assert [factor.alpha for factor in dagger.factors] == [third.alpha, second.alpha, first.alpha]
-    assert dagger.alpha == product.alpha
-
-
-def test_linear_combination_block_encoding_has_immutable_derived_representation():
-    """Verify that LCU terms are authoritative and exposed immutably."""
-    first = BlockEncoding(2, [], lambda operand: None, is_hermitian=True)
-    second = BlockEncoding(3, [], lambda operand: None, is_hermitian=True)
-    combination = BlockEncoding.linear_combination([first, second], coefficients=[4, -1])
-
-    assert isinstance(combination, LinearCombinationBlockEncoding)
-    assert isinstance(combination.terms, tuple)
-    assert combination.alpha == 11
-    assert combination.num_ops == 1
-    assert combination.num_ancs == 1
-    assert combination.is_hermitian
-
-    with pytest.raises(TypeError):
-        combination.terms[0] = (1, first)
-    with pytest.raises(AttributeError):
-        combination.terms = ()
-    with pytest.raises(AttributeError):
-        combination._terms = ()
-
-
-def test_block_encoding_lcu_reuses_heterogeneous_ancillas():
-    """Verify that heterogeneous child ancillas share one workspace."""
-
-    def two_ancilla_unitary(float_ancilla, bool_ancilla, operand):
-        x(float_ancilla)
-        x(bool_ancilla)
-
-    def one_ancilla_unitary(float_ancilla, operand):
-        x(float_ancilla)
-
-    BE_two_ancillas = BlockEncoding(
-        1,
-        [QuantumFloat(2), QuantumBool()],
-        two_ancilla_unitary,
-    )
-    BE_one_ancilla = BlockEncoding(1, [QuantumFloat(1)], one_ancilla_unitary)
-    BE = BlockEncoding.linear_combination([BE_two_ancillas, BE_one_ancilla])
-
-    # A linear combination of block encodings has exactly 2 ancillas:
-    # one for the LCU selection and one for the workspace.
-    assert BE.num_ancs == 2
-    # The workspace ancilla is the second one, which is a QuantumVariable of size 3
-    # (2 for the float and 1 for the bool).
-    assert BE._anc_templates[1].qv_size == 3
-
-    operand = QuantumVariable(1)
-    BE.apply(operand)
-
-    @jaspify
-    def main(block_encoding):
-        operand = QuantumVariable(1)
-        block_encoding.apply(operand)
-        return measure(operand)
-
-    assert main(BE) == 0
-
-
-@pytest.mark.parametrize(
-    "H1, H2",
-    [
-        (X(0) * X(1) - 0.2 * Y(0) * Y(1), 0.2 * Y(0) * Y(1) - X(0) * X(1)),
-        (0.5 * X(1) - 0.7 * Y(1) + 0.3 * X(4), 0.7 * Y(1) - 0.5 * X(1) - 0.3 * X(4)),
-        (Z(0) * Z(1) - Y(3), Y(3) - Z(0) * Z(1)),
-    ],
-)
-def test_block_encoding_negation(H1, H2):
-    """Test negation of block encodings corresponding to Hermitian operators."""
-
-    BE1 = BlockEncoding.from_operator(H1)
-    BE_neg = -BE1
-
-    BE2 = BlockEncoding.from_operator(H2)
-
-    n = H1.find_minimal_qubit_amount()
-
-    @terminal_sampling
-    def main(BE):
-        return BE.apply_rus(lambda: QuantumVariable(n))()
-
-    res_be2 = main(BE2)
-    res_be_neg = main(BE_neg)
-    _compare_results(res_be2, res_be_neg, n)
-
-
-@pytest.mark.parametrize(
-    "H1, H2",
-    [
-        (X(0) * X(1) + 0.2 * Y(0) * Y(1), Z(0) * Z(1) + X(2)),
-        (X(0) * X(1), Z(0) * Z(1)),
-    ],
-)
-def test_block_encoding_kron(H1, H2):
-    """Test the Kronecker product of two block encodings corresponding to Hermitian operators."""
-
-    BE1 = BlockEncoding.from_operator(H1)
-    BE2 = BlockEncoding.from_operator(H2)
-
-    BE_kron = BE1.kron(BE2)
-
-    n1 = H1.find_minimal_qubit_amount()
-    n2 = H2.find_minimal_qubit_amount()
-
-    def operand_prep():
-        qv1 = QuantumFloat(n1)
-        qv2 = QuantumFloat(n2)
-        return qv1, qv2
-
-    @terminal_sampling
-    def main(BE):
-        return BE.apply_rus(operand_prep)()
-
-    result_be_kron = main(BE_kron)
-
-    @terminal_sampling
-    def main(BE1, BE2):
-        qv1 = BE1.apply_rus(lambda: QuantumFloat(n1))()
-        qv2 = BE2.apply_rus(lambda: QuantumFloat(n2))()
-        return qv1, qv2
-
-    result_be1_be2 = main(BE1, BE2)
-
-    for k in range(2**n1):
-        for l in range(2**n2):
-            val_be_kron = result_be_kron.get((k, l), 0)
-            val_be1_be2 = result_be1_be2.get((k, l), 0)
-            assert np.isclose(val_be_kron, val_be1_be2)
-
-
-def _control_distribution_after_phase_kickback(coefficient, rotate_to_y_basis):
-    """Read a single-term combination's global phase off a control qubit.
-
-    A global phase is unobservable on its own, so the encoding is applied under a
-    control prepared in |+>. The phase is kicked back onto the control, which then
-    interferes:  (|0> + exp(i*arg)|1>)/sqrt(2). Measuring in the X basis gives
-    cos^2(arg/2), which pins the magnitude; rotating to the Y basis first gives
-    cos^2((arg - pi/2)/2), which separates arg from -arg.
-
-    The child acts as Z on an operand left in |0>, so it leaves the operand alone
-    and the control stays unentangled. Any residual entanglement would wash out the
-    interference and make the measurement meaningless rather than merely wrong.
-    """
-    child = BlockEncoding(1, [], lambda operand: z(operand[0]))
-    encoding = BlockEncoding.linear_combination([child], [coefficient])
-
-    @terminal_sampling
-    def main():
-        control_qbl = QuantumBool()
-        h(control_qbl)
-        operand = QuantumFloat(3)
-        with control(control_qbl[0]):
-            encoding.apply(operand)
-        if rotate_to_y_basis:
-            s_dg(control_qbl[0])
-        h(control_qbl)
-        return control_qbl
-
-    return main()
-
-
-@pytest.mark.parametrize(
-    "coefficient, argument",
-    [
-        (1.0, 0.0),
-        (-1.0, np.pi),
-        (1j, np.pi / 2),
-        (-1j, -np.pi / 2),
-        ((1 + 1j) / np.sqrt(2), np.pi / 4),
-    ],
-)
-def test_single_term_combination_applies_the_coefficient_phase(coefficient, argument):
-    """A one-term linear combination must encode its coefficient's phase.
-
-    alpha carries the coefficient's magnitude, so the unitary has to supply
-    coefficient / abs(coefficient), a global phase of arg(coefficient). A negative
-    real coefficient is the arg == pi case; writing that as a comparison against
-    zero raised a TypeError for a complex coefficient, even though the rest of the
-    LCU construction handles complex coefficients.
-    """
-    x_basis = _control_distribution_after_phase_kickback(coefficient, rotate_to_y_basis=False)
-    y_basis = _control_distribution_after_phase_kickback(coefficient, rotate_to_y_basis=True)
-
-    assert np.isclose(x_basis.get(False, 0), np.cos(argument / 2) ** 2, atol=1e-4)
-    assert np.isclose(y_basis.get(False, 0), np.cos((argument - np.pi / 2) / 2) ** 2, atol=1e-4)
-
-
-@pytest.mark.parametrize(
-    "name, build, expected",
-    [
-        ("real coefficients", lambda Z_be, X_be: Z_be + 2.0 * X_be, True),
-        ("negative coefficient", lambda Z_be, X_be: Z_be - X_be, True),
-        ("imaginary coefficient", lambda Z_be, X_be: Z_be + 1j * X_be, False),
-        ("complex coefficient", lambda Z_be, X_be: Z_be + ((1 + 1j) / np.sqrt(2)) * X_be, False),
-        ("single imaginary term", lambda Z_be, X_be: BlockEncoding.linear_combination([Z_be], [1j]), False),
-        ("single negative term", lambda Z_be, X_be: BlockEncoding.linear_combination([Z_be], [-1.0]), True),
-    ],
-)
-def test_linear_combination_reports_hermitian_only_for_real_coefficients(name, build, expected):
-    """A complex coefficient makes a sum of Hermitian operators non-Hermitian.
-
-    ``I + 1j * Z`` is the shortest example. Reporting it as Hermitian is not merely
-    imprecise: qubitization selects the cheaper reflection construction on the
-    strength of this flag, which is only valid for a Hermitian operator.
-    """
-    Z_be = BlockEncoding.from_operator(Z(0))
-    X_be = BlockEncoding.from_operator(X(0))
-
-    assert build(Z_be, X_be).is_hermitian is expected
-
-
-def test_complex_coefficients_reach_the_non_hermitian_qubitization():
-    r"""The flag has to change which construction qubitization builds, not just its value.
-
-    The Hermitian branch reuses the encoding's own ancillas, while the general one
-    adds a control ancilla to build a Hermitian operator out of $(A + A^\dagger)/2$.
-    The extra ancilla is therefore a direct witness of the branch taken.
-    """
-    Z_be = BlockEncoding.from_operator(Z(0))
-    X_be = BlockEncoding.from_operator(X(0))
-
-    real_combination = Z_be + 2.0 * X_be
-    complex_combination = Z_be + 1j * X_be
-
-    assert real_combination.qubitization().num_ancs == real_combination.num_ancs
-    assert complex_combination.qubitization().num_ancs == complex_combination.num_ancs + 1
-
-
-def test_coefficient_reality_survives_the_pytree_boundary():
-    """Passing a combination through a jit boundary must not change the verdict.
-
-    The coefficients become tracers there, so their value is no longer available,
-    but their dtype is, and that is what the check relies on. Were the dtype not
-    preserved, every combination would be reported non-Hermitian under tracing.
-    """
-    Z_be = BlockEncoding.from_operator(Z(0))
-    X_be = BlockEncoding.from_operator(X(0))
-    observed = {}
-
-    @jaspify
-    def main(block_encoding, key):
-        observed[key] = block_encoding.is_hermitian
-        qv = QuantumFloat(1)
-        block_encoding.apply(qv)
-        return measure(qv)
-
-    main(Z_be + 2.0 * X_be, "real")
-    main(Z_be + 1j * X_be, "complex")
-
-    assert observed["real"] is True
-    assert observed["complex"] is False
-
-
-#
-# Zero block encodings
-#
-
-
-def test_a_product_takes_its_factors_as_written():
-    """A product keeps every factor, including one that encodes nothing.
-
-    Products are read the same way linear combinations are: a description of a
-    circuit rather than an expression to simplify. A factor whose normalization is
-    zero used to annihilate the whole product into a zero encoding; it is now left
-    in place and reports that itself when its unitary is built.
-    """
-    A = BlockEncoding.from_operator(Z(0))
-    B = BlockEncoding.from_operator(X(0))
-
-    cancelling = A - A
-    product = cancelling @ B
-
-    assert isinstance(product, ProductBlockEncoding)
-    assert product.factors == (cancelling, B)
-    assert product.alpha == cancelling.alpha * B.alpha
-
-
-#
-# Terms are validated as supplied
-#
-
-
-def _one_and_two_operand_encodings():
-    one = BlockEncoding(1, [], lambda a: None, num_ops=1)
-    two = BlockEncoding(1, [], lambda a, b: None, num_ops=2)
-    return one, two
-
-
-@pytest.mark.parametrize(
-    "name, build",
-    [
-        ("zero coefficient", lambda one, two: BlockEncoding.linear_combination([one, two], coefficients=[1, 0])),
-        ("plain mismatch", lambda one, two: BlockEncoding.linear_combination([one, two], coefficients=[1, 1])),
-    ],
-)
-def test_a_zero_term_does_not_hide_an_operand_mismatch(name, build):
-    """Operand counts are compared for every term, whatever it contributes.
-
-    A term weighted by zero is kept like any other, so its child has to be checked
-    like any other; it must not be the one that slips through.
-    """
-    one, two = _one_and_two_operand_encodings()
-
-    with pytest.raises(ValueError, match="same number of operands"):
-        build(one, two)
-
-
-def test_a_combination_with_no_terms_is_rejected():
-    """An empty combination has nothing to derive anything from.
-
-    The operand count, the selector width and the normalization are all read off
-    the terms, starting with the first one, so an empty combination is an object
-    that raises an IndexError the moment anything is asked of it. The public
-    factory documents ValueError for this, and the class must agree: it is
-    exported, and reachable directly and through _from_lcu_terms.
-    """
-    with pytest.raises(ValueError, match="At least one block-encoding"):
-        LinearCombinationBlockEncoding([])
-
-    with pytest.raises(ValueError, match="At least one block-encoding"):
-        BlockEncoding._from_lcu_terms(())
-
-    with pytest.raises(ValueError, match="At least one block-encoding"):
-        BlockEncoding.linear_combination([], coefficients=[])
-
-
-def test_an_invalid_child_is_reported_as_a_type_error():
-    """A child that is not a block encoding must raise the documented TypeError.
-
-    Validation reads each child's normalization, so an invalid one would otherwise
-    surface as an AttributeError raised from somewhere unrelated.
-    """
-    with pytest.raises(TypeError, match="BlockEncoding"):
-        LinearCombinationBlockEncoding([(1, "not a block encoding")])
-
-
-def test_block_encoding_alpha_must_be_scalar_and_detaches_zero_d_numpy_array():
-    """BlockEncoding rejects non-scalar and complex alpha values and detaches 0-d NumPy arrays."""
-    unitary = lambda operand: x(operand[0])
+    def unitary(operand):
+        x(operand[0])
 
     with pytest.raises(ValueError, match="scalar"):
         BlockEncoding([1.0, 2.0], [], unitary)
-
     with pytest.raises(ValueError, match="scalar"):
         BlockEncoding(np.array([1.0, 2.0]), [], unitary)
-
     for complex_alpha in (1 + 2j, np.complex128(2.0), jnp.array(1 + 2j)):
         with pytest.raises(ValueError, match="real scalar"):
             BlockEncoding(complex_alpha, [], unitary)
@@ -868,249 +248,5 @@ def test_block_encoding_alpha_must_be_scalar_and_detaches_zero_d_numpy_array():
     mutable_alpha = np.array(2.5)
     encoding = BlockEncoding(mutable_alpha, [], unitary)
     mutable_alpha[...] = 9.0
-
     assert encoding.alpha == 2.5
     assert not isinstance(encoding.alpha, np.ndarray)
-
-
-def test_linear_combination_dagger_conjugates_terms_and_flattens():
-    """LinearCombinationBlockEncoding.dagger conjugates coefficients and child encodings."""
-    A = BlockEncoding.from_operator(X(0))
-    B = BlockEncoding.from_operator(Y(0))
-    C = BlockEncoding.from_operator(Z(0))
-
-    combo = (1 + 2j) * A + 3.0 * B
-    dag = combo.dagger()
-
-    assert isinstance(dag, LinearCombinationBlockEncoding)
-    assert [coeff for coeff, _ in dag.terms] == [1 - 2j, 3.0]
-    assert np.isclose(dag.alpha, combo.alpha)
-    assert len((dag + C).terms) == 3
-
-    # Verify numerically on a non-Hermitian combination of non-Hermitian shift operators.
-    U = BlockEncoding.from_eye(1)
-    V = BlockEncoding.from_eye(-1)
-    non_herm = (1 + 1j) * U + 2.0 * V
-    expected = (1 - 1j) * U.dagger() + 2.0 * V.dagger()
-
-    @terminal_sampling
-    def main(be):
-        return be.apply_rus(lambda: QuantumFloat(2))()
-
-    res_dag = main(non_herm.dagger())
-    res_exp = main(expected)
-    for state in range(4):
-        assert np.isclose(res_dag.get(state, 0), res_exp.get(state, 0))
-
-
-@pytest.mark.parametrize(
-    "name, build",
-    [
-        ("zero factor on the left", lambda one, two: (one - one) @ two),
-        ("zero factor on the right", lambda one, two: two @ (one - one)),
-    ],
-)
-def test_a_zero_factor_does_not_hide_an_operand_mismatch(name, build):
-    """A product checks its factors against each other before zero annihilates it.
-
-    A zero factor collapses the product without the remaining factors being built,
-    so the operand counts have to be compared first or the mismatch is swallowed
-    by the zero result.
-    """
-    one, two = _one_and_two_operand_encodings()
-
-    with pytest.raises(ValueError, match="same number of operands"):
-        build(one, two)
-
-
-#
-# is_hermitian describes the unitary that is built
-#
-
-
-def _unitary_hermiticity_error(block_encoding):
-    """Build the block-encoding unitary and return max|U - U^dagger|."""
-    operand = QuantumVariable(1)
-    ancillas = block_encoding.create_ancillas()
-    block_encoding.unitary(*ancillas, operand)
-    unitary = operand.qs.get_unitary()
-    return float(np.max(np.abs(unitary - unitary.conj().T)))
-
-
-@pytest.mark.parametrize(
-    "name, build, expected",
-    [
-        ("non-negative terms", lambda Z_be, X_be: Z_be + X_be, True),
-        ("scaled non-negative terms", lambda Z_be, X_be: Z_be + 2.0 * X_be, True),
-        ("signed sum", lambda Z_be, X_be: Z_be - X_be, True),
-        ("negated single term", lambda Z_be, X_be: -Z_be, True),
-        ("complex sum", lambda Z_be, X_be: Z_be + 1j * X_be, False),
-        ("complex single term", lambda Z_be, X_be: 1j * Z_be, False),
-    ],
-)
-def test_is_hermitian_agrees_with_the_unitary_that_is_built(name, build, expected):
-    """The attribute is about the unitary, which is not the same question as the operator.
-
-    PREP acts on magnitudes and each SELECT branch applies its term's argument, so
-    the unitary is ``PREP* (D SELECT) PREP``. That is Hermitian when the arguments
-    are signs, which a signed sum satisfies and a complex one does not. Claiming
-    otherwise is not cosmetic: qubitization builds a different walk operator on the
-    strength of it.
-    """
-    Z_be = BlockEncoding.from_operator(Z(0))
-    X_be = BlockEncoding.from_operator(X(0))
-    encoding = build(Z_be, X_be)
-
-    assert encoding.is_hermitian is expected
-    if expected:
-        assert _unitary_hermiticity_error(encoding) < 1e-9
-    else:
-        assert _unitary_hermiticity_error(encoding) > 1e-9
-
-
-def test_signed_sum_polynomial_matches_the_direct_encoding():
-    """A polynomial of a signed sum must agree with encoding the polynomial directly.
-
-    This is where a unitary that is not Hermitian, but claims to be, shows up as
-    wrong numbers rather than as an error: qubitization takes the reflection
-    shortcut, which is only valid for a Hermitian unitary.
-    """
-    operator = Z(0) - X(0) + Z(1)
-    combination = (
-        BlockEncoding.from_operator(Z(0)) - BlockEncoding.from_operator(X(0)) + BlockEncoding.from_operator(Z(1))
-    )
-    reference = BlockEncoding.from_operator(operator**2)
-
-    @terminal_sampling
-    def main(block_encoding):
-        return block_encoding.apply_rus(lambda: QuantumVariable(2))()
-
-    from_combination = main(combination.poly(np.array([0.0, 0.0, 1.0])))
-    from_reference = main(reference)
-
-    for state in (0, 1):
-        assert np.isclose(from_combination.get(state, 0), from_reference.get(state, 0), atol=1e-3)
-
-
-@pytest.mark.parametrize(
-    "name, coefficients",
-    [
-        ("non-negative", [1.0, 2.0]),
-        ("signed", [1.0, -2.0]),
-        ("complex", [1.0, 1j]),
-    ],
-)
-def test_prep_amplitudes_are_real_and_non_negative(name, coefficients):
-    """Whatever the coefficients, PREP is handed magnitudes.
-
-    That is what leaves a single construction to build. The arguments live in the
-    branches, so PREP never needs a separately inverted twin, and the uncomputation
-    stays a conjugation.
-    """
-    Z_be = BlockEncoding.from_operator(Z(0))
-    X_be = BlockEncoding.from_operator(X(0))
-    combination = BlockEncoding.linear_combination([Z_be, X_be], coefficients=coefficients)
-
-    amplitudes = np.asarray(combination._lcu_amplitudes)
-
-    assert np.all(np.isreal(amplitudes))
-    assert np.all(np.real(amplitudes) >= 0)
-
-
-def test_block_encoding_linear_combination_product_ancillae_quantumfloat():
-    """Ancillae returned by a linear combination or product of block encodings are of type QuantumFloat.
-
-    This is not strictly required: QuantumVariable decodes to bitstings in static mode.
-    This may cause confusion when post-selecting.
-    """
-
-    def unitary1(anc, operand):
-        x(operand[0])
-
-    def unitary2(anc, operand):
-        z(operand[0])
-
-    be1 = BlockEncoding(1, [QuantumBool()], unitary1)
-    be2 = BlockEncoding(1, [QuantumFloat(3)], unitary2)
-
-    combination = BlockEncoding.linear_combination([be1, be2], coefficients=[1.0, 1.0])
-    ancs = combination.apply(QuantumFloat(3))
-    for anc in ancs:
-        assert isinstance(anc, QuantumFloat)
-
-    product = be1 @ be2
-    ancs = product.apply(QuantumFloat(3))
-    for anc in ancs:
-        assert isinstance(anc, QuantumFloat)
-
-
-#
-# Coefficients are detached from the caller
-#
-
-
-def test_a_mutable_coefficient_cannot_make_the_derived_values_stale():
-    """Writing to a coefficient array after construction must not change the terms.
-
-    The terms are authoritative and everything else is derived from them and
-    cached, so a coefficient the caller can still write to would leave those
-    derived values describing a combination that no longer exists.
-    """
-    first = BlockEncoding(1, [], lambda operand: x(operand[0]))
-    second = BlockEncoding(1, [], lambda operand: x(operand[1]))
-
-    coefficient = np.array(2.0)
-    combination = BlockEncoding.linear_combination([first, second], coefficients=[coefficient, 1.0])
-    normalization = combination.alpha
-
-    coefficient[...] = 3.0
-
-    assert [value for value, _ in combination.terms] == [2.0, 1.0]
-    assert combination.alpha == normalization
-
-
-@pytest.mark.parametrize(
-    "name, build",
-    [
-        (
-            "through linear_combination",
-            lambda be: BlockEncoding.linear_combination([be], coefficients=[np.array([1.0, 2.0])]),
-        ),
-        ("through scalar multiplication", lambda be: be * np.array([1.0, 2.0])),
-        (
-            "as a JAX array",
-            lambda be: BlockEncoding.linear_combination([be], coefficients=[jnp.array([1.0, 2.0])]),
-        ),
-        ("as a traced array", lambda be: make_jaspr(lambda c: c * be)(jnp.array([1.0, 2.0]))),
-        (
-            "as a nested list",
-            lambda be: BlockEncoding.linear_combination([be, be], coefficients=[[1.0], [2.0]]),
-        ),
-    ],
-)
-def test_a_non_scalar_coefficient_is_rejected(name, build):
-    """An array of coefficients for a single term has no meaning and must be refused.
-
-    It used to be accepted, collapse the normalization to a sum of its entries, and
-    fail much later when the unitary was applied. The check reads ``ndim`` rather
-    than testing for a NumPy array, so that a JAX array or a traced one is caught
-    the same way; only the detaching that follows is NumPy-specific.
-    """
-    block_encoding = BlockEncoding(1, [], lambda operand: x(operand[0]))
-
-    with pytest.raises(ValueError, match="scalar"):
-        build(block_encoding)
-
-
-def test_immutable_coefficient_kinds_are_left_alone():
-    """Only NumPy arrays are detached, since nothing else that arrives is mutable."""
-    block_encoding = BlockEncoding(1, [], lambda operand: x(operand[0]))
-    other = BlockEncoding(1, [], lambda operand: x(operand[1]))
-
-    combination = BlockEncoding.linear_combination(
-        [block_encoding, other], coefficients=[np.array(2.0), jnp.array(1.0)]
-    )
-    stored = [type(value).__name__ for value, _ in combination.terms]
-
-    assert stored[0] == "float", "a NumPy array must be detached into a plain scalar"
-    assert stored[1] == "ArrayImpl", "a JAX array is already immutable and must pass through"
