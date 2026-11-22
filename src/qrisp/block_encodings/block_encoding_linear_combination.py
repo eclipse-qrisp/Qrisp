@@ -56,13 +56,17 @@ def _conj(value: ArrayLike) -> ArrayLike:
 
 
 def _validate_lcu_terms(terms: Sequence[_LCUTerm]) -> _LCUTerms:
-    """Validate LCU ``(coefficient, block_encoding)`` pairs and detach 0-d NumPy scalars."""
+    """Validate LCU ``(coefficient, block_encoding)`` pairs, flatten nested LCUs, and detach 0-d NumPy scalars."""
     checked: list[_LCUTerm] = []
     for coefficient, block_encoding in terms:
         if not isinstance(block_encoding, BlockEncoding):
             raise TypeError(f"Expected every item to be a BlockEncoding, but got {type(block_encoding).__name__}.")
         detached = _validate_scalar(coefficient, "every coefficient")
-        checked.append((detached, block_encoding))
+        if isinstance(block_encoding, LinearCombinationBlockEncoding):
+            for inner_coeff, inner_be in block_encoding._get_lcu_terms():
+                checked.append((detached * inner_coeff, inner_be))
+        else:
+            checked.append((detached, block_encoding))
 
     terms = tuple(checked)
     if not terms:

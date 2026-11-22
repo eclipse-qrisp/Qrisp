@@ -71,11 +71,15 @@ def test_flattened_linear_combination_and_pytree():
 
     BE_chain = coefficients[0] * BE1 + coefficients[1] * BE2 + coefficients[2] * BE3
     BE_direct = BlockEncoding.linear_combination([BE1, BE2, BE3], coefficients=coefficients)
+    BE_nested = BlockEncoding.linear_combination(
+        [coefficients[0] * BE1 + coefficients[1] * BE2, BE3], coefficients=[1.0, coefficients[2]]
+    )
 
     assert isinstance(BE_chain, LinearCombinationBlockEncoding)
     assert isinstance(BE_direct, LinearCombinationBlockEncoding)
     assert len(BE_chain.terms) == 3
     assert len(BE_direct.terms) == 3
+    assert len(BE_nested.terms) == 3
     assert BE_chain._anc_templates[0].qv_size == 2
     assert BE_chain.num_ancs == 2
 
@@ -371,8 +375,7 @@ def test_signed_sum_polynomial_matches_direct_encoding():
     from_combination = sample_postselected(combination.poly(np.array([0.0, 0.0, 1.0])), prep)
     from_reference = sample_postselected(reference, prep)
 
-    for state in (0, 1):
-        assert np.isclose(from_combination.get(state, 0), from_reference.get(state, 0), atol=1e-3)
+    compare_distributions(from_combination, from_reference, 2, atol=1e-3)
 
 
 @pytest.mark.parametrize("coefficients", [[1.0, 2.0], [1.0, -2.0], [1.0, 1j]])
