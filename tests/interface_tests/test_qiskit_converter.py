@@ -88,6 +88,19 @@ class TestQrispToQiskitRoundtrip:
         qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
         _assert_unitary_equal(qc, qc_rt)
 
+    @pytest.mark.parametrize("num_ctrl_qubits", [0, 1, 2])
+    def test_u3_with_symbolic_global_phase(self, num_ctrl_qubits):
+        import sympy
+
+        s = sympy.Symbol("s")
+        gate = U3Gate(0.3, 0.5, 0.7, global_phase=s)
+        if num_ctrl_qubits:
+            gate = gate.control(num_ctrl_qubits)
+        qc = QuantumCircuit(gate.num_qubits)
+        qc.append(gate, qc.qubits)
+        qc_rt = convert_from_qiskit(convert_to_qiskit(qc))
+        _assert_unitary_equal(qc.bind_parameters({s: 1.1}), qc_rt.bind_parameters({s: 1.1}))
+
     def test_prx(self):
         """PRXGate maps to Qiskit RGate and back."""
         qc = QuantumCircuit(1)
@@ -345,6 +358,18 @@ class TestQiskitToQrispRoundtrip:
         qc_rt_no_meas = qc_rt.remove_final_measurements(inplace=False)
         _assert_unitary_equal(qc_no_meas, qc_rt_no_meas)
 
+    @pytest.mark.parametrize("make_phase", [lambda t: t, lambda t: 2 * t + 1], ids=["t", "2t+1"])
+    def test_symbolic_global_phase(self, make_phase):
+        import sympy
+        from qiskit.circuit import Parameter
+
+        t = Parameter("t")
+        qc = QiskitQC(1)
+        qc.global_phase = make_phase(t)
+        qc.x(0)
+        qc_rt = convert_from_qiskit(qc)
+        _assert_unitary_equal(qc.assign_parameters({t: 1.1}), qc_rt.bind_parameters({sympy.Symbol("t"): 1.1}))
+
     def test_reset(self):
         qc = QiskitQC(1)
         qc.x(0)
@@ -410,8 +435,10 @@ class TestControlledOperations:
 
     @pytest.mark.parametrize("ctrl_state", [0, 1, 2, 3])
     def test_qiskit_annotated_control(self, ctrl_state):
+        from qiskit.circuit import AnnotatedOperation, ControlModifier
+
         qc = QiskitQC(3)
-        qc.append(UGate(0.3, 0.5, 0.7).control(2, ctrl_state=ctrl_state, annotated=True), [0, 1, 2])
+        qc.append(AnnotatedOperation(UGate(0.3, 0.5, 0.7), ControlModifier(2, ctrl_state=ctrl_state)), [0, 1, 2])
         qc_rt = convert_to_qiskit(convert_from_qiskit(qc))
         _assert_unitary_equal(qc, qc_rt)
 

@@ -352,8 +352,12 @@ def convert_from_qiskit(qiskit_qc: QiskitQuantumCircuit) -> QuantumCircuit:
     # Propagate Qiskit's global phase (stored as a circuit attribute,
     # not an instruction).  Dropping it changes the unitary — critical
     # for controlled operations built from gate definitions with phase.
-    if abs(getattr(qiskit_qc, "global_phase", 0)) > GLOBAL_PHASE_TOLERANCE:
-        qc.gphase(qiskit_qc.global_phase, qc.qubits[0])
+    # QUESTION: should this be inversely at the start of the circuit to respect expectation of
+    # functionalities like Qiskit's ``QuantumCircuit.remove_final_measurements``?
+    global_phase = _convert_param_from_qiskit(qiskit_qc.global_phase)
+    is_symbolic = isinstance(global_phase, Expr) and bool(global_phase.free_symbols)
+    if is_symbolic or abs(global_phase) > GLOBAL_PHASE_TOLERANCE:
+        qc.gphase(global_phase, qc.qubits[0])
 
     return qc
 
