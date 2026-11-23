@@ -48,7 +48,10 @@ from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.measurement import get_measurement
 from qrisp.operators.qubit.qubit_term import QubitTerm
 
+# Cutoff below which term coefficients are pruned as zero during operator arithmetic.
 threshold = 1e-9
+# Tolerance for treating imaginary parts of Pauli coefficients as zero (e.g., Hermiticity checks and unitaries()).
+_TOLERANCE = 1e-12
 
 #
 # QubitOperator
@@ -925,6 +928,23 @@ class QubitOperator(Hamiltonian):
 
         """
         return 0.5 * (self + self.adjoint())
+
+    def is_hermitian(self, tol: float = _TOLERANCE) -> bool:
+        r"""Returns ``True`` if the operator is Hermitian ($O = O^\dagger$) within ``tol``.
+
+        Parameters
+        ----------
+        tol : float, optional
+            Numerical tolerance for imaginary parts of Pauli coefficients. The default is ``1e-12``.
+
+        Returns
+        -------
+        bool
+            ``True`` if the operator is Hermitian, ``False`` otherwise.
+
+        """
+        pauli_op = self.to_pauli()
+        return all(abs(complex(coeff).imag) < tol for coeff in pauli_op.terms_dict.values())
 
     def eliminate_ladder_conjugates(self):
         new_terms_dict = {}
@@ -2124,27 +2144,25 @@ class QubitOperator(Hamiltonian):
     #
 
     def unitaries(self):
-        r"""Returns unitiaries and coefficients for the Pauli representation of the operator.
-        Note that this method will always consider the **hermitized** operator, i.e.
-
-        .. math::
-
-            H = (O + O^\dagger)/2
+        r"""Returns unitaries and coefficients for the Pauli representation of the operator.
 
         The Pauli representation reads
 
         .. math::
 
-            H = \sum_{i=0}^{M-1}\alpha_iP_i
+            O = \sum_{i=0}^{M-1} \alpha_i P_i = \sum_{i=0}^{M-1} |\alpha_i| (e^{i \theta_i} P_i)
 
-        where $\alpha_i$ are real coefficients, $P_i\in\{I,X,Y,Z\}^{\otimes n}$ are Pauli operators. Coefficients $\alpha_i$ are nonnegative and each Pauli carries a $\pm1$ sign (corressponding to a phase shift).
+        where $\alpha_i \in \mathbb{C}$ are coefficients and $P_i \in \{I, X, Y, Z\}^{\otimes n}$ are Pauli operators.
+        The returned coefficients $|\alpha_i|$ are real and nonnegative, and each phase $e^{i \theta_i}$
+        (including $\pm 1$ signs) is absorbed into the corresponding Pauli unitary via a global phase shift.
 
         Returns
         -------
         list[callable]
-            A list of functions performing the Pauli unitaries on a :ref:`QuantumVariable` for the terms in the Pauli Hamiltonian.
+            A list of functions performing the phased Pauli unitaries on a
+            :ref:`QuantumVariable` for the terms in the Pauli expansion.
         numpy.ndarray
-            An array of nonnegative coefficents for the terms in the Pauli Hamiltonian.
+            An array of nonnegative coefficients $|\alpha_i|$ for the terms in the Pauli expansion.
 
         Examples
         --------
@@ -2224,15 +2242,18 @@ class QubitOperator(Hamiltonian):
         and the resulting state is $(2\ket{3}-\ket{0})/\sqrt{5}$.
 
         """
-        hamiltonian = self.hermitize()
-        hamiltonian = hamiltonian.to_pauli()
+        pauli_op = self.to_pauli()
 
         unitaries = []
         coefficients = []
 
-        for term, coeff in hamiltonian.terms_dict.items():
-            coeff_ = np.real(coeff)
-            unitaries.append(term.unitary(sign=(coeff_ < 0)))
-            coefficients.append(np.abs(coeff_))
+        for term, coeff in pauli_op.terms_dict.items():
+            c = complex(coeff)
+            if abs(c.imag) < _TOLERANCE:
+                unitaries.append(term.unitary(sign=(c.real < 0)))
+                coefficients.append(abs(c.real))
+            else:
+                unitaries.append(term.unitary(phase=float(np.angle(c))))
+                coefficients.append(abs(c))
 
         return unitaries, np.array(coefficients, dtype=float)

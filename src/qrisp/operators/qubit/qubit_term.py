@@ -586,15 +586,18 @@ class QubitTerm:
     # Unitary
     #
 
-    def unitary(self, sign=False):
+    def unitary(self, sign: bool = False, phase: float = 0.0):
         """Returns the unitary for the term self.
 
         Parameters
         ----------
-            sign : bool
-                A Boolean indicating whether a phase -1 must be applied. The default is False.
+        sign : bool, optional
+            A Boolean indicating whether a phase -1 (``np.pi``) must be applied. The default is False.
+        phase : float, optional
+            An additional global phase angle (in radians) to apply. The default is 0.0.
 
         """
+        total_phase = (np.pi if sign else 0.0) + phase
 
         def unitary_(operand):
             for i, factor in self.factor_dict.items():
@@ -605,20 +608,26 @@ class QubitTerm:
                 elif factor == "Z":
                     z(operand[i])
 
-            if sign:
-                gphase(np.pi, operand[0])
+            if total_phase != 0.0:
+                gphase(total_phase, operand[0])
 
         return unitary_
 
-    def apply_unitary(self, operand, sign=False):
+    def apply_unitary(self, operand, sign: bool = False, phase: float = 0.0):
         """Applies the unitary for the term self to the ``operand``.
 
         Parameters
         ----------
-            sign : bool
-                A Boolean indicating whether a phase -1 must be applied. The default is False.
+        operand : QuantumVariable
+            The quantum variable to apply the unitary to.
+        sign : bool, optional
+            A Boolean indicating whether a phase -1 (``np.pi``) must be applied. The default is False.
+        phase : float, optional
+            An additional global phase angle (in radians) to apply. The default is 0.0.
 
         """
+        total_phase = (np.pi if sign else 0.0) + phase
+
         for i, factor in self.factor_dict.items():
             if factor == "X":
                 x(operand[i])
@@ -627,8 +636,8 @@ class QubitTerm:
             elif factor == "Z":
                 z(operand[i])
 
-        if sign:
-            gphase(np.pi, operand[0])
+        if total_phase != 0.0:
+            gphase(total_phase, operand[0])
 
     #
     # Commutativity

@@ -37,13 +37,16 @@ def build_from_operator(
     Returns
     -------
     BlockEncoding
-        A BlockEncoding representing the Hermitian part $(O+O^{\dagger})/2$.
+        A BlockEncoding representing the operator $O$.
 
     Notes
     -----
-    - Block encoding based on Pauli decomposition $O=\sum_i\alpha_i P_i$ where $\alpha_i$ are real positive coefficients
-      and $P_i$ are Pauli strings (including the respective sign).
-    - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i \alpha_i$.
+    - Block encoding based on Pauli decomposition $O=\sum_i \alpha_i P_i$ where $\alpha_i \in \mathbb{C}$ are
+      coefficients and $P_i$ are Pauli strings. Each coefficient's phase is absorbed into the corresponding
+      Pauli unitary so that the LCU uses real non-negative weights $|\alpha_i|$.
+    - If $O$ is Hermitian (all Pauli coefficients are real up to numerical precision), the resulting
+      :class:`BlockEncoding` has ``is_hermitian=True``; otherwise ``is_hermitian=False``.
+    - **Normalization**: The block-encoding normalization factor is $\alpha = \sum_i |\alpha_i|$.
 
     Examples
     --------
@@ -57,4 +60,4 @@ def build_from_operator(
         O = O.to_qubit_operator()
 
     unitaries, coeffs = O.unitaries()
-    return build_from_lcu(cls, coeffs, unitaries, is_hermitian=True)
+    return build_from_lcu(cls, coeffs, unitaries, is_hermitian=O.is_hermitian())

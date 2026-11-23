@@ -19,7 +19,7 @@
 import numpy as np
 
 from qrisp import LCU, QuantumVariable, prepare, terminal_sampling
-from qrisp.operators import X, Z
+from qrisp.operators import A, C, X, Y, Z
 
 
 def test_operators_LCU():
@@ -52,3 +52,29 @@ def test_operators_LCU():
 
     assert (np.abs(res_dict[0] - 1)) < 1e-4
     assert (np.abs(res_dict[3] - 2)) < 1e-4
+
+
+def test_operators_LCU_non_hermitian():
+    """Verify QubitOperator.unitaries() encodes non-Hermitian operators without hermitizing."""
+    op = (1 + 2j) * X(0) * X(1) - 1j * Z(0) * Z(1)
+    assert not op.is_hermitian()
+    assert (A(0) + C(0)).is_hermitian()
+    assert (A(0) - 0.5j * Y(0)).is_hermitian()
+    assert not A(0).is_hermitian()
+
+    @terminal_sampling
+    def main():
+        unitaries, coeffs = op.unitaries()
+
+        def operand_prep():
+            return QuantumVariable(2)
+
+        def state_prep(case):
+            prepare(case, np.sqrt(coeffs))
+
+        return LCU(operand_prep, state_prep, unitaries)
+
+    res_dict = main()
+    # op |00> = (1 + 2j)|11> - 1j|00>; probabilities proportional to |1+2j|^2 = 5 and |-1j|^2 = 1
+    assert np.isclose(res_dict[3], 5 / 6, atol=1e-4)
+    assert np.isclose(res_dict[0], 1 / 6, atol=1e-4)
