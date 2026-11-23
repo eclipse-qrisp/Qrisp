@@ -20,10 +20,13 @@ import warnings
 
 import numpy as np
 import pytest
+from scipy.sparse import csr_matrix
 
 from qrisp import (
+    QuantumBool,
     QuantumFloat,
     QuantumVariable,
+    control,
     cx,
     h,
     jaspify,
@@ -31,24 +34,130 @@ from qrisp import (
     multi_measurement,
     prepare,
     ry,
+    swap,
     terminal_sampling,
     x,
 )
 from qrisp.block_encodings import BlockEncoding
 from qrisp.misc.exceptions import QrispDeprecationWarning
-from qrisp.operators import X, Y, Z
+from qrisp.operators import P1, A, C, X, Y, Z, a, c
 
 
-def test_block_encoding_from_array():
-    A = np.array([[0, 1, 0, 1], [1, 0, 0, 0], [0, 0, 1, 0], [1, 0, 0, 0]])
-    B = BlockEncoding.from_array(A)
+def _operator_to_le_matrix(op, num_qubits: int) -> np.ndarray:
+    """Returns the dense matrix of an operator in Qrisp's little-endian qubit order."""
+    if hasattr(op, "to_qubit_operator"):
+        op = op.to_qubit_operator()
+    M_be = op.to_sparse_matrix(factor_amount=num_qubits).toarray()
+    perm = [int(f"{i:0{num_qubits}b}"[::-1], 2) for i in range(1 << num_qubits)]
+    return M_be[np.ix_(perm, perm)]
+
+
+def _assert_block_encoding_matches_matrix(BE, M: np.ndarray, b: np.ndarray, atol: float = 1e-6):
+    """Verifies BE |b> matches M |b> / ||M |b>|| (amplitudes and relative phases) via swap test."""
+    n = int(np.log2(len(b)))
+    expected = M @ b
+    expected = expected / np.linalg.norm(expected)
+
+    def operand_prep():
+        operand = QuantumFloat(n)
+        prepare(operand, b)
+        return operand
 
     @terminal_sampling
     def main():
-        return B.apply_rus(lambda: QuantumFloat(2))()
+        operand = BE.apply_rus(operand_prep)()
 
-    res = main()
-    assert res == {1.0: 0.5, 3.0: 0.5}
+        psi = QuantumFloat(n)
+        prepare(psi, expected)
+
+        qb = QuantumBool()
+        h(qb)
+        with control(qb):
+            swap(operand, psi)
+        h(qb)
+
+        return qb
+
+    res_dict = main()
+    assert np.isclose(res_dict.get(False, 0), 1.0, atol=atol)
+
+
+@pytest.mark.parametrize(
+    ("matrix", "expected_hermitian"),
+    [
+        # Real symmetric (Hermitian)
+        (
+            np.array([[0, 1, 0, 1], [1, 0, 0, 0], [0, 0, 1, 0], [1, 0, 0, 0]], dtype=float),
+            True,
+        ),
+        # Complex Hermitian
+        (
+            np.array(
+                [[1, 1j, 0, 0.5], [-1j, 2, 0.3 - 0.4j, 0], [0, 0.3 + 0.4j, -1, 0], [0.5, 0, 0, 0]],
+                dtype=complex,
+            ),
+            True,
+        ),
+        # Real non-Hermitian (asymmetric)
+        (
+            np.array([[0, 1.4, 0, 1.1], [0.2, 0, 1.4, 0], [0, 0.5, 0, 1.4], [1.4, 0, 0.3, 0]], dtype=float),
+            False,
+        ),
+        # Complex non-Hermitian
+        (
+            np.array(
+                [[0.5j, 1 + 0.5j, 0, 0.3], [0.2, -1, 0.7j, 0], [0, 0.4, 0.2 - 0.6j, 1], [1j, 0, 0, 0.8]],
+                dtype=complex,
+            ),
+            False,
+        ),
+        # Single-Pauli complex matrix (0 ancillas)
+        (
+            np.array([[0, 1j, 0, 0], [1j, 0, 0, 0], [0, 0, 0, -1j], [0, 0, -1j, 0]], dtype=complex),
+            False,
+        ),
+        # Sparse non-Hermitian csr_matrix
+        (
+            csr_matrix(np.array([[0, 1.2 + 0.3j, 0, 0], [0, 0, 0.8j, 0], [0.5, 0, 0, 1], [0, 0, 0, -0.4j]])),
+            False,
+        ),
+    ],
+)
+def test_block_encoding_from_array(matrix, expected_hermitian):
+    """Verify BlockEncoding.from_array on Hermitian and non-Hermitian dense/sparse arrays."""
+    B = BlockEncoding.from_array(matrix)
+    assert B.is_hermitian is expected_hermitian
+
+    dense = matrix.toarray() if isinstance(matrix, csr_matrix) else matrix
+    b = np.array([1.0, 0.5, -0.5, 1.0])
+    _assert_block_encoding_matches_matrix(B, dense, b)
+
+
+def test_block_encoding_from_array_dagger():
+    """Verify dagger() of a non-Hermitian BlockEncoding.from_array encodes the conjugate transpose."""
+    M = np.array(
+        [[0.5j, 1 + 0.5j, 0, 0.3], [0.2, -1, 0.7j, 0], [0, 0.4, 0.2 - 0.6j, 1], [1j, 0, 0, 0.8]],
+        dtype=complex,
+    )
+    B = BlockEncoding.from_array(M)
+    assert B.is_hermitian is False
+
+    b = np.array([1.0, 0.5, -0.5, 1.0])
+    _assert_block_encoding_matches_matrix(B.dagger(), M.conj().T, b)
+
+
+@pytest.mark.parametrize(
+    "bad_array",
+    [
+        np.array([1, 2, 3, 4]),  # 1-D
+        np.zeros((2, 4)),  # non-square
+        np.zeros((3, 3)),  # non-power-of-two
+    ],
+)
+def test_block_encoding_from_array_value_error(bad_array):
+    """Verify BlockEncoding.from_array rejects non-2D, non-square, and non-power-of-two arrays."""
+    with pytest.raises(ValueError):
+        BlockEncoding.from_array(bad_array)
 
 
 def test_block_encoding_from_lcu():
@@ -68,16 +177,42 @@ def test_block_encoding_from_lcu():
     assert res == {1.0: 0.5, 3.0: 0.5}
 
 
-def test_block_encoding_from_operator():
-    H = X(0) * X(1) + 0.2 * Y(0) * Y(1)
-    B = BlockEncoding.from_operator(H)
+@pytest.mark.parametrize(
+    ("operator", "expected_hermitian"),
+    [
+        # Hermitian QubitOperator
+        (X(0) * X(1) + 0.2 * Y(0) * Y(1) - 0.5 * Z(0), True),
+        # Non-Hermitian QubitOperator with complex Pauli coefficients
+        ((1 + 0.5j) * X(0) * X(1) - 0.7j * Y(0) * Z(1) + 0.3 * Z(1), False),
+        # Non-Hermitian QubitOperator with ladder/projector terms
+        (A(0) + 0.5 * C(0) * A(1) + 0.3 * P1(1), False),
+        # Single-term non-Hermitian QubitOperator (0 ancillas)
+        ((1 + 1j) * X(0) * Z(1), False),
+        # Hermitian FermionicOperator
+        (c(0) * a(1) + c(1) * a(0), True),
+        # Non-Hermitian FermionicOperator
+        (a(0) + 0.5 * c(0) * a(1), False),
+    ],
+)
+def test_block_encoding_from_operator(operator, expected_hermitian):
+    """Verify BlockEncoding.from_operator on Hermitian and non-Hermitian qubit/fermionic operators."""
+    B = BlockEncoding.from_operator(operator)
+    assert B.is_hermitian is expected_hermitian
 
-    @terminal_sampling
-    def main():
-        return B.apply_rus(lambda: QuantumFloat(2))()
+    M = _operator_to_le_matrix(operator, num_qubits=2)
+    b = np.array([1.0, 0.5, -0.5, 1.0])
+    _assert_block_encoding_matches_matrix(B, M, b)
 
-    res = main()
-    assert res == {3.0: 1.0}
+
+def test_block_encoding_from_operator_dagger():
+    """Verify dagger() of a non-Hermitian BlockEncoding.from_operator encodes the adjoint operator."""
+    op = (1 + 0.5j) * X(0) * X(1) - 0.7j * Y(0) * Z(1) + A(0)
+    B = BlockEncoding.from_operator(op)
+    assert B.is_hermitian is False
+
+    M_dag = _operator_to_le_matrix(op.adjoint(), num_qubits=2)
+    b = np.array([1.0, 0.5, -0.5, 1.0])
+    _assert_block_encoding_matches_matrix(B.dagger(), M_dag, b)
 
 
 def test_block_encoding_from_eye():

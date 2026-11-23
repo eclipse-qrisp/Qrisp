@@ -659,6 +659,20 @@ Compatibility
   also be imported from ``qrisp.circuit.standard_operations``
   (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
 
+* :meth:`QubitOperator.unitaries <qrisp.operators.qubit.QubitOperator.unitaries>`,
+  :meth:`BlockEncoding.from_array <qrisp.block_encodings.BlockEncoding.from_array>`,
+  and :meth:`BlockEncoding.from_operator <qrisp.block_encodings.BlockEncoding.from_operator>`
+  no longer implicitly hermitize non-Hermitian inputs to $(O + O^{\dagger})/2$
+  (or $(A + A^{\dagger})/2$). They now decompose and block-encode the given
+  operator or array directly, absorbing complex coefficient phases into the
+  Pauli unitaries while keeping real nonnegative LCU weights.
+  ``BlockEncoding.from_array`` and ``BlockEncoding.from_operator`` set
+  ``is_hermitian=True`` only when the input is Hermitian (all Pauli
+  coefficients real up to numerical precision) and ``is_hermitian=False``
+  otherwise. Hermitian inputs are unaffected; callers that want the Hermitian
+  part of a non-Hermitian input should pass ``O.hermitize()`` or
+  ``0.5 * (A + A.conj().T)`` explicitly.
+
 .. Add compatibility notes above this line
 
 New Tutorials/ Updated Documentation
