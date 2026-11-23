@@ -371,28 +371,38 @@ def _jasp_balauca_mcx(
     jasp_balauca_mcx(controls, [target], ctrl_state)
 
 
-def _balauca_dirty_mcx(controls, target, ctrl_state, num_ancilla: int) -> None:
+def _balauca_dirty_mcx(
+    controls: list[Qubit],
+    target: Qubit,
+    ctrl_state: str,
+    num_ancilla: int,
+) -> None:
     """Apply the balauca mcx gate with ``num_ancilla`` dirty ancillas."""
     from qrisp.alg_primitives.mcx_algs import balauca_dirty
 
     balauca_dirty(controls, [target], k=num_ancilla, ctrl_state=ctrl_state)
 
 
-def _yong_mcx(controls, target, ctrl_state, _num_ancilla: int) -> None:
+def _yong_mcx(
+    controls: list[Qubit | Tracer],
+    target: Qubit | Tracer,
+    ctrl_state: int | str | jax.Array,
+    _num_ancilla: int,
+) -> None:
     """Apply the yong mcx gate."""
     from qrisp.alg_primitives.mcx_algs import yong_mcx
 
     yong_mcx(controls, [target], ctrl_state=ctrl_state)
 
 
-def _hybrid_mcx(controls, target, ctrl_state, num_ancilla: int) -> None:
+def _hybrid_mcx(controls: list[Qubit], target: Qubit, ctrl_state: str, num_ancilla: int) -> None:
     """Apply the hybrid mcx gate with ``num_ancilla`` ancillas."""
     from qrisp.alg_primitives.mcx_algs import hybrid_mcx
 
     hybrid_mcx(controls, [target], ctrl_state=ctrl_state, num_ancilla=num_ancilla)
 
 
-def _amy_mcx(controls, target, ctrl_state, _num_ancilla: int) -> None:
+def _amy_mcx(controls: list[Qubit], target: Qubit, ctrl_state: str, _num_ancilla: int) -> None:
     """Apply the Toffoli construction of Amy et al."""
     from qrisp.alg_primitives.mcx_algs import amy_toffoli
 
@@ -400,7 +410,7 @@ def _amy_mcx(controls, target, ctrl_state, _num_ancilla: int) -> None:
     amy_toffoli(controls, [target], ctrl_state=ctrl_state)
 
 
-def _jones_mcx(controls, target, ctrl_state, _num_ancilla: int) -> None:
+def _jones_mcx(controls: list[Qubit], target: Qubit, ctrl_state: str, _num_ancilla: int) -> None:
     """Apply the Toffoli construction of Jones."""
     from qrisp.alg_primitives.mcx_algs import jones_toffoli
 
@@ -408,7 +418,12 @@ def _jones_mcx(controls, target, ctrl_state, _num_ancilla: int) -> None:
     jones_toffoli(controls, [target], ctrl_state=ctrl_state)
 
 
-def _khattar_mcx(controls, target, ctrl_state, _num_ancilla: int) -> None:
+def _khattar_mcx(
+    controls: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
+    target: Qubit | Tracer,
+    ctrl_state: int | str | jax.Array,
+    _num_ancilla: int,
+) -> None:
     """Apply the khattar mcx gate."""
     from qrisp.alg_primitives.mcx_algs import khattar_mcx
 
@@ -910,7 +925,12 @@ def mcx(
 
 
 @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
-def _mcz_inner(qubits, method: str, ctrl_state: str) -> None:
+def _mcz_inner(
+    qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
+    method: str,
+    ctrl_state: str,
+    num_ancilla: int,
+) -> None:
     """Apply a static multi-controlled Z gate as an mcx gate conjugated by H gates.
 
     Parameters
@@ -921,6 +941,8 @@ def _mcz_inner(qubits, method: str, ctrl_state: str) -> None:
         The mcx method.
     ctrl_state : str
         The control state, with one character per qubit.
+    num_ancilla : int
+        The number of ancillas of the ``hybrid`` and ``balauca_dirty`` methods.
 
     Raises
     ------
@@ -930,14 +952,14 @@ def _mcz_inner(qubits, method: str, ctrl_state: str) -> None:
     """
     n = jlen(qubits)
     if len(ctrl_state) != n:
-        msg = f"Given control state {ctrl_state} does not matchcontrol qubit amount {n}"
+        msg = f"Given control state {ctrl_state} does not match control qubit amount {n}"
         raise ValueError(msg)
 
     if ctrl_state[-1] == "0":
         x(qubits[-1])
 
     h(qubits[-1])
-    mcx(qubits[:-1], qubits[-1], method=method, ctrl_state=ctrl_state[:-1])
+    mcx(qubits[:-1], qubits[-1], method=method, ctrl_state=ctrl_state[:-1], num_ancilla=num_ancilla)
     h(qubits[-1])
 
     if ctrl_state[-1] == "0":
@@ -945,7 +967,11 @@ def _mcz_inner(qubits, method: str, ctrl_state: str) -> None:
 
 
 @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcz")
-def _jasp_mcz_inner(qubits, method: str, ctrl_state: int | jax.Array) -> None:
+def _jasp_mcz_inner(
+    qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
+    method: str,
+    ctrl_state: int | jax.Array,
+) -> None:
     """Apply a multi-controlled Z gate in Jasp mode as an mcx gate conjugated by H gates.
 
     Parameters
@@ -986,6 +1012,7 @@ def _static_mcz(
     n: int,
     method: str,
     ctrl_state: int | str | jax.Array,
+    num_ancilla: int,
 ) -> None:
     """Apply a multi-controlled Z gate in static mode.
 
@@ -1002,6 +1029,8 @@ def _static_mcz(
         The synthesis method.
     ctrl_state : int or str
         The control state.
+    num_ancilla : int
+        The number of ancillas of the ``hybrid`` and ``balauca_dirty`` methods.
 
     """
     ctrl_state = _ctrl_state_string(ctrl_state, n)
@@ -1011,12 +1040,8 @@ def _static_mcz(
             if ctrl_state[-1] == "0":
                 x(qubits[-1])
 
-            if len(qubits) > 1:
-                z_gate = std_ops.ZGate().control(
-                    len(qubits) - 1,
-                    method=method,
-                    ctrl_state=ctrl_state[:-1],
-                )
+            if n > 1:
+                z_gate = std_ops.ZGate().control(n - 1, method=method, ctrl_state=ctrl_state[:-1])
                 append_operation(z_gate, qubits)
             else:
                 z(qubits[0])
@@ -1025,7 +1050,7 @@ def _static_mcz(
                 x(qubits[-1])
 
         case _:
-            _mcz_inner(qubits, method, ctrl_state)
+            _mcz_inner(qubits, method, ctrl_state, num_ancilla)
 
 
 def _jasp_mcz(
@@ -1081,15 +1106,18 @@ def mcz(
         the method is set to ``hybrid``. The default is 1.
 
     """
-    n = jlen(qubits)
     if check_for_tracing_mode():
         _jasp_mcz(qubits, method, ctrl_state)
     else:
-        _static_mcz(qubits, n, method, ctrl_state)
+        _static_mcz(qubits, jlen(qubits), method, ctrl_state, num_ancilla)
 
 
 @gate_wrap(permeability="full", is_qfree=True, name="anc supported mcp")
-def _balauca_mcp(phi: FloatLike, qubits, ctrl_state: str) -> None:
+def _balauca_mcp(
+    phi: FloatLike,
+    qubits: Sequence[Qubit | Tracer] | QuantumVariable | DynamicQubitArray,
+    ctrl_state: str,
+) -> None:
     """Apply a static multi-controlled phase gate with the balauca method.
 
     Parameters
@@ -1130,6 +1158,8 @@ def _static_mcp(
 ) -> None:
     """Apply a multi-controlled phase gate in static mode.
 
+    The ``auto`` method uses ``gray`` below four qubits and ``balauca`` from four on.
+
     Parameters
     ----------
     phi : FloatLike
@@ -1149,9 +1179,11 @@ def _static_mcp(
         If the method is unknown.
 
     """
-    # These packages import this module, so they can only be imported at call time.
+    # qrisp.alg_primitives imports this module, so it can only be imported at call time.
     from qrisp.alg_primitives.mcx_algs import khattar_mcp
-    from qrisp.environments import control
+
+    if method == "auto":
+        method = "gray" if n < _MCP_AUTO_BALAUCA_MIN_QUBITS else "balauca"
 
     ctrl_state = _ctrl_state_string(ctrl_state, n)
 
@@ -1171,12 +1203,6 @@ def _static_mcp(
 
         case "khattar":
             khattar_mcp(phi, qubits, ctrl_state=ctrl_state)
-
-        case "auto":
-            with control(n < _MCP_AUTO_BALAUCA_MIN_QUBITS):
-                mcp(phi, qubits, method="gray", ctrl_state=ctrl_state)
-            with control(n >= _MCP_AUTO_BALAUCA_MIN_QUBITS):
-                mcp(phi, qubits, method="balauca", ctrl_state=ctrl_state)
 
         case _:
             raise ValueError(f"Don't know method {method}")
@@ -1291,11 +1317,10 @@ def mcp(
         The control state on which to apply the phase. The default is "111...".
 
     """
-    n = jlen(qubits)
     if check_for_tracing_mode():
         _jasp_mcp(phi, qubits, method, ctrl_state)
     else:
-        _static_mcp(phi, qubits, n, method, ctrl_state)
+        _static_mcp(phi, qubits, jlen(qubits), method, ctrl_state)
 
 
 def p(phi: FloatLike, qubits: QuantumOperand) -> None:
@@ -1800,7 +1825,8 @@ def reset(qubits: QuantumOperand) -> None:
         case jax.core.Tracer(aval=AbstractQubitArray() | AbstractQubit()):
             abs_qst = reset_p.bind(qubits, qs.abs_qst)
         case _:
-            raise TypeError(f"Tried to reset type {type(qubits.aval)}")
+            # A tracer is reported by its abstract value, such as ShapedArray for an integer.
+            raise TypeError(f"Tried to reset type {type(getattr(qubits, 'aval', qubits))}")
 
     qs.abs_qst = abs_qst
 
@@ -1843,11 +1869,15 @@ def barrier(qubits: QuantumOperand) -> None:
     QuantumVariable qv
 
     """
+    tracing = check_for_tracing_mode()
     if isinstance(qubits, Qubit):
         qubits = [qubits]
-    elif check_for_tracing_mode() and isinstance(qubits, _UNSIZED_JASP_OPERANDS):
+    elif tracing and isinstance(qubits, _UNSIZED_JASP_OPERANDS):
         # These have no static number of qubits, so no Barrier operation can be built.
         return
+    elif not tracing and isinstance(qubits, QuantumArray):
+        # One barrier qubit per qubit of the array, not per element.
+        qubits = convert_to_qb_list(qubits)
 
     append_operation(std_ops.Barrier(len(qubits)), qubits)
 

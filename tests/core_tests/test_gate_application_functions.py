@@ -22,6 +22,7 @@ import sympy
 
 from qrisp import (
     CXGate,
+    QuantumArray,
     QuantumBool,
     QuantumFloat,
     QuantumSession,
@@ -280,6 +281,15 @@ def test_gate_structure(apply, name, params, qubits):
     assert [qv.reg.index(qubit) for qubit in instruction.qubits] == qubits
 
 
+def test_barrier_on_a_quantum_array_covers_every_qubit():
+    """A barrier on a QuantumArray of multi-qubit elements has one qubit per qubit of the array."""
+    qa = QuantumArray(QuantumFloat(2), shape=3)
+    barrier(qa)
+    (instruction,) = appended(qa)
+    assert instruction.op.name == "barrier"
+    assert instruction.qubits == [qubit for qf in qa.flatten() for qubit in qf.reg]
+
+
 def test_symbolic_parameters_are_kept():
     """A SymPy symbol is appended as the parameter of the gate."""
     qv = QuantumVariable(2)
@@ -489,11 +499,10 @@ def test_mcz_one_qubit(ctrl_state, expected):
 @pytest.mark.parametrize("ctrl_state", ["1", "1011"])
 def test_mcz_rejects_a_control_state_of_the_wrong_length(ctrl_state):
     """The helper used by the ancilla-based methods checks the control state."""
-    with pytest.raises(ValueError, match="does not matchcontrol qubit amount 3"):
+    with pytest.raises(ValueError, match="does not match control qubit amount 3"):
         mcz(QuantumVariable(3), method="balauca", ctrl_state=ctrl_state)
 
 
-@pytest.mark.xfail(strict=True, reason="mcz does not forward num_ancilla to mcx")
 def test_mcz_hybrid_uses_num_ancilla():
     """The hybrid method uses num_ancilla ancillas, as it does for mcx."""
 
@@ -525,6 +534,18 @@ def test_mcp_auto_uses_balauca_from_four_qubits():
     mcp(0.5, large)
     assert all(instruction.op.name != "anc supported mcp" for instruction in appended(small))
     assert any(instruction.op.name == "anc supported mcp" for instruction in appended(large))
+
+
+@pytest.mark.parametrize("n, method", [(3, "gray"), (5, "balauca")])
+def test_mcp_auto_only_builds_the_chosen_method(n, method):
+    """Method auto appends exactly what the method it picks appends, without extra qubits."""
+    auto, chosen = QuantumVariable(n), QuantumVariable(n)
+    mcp(0.5, auto)
+    mcp(0.5, chosen, method=method)
+    auto_names = [instruction.op.name for instruction in session_of(auto).data]
+    chosen_names = [instruction.op.name for instruction in session_of(chosen).data]
+    assert auto_names == chosen_names
+    assert len(session_of(auto).qubits) == len(session_of(chosen).qubits)
 
 
 @pytest.mark.parametrize("ctrl_state", [-1, "011"])

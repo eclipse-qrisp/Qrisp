@@ -40,8 +40,9 @@ class DynamicQubitArray:
     @_typing.overload
     def __getitem__(self, key: slice) -> "DynamicQubitArray": ...
 
+    # Integers, NumPy integers, JAX arrays and tracers all implement __index__, slices do not.
     @_typing.overload
-    def __getitem__(self, key: _typing.Any) -> "Tracer": ...
+    def __getitem__(self, key: _typing.SupportsIndex) -> "Tracer": ...
 
     def __getitem__(self, key):
         if isinstance(key, slice):

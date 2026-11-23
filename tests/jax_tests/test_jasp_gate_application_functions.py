@@ -514,3 +514,15 @@ def test_jasp_reset_rejects_classical_values():
 
     with pytest.raises(TypeError, match="Tried to reset type"):
         make_jaspr(main)(1)
+
+
+def test_jasp_reset_rejects_lists():
+    """A list of qubits raises a TypeError, not an AttributeError."""
+
+    def main():
+        qf = QuantumFloat(2)
+        reset([qf[0]])
+        return measure(qf)
+
+    with pytest.raises(TypeError, match="Tried to reset type <class 'list'>"):
+        make_jaspr(main)()

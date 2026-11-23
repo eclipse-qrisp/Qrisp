@@ -16,6 +16,10 @@
 
 """Implements ancilla-supported multi-controlled X gates following Maslov's construction."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qrisp.alg_primitives.mcx_algs.circuit_library import (
     margolus_qc,
     maslov_qc,
@@ -24,9 +28,12 @@ from qrisp.alg_primitives.mcx_algs.circuit_library import (
 from qrisp.circuit import QuantumCircuit
 from qrisp.misc.utility import bin_rep
 
+if TYPE_CHECKING:
+    from qrisp.circuit import Operation
+
 
 # Ancilla supported multi controlled X gates from https://arxiv.org/pdf/1508.03273.pdf
-def maslov_mcx(n, ctrl_state: int | str = -1):
+def maslov_mcx(n: int, ctrl_state: int | str = -1) -> Operation:
     """Return a multi-controlled X gate built with the construction of Maslov.
 
     For 3 and 4 controls, the gate acts on one more qubit, placed between the controls

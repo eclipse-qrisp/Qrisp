@@ -119,7 +119,7 @@ def CZGate():
     return ZGate().control()
 
 
-def MCXGate(control_amount=1, ctrl_state: int | str = -1, method="gray"):
+def MCXGate(control_amount: int = 1, ctrl_state: int | str = -1, method: str = "gray") -> Operation:
     """Return a multi-controlled X gate.
 
     Parameters
