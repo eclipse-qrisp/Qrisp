@@ -1,14 +1,9 @@
 name: Link check
 
 on:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - ready_for_review
-    branches:
-      - main
+  schedule:
+    # Monthly, on the first day of the month at 03:00 UTC.
+    - cron: "0 3 1 * *"
   workflow_dispatch:
 
 concurrency:
