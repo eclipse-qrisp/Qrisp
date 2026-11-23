@@ -125,6 +125,7 @@ exclude_patterns = [
 # not documentation pages, so its notebooks are not checked either.
 linkcheck_exclude_documents = [
     r"^general/changelog/0\.",
+    r"^general/imprint$",
     r"^_static/",
 ]
 
