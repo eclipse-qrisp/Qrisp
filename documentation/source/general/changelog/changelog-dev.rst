@@ -673,10 +673,6 @@ New Tutorials/ Updated Documentation
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
-* Rewrote the docstring of :func:`measure <qrisp.measure>` with examples that
-  run under doctest
-  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
-
 
 
 .. Add new tutorials above this line
@@ -884,11 +880,6 @@ Development
 * Removed the duplicate PyPI badge from the README, keeping a single
   version badge linked to the PyPI project page
   (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
-
-* Added dedicated tests for ``measure``, split into static and Jasp mode like
-  the rest of the test suite. Several function-level imports in
-  ``gate_application_functions.py`` moved to module level
-  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
 Dependency Upgrades
 -------------------
