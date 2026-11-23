@@ -129,3 +129,20 @@ def test_controlled_gates():
     u3 = U3Gate(1.7465, -0.58331, 0)
     cu3 = u3.control(1)
     assert np.allclose(cu3.get_unitary(), cu3.definition.get_unitary(), atol=1e-5)
+
+
+@pytest.mark.parametrize(
+    "u3_gate",
+    [
+        U3Gate(0, 0, 0.3, name="p", global_phase=0.4),
+        U3Gate(0, 0.3, 0, name="rz", global_phase=0.25),
+        U3Gate(0.7, -np.pi / 2, np.pi / 2, name="rx", global_phase=0.4),
+        U3Gate(0.7, 0, 0, name="ry", global_phase=0.4),
+    ],
+)
+@pytest.mark.parametrize("control_amount", [1, 2])
+def test_controlled_named_gate_keeps_global_phase(u3_gate, control_amount):
+    """Once controlled, a named gate's global phase becomes a relative phase, so the
+    synthesized circuit must include it, not only the angles the gate name implies."""
+    controlled_gate = u3_gate.control(control_amount)
+    assert np.allclose(controlled_gate.get_unitary(), controlled_gate.definition.get_unitary(), atol=1e-6)

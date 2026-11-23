@@ -180,6 +180,11 @@ Improvements
   operations instead of a single ``reflection`` gate. Jasp mode is unaffected
   (`PR #947 <https://github.com/eclipse-qrisp/Qrisp/pull/947>`_).
 
+* The simulator shows its progress bar only in terminals and Jupyter notebooks.
+  Redirected or captured output, such as log files, CI runs and doctests, no
+  longer contains progress bar text
+  (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
+
 Other New Features
 ------------------
 
@@ -623,6 +628,19 @@ Bug Fixes
 * Fixed ``reset`` on a single qubit, such as ``reset(qv[0])``, failing to
   compile with :ref:`qjit <qjit>`. Resetting a whole QuantumVariable was not
   affected (`PR #941 <https://github.com/eclipse-qrisp/Qrisp/pull/941>`_).
+* Fixed the matrices of several standard gates and their conversions:
+
+  - ``RGate(theta, phi)`` now implements ``RZ(phi) RX(theta) RZ(-phi)``,
+    matching the standard R gate. Its PennyLane conversion is now
+    ``qml.Rot(pi/2 - phi, theta, phi - pi/2)``.
+  - ``SXGate`` and ``SXDGGate`` now carry the global phase ``±pi/4``, so they
+    are the exact square roots of ``X`` instead of ``RX(±pi/2)``. This phase is
+    also kept when they are controlled. They are now converted to ``qml.SX``
+    in PennyLane.
+  - ``U1Gate`` now converts to Qiskit's ``RZGate`` instead of ``PhaseGate``,
+    since Qrisp's ``U1`` is an RZ rotation.
+
+  (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
 
 Compatibility
 -------------
@@ -651,10 +669,33 @@ Compatibility
   integer
   (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
+* Qrisp now supports SymPy 1.14. Multi-``QuantumVariable`` statevectors are
+  built with ``TensorProduct``, which SymPy 1.14 requires, and the dependency
+  bound is now ``sympy>=1.13,<1.15``
+  (`PR #590 <https://github.com/eclipse-qrisp/Qrisp/pull/590>`_).
+* ``RGate`` and ``QuantumCircuit.r`` are deprecated in favor of the identical
+  ``PRXGate`` and the new ``QuantumCircuit.prx``. Both still work but emit a
+  ``QrispDeprecationWarning``. ``RGate(theta, phi)`` now builds a
+  ``PRXGate(theta, phi)``, so the resulting operation is named ``"prx"`` instead
+  of ``"r"`` and stores its angles as ``alpha`` and ``beta``. ``PRXGate`` can now
+  also be imported from ``qrisp.circuit.standard_operations``
+  (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
+
 .. Add compatibility notes above this line
 
 New Tutorials/ Updated Documentation
 -------------------------------------
+
+* Updated the :doc:`BigInteger tutorial </general/tutorial/BigInteger>`, which
+  compiles the order-finding circuit of Shor's algorithm and counts its gates up
+  to 2048 bits. The parallel resource estimation now draws odd moduli with a
+  coprime base, uses BigIntegers wide enough for the products before their
+  reduction, and passes precomputed multipliers and inverses to the in-place
+  multiplication. The 2048-bit counts are therefore correct, and they take
+  minutes instead of hours. The tutorial also counts the peak number of qubits,
+  on the first multiplication, which reaches the peak of the whole circuit. The
+  operator examples no longer overflow, and the code uses explicit imports
+  (`PR #1002 <https://github.com/eclipse-qrisp/Qrisp/pull/1002>`_).
 
 * :doc:`CUDA-Q tutorial </general/tutorial/CUDAQ>` - Compiling and running
   Qrisp kernels on NVIDIA's CUDA-Q platform, from a Bell-state example to
@@ -679,6 +720,13 @@ New Tutorials/ Updated Documentation
 
 API Changes
 -----------
+
+* The PyTket converter has been removed in this release: the
+  ``qrisp.interface.converter.pytket_converter`` module and its exports,
+  the ``pytket`` optional dependency, and the associated tests and
+  documentation are gone. :meth:`~qrisp.QuantumCircuit.to_pytket` is kept
+  only as a stub that raises ``NotImplementedError``
+  (`PR #662 <https://github.com/eclipse-qrisp/Qrisp/pull/662>`_).
 
 * :class:`~qrisp.interface.IQMBackend` is now a delegation shim that
   re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` (IQM client).
@@ -880,6 +928,10 @@ Development
 * Removed the duplicate PyPI badge from the README, keeping a single
   version badge linked to the PyPI project page
   (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
+
+* Added a doctest workflow that runs the docstring examples of ``qrisp.qtypes``
+  on pull requests. Further packages are added as their examples are fixed
+  (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
 
 Dependency Upgrades
 -------------------
