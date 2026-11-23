@@ -120,6 +120,33 @@ exclude_patterns = [
     "**/.ipynb_checkpoints",
 ]
 
+# Changelogs of released versions are frozen and no longer edited, so do not
+# check their (increasingly stale) external links. ``_static`` holds assets,
+# not documentation pages, so its notebooks are not checked either.
+linkcheck_exclude_documents = [
+    r"^general/changelog/0\.",
+    r"^_static/",
+]
+
+# Relative ``*.html`` links point at pages that Sphinx generates during the
+# HTML build, but the linkcheck builder checks them against the source tree,
+# where they do not exist yet. The publisher sites below reject automated
+# requests (403/401), so their links cannot be verified.
+linkcheck_ignore = [
+    r"^\./.*\.html$",
+    r"^https://dl\.acm\.org/",
+    r"^https://journals\.aps\.org/",
+    r"^https://link\.aps\.org/",
+    r"^https?://(?:dx\.)?doi\.org/",
+    r"^https://www\.cambridge\.org/de/",
+    r"^https://www\.sciencedirect\.com/",
+    r"^https://www\.mdpi\.com/",
+    r"^https://www\.researchgate\.net/",
+    r"^https://resonance\.meetiqm\.com/",
+    # Linked from the Windows/WSL note in general/tutorial/H2.ipynb.
+    r"^https://harshityadav95\.medium\.com/",
+]
+
 # Map external documentation inventories so that cross-references to Python
 # standard-library symbols (e.g. :exc:`RuntimeError`, :class:`~collections.abc.Mapping`)
 # resolve to clickable links pointing at the official Python 3 documentation.

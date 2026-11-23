@@ -7,7 +7,7 @@ The following functions expose program control features from Jax as Jasp-compati
 
 .. note::
 
-    If you `kernelized <quantum_kernel>`_ your code, the quantum state doesn't need to be tracked, implying you can use the Jax versions.
+    If you :ref:`kernelized <quantum_kernel>` your code, the quantum state doesn't need to be tracked, implying you can use the Jax versions.
 
 .. _q_fori_loop:
 

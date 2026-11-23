@@ -235,7 +235,7 @@ You have the following rights:
 Data Security
 -------------
 
-All your personal data are transmitted in encrypted format, using the widely used and secure TLS (Transport Layer Security) standard. TLS is a secure and proven standard that is also used, for instance, in online banking. You will recognize a secure TLS connection by the additional s after http (i.e., https://..) in the address bar of your browser or by the lock icon in the lower part of your browser.
+All your personal data are transmitted in encrypted format, using the widely used and secure TLS (Transport Layer Security) standard. TLS is a secure and proven standard that is also used, for instance, in online banking. You will recognize a secure TLS connection by the additional s after http (i.e., ``https://..``) in the address bar of your browser or by the lock icon in the lower part of your browser.
 
 In all other regards, we use suitable technical and organizational security measures to protect your data against accidental or intentional manipulations, partial or complete loss, destruction, or the unauthorized access of third parties. We continuously improve our security measures in accordance with the state of the art.
 
