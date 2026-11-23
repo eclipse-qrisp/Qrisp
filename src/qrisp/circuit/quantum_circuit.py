@@ -18,7 +18,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+import warnings
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import numpy as np
 import sympy
@@ -33,6 +34,7 @@ from qiskit.visualization import circuit_drawer
 import qrisp.circuit.standard_operations as ops
 from qrisp.circuit import Clbit, Instruction, Operation, Qubit, U3Gate
 from qrisp.misc import (
+    QrispDeprecationWarning,
     cnot_count,
     cnot_depth_indicator,
     get_depth_dic,
@@ -2139,20 +2141,21 @@ class QuantumCircuit:
 
         return qrisp_to_stim(self, return_measurement_map, return_detector_map, return_observable_map)
 
-    def to_pytket(self):
-        """Method to convert the given QuantumCircuit to a
-        `PyTket <https://cqcl.github.io/tket/pytket/api/#>`_ Circuit.
+    def to_pytket(self) -> NoReturn:
+        """Method to convert the given QuantumCircuit to a PyTket Circuit.
 
-        Returns
-        -------
-        pytket.Circuit
-            The converted PyTket circuit.
+        The ``to_pytket`` converter has been removed in Qrisp 0.10 and this
+        method is no longer functional.
+
+        Raises
+        ------
+        NotImplementedError
+            Always, because the converter has been removed.
 
         """
-        # NOTE: This is here to avoid circular imports
-        from qrisp.interface import pytket_converter
-
-        return pytket_converter(self)
+        raise NotImplementedError(
+            "The 'to_pytket' converter has been removed in Qrisp 0.10 and is no longer available."
+        )
 
     def to_cirq(self):
         """Method to convert the given QuantumCircuit to a Cirq Circuit.
@@ -2821,18 +2824,38 @@ class QuantumCircuit:
         """
         self.append(ops.u3Gate(theta, phi, lam), [qubits])
 
-    def r(self, theta: FloatLike, phi: FloatLike, qubits: QubitLike):
-        r"""Instruct an R-gate.
+    def prx(self, alpha: FloatLike, beta: FloatLike, qubits: QubitLike):
+        r"""Instruct a PRX (Phased-RX) gate.
 
         The unitary is
 
         .. math::
 
-            R(\theta, \phi) =
+            \text{PRX}(\alpha, \beta) = R_Z(\beta) R_X(\alpha) R_Z(-\beta) =
             \begin{pmatrix}
-                \cos\!\tfrac{\theta}{2} & e^{-i\phi}\sin\!\tfrac{\theta}{2} \\
-                -e^{i\phi}\sin\!\tfrac{\theta}{2} & \cos\!\tfrac{\theta}{2}
+                \cos\!\tfrac{\alpha}{2} & -i e^{-i\beta}\sin\!\tfrac{\alpha}{2} \\
+                -i e^{i\beta}\sin\!\tfrac{\alpha}{2} & \cos\!\tfrac{\alpha}{2}
             \end{pmatrix}
+
+        Parameters
+        ----------
+        alpha : FloatLike
+            Rotation angle in radians. Controls the amount of rotation.
+        beta : FloatLike
+            Phase angle in radians. Selects the rotation axis in the XY plane.
+        qubits : QubitLike
+            The qubit to apply the gate on.
+
+        """
+        self.append(ops.PRXGate(alpha, beta), [qubits])
+
+    def r(self, theta: FloatLike, phi: FloatLike, qubits: QubitLike):
+        """Instruct an R-gate.
+
+        .. deprecated:: 0.10
+
+            ``r`` is deprecated, use :meth:`prx` instead.
+            ``qc.r(theta, phi, qubits)`` is identical to ``qc.prx(theta, phi, qubits)``.
 
         Parameters
         ----------
@@ -2844,7 +2867,14 @@ class QuantumCircuit:
             The qubit to apply the gate on.
 
         """
-        self.append(ops.RGate(theta, phi), [qubits])
+        warnings.warn(
+            "DeprecationWarning: QuantumCircuit.r is deprecated and will be removed in a "
+            "later release of Qrisp. Use QuantumCircuit.prx instead, "
+            "qc.r(theta, phi, qubits) is identical to qc.prx(theta, phi, qubits).",
+            QrispDeprecationWarning,
+            stacklevel=2,
+        )
+        self.prx(theta, phi, qubits)
 
     def unitary(self, unitary_array, qubits: QubitLike):
         """Instruct a gate from a given unitary matrix.
