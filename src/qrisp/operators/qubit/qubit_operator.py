@@ -2159,7 +2159,8 @@ class QubitOperator(Hamiltonian):
         Returns
         -------
         list[callable]
-            A list of functions performing the phased Pauli unitaries on a :ref:`QuantumVariable` for the terms in the Pauli expansion.
+            A list of functions performing the phased Pauli unitaries on a
+            :ref:`QuantumVariable` for the terms in the Pauli expansion.
         numpy.ndarray
             An array of nonnegative coefficients $|\alpha_i|$ for the terms in the Pauli expansion.
 
