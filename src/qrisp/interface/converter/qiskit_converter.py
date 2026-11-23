@@ -34,11 +34,9 @@ import qiskit.circuit.library.standard_gates as qsk_gates
 from qiskit import QiskitError
 from qiskit import QuantumCircuit as QiskitQuantumCircuit
 from qiskit.circuit import (
-    AnnotatedOperation,
     Barrier,
     ControlFlowOp,
     ControlledGate,
-    ControlModifier,
     IfElseOp,
     Measure,
     Parameter,
@@ -57,6 +55,11 @@ from qrisp.circuit import ClControlledOperation, ControlledOperation, Instructio
 from qrisp.circuit.standard_operations import op_list
 from qrisp.misc import bin_rep
 from qrisp.typing import FloatLike
+
+try:
+    from qiskit.circuit import AnnotatedOperation, ControlModifier
+except ImportError:  # Qiskit < 0.45, where such operations cannot occur
+    AnnotatedOperation = ControlModifier = None
 
 GLOBAL_PHASE_TOLERANCE = 1e-10
 
@@ -496,7 +499,7 @@ def _convert_operation_from_qiskit(qiskit_op: QiskitInstruction) -> Operation:
 
     # Qiskit's ``control()`` can return an AnnotatedOperation instead of a ControlledGate,
     # e.g. for gates with symbolic parameters and two or more controls.
-    if isinstance(qiskit_op, AnnotatedOperation):
+    if AnnotatedOperation is not None and isinstance(qiskit_op, AnnotatedOperation):
         if len(qiskit_op.modifiers) != 1 or not isinstance(qiskit_op.modifiers[0], ControlModifier):
             raise NotImplementedError(
                 f"Converting Qiskit annotated operations with modifiers {qiskit_op.modifiers} to Qrisp is not supported"
