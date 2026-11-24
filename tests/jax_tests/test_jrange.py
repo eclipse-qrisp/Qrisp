@@ -24,7 +24,7 @@ import numpy as np
 import pytest
 from jax.core import Tracer
 
-from qrisp import QuantumFloat, control, cx, invert, measure, x
+from qrisp import QuantumFloat, control, cx, h, invert, measure, x
 from qrisp.jasp import boolean_simulation, jlen, jrange, make_jaspr, make_tracer, qache
 from qrisp.jasp.program_control.jrange_iterator import JRANGE_MARKER_NAME, JRangeIterator
 
@@ -212,12 +212,31 @@ def test_jasp_loop_is_traced_twice_and_compiled_into_a_while_loop():
     assert "jasp.q_env" not in primitives
 
 
+def test_jasp_loop_runs_in_the_default_simulator():
+    """One Jaspr prepares GHZ states of several sizes, with a random measurement outcome."""
+
+    def main(n):
+        qf = QuantumFloat(n)
+        h(qf[0])
+        for i in jrange(n - 1):
+            cx(qf[0], qf[i + 1])
+        return measure(qf)
+
+    jaspr = make_jaspr(main)(1)
+    for n in range(1, 7):
+        assert int(jaspr(n)) in (0, 2**n - 1)
+
+
 @pytest.mark.parametrize(
-    "escaping, message",
-    [(lambda i: i + 1, "Found jrange with external carry value"), (lambda i: i, None)],
+    "escaping, error, message",
+    [
+        (lambda i: i + 1, Exception, "Found jrange with external carry value"),
+        # The loop index fails with an internal error instead of the message above.
+        (lambda i: i, KeyError, r"Var\(id=\d+\):int64\[\]"),
+    ],
     ids=["computed-value", "loop-index"],
 )
-def test_jasp_external_carry_value_raises(escaping, message):
+def test_jasp_external_carry_value_raises(escaping, error, message):
     """Neither values computed in the loop nor the loop index can be used after it."""
 
     @qache
@@ -233,8 +252,7 @@ def test_jasp_external_carry_value_raises(escaping, message):
         flip_all(qf)
         return measure(qf)
 
-    # The loop index fails with an internal error instead of the message.
-    with pytest.raises(Exception, match=message):
+    with pytest.raises(error, match=message):
         make_jaspr(main)(3)
 
 

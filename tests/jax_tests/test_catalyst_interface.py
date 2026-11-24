@@ -185,6 +185,45 @@ def test_reset_catalyst():
     assert array_reset() == 0
 
 
+def test_sx_catalyst():
+    """SX is lowered to RX(pi/2) since Catalyst has no native SX gate."""
+    try:
+        import catalyst
+    except ModuleNotFoundError:
+        return
+
+    # SX * SX = X
+    @qjit
+    def sx_squared():
+        qv = QuantumVariable(1)
+        sx(qv[0])
+        sx(qv[0])
+        return measure(qv)
+
+    assert sx_squared() == 1
+
+    # SX_DG * SX = I
+    @qjit
+    def sx_then_sx_dg():
+        qv = QuantumVariable(1)
+        sx(qv[0])
+        sx_dg(qv[0])
+        return measure(qv)
+
+    assert sx_then_sx_dg() == 0
+
+    # SX|0> ~ |0> - i|1>, which S maps to |+> and H to |0>. SX_DG would give |1> instead.
+    @qjit
+    def sx_s_h():
+        qv = QuantumVariable(1)
+        sx(qv[0])
+        s(qv[0])
+        h(qv[0])
+        return measure(qv)
+
+    assert sx_s_h() == 0
+
+
 def test_parity_catalyst():
     """Test parity primitive with catalyst interface."""
 

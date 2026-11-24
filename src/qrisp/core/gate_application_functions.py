@@ -806,7 +806,7 @@ def mcx(
     The statevector can still be accessed:
 
     >>> print(control.qs.statevector())
-    |00>*|False>
+    |00>x|False>
 
     To introduce the measurement we simply call the
     :meth:`.compile <qrisp.QuantumSession.compile>` method with the keyword
@@ -1484,7 +1484,7 @@ def sx_dg(qubits: QuantumOperand) -> None:
         The Qubit to perform the daggered SX gate on.
 
     """
-    append_operation(std_ops.SXDGGate().inverse(), [qubits])
+    append_operation(std_ops.SXDGGate(), [qubits])
 
 
 def gphase(phi: FloatLike, qubits: QuantumOperand) -> None:
@@ -1679,9 +1679,10 @@ def unitary(unitary_array: NDArrayLike, qubits: Qubit | Tracer) -> None:
 def measure(qubits: QuantumOperand) -> Any:
     """Measure qubits in the computational basis.
 
-    In static mode, the measurement is appended to the circuit and the classical
-    bits holding the outcome are returned. In :ref:`Jasp <jasp>` mode, the outcome
-    itself is returned as a traced value.
+    Outside of :ref:`Jasp <jasp>`, the measurement is appended to the circuit and
+    the classical bits holding the outcome are returned. In a function traced with
+    Jasp, for example with :func:`~qrisp.jasp.jaspify` or
+    :ref:`make_jaspr <jaspr>`, the outcome itself is returned as a traced value.
 
     Parameters
     ----------
@@ -1692,7 +1693,7 @@ def measure(qubits: QuantumOperand) -> Any:
     Returns
     -------
     Clbit or list[Clbit] or jax.Array
-        In static mode, a :ref:`Clbit` for a single qubit, and otherwise a list
+        Outside of Jasp, a :ref:`Clbit` for a single qubit, and otherwise a list
         with one Clbit per qubit. In Jasp mode, a boolean for a
         qubit, an integer for an array of qubits, and the decoded value for a
         :ref:`QuantumVariable` or a :ref:`QuantumArray`.
@@ -1709,6 +1710,7 @@ def measure(qubits: QuantumOperand) -> Any:
     See Also
     --------
     QuantumVariable.get_measurement : Simulate a QuantumVariable and return its measurement results.
+    qrisp.jasp.terminal_sampling : Sample the measurement results of a Jasp function.
 
     Examples
     --------
@@ -1737,6 +1739,8 @@ def measure(qubits: QuantumOperand) -> Any:
     if not isinstance(qs, TracingQuantumSession):
         # One new Clbit per qubit, or a single Clbit for a single qubit. The qubits of
         # a QuantumArray are counted with convert_to_qb_list, like append_operation does.
+        # TODO: Other inputs with several qubits per item, such as a list of
+        # QuantumVariables, still fail. Count the qubits of every input this way.
         match qubits:
             case QuantumArray():
                 clbits = [qs.add_clbit() for _ in convert_to_qb_list(qubits)]

@@ -240,10 +240,17 @@ def test_single_qubit_gate_unitaries(gate):
     assert equal_up_to_global_phase(unitary_of(gate), SINGLE_QUBIT_UNITARIES[gate])
 
 
-@pytest.mark.xfail(strict=True, reason="sx_dg applies SXDGGate().inverse(), which is SX")
 def test_sx_dg_is_the_inverse_of_sx():
     """sx_dg applies the conjugate transpose of SX."""
     assert equal_up_to_global_phase(unitary_of(sx_dg), SQRT_X.conj().T)
+
+
+def test_sx_dg_is_inverse_of_sx():
+    """sx_dg used to apply SX itself, so sx followed by sx_dg gave X instead of the identity."""
+    qv = QuantumVariable(1)
+    sx(qv[0])
+    sx_dg(qv[0])
+    assert np.allclose(qv.qs.compile().get_unitary(), np.eye(2))
 
 
 GATE_STRUCTURE = [

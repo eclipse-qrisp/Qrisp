@@ -212,8 +212,8 @@ def jrange(*args: Any) -> "JRangeIterator | range":
     Notes
     -----
     For another step, compute the index from the loop variable: ``2 * k`` for
-    ``k`` in ``jrange((n + 1) // 2)`` steps through ``0, 2, ..., n - 1``. To
-    iterate backwards, use ``n - 1 - k``, or put the loop in an
+    ``k`` in ``jrange((n + 1) // 2)`` steps through the even numbers below ``n``.
+    To iterate backwards, use ``n - 1 - k``, or put the loop in an
     :ref:`InversionEnvironment`, which also inverts its operations.
 
     Examples

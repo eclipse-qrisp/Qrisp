@@ -250,6 +250,31 @@ def test_jasp_nested_classical_control():
     assert [int(main(value, c_value)) for value, c_value in cases] == [3, 3, 4, 5]
 
 
+def test_jasp_nested_classical_control_on_a_random_outcome():
+    """The default simulator runs nested classical controls on a random measurement."""
+    trigger = 4
+
+    def main(value):
+        a = QuantumFloat(3)
+        a[:] = value
+        with control(measure(a) == trigger):
+            c = QuantumFloat(2)
+            h(c[0])
+            # If c is measured in 1, flip the first qubit of a and set c back to 0.
+            with control(measure(c) == 1):
+                x(a[0])
+                x(c[0])
+            c.delete()
+        return measure(a)
+
+    jaspr = make_jaspr(main)(1)
+    # Only the trigger value enters the outer block, where the outcome of c decides
+    # whether the first qubit of a is flipped.
+    assert {int(jaspr(trigger)) for _ in range(10)} <= {trigger, trigger + 1}
+    other_value = trigger - 1
+    assert int(jaspr(other_value)) == other_value
+
+
 def test_jasp_classical_control_carry_value_raises():
     """A variable created in a classically controlled block cannot be used after it."""
 

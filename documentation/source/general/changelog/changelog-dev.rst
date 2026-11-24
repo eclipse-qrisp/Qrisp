@@ -153,15 +153,22 @@ Improvements
   generation to QuantumSession in a central place.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
-- Refactored :func:`control <qrisp.control>`, :func:`measure <qrisp.measure>`
-  and :func:`jrange <qrisp.jasp.jrange>`. 
-  They now have type hints and dedicated tests, and ``control`` also
-  accepts a tuple of controls and raises a ``TypeError`` for unsupported or
-  mixed controls. Across ``src/qrisp``, pyright now reports 1538 errors
-  instead of 1747, mostly because the loop variable of ``jrange`` now has a
-  precise type
+- Refactored :func:`measure <qrisp.measure>`. It now has an accurate
+  docstring, more specific exceptions and dedicated tests
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
-  
+
+- Refactored :func:`control <qrisp.control>`. It now has type hints and
+  dedicated tests, accepts a tuple of controls and raises a ``TypeError`` for
+  unsupported or mixed controls
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
+- Refactored :func:`jrange <qrisp.jasp.jrange>`. It now has type hints and
+  dedicated tests. Together with the refactoring of ``control`` and
+  ``measure``, pyright now reports 1538 errors instead of 1747 across
+  ``src/qrisp``, mostly because the loop variable of ``jrange`` now has a
+  precise type
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
+
 - **Faster resource estimation of modular multiplications in Jasp**
   The classical constants of the multiplication of a
   :class:`~qrisp.QuantumModulus` by a classical factor are now computed by
@@ -184,6 +191,11 @@ Improvements
   state function uses ancillas. Printed circuits show the individual
   operations instead of a single ``reflection`` gate. Jasp mode is unaffected
   (`PR #947 <https://github.com/eclipse-qrisp/Qrisp/pull/947>`_).
+
+* The simulator shows its progress bar only in terminals and Jupyter notebooks.
+  Redirected or captured output, such as log files, CI runs and doctests, no
+  longer contains progress bar text
+  (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
 
 Other New Features
 ------------------
@@ -519,20 +531,6 @@ Bug Fixes
 
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
-* :func:`control <qrisp.control>` now honors ``invert=True`` for classical
-  control outside of Jasp mode and for quantum control in Jasp mode, where it
-  was ignored. In Jasp mode, the condition of several controls is computed
-  into a helper qubit, which is uncomputed afterwards
-  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
-
-* In Jasp mode, :func:`control <qrisp.control>` negated Python booleans and
-  integers bitwise, so ``invert=True`` and a ``0`` in ``ctrl_state`` had no effect
-  on them (``~True`` is ``-2``), and several integer controls were combined with a
-  bitwise AND, so ``control([1, 2])`` did not hold. These controls are now
-  converted to booleans before they are negated or combined: an integer holds if
-  it is not ``0``
-  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
-
 * Under :func:`~qrisp.jasp.boolean_simulation`, measuring a single qubit
   returned a ``uint64`` instead of a boolean, so ``~measure(qb)``, and
   ``invert=True`` or ``ctrl_state=0`` on measured booleans, gave wrong
@@ -545,11 +543,26 @@ Bug Fixes
   several qubits. Every qubit of the array now gets its own classical bit
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
+* :func:`control <qrisp.control>` now honors ``invert=True`` for classical
+  control outside of Jasp mode and for quantum control in Jasp mode, where it
+  was ignored. In Jasp mode, the condition of several controls is computed
+  into a helper qubit, which is uncomputed afterwards
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
+* In Jasp mode, :func:`control <qrisp.control>` negated Python booleans and
+  traced integers bitwise, so ``invert=True`` and a ``0`` in ``ctrl_state`` had no
+  effect on them (``~True`` is ``-2``), and several traced integer controls were
+  combined with a bitwise AND, so two controls with the values ``1`` and ``2`` did
+  not hold. These controls are now converted to booleans before they are negated
+  or combined: a traced integer holds if it is not ``0``. Python integers are
+  still not accepted as controls
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
 * In Jasp mode, :func:`jrange <qrisp.jasp.jrange>` now accepts as a bound a
   concrete JAX array created outside of the traced function, and
   ``make_tracer`` no longer fails on complex numbers
-  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
-  
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
+
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
   (``qm *= X`` and ``qm * X``, and ``QuantumArray @ matrix``) now chooses the
   Montgomery shift from the number of qubits of the register, as the Montgomery
@@ -647,6 +660,19 @@ Bug Fixes
 * Fixed ``reset`` on a single qubit, such as ``reset(qv[0])``, failing to
   compile with :ref:`qjit <qjit>`. Resetting a whole QuantumVariable was not
   affected (`PR #941 <https://github.com/eclipse-qrisp/Qrisp/pull/941>`_).
+* Fixed the matrices of several standard gates and their conversions:
+
+  - ``RGate(theta, phi)`` now implements ``RZ(phi) RX(theta) RZ(-phi)``,
+    matching the standard R gate. Its PennyLane conversion is now
+    ``qml.Rot(pi/2 - phi, theta, phi - pi/2)``.
+  - ``SXGate`` and ``SXDGGate`` now carry the global phase ``±pi/4``, so they
+    are the exact square roots of ``X`` instead of ``RX(±pi/2)``. This phase is
+    also kept when they are controlled. They are now converted to ``qml.SX``
+    in PennyLane.
+  - ``U1Gate`` now converts to Qiskit's ``RZGate`` instead of ``PhaseGate``,
+    since Qrisp's ``U1`` is an RZ rotation.
+
+  (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
 
 * Fixed :func:`~qrisp.barrier` raising ``TracerIntegerConversionError`` on a
   QuantumVariable in :ref:`Jasp <jasp>` mode. A QuantumVariable has a traced size, so no
@@ -698,12 +724,16 @@ Compatibility
   generic ``Exception``. Code using ``except Exception:`` is unaffected
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
-* :func:`measure <qrisp.measure>` now raises a ``TypeError`` for unsupported
-  inputs and a ``RuntimeError`` when the quantum state is lost in Jasp mode,
-  and ``make_tracer`` raises a ``TypeError`` for unsupported types, instead of
-  a generic ``Exception``. The messages are unchanged, and code using
+* In Jasp mode, :func:`measure <qrisp.measure>` now raises a ``TypeError`` for
+  unsupported inputs and a ``RuntimeError`` when the quantum state is lost,
+  instead of a generic ``Exception``. The messages are unchanged, and code using
   ``except Exception:`` is unaffected
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
+* ``make_tracer`` now raises a ``TypeError`` for unsupported types, instead of
+  a generic ``Exception``. The message is unchanged, and code using
+  ``except Exception:`` is unaffected
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 * :ref:`IQPE <IQPE>` returns the phase instead of twice the phase modulo 1
   (see Bug Fixes). It raises a ``TypeError`` for a precision that is not an
@@ -712,10 +742,33 @@ Compatibility
   integer
   (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
+* Qrisp now supports SymPy 1.14. Multi-``QuantumVariable`` statevectors are
+  built with ``TensorProduct``, which SymPy 1.14 requires, and the dependency
+  bound is now ``sympy>=1.13,<1.15``
+  (`PR #590 <https://github.com/eclipse-qrisp/Qrisp/pull/590>`_).
+* ``RGate`` and ``QuantumCircuit.r`` are deprecated in favor of the identical
+  ``PRXGate`` and the new ``QuantumCircuit.prx``. Both still work but emit a
+  ``QrispDeprecationWarning``. ``RGate(theta, phi)`` now builds a
+  ``PRXGate(theta, phi)``, so the resulting operation is named ``"prx"`` instead
+  of ``"r"`` and stores its angles as ``alpha`` and ``beta``. ``PRXGate`` can now
+  also be imported from ``qrisp.circuit.standard_operations``
+  (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
+
 .. Add compatibility notes above this line
 
 New Tutorials/ Updated Documentation
 -------------------------------------
+
+* Updated the :doc:`BigInteger tutorial </general/tutorial/BigInteger>`, which
+  compiles the order-finding circuit of Shor's algorithm and counts its gates up
+  to 2048 bits. The parallel resource estimation now draws odd moduli with a
+  coprime base, uses BigIntegers wide enough for the products before their
+  reduction, and passes precomputed multipliers and inverses to the in-place
+  multiplication. The 2048-bit counts are therefore correct, and they take
+  minutes instead of hours. The tutorial also counts the peak number of qubits,
+  on the first multiplication, which reaches the peak of the whole circuit. The
+  operator examples no longer overflow, and the code uses explicit imports
+  (`PR #1002 <https://github.com/eclipse-qrisp/Qrisp/pull/1002>`_).
 
 * :doc:`CUDA-Q tutorial </general/tutorial/CUDAQ>` - Compiling and running
   Qrisp kernels on NVIDIA's CUDA-Q platform, from a Bell-state example to
@@ -735,10 +788,13 @@ New Tutorials/ Updated Documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
 * Documented :func:`control <qrisp.control>` on the
-  :ref:`ControlEnvironment <ControlEnvironment>` page, and rewrote the
-  docstrings of ``control``, ``measure`` and ``jrange`` with examples that run
-  under doctest
-  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+  :ref:`ControlEnvironment <ControlEnvironment>` page, and rewrote its
+  docstring with examples that run under doctest
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
+* Rewrote the docstring of :func:`jrange <qrisp.jasp.jrange>` with examples
+  that run under doctest
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 
 
@@ -746,6 +802,13 @@ New Tutorials/ Updated Documentation
 
 API Changes
 -----------
+
+* The PyTket converter has been removed in this release: the
+  ``qrisp.interface.converter.pytket_converter`` module and its exports,
+  the ``pytket`` optional dependency, and the associated tests and
+  documentation are gone. :meth:`~qrisp.QuantumCircuit.to_pytket` is kept
+  only as a stub that raises ``NotImplementedError``
+  (`PR #662 <https://github.com/eclipse-qrisp/Qrisp/pull/662>`_).
 
 * :class:`~qrisp.interface.IQMBackend` is now a delegation shim that
   re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` (IQM client).
@@ -948,14 +1011,24 @@ Development
   version badge linked to the PyPI project page
   (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
 
-* Consolidated the tests of ``control``, ``measure`` and ``jrange`` into
-  dedicated files, split into static and Jasp mode like the rest of the test
-  suite. The tests of ``test_control_flow_capturing.py`` and
-  ``test_control_compilation.py`` moved there, mostly running with
+* Added a doctest workflow that runs the docstring examples of ``qrisp.qtypes``
+  on pull requests. Further packages are added as their examples are fixed
+  (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
+
+* Consolidated the tests of ``control`` into dedicated files, split into static
+  and Jasp mode like the rest of the test suite. The tests of
+  ``test_control_compilation.py`` and the classical control test of
+  ``test_control_flow_capturing.py`` moved there, mostly running with
   ``boolean_simulation`` instead of the full simulator. Function-level imports
-  in the refactored modules moved to module level, except two that would be
-  circular, which are commented
-  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+  in the control environment modules moved to module level, except one that
+  would be circular, which is commented
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
+* Consolidated the tests of ``jrange``, ``JRangeIterator``, ``make_tracer`` and
+  ``jlen`` into ``test_jrange.py``, which replaces
+  ``test_control_flow_capturing.py``. Most of them run with
+  ``boolean_simulation`` instead of the full simulator
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 Dependency Upgrades
 -------------------
