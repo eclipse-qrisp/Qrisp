@@ -228,6 +228,22 @@ def test_jasp_classical_ctrl_state_and_invert():
         assert (bool(matched), bool(not_matched)) == expected
 
 
+@pytest.mark.parametrize("ctrl_state", [0, 1, 2, 3])
+def test_jasp_classical_integer_ctrl_state(ctrl_state):
+    """Bit i of an integer ctrl_state is the required value of control i, for every control."""
+
+    @boolean_simulation
+    def main(n):
+        a = QuantumFloat(2)
+        a[:] = n
+        matched = QuantumBool()
+        with control([measure(a[0]), measure(a[1])], ctrl_state=ctrl_state):
+            x(matched)
+        return measure(matched)
+
+    assert [bool(main(value)) for value in range(4)] == [value == ctrl_state for value in range(4)]
+
+
 def test_jasp_nested_classical_control():
     """Classical controls nest, and a block can allocate, measure and delete a variable."""
     trigger = 4

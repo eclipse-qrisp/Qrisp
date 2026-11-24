@@ -16,8 +16,11 @@
 
 """Defines ClControlEnvironment, executing quantum code conditioned on classical boolean values."""
 
+from types import TracebackType
+
 import jax
 import jax.numpy as jnp
+from jax.extend.core import JaxprEqn
 from jax.lax import cond
 
 from qrisp.environments import QuantumEnvironment
@@ -28,6 +31,7 @@ from qrisp.jasp import (
     get_last_equation,
     insert_outvalues,
 )
+from qrisp.jasp.interpreter_tools.abstract_interpreter import ContextDict
 
 
 class ClControlEnvironment(QuantumEnvironment):
@@ -172,14 +176,26 @@ class ClControlEnvironment(QuantumEnvironment):
 
         self.invert = invert
 
-    def compile(self):
-        bits = [bool((self.ctrl_state >> i) & 1) for i in range(len(self.ctrl_bls))]
-        matches = not any(ctrl_bl != bit for ctrl_bl, bit in zip(self.ctrl_bls, bits))
-        # With invert, the body takes effect when the booleans do not match ctrl_state.
-        if matches != bool(self.invert):
+    def _is_active(self) -> bool:
+        """Return whether the body takes effect, for static booleans.
+
+        Bit ``i`` of ``ctrl_state`` is the required value of boolean ``i``. With
+        ``invert``, the body takes effect when the booleans do not match it.
+        """
+        bits = ((self.ctrl_state >> i) & 1 for i in range(len(self.ctrl_bls)))
+        matches = all(bool(ctrl_bl) == bool(bit) for ctrl_bl, bit in zip(self.ctrl_bls, bits))
+        return matches != bool(self.invert)
+
+    def compile(self) -> None:
+        if self._is_active():
             QuantumEnvironment.compile(self)
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool:
 
         # "with" blocks in Python are always executed - the ClControlEnvironment
         # is no exception. It can therefore happen that code is run, which is not
@@ -193,25 +209,19 @@ class ClControlEnvironment(QuantumEnvironment):
         # If this is the case, we simply exit the QuantumEnvironment without
         # any further action.
         static_error_appeared = False
-        if not check_for_tracing_mode():
-            if exception_type is not None:
-                states = [self.ctrl_state >> i for i in range(len(self.ctrl_bls))]
-                pairs = zip(self.ctrl_bls, states)
-                mismatch = any((ctrl_bl ^ state) & 1 for ctrl_bl, state in pairs)
-                # With invert, the body was not supposed to run if the booleans match.
-                if mismatch != bool(self.invert):
-                    self.env_qs.data = []
-                    static_error_appeared = True
-                    exception_type = None
-                    exception_value = None
-                    traceback = None
+        if not check_for_tracing_mode() and exception_type is not None and not self._is_active():
+            self.env_qs.data = []
+            static_error_appeared = True
+            exception_type = None
+            exception_value = None
+            traceback = None
 
         QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
 
-        if static_error_appeared:
-            return True
+        # Returning True suppresses the exception of a body that was not supposed to run.
+        return static_error_appeared
 
-    def jcompile(self, eqn, context_dic):
+    def jcompile(self, eqn: JaxprEqn, context_dic: ContextDict) -> None:
 
         args = extract_invalues(eqn, context_dic)
 
