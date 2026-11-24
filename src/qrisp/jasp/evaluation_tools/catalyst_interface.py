@@ -21,8 +21,8 @@ import jax.numpy as jnp
 import pennylane as qml
 from catalyst.jax_extras.patches import patched_make_eqn
 from catalyst.jax_primitives import AbstractQreg, device_init_p, qalloc_p
-from catalyst.utils.patching import Patcher
 from catalyst.pipelines import default_pipeline
+from catalyst.utils.patching import Patcher
 from jax import make_jaxpr
 from jax.extend.core import Literal
 from jax.interpreters.partial_eval import DynamicJaxprTrace
