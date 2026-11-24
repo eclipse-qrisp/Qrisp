@@ -1,1 +1,0 @@
-pip install -U sphinx_fontawesome sphinx_fontawesome sphinx_toolbox myst_parser nb2plots texext numpydoc pydata_sphinx_theme nbsphinx sphinx-sitemap sphinx-copybutton sphinx-design sphinx-thebe

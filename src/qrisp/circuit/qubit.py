@@ -24,6 +24,10 @@ qubit_hash = np.zeros(1)
 class Qubit:
     """This class describes qubits. Qubits are created by supplying the identifier string.
 
+    A bare Qubit can be obtained from a :class:`QuantumVariable` by indexing it
+    (``qv[0]`` returns a Qubit, ``qv[0:2]`` returns a list of Qubits) or by
+    accessing the entries of its ``qubits`` list.
+
     Attributes
     ----------
     identifier : str

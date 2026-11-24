@@ -18,5 +18,9 @@ Version history
    0.3
    0.2
    0.1
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Development
+
    changelog-dev
-   

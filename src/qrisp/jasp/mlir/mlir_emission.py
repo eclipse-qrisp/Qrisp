@@ -26,6 +26,7 @@ Three key steps happen here:
 """
 
 from xdsl.dialects import builtin
+from xdsl.transforms.reconcile_unrealized_casts import reconcile_unrealized_casts
 
 from qrisp.jasp.interpreter_tools.interpreters.composite_gate_interpreter import decompose_composite_gates
 from qrisp.jasp.jasp_expression import Jaspr
@@ -66,9 +67,11 @@ def jaspr_to_mlir(jaspr: Jaspr, lower_stableHLO=False) -> builtin.ModuleOp:
     fix_quantum_control_flow(xdsl_module)
 
     # Run xDSL optimization passes to clean up lowering artifacts
-    # (e.g., verbose scalar ``linalg.generic`` chains produced by
-    # ``stablehlo-legalize-to-linalg``).
+    # (e.g., identity ``unrealized_conversion_cast`` ops left by
+    # ``stablehlo-convert-to-signless`` and verbose scalar ``linalg.generic``
+    # chains produced by ``stablehlo-legalize-to-linalg``).
     if lower_stableHLO:
+        reconcile_unrealized_casts(xdsl_module)
         scalar_linalg_folding(xdsl_ctx, xdsl_module)
         scalar_tensor_folding(xdsl_ctx, xdsl_module)
         cmpi_extui_folding(xdsl_ctx, xdsl_module)

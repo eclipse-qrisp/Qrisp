@@ -25,17 +25,17 @@ from qrisp import *
 
 
 # Gaussian
-def f(x, alpha):
-    return jnp.exp(-alpha * x**2)
+def f(x, alpha, x0):
+    return jnp.exp(-alpha * (x - x0) ** 2)
 
 
 # Converts the function to be executed within a repeat-until-success (RUS) procedure.
 @RUS(static_argnames=["k"])
-def prepare_gaussian(n, alpha, k):
+def prepare_gaussian(n, alpha, x0, k):
     # Use 32 sampling points to evaluate f
     N_samples = 32
     x_val = jnp.arange(-1.0, 1.0, 2.0 / N_samples)
-    y_val = f(x_val, alpha)
+    y_val = f(x_val, alpha, x0)
     y_val = y_val / jnp.linalg.norm(y_val)
 
     qv = QuantumFloat(n)
@@ -49,22 +49,23 @@ def prepare_gaussian(n, alpha, k):
 # The terminal_sampling decorator performs a hybrid simulation,
 # and afterwards samples from the resulting quantum state.
 @terminal_sampling
-def main(n, alpha):
-    qv = prepare_gaussian(n, alpha, 4)
+def main(n, alpha, x0):
+    qv = prepare_gaussian(n, alpha, x0, 4)
     return qv
 
 
 @pytest.mark.parametrize(
-    "n, alpha",
+    "n, alpha, x0",
     [
-        (6, 4),
-        (6, 10),
+        (6, 4, 0.0),
+        (6, 10, 0.0),
+        (6, 10, 0.3),
     ],
 )
-def test_gqsp_gaussian(n, alpha):
-    """Test GQSP Fourier series loader on a Gaussian function with different widths."""
+def test_gqsp_gaussian(n, alpha, x0):
+    """Test GQSP Fourier series loader on a Gaussian function with different widths and centres."""
     # Run the simulation for n-qubit state
-    res_dict = main(n, alpha)
+    res_dict = main(n, alpha, x0)
 
     # Convert the resulting measurement probabilities to amplitudes by appling the square root.
     for k, v in res_dict.items():
@@ -74,7 +75,7 @@ def test_gqsp_gaussian(n, alpha):
 
     # Compare to target values
     x_val = np.arange(-1, 1, 2 ** (-n + 1))
-    y_val = f(x_val, alpha)
+    y_val = f(x_val, alpha, x0)
     y_val = y_val / np.linalg.norm(y_val)
 
     # Evaluate trace distance
