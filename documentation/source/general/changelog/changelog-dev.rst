@@ -681,6 +681,14 @@ Compatibility
   also be imported from ``qrisp.circuit.standard_operations``
   (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
 
+* The incrementation functionality in
+  ``qrisp.alg_primitives.arithmetic.adders.incrementation`` is deprecated and
+  will be removed in Qrisp v0.12. ``increment`` and ``QuantumFloat.incr`` now
+  emit a ``QrispDeprecationWarning``; they are equivalent to classical-quantum
+  in-place addition, so use ``qf += value`` instead. ``lin_incr`` also warns and
+  will be removed together with the QCLA adder
+  (`PR #1030 <https://github.com/eclipse-qrisp/Qrisp/pull/1030>`_).
+
 .. Add compatibility notes above this line
 
 New Tutorials/ Updated Documentation
