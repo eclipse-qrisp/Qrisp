@@ -164,9 +164,9 @@ def test_hash():
 
 
 def test_a_c_error():
-    with pytest.raises(Exception, match="Cannot initialize operator from type"):
+    with pytest.raises(TypeError, match="Cannot initialize operator from type"):
         O = a(0.5)
-    with pytest.raises(Exception, match="Cannot initialize operator from type"):
+    with pytest.raises(TypeError, match="Cannot initialize operator from type"):
         O = c(0.5)
 
 

@@ -37,7 +37,7 @@ def a_b(arg: int):
     if isinstance(arg, int):
         return BosonicOperator({BosonicTerm([(arg, False)]): 1})
     else:
-        raise Exception("Cannot initialize operator from type " + str(type(arg)))
+        raise TypeError("Cannot initialize operator from type " + str(type(arg)))
 
 
 def c_b(arg: int):
@@ -57,4 +57,4 @@ def c_b(arg: int):
     if isinstance(arg, int):
         return BosonicOperator({BosonicTerm([(arg, True)]): 1})
     else:
-        raise Exception("Cannot initialize operator from type " + str(type(arg)))
+        raise TypeError("Cannot initialize operator from type " + str(type(arg)))
