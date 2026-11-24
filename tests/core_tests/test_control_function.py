@@ -176,6 +176,17 @@ def test_static_quantum_ctrl_state(value, ctrl_state):
     assert bit(target) == (value == 1)
 
 
+@pytest.mark.parametrize("flipped", [False, True])
+def test_static_environment_on_a_single_qubit(flipped):
+    """A ControlEnvironment accepts a single Qubit, also with the default ctrl_state."""
+    ctrl, target = QuantumBool(), QuantumBool()
+    if flipped:
+        x(ctrl)
+    with ControlEnvironment(ctrl[0]):
+        x(target)
+    assert bit(target) == flipped
+
+
 @pytest.mark.parametrize("value", range(4))
 def test_static_quantum_invert(value):
     """invert=True activates the block for every state except ctrl_state."""
