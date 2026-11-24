@@ -228,6 +228,12 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed compilation errors when compiling certain programs with 
+  Catalyst (``@qjit``), e.g. Grover's algorithm.
+  Qrisp now skips Catalyst's ``annotate-invalid-gradient-functions`` pass.
+  (`PR #984 <https://github.com/eclipse-qrisp/Qrisp/pull/984>`_,
+  `Issue #886 <https://github.com/eclipse-qrisp/Qrisp/issues/886>`_).
+
 * Fixed the lowering of unsigned integers by
   :meth:`Jaspr.to_mlir <qrisp.jasp.Jaspr.to_mlir>` with
   ``lower_stablehlo=True``. An unsigned constant kept its unsigned value behind
