@@ -181,12 +181,24 @@ class ClControlEnvironment(QuantumEnvironment):
 
         Bit ``i`` of ``ctrl_state`` is the required value of boolean ``i``. With
         ``invert``, the body takes effect when the booleans do not match it.
+
+        Returns
+        -------
+        bool
+            Whether the body takes effect.
+
         """
         bits = ((self.ctrl_state >> i) & 1 for i in range(len(self.ctrl_bls)))
         matches = all(bool(ctrl_bl) == bool(bit) for ctrl_bl, bit in zip(self.ctrl_bls, bits))
         return matches != bool(self.invert)
 
     def compile(self) -> None:
+        """Compile the body into the enclosing session if it takes effect.
+
+        The body takes effect if the booleans match ``ctrl_state`` or, with
+        ``invert``, if they do not.
+
+        """
         if self._is_active():
             QuantumEnvironment.compile(self)
 
@@ -196,7 +208,26 @@ class ClControlEnvironment(QuantumEnvironment):
         exception_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool:
+        """Exit the environment.
 
+        Outside of Jasp mode, an exception raised by a body that does not take
+        effect is discarded, together with the operations of the body.
+
+        Parameters
+        ----------
+        exception_type : type[BaseException] or None
+            The type of the exception raised in the body, if any.
+        exception_value : BaseException or None
+            The exception raised in the body, if any.
+        traceback : TracebackType or None
+            The traceback of the exception, if any.
+
+        Returns
+        -------
+        bool
+            Whether the exception is suppressed.
+
+        """
         # "with" blocks in Python are always executed - the ClControlEnvironment
         # is no exception. It can therefore happen that code is run, which is not
         # intended to run by the semantics, because the classical condition is not
@@ -222,7 +253,24 @@ class ClControlEnvironment(QuantumEnvironment):
         return static_error_appeared
 
     def jcompile(self, eqn: JaxprEqn, context_dic: ContextDict) -> None:
+        """Compile the environment into a ``cond`` primitive.
 
+        The true branch is the body of the environment and the false branch does
+        nothing.
+
+        Parameters
+        ----------
+        eqn : JaxprEqn
+            The equation of the environment.
+        context_dic : ContextDict
+            The values of the variables, where the outputs of ``eqn`` are inserted.
+
+        Raises
+        ------
+        Exception
+            If the body has a carry value.
+
+        """
         args = extract_invalues(eqn, context_dic)
 
         # This list stores the the variables representing the control variables

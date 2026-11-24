@@ -139,7 +139,17 @@ class ControlEnvironment(QuantumEnvironment):
 
     # Method to enter the environment
     def __enter__(self) -> Qubit | Tracer | None:
+        """Enter the environment.
 
+        In Jasp mode, an inverted environment with several controls first computes
+        its condition into a helper qubit.
+
+        Returns
+        -------
+        Qubit or None
+            In static mode, the qubit holding the condition. In Jasp mode, None.
+
+        """
         if check_for_tracing_mode():
             negated_ctrl_qubits = self._negated_ctrl_qubits
             if negated_ctrl_qubits is not None:
@@ -172,6 +182,21 @@ class ControlEnvironment(QuantumEnvironment):
         exception_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
+        """Exit the environment.
+
+        In Jasp mode, the helper qubit of an inverted environment with several
+        controls is uncomputed and released.
+
+        Parameters
+        ----------
+        exception_type : type[BaseException] or None
+            The type of the exception raised in the body, if any.
+        exception_value : BaseException or None
+            The exception raised in the body, if any.
+        traceback : TracebackType or None
+            The traceback of the exception, if any.
+
+        """
         if check_for_tracing_mode():
             QuantumEnvironment.__exit__(self, exception_type, exception_value, traceback)
             negated_ctrl_qubits, condition = self._negated_ctrl_qubits, self._condition
@@ -406,12 +431,32 @@ class ControlEnvironment(QuantumEnvironment):
 
     @staticmethod
     def _flip_if_matching(ctrl_qubits: list[Tracer], ctrl_state: str, target: QuantumBool) -> None:
-        """Flip ``target`` if ``ctrl_qubits`` are in ``ctrl_state``, in Jasp mode."""
+        """Flip ``target`` if ``ctrl_qubits`` are in ``ctrl_state``, in Jasp mode.
+
+        Parameters
+        ----------
+        ctrl_qubits : list[jax.core.Tracer]
+            The control qubits.
+        ctrl_state : str
+            The control state, with one character per control qubit.
+        target : QuantumBool
+            The QuantumBool to flip.
+
+        """
         with ControlEnvironment(ctrl_qubits, ctrl_state=ctrl_state):
             x(target)
 
     def jcompile(self, eqn: JaxprEqn, context_dic: ContextDict) -> None:
-        """Compile the environment into a call of the controlled body."""
+        """Compile the environment into a call of the controlled body.
+
+        Parameters
+        ----------
+        eqn : JaxprEqn
+            The equation of the environment.
+        context_dic : ContextDict
+            The values of the variables, where the outputs of ``eqn`` are inserted.
+
+        """
         args = extract_invalues(eqn, context_dic)
         body_jaspr = eqn.params["jaspr"]
 
