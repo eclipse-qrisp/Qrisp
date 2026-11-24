@@ -16,6 +16,5 @@
 
 """A module for bosonic operators."""
 
-# -*- coding: utf-8 -*-
 from qrisp.operators.bosonic.bosonic_operator import *
 from qrisp.operators.bosonic.bosonic import *
