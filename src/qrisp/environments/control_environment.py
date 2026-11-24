@@ -29,7 +29,7 @@ from jax.core import ShapedArray
 
 from qrisp.circuit import QuantumCircuit, Qubit, XGate
 from qrisp.core import QuantumVariable, mcx, p, rz, x
-from qrisp.core.session_merging_tools import merge, merge_sessions, multi_session_merge
+from qrisp.core.session_merging_tools import merge, merge_sessions
 from qrisp.environments import (
     ClControlEnvironment,
     ConditionEnvironment,
@@ -123,10 +123,6 @@ class ControlEnvironment(QuantumEnvironment):
                 self._negated_ctrl_qubits = list(self.env_args)
 
         else:
-            if isinstance(ctrl_qubits, list):
-                self.arg_qs = multi_session_merge([qb.qs() for qb in ctrl_qubits])
-            else:
-                self.arg_qs = ctrl_qubits.qs()
             self.arg_qs = merge(ctrl_qubits)
 
             self.ctrl_method = ctrl_method
