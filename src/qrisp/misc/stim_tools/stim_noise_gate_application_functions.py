@@ -31,7 +31,7 @@ greek_letters = symbols(
 def stim_noise(stim_name, *parameters_and_qubits, pauli_string=None):
     """Applies a ``StimNoiseGate`` to the given qubits.
 
-    For a list of supported error instructions, please check `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md#noise-channels>`_.
+    For a list of supported error instructions, please check `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md>`_.
 
     Some of the most common errors are listed below:
 
@@ -76,7 +76,7 @@ def stim_noise(stim_name, *parameters_and_qubits, pauli_string=None):
     *parameters : float
         The parameters of the error channel (e.g. error probability). Further
         details about the semantics of the parameters can be found in the
-        `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md#noise-channels>`_.
+        `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md>`_.
     *qubits : Qubit
         The qubits to apply the error channel to.
     pauli_string : str, optional

@@ -62,7 +62,7 @@ class StimNoiseGate(Operation):
     *params : float
         The parameters of the error channel (e.g. error probability). Further
         details about the semantics of the parameters can be found in the
-        `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md#noise-channels>`_
+        `Stims gate reference <https://github.com/quantumlib/Stim/blob/main/doc/gates.md>`_
     pauli_string : str, optional
         A string of Pauli operators (e.g. ``XX``) for correlated errors.
 

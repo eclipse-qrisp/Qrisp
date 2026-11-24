@@ -933,6 +933,11 @@ Development
   on pull requests. Further packages are added as their examples are fixed
   (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
 
+* Added a monthly link check workflow that runs Sphinx's ``linkcheck`` builder
+  over the documentation, so broken links are reported regularly instead of
+  only when someone happens to build the docs
+  (`PR #998 <https://github.com/eclipse-qrisp/Qrisp/pull/998>`_).
+
 Dependency Upgrades
 -------------------
 

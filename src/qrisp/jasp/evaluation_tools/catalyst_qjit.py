@@ -61,7 +61,7 @@ def qjit(function=None, device=None):
 
     If the setup uses an older version of ROCm or a different AMD GPU series, Lightning-AMDGPU must be built manually from source.
 
-    Installation instructions for different platforms are available at `pennylane.ai/install <https://pennylane.ai/install#high-performance-computing-and-gpus>`_.
+    Installation instructions for different platforms are available at `pennylane.ai/install <https://pennylane.ai/install>`_.
 
     Examples
     --------
