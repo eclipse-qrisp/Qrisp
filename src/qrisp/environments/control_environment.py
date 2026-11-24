@@ -17,8 +17,10 @@
 """Defines ControlEnvironment for controlling code blocks on qubits, plus the control() dispatch function."""
 
 from collections.abc import Sequence
-from types import TracebackType
-from typing import Any
+
+# Private alias, so that star imports of this module do not export it.
+from itertools import count as _count
+from typing import TYPE_CHECKING, Any
 
 import jax
 import numpy as np
@@ -46,6 +48,15 @@ from qrisp.jasp import (
 from qrisp.jasp.interpreter_tools.abstract_interpreter import ContextDict
 from qrisp.misc import bin_rep, perm_lock, perm_unlock, retarget_instructions
 from qrisp.qtypes.quantum_bool import QuantumBool
+
+if TYPE_CHECKING:
+    from types import TracebackType
+
+
+# Numbers the helper QuantumBools of inverted environments. In Jasp mode, a QuantumBool
+# created on an assignment line is named after its Python variable, and the tracing
+# session deletes variables by name, so the helpers need names no other variable has.
+_CONDITION_NUMBERS = _count()
 
 
 class ControlEnvironment(QuantumEnvironment):
@@ -156,7 +167,7 @@ class ControlEnvironment(QuantumEnvironment):
                 # Negating the condition of several controls is not the same as
                 # negating each control: compute the condition into a helper qubit
                 # and control the body on it being 0.
-                condition = QuantumBool()
+                condition = QuantumBool(name=f"ctrl_env_condition_{next(_CONDITION_NUMBERS)}")
                 self._flip_if_matching(negated_ctrl_qubits, self._negated_ctrl_state, condition)
                 self._condition = condition
                 self.env_args = [condition[0]]
@@ -180,7 +191,7 @@ class ControlEnvironment(QuantumEnvironment):
         self,
         exception_type: type[BaseException] | None,
         exception_value: BaseException | None,
-        traceback: TracebackType | None,
+        traceback: "TracebackType | None",
     ) -> None:
         """Exit the environment.
 
@@ -572,6 +583,11 @@ def control(ctrl: Any, /, *args: Any, **kwargs: Any) -> "ControlEnvironment | Cl
     For a string, character ``i`` is the state of the ``i``-th qubit in quantum
     control, while classical control reads the string as a binary number, so its
     last character is the state of the first boolean.
+
+    The block must not change its control qubits. With several controls, the
+    condition can be computed into a helper qubit, which is uncomputed by
+    evaluating the condition again at the end of the block: in static mode, and
+    in Jasp mode with ``invert=True``.
 
     See Also
     --------

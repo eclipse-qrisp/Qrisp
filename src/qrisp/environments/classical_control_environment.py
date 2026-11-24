@@ -16,7 +16,7 @@
 
 """Defines ClControlEnvironment, executing quantum code conditioned on classical boolean values."""
 
-from types import TracebackType
+from typing import TYPE_CHECKING
 
 import jax
 import jax.numpy as jnp
@@ -32,6 +32,9 @@ from qrisp.jasp import (
     insert_outvalues,
 )
 from qrisp.jasp.interpreter_tools.abstract_interpreter import ContextDict
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 
 class ClControlEnvironment(QuantumEnvironment):
@@ -206,12 +209,14 @@ class ClControlEnvironment(QuantumEnvironment):
         self,
         exception_type: type[BaseException] | None,
         exception_value: BaseException | None,
-        traceback: TracebackType | None,
+        traceback: "TracebackType | None",
     ) -> bool:
         """Exit the environment.
 
         Outside of Jasp mode, an exception raised by a body that does not take
-        effect is discarded, together with the operations of the body.
+        effect is discarded, together with the operations of the body. Exceptions
+        that are not ``Exception`` subclasses, such as ``KeyboardInterrupt``, are
+        not discarded.
 
         Parameters
         ----------
@@ -240,7 +245,9 @@ class ClControlEnvironment(QuantumEnvironment):
         # If this is the case, we simply exit the QuantumEnvironment without
         # any further action.
         static_error_appeared = False
-        if not check_for_tracing_mode() and exception_type is not None and not self._is_active():
+        # Interrupts and exits, which are not Exception subclasses, always propagate.
+        suppressible = exception_type is not None and issubclass(exception_type, Exception)
+        if suppressible and not check_for_tracing_mode() and not self._is_active():
             self.env_qs.data = []
             static_error_appeared = True
             exception_type = None

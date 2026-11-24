@@ -539,7 +539,9 @@ Bug Fixes
 * :func:`control <qrisp.control>` now honors ``invert=True`` for classical
   control outside of Jasp mode and for quantum control in Jasp mode, where it
   was ignored. In Jasp mode, the condition of several controls is computed
-  into a helper qubit, which is uncomputed afterwards
+  into a helper qubit, which is uncomputed afterwards. Outside of Jasp mode, a
+  classical control block that does not take effect no longer discards a
+  ``KeyboardInterrupt`` or ``SystemExit`` raised in its body
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
 * In Jasp mode, :func:`control <qrisp.control>` negated Python booleans and

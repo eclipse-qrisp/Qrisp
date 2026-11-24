@@ -37,7 +37,13 @@ from qrisp import (
     swap,
     x,
 )
-from qrisp.jasp import boolean_simulation, make_jaspr, qache, terminal_sampling
+from qrisp.jasp import (
+    TracingQuantumSession,
+    boolean_simulation,
+    make_jaspr,
+    qache,
+    terminal_sampling,
+)
 
 UNSUPPORTED_MESSAGE = "Don't know how to control from input type"
 
@@ -442,6 +448,25 @@ def test_jasp_quantum_invert_several_controls(ctrl_state):
         fired, controls = main(value)
         assert bool(fired) == (value != activating_value)
         assert int(controls) == value
+
+
+def test_jasp_quantum_invert_helper_qubits_are_released():
+    """The helper qubits of nested inverted blocks are released, and no other variable is."""
+    registered = {}
+
+    def main():
+        a, b = QuantumFloat(2), QuantumFloat(2)
+        # Named like the Python variable holding the helper, so a helper named after
+        # its variable would make the tracing session delete this one instead.
+        user = QuantumBool(name="condition")
+        with control([a[0], a[1]], invert=True), control([b[0], b[1]], invert=True):
+            x(user)
+        registered["created"] = [a, b, user]
+        registered["after"] = list(TracingQuantumSession.get_instance().qv_list)
+        return measure(user)
+
+    make_jaspr(main)()
+    assert [id(qv) for qv in registered["after"]] == [id(qv) for qv in registered["created"]]
 
 
 @pytest.mark.parametrize("ctrl_state", ["10", 3, 0])

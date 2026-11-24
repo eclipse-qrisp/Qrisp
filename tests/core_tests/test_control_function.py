@@ -237,6 +237,14 @@ def test_static_classical_inactive_block_errors_are_discarded(flag, inverted):
     assert not bit(target)
 
 
+@pytest.mark.parametrize("exception", [KeyboardInterrupt, SystemExit])
+@pytest.mark.parametrize("flag, inverted", [(False, False), (True, True)])
+def test_static_classical_inactive_block_interrupts_propagate(flag, inverted, exception):
+    """Interrupts and exits, which are not Exception subclasses, are not discarded."""
+    with pytest.raises(exception), control(flag, invert=inverted):
+        raise exception()
+
+
 def test_static_classical_active_block_errors_propagate():
     """An error raised by a block that takes effect propagates."""
     with pytest.raises(IndexError), control(False, invert=True):
