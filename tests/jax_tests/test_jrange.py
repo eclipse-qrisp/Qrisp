@@ -277,10 +277,17 @@ def test_jasp_changing_iterations_raise():
 
 @pytest.mark.parametrize(
     "start, stop, expected",
-    [(None, jnp.array(2), 0b011), (jnp.array(1), None, 0b110)],
+    [
+        (None, jnp.array(2), 0b011),
+        (jnp.array(1), None, 0b110),
+        (None, np.int32(2), 0b011),
+        (np.int32(1), None, 0b110),
+        (np.array(1), None, 0b110),
+    ],
+    ids=["jax-stop", "jax-start", "numpy-stop", "numpy-start", "numpy-array-start"],
 )
 def test_jasp_concrete_array_bounds(start, stop, expected):
-    """Concrete JAX arrays created outside of the traced function are valid bounds."""
+    """Concrete JAX or NumPy values created outside of the traced function are valid bounds."""
 
     def make_args(qf):
         if start is None:
@@ -343,6 +350,15 @@ def test_make_tracer_dtypes(value, dtype):
     assert result.shape == ()
     assert result.dtype == dtype
     assert result == value
+
+
+@pytest.mark.parametrize("value", [True, 3, 2.5, 1 + 2j])
+def test_make_tracer_in_jasp_mode_matches_eager(value):
+    """Traced and eager calls return the same value and type."""
+    eager = make_tracer(value)
+    traced = jax.jit(lambda: make_tracer(value))()
+    assert traced.dtype == eager.dtype
+    assert traced == eager
 
 
 def test_make_tracer_complex():

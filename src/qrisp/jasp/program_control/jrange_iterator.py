@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from jax import jit
 from jax._src.array import ArrayImpl
 
@@ -36,7 +37,7 @@ _TRACED_ITERATIONS = 2
 
 
 @jit
-def _jrange_marker(updated_loop_index: Any, threshold: Any) -> Any:
+def _jrange_marker(updated_loop_index: jax.Array, threshold: jax.Array) -> jax.Array:
     """Mark the end of a traced ``jrange`` iteration.
 
     Each traced iteration ends with a call to this function, which appears in the
@@ -178,7 +179,7 @@ def jrange(*args: Any) -> "JRangeIterator | range":
 
     Parameters
     ----------
-    *args : int or jax.Array
+    *args : int or numpy.integer or jax.Array
         ``stop``, or ``start`` and ``stop``. Outside of Jasp mode, they are
         converted to :class:`int`.
 
@@ -301,9 +302,11 @@ def jrange(*args: Any) -> "JRangeIterator | range":
         )
 
     if check_for_tracing_mode():
-        # A concrete array is used like the Python scalar it holds, and Python integers
-        # become traced values, so that the bounds are variables of the program.
-        scalars = [arg.item() if isinstance(arg, ArrayImpl) else arg for arg in args]
+        # A concrete JAX or NumPy array, or a NumPy scalar, is used like the Python scalar
+        # it holds, and Python integers become traced values, so that the bounds are
+        # variables of the program.
+        concrete = (ArrayImpl, np.ndarray, np.generic)
+        scalars = [arg.item() if isinstance(arg, concrete) else arg for arg in args]
         bounds = [make_tracer(arg) if isinstance(arg, int) else arg for arg in scalars]
         return JRangeIterator(*bounds)
 
@@ -354,6 +357,10 @@ def make_tracer(x: bool | int | float | complex) -> jax.Array:
         dtype = jnp.complex128
     else:
         raise TypeError(f"Don't know how to tracerize type {type(x)}")
+
+    if not check_for_tracing_mode():
+        # There is nothing to trace, and jit would compile a new function on every call.
+        return jnp.array(x, dtype)
 
     def tracerizer() -> jax.Array:
         """Return ``x`` as an array of type ``dtype``.

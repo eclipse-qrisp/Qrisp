@@ -559,8 +559,8 @@ Bug Fixes
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
 * In Jasp mode, :func:`jrange <qrisp.jasp.jrange>` now accepts as a bound a
-  concrete JAX array created outside of the traced function, and
-  ``make_tracer`` no longer fails on complex numbers
+  concrete JAX array created outside of the traced function, and a NumPy
+  integer as ``start``, and ``make_tracer`` no longer fails on complex numbers
   (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
