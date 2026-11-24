@@ -20,7 +20,7 @@ from itertools import product
 
 import networkx as nx
 import numpy as np
-from sympy.physics.quantum import OrthogonalKet
+from sympy.physics.quantum import OrthogonalKet, TensorProduct
 
 from qrisp import (
     HGate,
@@ -1478,13 +1478,11 @@ class QuantumBacktrackingTree:
                     if abs(amplitude) < 1e-5:
                         continue
 
-                    external_ket_expr = 1
-                    # Generate the ket expression for the external qvs
-                    for label in external_label_const:
-                        external_ket_expr *= OrthogonalKet(label)
-
                     # Add the corresponding state
-                    res_state += amplitude * OrthogonalKet(str(path)) * external_ket_expr
+                    res_state += amplitude * TensorProduct(
+                        OrthogonalKet(str(path)),
+                        *(OrthogonalKet(label) for label in external_label_const),
+                    )
 
         return res_state
 

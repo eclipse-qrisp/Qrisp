@@ -2480,12 +2480,23 @@ class TestQuantumCircuitGateMethods:
     # r                                                                  #
     # ------------------------------------------------------------------ #
 
-    def test_r_appends_instruction_named_r(self):
-        """r() appends exactly one instruction named 'r'."""
+    def test_prx_appends_instruction_named_prx(self):
+        """prx() appends exactly one instruction named 'prx'."""
         qc = QuantumCircuit(1)
-        qc.r(np.pi / 4, np.pi / 4, 0)
+        qc.prx(np.pi / 4, np.pi / 4, 0)
         assert len(qc.data) == 1
-        assert qc.data[0].op.name == "r"
+        assert qc.data[0].op.name == "prx"
+
+    def test_r_method_is_deprecated(self):
+        """r() warns and appends the same PRX gate as prx()."""
+        from qrisp.misc.exceptions import QrispDeprecationWarning
+
+        qc = QuantumCircuit(1)
+        with pytest.warns(QrispDeprecationWarning, match="QuantumCircuit.r is deprecated"):
+            qc.r(0.3, 1.1, 0)
+        assert len(qc.data) == 1
+        assert qc.data[0].op.name == "prx"
+        assert (qc.data[0].op.alpha, qc.data[0].op.beta) == (0.3, 1.1)
 
     # ------------------------------------------------------------------ #
     # unitary                                                            #
@@ -2710,14 +2721,11 @@ class TestQuantumCircuitExternalConversions:
     # to_pytket                                                          #
     # ------------------------------------------------------------------ #
 
-    def test_to_pytket_basic(self):
-        """to_pytket returns a pytket.Circuit without raising."""
-        pytest.importorskip("pytket")
-        qc = QuantumCircuit(2)
-        qc.h(0)
-        qc.cx(0, 1)
-        pytket_qc = qc.to_pytket()
-        assert pytket_qc is not None
+    def test_to_pytket_removed(self):
+        """to_pytket raises because the converter has been removed."""
+        qc = QuantumCircuit(1)
+        with pytest.raises(NotImplementedError, match="to_pytket.*removed"):
+            qc.to_pytket()
 
     # ------------------------------------------------------------------ #
     # to_cirq                                                            #
