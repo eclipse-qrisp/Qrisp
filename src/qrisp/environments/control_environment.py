@@ -18,9 +18,9 @@
 
 from collections.abc import Sequence
 
-# Private alias, so that star imports of this module do not export it.
+# Private aliases, so that star imports of this module do not export them.
 from itertools import count as _count
-from typing import Any
+from typing import overload as _overload
 
 import jax
 import numpy as np
@@ -491,7 +491,47 @@ def convert_to_custom_control(instruction, control_qubit, invert_control=False):
     return res
 
 
-def control(ctrl: Any, /, *args: Any, **kwargs: Any) -> "ControlEnvironment | ClControlEnvironment":
+# The arguments after ctrl_state depend on the kind of control: the third positional
+# argument is ctrl_method for qubits and invert for booleans. Other controls, such as
+# JAX tracers (qubits or booleans in Jasp mode), are checked at run time and take these
+# arguments by keyword.
+@_overload
+def control(
+    ctrl: Qubit | QuantumVariable | Sequence[Qubit | QuantumBool],
+    /,
+    ctrl_state: int | str = -1,
+    ctrl_method: str | None = None,
+    invert: bool = False,
+) -> "ControlEnvironment": ...
+
+
+@_overload
+def control(
+    ctrl: bool | Sequence[bool],
+    /,
+    ctrl_state: int | str = -1,
+    invert: bool = False,
+) -> ClControlEnvironment: ...
+
+
+@_overload
+def control(
+    ctrl: object,
+    /,
+    ctrl_state: int | str = -1,
+    *,
+    ctrl_method: str | None = None,
+    invert: bool = False,
+) -> "ControlEnvironment | ClControlEnvironment": ...
+
+
+def control(
+    ctrl: object,
+    /,
+    ctrl_state: int | str = -1,
+    *args: str | bool | None,
+    **kwargs: str | bool | None,
+) -> "ControlEnvironment | ClControlEnvironment":
     """Return the environment that controls a ``with`` block on qubits or booleans.
 
     If ``ctrl`` holds qubits, a :ref:`ControlEnvironment` is returned and the block
@@ -506,13 +546,16 @@ def control(ctrl: Any, /, *args: Any, **kwargs: Any) -> "ControlEnvironment | Cl
         only a :ref:`QuantumBool`), a boolean (``bool``, ``numpy.bool_`` outside of
         Jasp mode, a JAX array, or a traced value such as ``measure(qb)``), or a
         list or tuple of either kind.
-    *args : Any
-        Positional arguments forwarded to the environment after ``ctrl``, starting
-        with ``ctrl_state``.
-    **kwargs : Any
-        Keyword arguments forwarded to the environment: ``ctrl_state`` (int or str,
-        all ones by default), ``invert`` (bool) and, for quantum control only,
-        ``ctrl_method`` (str).
+    ctrl_state : int or str, optional
+        The state of the controls in which the block takes effect. The default is
+        ``-1``, all controls in state 1 (or True).
+    *args : str or bool or None
+        For quantum control, ``ctrl_method`` and then ``invert``. For classical
+        control, ``invert``.
+    **kwargs : str or bool or None
+        ``invert`` (bool, False by default): the block takes effect when the
+        controls are not in ``ctrl_state``. For quantum control only,
+        ``ctrl_method`` (str): the method used to synthesize the controlled gates.
 
     Returns
     -------
@@ -575,11 +618,13 @@ def control(ctrl: Any, /, *args: Any, **kwargs: Any) -> "ControlEnvironment | Cl
     3
 
     """
-    environment_type, ctrl_list = _select_environment(_as_control_list(ctrl))
-    return environment_type(ctrl_list, *args, **kwargs)
+    env_type, ctrl_list = _select_environment(_as_control_list(ctrl))
+    # The two environments take ctrl_method and invert in different positional orders,
+    # as the overloads describe, so the forwarded arguments are not typed one by one.
+    return env_type(ctrl_list, ctrl_state, *args, **kwargs)  # pyright: ignore[reportArgumentType]
 
 
-def _as_control_list(ctrl: Any) -> list[Any]:
+def _as_control_list(ctrl: object) -> list[object]:
     """Return ``ctrl`` as a list of qubits or booleans.
 
     A QuantumBool becomes its qubit and any other QuantumVariable the list of its
@@ -609,8 +654,8 @@ def _as_control_list(ctrl: Any) -> list[Any]:
 
 
 def _select_environment(
-    ctrl_list: list[Any],
-) -> "tuple[type[ControlEnvironment] | type[ClControlEnvironment], list[Any]]":
+    ctrl_list: list[object],
+) -> "tuple[type[ControlEnvironment] | type[ClControlEnvironment], list[object]]":
     """Select the environment for ``ctrl_list``.
 
     Qubits select :class:`ControlEnvironment`, booleans select
