@@ -1002,7 +1002,7 @@ def sx_dg(qubits):
         The Qubit to perform the daggered SX gate on.
 
     """
-    append_operation(std_ops.SXDGGate().inverse(), [qubits])
+    append_operation(std_ops.SXDGGate(), [qubits])
 
 
 def gphase(phi, qubits):
@@ -1172,9 +1172,10 @@ def unitary(unitary_array, qubits):
 def measure(qubits):
     """Measure qubits in the computational basis.
 
-    In static mode, the measurement is appended to the circuit and the classical
-    bits holding the outcome are returned. In :ref:`Jasp <jasp>` mode, the outcome
-    itself is returned as a traced value.
+    Outside of :ref:`Jasp <jasp>`, the measurement is appended to the circuit and
+    the classical bits holding the outcome are returned. In a function traced with
+    Jasp, for example with :func:`~qrisp.jasp.jaspify` or
+    :ref:`make_jaspr <jaspr>`, the outcome itself is returned as a traced value.
 
     Parameters
     ----------
@@ -1185,7 +1186,7 @@ def measure(qubits):
     Returns
     -------
     Clbit or list[Clbit] or jax.Array
-        In static mode, a :ref:`Clbit` for a single qubit, and otherwise a list
+        Outside of Jasp, a :ref:`Clbit` for a single qubit, and otherwise a list
         with one Clbit per qubit. In Jasp mode, a boolean for a
         qubit, an integer for an array of qubits, and the decoded value for a
         :ref:`QuantumVariable` or a :ref:`QuantumArray`.
@@ -1202,6 +1203,7 @@ def measure(qubits):
     See Also
     --------
     QuantumVariable.get_measurement : Simulate a QuantumVariable and return its measurement results.
+    qrisp.jasp.terminal_sampling : Sample the measurement results of a Jasp function.
 
     Examples
     --------
