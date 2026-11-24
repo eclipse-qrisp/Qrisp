@@ -810,6 +810,11 @@ API Changes
 Development
 -----------
 
+* Removed the obsolete ``src/qrisp/examples`` directory. These standalone
+  scripts were not part of the installed package and duplicated examples that
+  are maintained in the documentation
+  (`PR #1033 <https://github.com/eclipse-qrisp/Qrisp/pull/1033>`_).
+
 * Added ``jaspr_to_static_register_jaspr``, which rewrites a Jaspr so that all
   qubits come from a single register of fixed size allocated at program start.
   The CUDA-Q backend in `qrisp-cudaq <https://github.com/eclipse-qrisp/qrisp-cudaq>`_
