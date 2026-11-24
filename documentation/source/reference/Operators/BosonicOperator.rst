@@ -11,8 +11,7 @@ Methods
 
 .. autosummary::
    :toctree: generated/
-   
-   BosonicOperator.coeffs
+
    BosonicOperator.dagger
    BosonicOperator.expectation_value
    BosonicOperator.ground_state_energy
