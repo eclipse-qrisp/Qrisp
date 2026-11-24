@@ -933,6 +933,12 @@ Development
   on pull requests. Further packages are added as their examples are fixed
   (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
 
+* Updated the ``pyproject.toml`` license metadata to the
+  `PEP 639 <https://peps.python.org/pep-0639/>`_ SPDX format and removed the
+  deprecated license classifier
+  (`Issue #1044 <https://github.com/eclipse-qrisp/Qrisp/issues/1044>`_,
+  `PR #1048 <https://github.com/eclipse-qrisp/Qrisp/pull/1048>`_).
+
 Dependency Upgrades
 -------------------
 
