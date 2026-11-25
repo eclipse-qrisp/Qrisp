@@ -226,9 +226,9 @@ class QubitOperator(Hamiltonian):
         self.terms_dict = dict(terms_dict)
         if num_qubits is None:
             num_qubits = _qubit_amount(self.terms_dict)
-        elif type(num_qubits) is not int:
-            if not isinstance(num_qubits, np.integer):
-                raise ValueError(f"num_qubits must be an integer, not {num_qubits!r}")
+        elif isinstance(num_qubits, bool) or not isinstance(num_qubits, (int, np.integer)):
+            raise TypeError(f"num_qubits must be an integer, not {num_qubits!r}")
+        else:
             num_qubits = int(num_qubits)
         # Arithmetic passes this on (by maximum), see the num_qubits property.
         self._num_qubits = num_qubits

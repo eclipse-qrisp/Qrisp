@@ -181,8 +181,10 @@ def test_explicit_num_qubits():
     assert QubitOperator().num_qubits == 0
     assert QubitOperator({}, num_qubits=np.int64(3)).num_qubits == 3
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         QubitOperator({}, num_qubits=2.5)
+    with pytest.raises(TypeError):
+        QubitOperator({}, num_qubits=True)
 
 
 def test_editing_terms_dict_directly_is_counted():
