@@ -16,4 +16,3 @@
 
 
 from qrisp.alg_primitives.program_control.quantum_switch import *
-from qrisp.alg_primitives.program_control.switch_case import *

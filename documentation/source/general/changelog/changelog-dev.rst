@@ -728,6 +728,10 @@ New Tutorials/ Updated Documentation
 API Changes
 -----------
 
+* Removed the deprecated ``qswitch`` function and its module
+  ``qrisp.alg_primitives.program_control.switch_case``. Use
+  :func:`q_switch <qrisp.q_switch>` instead.
+
 * The PyTket converter has been removed in this release: the
   ``qrisp.interface.converter.pytket_converter`` module and its exports,
   the ``pytket`` optional dependency, and the associated tests and
