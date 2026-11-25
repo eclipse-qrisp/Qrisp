@@ -993,11 +993,6 @@ Dependency Upgrades
   ``sphinx_toolbox.sidebar_links`` Sphinx extensions
   (`PR #961 <https://github.com/eclipse-qrisp/Qrisp/pull/961>`_).
 
-* Pinned ``qiskit`` to ``<2.6``. With qiskit 2.6.0 on Linux, importing
-  ``qiskit_aer``, ``pyscf`` or PennyLane Lightning after ``qrisp`` fails with
-  ``cannot allocate memory in static TLS block``
-  (`PR #976 <https://github.com/eclipse-qrisp/Qrisp/pull/976>`_).
-
 * Required ``iqm-client[qrisp]>=35.0.0`` in the ``iqm`` and ``dev-testing``
   dependency groups. Older releases do not provide the ``qrisp`` extra, so pip
   could fall back to one of them and install no IQM backend. This happened on
