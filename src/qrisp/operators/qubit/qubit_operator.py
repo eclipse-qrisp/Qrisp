@@ -67,15 +67,18 @@ def _qubit_amount(terms_dict: dict) -> int:
 
 
 class QubitOperator(Hamiltonian):
-    r"""This class provides an efficient implementation of QubitOperators, i.e.
-    Operators, that act on a qubit space :math:`(\mathbb{C}^2)^{\otimes n}`.
-    Supported are operators of the following form:
+    r"""Linear operator acting on a set of qubits.
+
+    This class provides an efficient implementation of operators acting on an
+    :math:`n`-qubit Hilbert space :math:`(\mathbb{C}^2)^{\otimes n}` of the
+    following form:
     
     .. math::
         
         O=\sum\limits_{j}\alpha_j O_j 
         
-    where :math:`O_j=\bigotimes_i m_i^j` is a product of the following operators:
+    where :math:`O_j=\bigotimes_i o_{j,i}` is a tensor product of the following
+    single-qubit operators:
     
     .. list-table::
        :header-rows: 1
