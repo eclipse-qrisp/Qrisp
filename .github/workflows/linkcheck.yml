@@ -2,8 +2,8 @@ name: Link check
 
 on:
   schedule:
-    # Monthly, on the first day of the month at 03:00 UTC.
-    - cron: "0 3 1 * *"
+    # Weekly, every Monday at 03:00 UTC.
+    - cron: "0 3 * * 1"
   workflow_dispatch:
 
 concurrency:
