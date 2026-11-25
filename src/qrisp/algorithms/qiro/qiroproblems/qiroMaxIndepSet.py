@@ -117,8 +117,8 @@ def create_max_indep_cost_operator_reduced(problem_updated):
         for pair in list(problem.edges()):
             # cx(qv[pair[0]], qv[pair[1]])
             rzz(3 * gamma, qv[pair[0]], qv[pair[1]])
-            rz(-gamma, qv[pair[0]])
-            rz(-gamma, qv[pair[1]])
+            rz(-3 * gamma, qv[pair[0]])
+            rz(-3 * gamma, qv[pair[1]])
         for i in problem.nodes():
             if i not in solutions:
                 rz(gamma, qv[i])
