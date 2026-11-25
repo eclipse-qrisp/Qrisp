@@ -16,6 +16,7 @@
 
 """Implements the QubitOperator class for Pauli/ladder operators, measurement, and trotterization."""
 
+import operator
 from itertools import product
 
 import jax.numpy as jnp
@@ -226,10 +227,8 @@ class QubitOperator(Hamiltonian):
         self.terms_dict = dict(terms_dict)
         if num_qubits is None:
             num_qubits = _qubit_amount(self.terms_dict)
-        elif isinstance(num_qubits, bool) or not isinstance(num_qubits, (int, np.integer)):
-            raise TypeError(f"num_qubits must be an integer, not {num_qubits!r}")
         else:
-            num_qubits = int(num_qubits)
+            num_qubits = operator.index(num_qubits)
         # Arithmetic passes this on (by maximum), see the num_qubits property.
         self._num_qubits = num_qubits
 

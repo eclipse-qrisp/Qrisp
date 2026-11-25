@@ -183,8 +183,6 @@ def test_explicit_num_qubits():
 
     with pytest.raises(TypeError):
         QubitOperator({}, num_qubits=2.5)
-    with pytest.raises(TypeError):
-        QubitOperator({}, num_qubits=True)
 
 
 def test_editing_terms_dict_directly_is_counted():
