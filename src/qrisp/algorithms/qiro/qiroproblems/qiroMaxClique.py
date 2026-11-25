@@ -81,7 +81,7 @@ def create_max_clique_replacement_routine(res, problem_updated):
     elif sign > 0:
         # keep the two items in solution and remove all that are not adjacent to both
 
-        intersect = list(set(list(graph.adj[max_item[0]].keys())) & set(list(graph.adj[max_item[0]].keys())))
+        intersect = list(set(list(graph.adj[max_item[0]].keys())) & set(list(graph.adj[max_item[1]].keys())))
         intersect.append(max_item[0])
         intersect.append(max_item[1])
         to_remove = [int(item) for item in graph.nodes() if item not in intersect]

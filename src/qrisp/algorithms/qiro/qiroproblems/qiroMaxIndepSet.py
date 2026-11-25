@@ -16,11 +16,11 @@
 
 """Implements the QIRO replacement routine, cost operator, mixer, and init function for MaxIndepSet."""
 
-import copy
+import numpy as np
 
 from qrisp import QuantumBool, mcx, rz, rzz, x
 from qrisp.algorithms.qiro.qiro_mixers import qiro_controlled_RX_mixer_gen
-from qrisp.algorithms.qiro.qiroproblems.qiro_utils import find_max
+from qrisp.algorithms.qiro.qiroproblems.qiro_utils import sorted_correlations
 
 
 def create_max_indep_replacement_routine(res, problem_updated):
@@ -57,41 +57,46 @@ def create_max_indep_replacement_routine(res, problem_updated):
     # for single qubit correlations
     orig_nodes = list(graph.nodes())
 
-    max_item, sign = find_max(orig_nodes, orig_edges, res, solutions)
-    if max_item == None:
-        return graph, solutions, 0, exclusions
+    # create a copy of the graph (graph.copy() also copies the adjacency, so the input graph stays unchanged)
+    new_graph = graph.copy()
 
-    # create a copy of the graph
-    new_graph = copy.copy(graph)
+    # go through the correlations from largest to smallest absolute value;
+    # as in the original paper, fall back to the next-largest correlation if a negatively
+    # correlated edge has no common neighbours, i.e. the rule would not remove any node
+    for max_item, value in sorted_correlations(orig_nodes, orig_edges, res, solutions):
+        sign = np.sign(value)
 
-    # we remove nodes from the graph, as suggested by the replacement rules
-    # if the item is an int, it is a single node, else it is an edge
-    if isinstance(max_item, int):
-        # if sign <0 then its mostly appeared as a "1" in the results--> part of solution set
-        if sign < 0:
-            # remove all adjacent nodes
-            to_remove = list(graph.adj[max_item])
-            new_graph.remove_nodes_from(to_remove)
-            solutions.append(max_item)
-            exclusions += to_remove
-        # if sign >0 then its mostly appeared as a "0" in the results
-        elif sign > 0:
-            # remove the node
-            new_graph.remove_node(max_item)
-            exclusions.append(max_item)
+        # we remove nodes from the graph, as suggested by the replacement rules
+        # if the item is an int, it is a single node, else it is an edge
+        if isinstance(max_item, int):
+            # if sign <0 then its mostly appeared as a "1" in the results--> part of solution set
+            if sign < 0:
+                # remove all adjacent nodes
+                to_remove = list(graph.adj[max_item])
+                new_graph.remove_nodes_from(to_remove)
+                solutions.append(max_item)
+                exclusions += to_remove
+            # if sign >0 then its mostly appeared as a "0" in the results
+            else:
+                # remove the node
+                new_graph.remove_node(max_item)
+                exclusions.append(max_item)
+            return new_graph, solutions, sign, exclusions
 
-    elif sign > 0:
-        # remove both nodes
-        new_graph.remove_nodes_from(max_item)
-        exclusions += list(max_item)
+        if sign > 0:
+            # remove both nodes
+            new_graph.remove_nodes_from(max_item)
+            exclusions += list(max_item)
+            return new_graph, solutions, sign, exclusions
 
-    elif sign < 0:
         # remove all nodes connected to both nodes
-        intersect = list(set(list(graph.adj[max_item[0]].keys())) & set(list(graph.adj[max_item[0]].keys())))
-        new_graph.remove_nodes_from(intersect)
-        exclusions += intersect
+        intersect = list(set(graph.adj[max_item[0]]) & set(graph.adj[max_item[1]]))
+        if intersect:
+            new_graph.remove_nodes_from(intersect)
+            exclusions += intersect
+            return new_graph, solutions, sign, exclusions
 
-    return new_graph, solutions, sign, exclusions
+    return graph, solutions, 0, exclusions
 
 
 def create_max_indep_cost_operator_reduced(problem_updated):

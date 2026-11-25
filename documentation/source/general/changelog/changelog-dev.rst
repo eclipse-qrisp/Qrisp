@@ -228,6 +228,15 @@ Other New Features
 Bug Fixes
 ---------
 
+* Fixed the QIRO replacement routines for MaxIndepSet and MaxClique. For an
+  edge correlation they intersected the neighbourhood of the first node with
+  itself instead of with that of the second node, so MaxIndepSet removed all
+  neighbours of the first node (including the second one) and MaxClique kept
+  nodes not adjacent to both. The MaxIndepSet routine also no longer modifies
+  the input graph, and it falls back to the next-largest correlation if a
+  negatively correlated edge has no common neighbours, as in the original
+  paper (`Issue #1038 <https://github.com/eclipse-qrisp/Qrisp/issues/1038>`_).
+
 * Fixed the lowering of unsigned integers by
   :meth:`Jaspr.to_mlir <qrisp.jasp.Jaspr.to_mlir>` with
   ``lower_stablehlo=True``. An unsigned constant kept its unsigned value behind
