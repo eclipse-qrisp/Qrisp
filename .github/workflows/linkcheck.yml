@@ -12,6 +12,7 @@ concurrency:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   linkcheck:
@@ -42,3 +43,13 @@ jobs:
 
       - name: Run linkcheck
         run: make -C documentation linkcheck
+
+      - name: Open an issue if linkcheck failed
+        if: failure()
+        uses: JasonEtco/create-an-issue@1b14a70e4d8dc185e5cc76d3bec9eab20257b2c5 # v2.9.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          filename: .github/linkcheck_issue.md
+          update_existing: true
