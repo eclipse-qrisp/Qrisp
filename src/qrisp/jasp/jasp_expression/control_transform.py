@@ -321,7 +321,7 @@ def exec_multi_controlled_jaspr(jaspr: Jaspr, num_ctrls: int, ctrl_state: str) -
         qs = TracingQuantumSession.get_instance()
         ctrls = list(args)[:num_ctrls]
         invalues = list(args)[num_ctrls:]
-        controlled_jaspr = control_jaspr(jaspr)
+        controlled_jaspr = jaspr.ctrl_jaspr if jaspr.ctrl_jaspr is not None else control_jaspr(jaspr)
 
         from qrisp.circuit import XGate
 

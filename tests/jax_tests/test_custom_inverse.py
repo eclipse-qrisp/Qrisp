@@ -762,6 +762,30 @@ def test_controlled_conjugation_ignores_conjugator_control_binding_error():
     assert run(ctrl_active=True, invert_block=False) == {1.0: pytest.approx(1.0)}
     assert run(ctrl_active=True, invert_block=True) == {1.0: pytest.approx(1.0)}
 
+    # Directly controlling the conjugation_env callee with ctrl_state=0 or
+    # multiple controls must reuse its registered center-only ctrl_jaspr rather
+    # than falling back to control_jaspr on the boundary conjugators.
+    def plain_conj(phi):
+        qv = QuantumFloat(1)
+
+        @custom_control
+        def h_conjugator(qv, ctrl=None):
+            if ctrl is None:
+                h(qv[0])
+            else:
+                with control(ctrl):
+                    h(qv[0])
+                p(phi, ctrl)
+
+        with conjugate(h_conjugator)(qv):
+            z(qv[0])
+        return qv
+
+    jaspr = make_jaspr(plain_conj)(0.5)
+    conj_callee = next(eqn.params["jaxpr"] for eqn in jaspr.eqns if eqn.params.get("name") == "conjugation_env")
+    assert conj_callee.control(1, ctrl_state=0) is not None
+    assert conj_callee.control(2) is not None
+
 
 @pytest.mark.parametrize("ctrl_outer", [True, False])
 def test_stacked_custom_control_and_inversion_defers_counterpart_error(ctrl_outer):
