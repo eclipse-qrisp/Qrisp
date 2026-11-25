@@ -21,3 +21,5 @@ tmp/*
 /python311venv/
 /multiverseenv/
 /notebooks/
+AGENTS.md
+CLAUDE.md
