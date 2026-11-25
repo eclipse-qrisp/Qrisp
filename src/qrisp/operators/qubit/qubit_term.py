@@ -141,7 +141,8 @@ class QubitTerm:
         # The idea here is to serialize the operator via 3 integers.
         # These integers specify how the energy of a measurement sample should
         # be computed.
-        # They are processed in the function "evaluate_observable".
+        # They are processed by the expectation-value evaluation in measurement.py and
+        # jasp_measurement.py.
 
         # 1. The Z-int: The binary representation of this integer has a 1 at
         # every digit, where there is a Pauli term in self.

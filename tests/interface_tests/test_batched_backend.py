@@ -626,13 +626,13 @@ def test_hamiltonian_measurement_uses_single_run_async_call():
         return qv
 
     # Unequal coefficients → different operator variances → different shot budgets
-    # per group (~799 shots for 3*X(0), ~266 shots for Z(0) at precision=0.1).
+    # per group (~800 shots for 3*X(0), ~267 shots for Z(0) at atol=0.1).
     H = 3 * X(0) + Z(0)
 
     counting = CountingWrapper(QrispSimulatorBackend())
     bb = counting.batched()
 
-    H.expectation_value(state_prep, precision=0.1, backend=bb)()
+    H.expectation_value(state_prep, atol=0.1, backend=bb)()
 
     # One run_async call regardless of how many commuting groups
     # the Hamiltonian decomposes into
