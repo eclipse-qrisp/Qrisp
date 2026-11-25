@@ -380,7 +380,7 @@ This track demonstrates how to bridge the gap between complex scientific theory 
 
             <a href="./dynamical_cooling.html">
             <div class="example-img-plot-overlay">
-            <p class="sd-card-text">Use block encodings to prepare the groundstate of a Hamiltonian with dynamical cooling.</p>
+            <p class="sd-card-text">Use block encodings to prepare the ground state of a Hamiltonian with dynamical cooling.</p>
             </div>
             </a>
 
@@ -388,7 +388,7 @@ This track demonstrates how to bridge the gap between complex scientific theory 
             :alt: Dynamical Cooling Algorithm
 
         +++
-        **Dynamical Groundstate Preparation**
+        **Dynamical Cooling**
 
 
 You’ve now explored the breadth of what’s possible when you trade gate-level surgery for high-level logic.
