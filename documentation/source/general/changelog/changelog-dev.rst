@@ -944,6 +944,9 @@ Development
   (`Issue #1044 <https://github.com/eclipse-qrisp/Qrisp/issues/1044>`_,
   `PR #1048 <https://github.com/eclipse-qrisp/Qrisp/pull/1048>`_).
 
+* Added ``AGENTS.md`` to ``.gitignore`` so that developers can keep their own
+  agent conventions locally without committing them.
+
 Dependency Upgrades
 -------------------
 
