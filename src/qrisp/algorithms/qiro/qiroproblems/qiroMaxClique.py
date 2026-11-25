@@ -128,8 +128,8 @@ def create_max_clique_cost_operator_reduced(problem_updated):
     def cost_operator(qv, gamma):
         for pair in list(G_compl.edges()):
             rzz(3 * gamma, qv[pair[0]], qv[pair[1]])
-            rz(-gamma, qv[pair[0]])
-            rz(-gamma, qv[pair[1]])
+            rz(-3 * gamma, qv[pair[0]])
+            rz(-3 * gamma, qv[pair[1]])
         for i in problem.nodes():
             if i not in solutions:
                 rz(gamma, qv[i])
