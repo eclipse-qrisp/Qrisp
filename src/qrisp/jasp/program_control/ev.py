@@ -116,7 +116,7 @@ def expectation_value(sampling_kernel, shots, post_processor=None):
 
         print(main(3))
         # Yields e.g.
-        # [1.44 1.44]
+        # (Array(1.44, dtype=float64), Array(1.44, dtype=float64))
 
     The true value 1.5 is not reached exactly because of `shot noise <https://en.wikipedia.org/wiki/Shot_noise>`_ —
     the printed value fluctuates around 1.5 from run to run. To improve the

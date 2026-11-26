@@ -216,8 +216,8 @@ def sample(sampling_kernel=None, shots=0, post_processor=None):
 
         print(main())
         # Yields e.g. (a tuple of two 1D arrays):
-        # (Array([0., 0., 1., ...], dtype=float64),
-        #  Array([0., 0., 0., ...], dtype=float64))
+        # (Array([2., 3., 1., ...], dtype=float64),
+        #  Array([ True,  True, False, ...], dtype=bool))
 
     .. note::
 
