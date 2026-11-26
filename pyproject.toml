@@ -42,6 +42,8 @@ dependencies = [
     "tqdm",
     "dill",
     "psutil",
+    # typing.override only exists from Python 3.12 on
+    "typing_extensions>=4.4.0",
     "jax==0.7.1",
     "jaxlib==0.7.1"
 ]
@@ -146,6 +148,10 @@ ignore = [
     "PLC0415",  # import not at top of file (lazy/function-level imports to avoid circular imports)
     "E402",  # module-level import not at top of file (imports after a module docstring)
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# Test names say what is tested, so test functions and methods need no docstring.
+"tests/**" = ["D102", "D103"]
 
 [tool.coverage.run]
 omit = ["*/__init__.py"]
