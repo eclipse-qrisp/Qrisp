@@ -42,14 +42,69 @@ jobs:
           pip install --no-deps -r documentation/requirements-cudaq.txt
 
       - name: Run linkcheck
+        id: linkcheck
         run: make -C documentation linkcheck
 
-      - name: Open an issue if linkcheck failed
-        if: failure()
-        uses: JasonEtco/create-an-issue@1b14a70e4d8dc185e5cc76d3bec9eab20257b2c5 # v2.9.2
+      # Sphinx writes the broken-link list to documentation/build/linkcheck/
+      # (output.txt / output.json). Upload it even when the step failed, so the
+      # report remains available after the workflow logs expire.
+      - name: Upload linkcheck report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: linkcheck-report
+          path: documentation/build/linkcheck/
+          if-no-files-found: ignore
+
+      # Runs only if the "Run linkcheck" step itself failed. Using the step
+      # outcome (instead of failure()) avoids opening this issue when an earlier
+      # setup step (apt, pip, ...) fails.
+      - name: Open or update tracking issue if linkcheck failed
+        if: steps.linkcheck.outcome == 'failure'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          # Exposed to the script via process.env.RUN_URL.
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         with:
-          filename: .github/linkcheck_issue.md
-          update_existing: true
+          # github-script reports errors automatically; no GITHUB_TOKEN env is
+          # needed because the action uses ${{ github.token }} by default.
+          script: |
+            const fs = require('fs');
+
+            // Read the body template from the repo and substitute the run URL.
+            // The file has no front matter; title and labels are handled below.
+            const body = fs
+              .readFileSync('.github/linkcheck_issue.md', 'utf8')
+              .replaceAll('{{ env.RUN_URL }}', process.env.RUN_URL);
+
+            const title = 'Link check failed';
+
+            // Find open issues whose title contains the given text. Search is
+            // used instead of a title lookup because the REST API has no direct
+            // "issue by exact title" endpoint.
+            const { data } = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open in:title "${title}"`,
+            });
+
+            // Search can match partially, so require an exact title match.
+            const existing = data.items.find((issue) => issue.title === title);
+
+            if (existing) {
+              // Keep a single tracking issue: refresh its body with the latest
+              // run URL instead of opening a duplicate every week.
+              await github.rest.issues.update({
+                ...context.repo,
+                issue_number: existing.number,
+                body,
+              });
+              core.info(`Updated issue #${existing.number}`);
+            } else {
+              // No open tracking issue exists, so create one with the labels.
+              const issue = await github.rest.issues.create({
+                ...context.repo,
+                title,
+                body,
+                labels: ['documentation', 'CI'],
+              });
+              core.info(`Created issue #${issue.data.number}`);
+            }
