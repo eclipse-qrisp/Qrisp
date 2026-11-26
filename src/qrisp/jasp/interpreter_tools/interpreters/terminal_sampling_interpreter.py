@@ -289,7 +289,11 @@ def terminal_sampling_evaluator(sampling_res_type):
                         outvalues = [np.asarray(x) for x in outvalues]
 
                         if sampling_res_type == "ev":
-                            ev_sums = [acc + x * v for acc, x in zip(ev_sums, outvalues)]
+                            # Promote before weighting so integer products cannot overflow int64.
+                            ev_sums = [
+                                acc + x.astype(np.promote_types(x.dtype, np.float64)) * v
+                                for acc, x in zip(ev_sums, outvalues)
+                            ]
                             continue
 
                         if leaf_dtypes is None:

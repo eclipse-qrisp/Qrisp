@@ -550,6 +550,30 @@ class TestEdgeCases:
 
         assert isinstance(main(2), tuple) and len(main(2)) == 2
 
+    def test_terminal_sampling_large_int_no_overflow(self):
+        """Terminal sampling promotes integer leaves before weighting so
+        large integer products do not wrap in int64, while keeping complex
+        leaves complex."""
+
+        def kernel():
+            qb = QuantumBool()
+            x(qb)
+            return qb
+
+        @jaspify(terminal_sampling=True)
+        def main():
+            return expectation_value(
+                kernel,
+                shots=4,
+                post_processor=lambda b: (jnp.int64(2**62), jnp.complex64(1 + 2j)),
+            )()
+
+        res_int, res_complex = main()
+        assert res_int.dtype == jnp.float64
+        assert jnp.isclose(res_int, float(2**62))
+        assert jnp.issubdtype(res_complex.dtype, jnp.complexfloating)
+        assert jnp.isclose(res_complex, 1 + 2j)
+
 
 # =============================================================================
 # 8. Stress
