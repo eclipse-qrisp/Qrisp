@@ -61,7 +61,7 @@ def get_jasp_measurement(
     hamiltonian = hamiltonian.hermitize()
     hamiltonian = hamiltonian.eliminate_ladder_conjugates()
     hamiltonian = hamiltonian.apply_threshold(0)
-    if len(hamiltonian.terms_dict) == 0:
+    if len(hamiltonian.coeff_by_term) == 0:
         return 0
 
     if diagonalisation_method == "commuting_qw":
@@ -113,7 +113,7 @@ def get_jasp_measurement(
 
         temp_meas_ops = []
         temp_coeff = []
-        for term, coeff in meas_op.terms_dict.items():
+        for term, coeff in meas_op.coeff_by_term.items():
             temp_meas_ops.append(jnp.array(term.serialize(), dtype=jnp.int64))
             temp_coeff.append(jnp.real(coeff))
 

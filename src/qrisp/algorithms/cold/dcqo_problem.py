@@ -517,9 +517,9 @@ class DCQOProblem:
             # containing any of them disables the fast path entirely below.
             diagonal_eigenvalues = {"Z": 1 - 2 * basis, "P0": 1 - basis, "P1": basis}
             costs = np.zeros(num_states)
-            for term, coeff in self.H_prob.terms_dict.items():
+            for term, coeff in self.H_prob.coeff_by_term.items():
                 term_value = np.ones(num_states)
-                for idx, factor in term.factor_dict.items():
+                for idx, factor in term.factor_by_qubit.items():
                     if factor not in diagonal_eigenvalues:
                         costs = None
                         break

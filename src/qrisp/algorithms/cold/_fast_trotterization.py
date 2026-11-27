@@ -48,8 +48,8 @@ def is_flat_ising_operator(H):
         two-qubit Z*Z term.
 
     """
-    for term in H.terms_dict:
-        factor_dict = term.factor_dict
+    for term in H.coeff_by_term:
+        factor_dict = term.factor_by_qubit
         n = len(factor_dict)
         if n == 0:
             continue
@@ -66,8 +66,8 @@ def is_flat_ising_operator(H):
 
 def _emit_flat_trotter_step(H, qarg, t, steps, forward_evolution):
     sign = 1 if forward_evolution else -1
-    for term, term_coeff in H.terms_dict.items():
-        factor_dict = term.factor_dict
+    for term, term_coeff in H.coeff_by_term.items():
+        factor_dict = term.factor_by_qubit
         if len(factor_dict) == 0:
             gphase(-sign * jnp.real(term_coeff) * t / steps, qarg[0])
             continue

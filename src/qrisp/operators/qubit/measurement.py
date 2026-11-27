@@ -116,7 +116,7 @@ def get_measurement(
     hamiltonian = hamiltonian.hermitize()
     hamiltonian = hamiltonian.eliminate_ladder_conjugates()
     hamiltonian = hamiltonian.apply_threshold(0)
-    if len(hamiltonian.terms_dict) == 0:
+    if len(hamiltonian.coeff_by_term) == 0:
         return 0
 
     # Copy circuit in over to prevent modification
@@ -207,8 +207,8 @@ class QubitOperatorMeasurement:
             curr.append(gate, qubits)
 
             results.append(get_measurement_from_qc(curr, list(qubit_list), backend, shots))
-            meas_ops.append([term.serialize() for term in group.terms_dict])
-            meas_coeffs.append(list(group.terms_dict.values()))
+            meas_ops.append([term.serialize() for term in group.coeff_by_term])
+            meas_coeffs.append(list(group.coeff_by_term.values()))
 
         if isinstance(backend, BatchedBackend):
             backend.dispatch()

@@ -48,8 +48,8 @@ def test_commute_qw_matches_matrix_commutation():
 
     terms = _random_terms(150, 5, 5, seed=0)
     for s, t in itertools.product(terms, repeat=2):
-        qubits = set(s.factor_dict) | set(t.factor_dict)
-        expected = all(commutes[s.factor_dict.get(q, "I"), t.factor_dict.get(q, "I")] for q in qubits)
+        qubits = set(s.factor_by_qubit) | set(t.factor_by_qubit)
+        expected = all(commutes[s.factor_by_qubit.get(q, "I"), t.factor_by_qubit.get(q, "I")] for q in qubits)
         assert s.commute_qw(t) == expected
 
 
