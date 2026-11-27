@@ -692,6 +692,12 @@ New Tutorials/ Updated Documentation
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
+* Updated the Pauli block-encoding tutorial to calculate the ancilla
+  register width from the number of unitaries, pad the coefficient list
+  to match the register capacity, and use the square roots of the
+  coefficients as preparation amplitudes
+  (`PR #1046 <https://github.com/eclipse-qrisp/Qrisp/pull/1046>`_).
+
 
 
 .. Add new tutorials above this line
