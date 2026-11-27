@@ -148,52 +148,38 @@ def _test_roundtrip_reverse(c: Circuit) -> None:
     _compare_unitaries(c.to_matrix(), c2.to_matrix())
 
 
-def test_single_qubit_circuit_qrisp_to_pyzx() -> None:
-    """Test conversion of qrisp circuit to pyzx circuit for single qubit gates"""
-    qc = _build_single_qubit_qrisp_circuit()
-    _test_qrisp_to_pyzx(qc)
+QRISP_CIRCUIT_BUILDERS = [
+    pytest.param(_build_single_qubit_qrisp_circuit, id="single_qubit"),
+    pytest.param(_build_multi_qubit_qrisp_circuit, id="multi_qubit"),
+]
+PYZX_CIRCUIT_BUILDERS = [
+    pytest.param(_build_single_qubit_pyzx_circuit, id="single_qubit"),
+    pytest.param(_build_multi_qubit_pyzx_circuit, id="multi_qubit"),
+]
 
 
-def test_multi_qubit_circuit_qrisp_to_pyzx() -> None:
-    """Test conversion of qrisp circuit to pyzx circuit for multi qubit gates"""
-    qc = _build_multi_qubit_qrisp_circuit()
-    _test_qrisp_to_pyzx(qc)
+@pytest.mark.parametrize("builder", QRISP_CIRCUIT_BUILDERS)
+def test_circuit_qrisp_to_pyzx(builder: Callable[[], QuantumCircuit]) -> None:
+    """Test conversion of qrisp circuits to pyzx circuits."""
+    _test_qrisp_to_pyzx(builder())
 
 
-def test_single_qubit_circuit_pyzx_to_qrisp() -> None:
-    """Test conversion of pyzx circuit to qrisp circuit for single qubit gates"""
-    c = _build_single_qubit_pyzx_circuit()
-    _test_pyzx_to_qrisp(c)
+@pytest.mark.parametrize("builder", PYZX_CIRCUIT_BUILDERS)
+def test_circuit_pyzx_to_qrisp(builder: Callable[[], Circuit]) -> None:
+    """Test conversion of pyzx circuits to qrisp circuits."""
+    _test_pyzx_to_qrisp(builder())
 
 
-def test_multi_qubit_circuit_pyzx_to_qrisp() -> None:
-    """Test conversion of pyzx circuit to qrisp circuit for multi qubit gates"""
-    c = _build_multi_qubit_pyzx_circuit()
-    _test_pyzx_to_qrisp(c)
+@pytest.mark.parametrize("builder", QRISP_CIRCUIT_BUILDERS)
+def test_circuit_roundtrip(builder: Callable[[], QuantumCircuit]) -> None:
+    """Test roundtrip starting from qrisp circuits."""
+    _test_roundtrip(builder())
 
 
-def test_single_qubit_circuit_roundtrip() -> None:
-    """Test roundtrip starting from qrisp circuit for single qubit gates"""
-    qc = _build_single_qubit_qrisp_circuit()
-    _test_roundtrip(qc)
-
-
-def test_multi_qubit_circuit_roundtrip() -> None:
-    """Test roundtrip starting from qrisp circuit for multi qubit gates"""
-    qc = _build_multi_qubit_qrisp_circuit()
-    _test_roundtrip(qc)
-
-
-def test_single_qubit_circuit_roundtrip_reverse() -> None:
-    """Test roundtrip starting from pyzx circuit for single qubit gates"""
-    c = _build_single_qubit_pyzx_circuit()
-    _test_roundtrip_reverse(c)
-
-
-def test_multi_qubit_circuit_roundtrip_reverse() -> None:
-    """Test roundtrip starting from pyzx circuit for multi qubit gates"""
-    c = _build_multi_qubit_pyzx_circuit()
-    _test_roundtrip_reverse(c)
+@pytest.mark.parametrize("builder", PYZX_CIRCUIT_BUILDERS)
+def test_circuit_roundtrip_reverse(builder: Callable[[], Circuit]) -> None:
+    """Test roundtrip starting from pyzx circuits."""
+    _test_roundtrip_reverse(builder())
 
 
 def test_qrisp_transpilation() -> None:
@@ -277,7 +263,7 @@ def _real_unknown_circuit() -> QuantumCircuit:
     ids=["unknown_gate", "none_gate_no_definition", "real_unknown_no_progress"],
 )
 def test_convert_to_pyzx_raises(circuit_builder: Callable[[], QuantumCircuit], match: str) -> None:
-    """Verify convert_to_cirq raises ValueError for unsupported gates."""
+    """Verify convert_to_pyzx raises ValueError for unsupported gates."""
     with pytest.raises(ValueError, match=match):
         qc = circuit_builder()
         qc.to_pyzx()
@@ -306,18 +292,18 @@ def _build_pyzx_circuit_with_undecomposable_gate() -> Circuit:
     return c
 
 
-def test_error_pyzx_to_qrisp_mock_gate() -> None:
-    """from_pyzx raises ValueError for a gate unknown to PyZX."""
-    c = _build_pyzx_circuit_with_mock_gate()
-    with pytest.raises(ValueError, match="of PyZX is unknown"):
-        QuantumCircuit.from_pyzx(c)
-
-
-def test_error_pyzx_to_qrisp_undecomposable_gate() -> None:
-    """from_pyzx raises ValueError for a gate PyZX cannot decompose."""
-    c = _build_pyzx_circuit_with_undecomposable_gate()
-    with pytest.raises(ValueError, match="cannot be decomposed either"):
-        QuantumCircuit.from_pyzx(c)
+@pytest.mark.parametrize(
+    "circuit_builder, match",
+    [
+        (_build_pyzx_circuit_with_mock_gate, "of PyZX is unknown"),
+        (_build_pyzx_circuit_with_undecomposable_gate, "cannot be decomposed either"),
+    ],
+    ids=["unknown_gate", "undecomposable_gate"],
+)
+def test_convert_from_pyzx_raises(circuit_builder: Callable[[], Circuit], match: str) -> None:
+    """Verify convert_from_pyzx raises ValueError for unsupported gates."""
+    with pytest.raises(ValueError, match=match):
+        QuantumCircuit.from_pyzx(circuit_builder())
 
 
 # ---------------------------------------------------------------------------
