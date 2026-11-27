@@ -48,6 +48,8 @@ MIN_PYZX_VERSION = "0.10.1"
 def _check_pyzx_compatibility(pyzx_module: object, circuit_cls: type) -> None:
     """Raise a clear ``ImportError`` if the installed PyZX is too old.
 
+    Used by :func:`_import_pyzx` before any conversion starts.
+
     Parameters
     ----------
     pyzx_module : object
@@ -83,6 +85,8 @@ def _check_pyzx_compatibility(pyzx_module: object, circuit_cls: type) -> None:
 def _import_pyzx() -> tuple[object, type]:
     """Import PyZX, verify compatibility, and return its module and ``Circuit`` class.
 
+    Used by :func:`convert_to_pyzx` and :func:`convert_from_pyzx`.
+
     Returns
     -------
     tuple[object, type]
@@ -106,6 +110,9 @@ def _import_pyzx() -> tuple[object, type]:
 
 def _to_float(value: object, description: str = "parameter") -> float:
     """Convert a numeric value to float, raising a clear error for symbolic values.
+
+    Used by :func:`_phase` and the PyZX-to-Qrisp handlers to reject symbolic
+    parameters.
 
     Parameters
     ----------
@@ -136,6 +143,8 @@ def _to_float(value: object, description: str = "parameter") -> float:
 
 def _phase(angle: float, max_denominator: int = 1024, tol: float = 1e-9) -> Fraction:
     """Convert an angle in radians to a PyZX phase in units of pi.
+
+    Used throughout the Qrisp-to-PyZX handlers to build PyZX phase arguments.
 
     PyZX simplification rules key on small rational phases such as ``1/4`` or
     ``1/2``. Since most angles are not exactly representable as binary floats,
@@ -175,6 +184,8 @@ def _phase(angle: float, max_denominator: int = 1024, tol: float = 1e-9) -> Frac
 def _ungadget(gate: Gate) -> Gate:
     """Return a copy of a phase gadget with its gadget flag disabled.
 
+    Used by :func:`convert_from_pyzx` before asking PyZX to decompose a gate.
+
     A copy is made so that converting a PyZX circuit does not mutate the
     caller's gate objects. Gates that are not gadgets are returned unchanged.
 
@@ -198,6 +209,8 @@ def _ungadget(gate: Gate) -> Gate:
 
 def _measurement_clbit(qc: QuantumCircuit, result_bit: int | None) -> Clbit:
     """Return the Qrisp clbit for a PyZX measurement destination.
+
+    Used by :func:`_handle_measurement` in the PyZX-to-Qrisp gate table.
 
     A measurement without a destination is assigned a freshly allocated
     classical bit. An explicit destination that exceeds the circuit's classical
@@ -232,7 +245,12 @@ def _measurement_clbit(qc: QuantumCircuit, result_bit: int | None) -> Clbit:
 
 
 def _circuit_signature(circuit: QuantumCircuit) -> tuple[tuple[str, str, tuple[str, ...], tuple[str, ...]], ...]:
-    """Return a comparable signature of a circuit's instructions."""
+    """Return a comparable signature of a circuit's instructions.
+
+    Used by :func:`_transpile` to detect whether a transpilation round made
+    progress, including cases where the set of unknown operation names stays
+    the same but the circuit itself changed.
+    """
     return tuple(
         (
             instr.op.name,
@@ -251,6 +269,9 @@ def _transpile(
     needs_transpile: Callable[[Operation], bool] | None = None,
 ) -> QuantumCircuit:
     """Transpile a circuit until only supported operations remain.
+
+    Used by :func:`convert_to_pyzx` to expand gates without native PyZX
+    mappings.
 
     Operations are repeatedly transpiled until no further progress can be made.
     The code was adapted from the Cirq converter.
@@ -283,13 +304,19 @@ def _transpile(
     """
 
     def _needs_transpile(op: Operation) -> bool:
-        """Return whether ``op`` has to be transpiled."""
+        """Return whether ``op`` has to be transpiled.
+
+        Used by :func:`_transpile` to select operations for each round.
+        """
         if needs_transpile is not None:
             return needs_transpile(op)
         return op.name not in gate_map
 
     def _unknown_names(circuit: QuantumCircuit) -> set[str]:
-        """Return the names of all operations that must be transpiled."""
+        """Return the names of all operations that must be transpiled.
+
+        Used by :func:`_transpile` for progress checks and error messages.
+        """
         return {instr.op.name for instr in circuit.data if _needs_transpile(instr.op)}
 
     for _ in range(max_iterations):
@@ -298,7 +325,10 @@ def _transpile(
             return qrisp_circuit
 
         def _transpile_predicate(op: Operation) -> bool:
-            """Return whether ``op`` must be transpiled."""
+            """Return whether ``op`` must be transpiled.
+
+            Passed to :meth:`QuantumCircuit.transpile` by :func:`_transpile`.
+            """
             return _needs_transpile(op)
 
         try:
@@ -331,6 +361,9 @@ def _transpile(
 def _has_default_ctrl_state(op: Operation) -> bool:
     """Return whether all controls of ``op`` trigger on ``|1>``.
 
+    Used by :func:`_check_ctrl_state` and the transpile predicate in
+    :func:`convert_to_pyzx`.
+
     Parameters
     ----------
     op : qrisp.Operation
@@ -357,6 +390,8 @@ def _has_default_ctrl_state(op: Operation) -> bool:
 
 def _check_ctrl_state(op: Operation) -> None:
     """Raise if an inverted control survived transpilation.
+
+    Used by :func:`convert_to_pyzx` as a safety net after transpilation.
 
     Qrisp keeps the operation name (for example ``"cx"``) when a control is
     inverted via ``ctrl_state``. Such operations are normally routed through
@@ -386,7 +421,11 @@ def _skip_operation(
     qubits: list[int],
     _params: list[float],
 ) -> None:
-    """Drop an operation that has no PyZX representation."""
+    """Drop an operation that has no PyZX representation.
+
+    Used in the Qrisp-to-PyZX gate map for operations that are intentionally
+    skipped.
+    """
     return None
 
 
@@ -395,7 +434,10 @@ def _emit_s_dg(
     qubits: list[int],
     _params: list[float],
 ) -> None:
-    """Emit the adjoint of S as a PyZX ZPhase gate."""
+    """Emit the adjoint of S as a PyZX ZPhase gate.
+
+    Used as the ``s_dg`` handler in the Qrisp-to-PyZX gate map.
+    """
     pyzx_circuit.add_gate("ZPhase", qubits[0], _phase(-np.pi / 2))
 
 
@@ -404,7 +446,10 @@ def _emit_t_dg(
     qubits: list[int],
     _params: list[float],
 ) -> None:
-    """Emit the adjoint of T as a PyZX ZPhase gate."""
+    """Emit the adjoint of T as a PyZX ZPhase gate.
+
+    Used as the ``t_dg`` handler in the Qrisp-to-PyZX gate map.
+    """
     pyzx_circuit.add_gate("ZPhase", qubits[0], _phase(-np.pi / 4))
 
 
@@ -413,7 +458,10 @@ def _emit_p(
     qubits: list[int],
     params: list[float],
 ) -> None:
-    """Emit Qrisp's phase gate as a PyZX ZPhase gate."""
+    """Emit Qrisp's phase gate as a PyZX ZPhase gate.
+
+    Used as the ``p`` handler in the Qrisp-to-PyZX gate map.
+    """
     pyzx_circuit.add_gate("ZPhase", qubits[0], _phase(params[0]))
 
 
@@ -422,7 +470,10 @@ def _emit_sx_dg(
     qubits: list[int],
     _params: list[float],
 ) -> None:
-    """Emit the adjoint of SX as a PyZX XPhase gate."""
+    """Emit the adjoint of SX as a PyZX XPhase gate.
+
+    Used as the ``sx_dg`` handler in the Qrisp-to-PyZX gate map.
+    """
     pyzx_circuit.add_gate("XPhase", qubits[0], _phase(-np.pi / 2))
 
 
@@ -541,52 +592,83 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
 
 
 def _append_controlled_sx(qc: QuantumCircuit, x: Qubit, y: Qubit) -> None:
-    """Append a controlled SX gate acting on ``x`` (control) and ``y`` (target)."""
+    """Append a controlled SX gate acting on ``x`` (control) and ``y`` (target).
+
+    Used as the ``CSX`` method in the PyZX-to-Qrisp gate table.
+    """
     qc.append(SXGate().control(), [x, y])
 
 
 def _handle_measurement(qc: QuantumCircuit, method: Callable[..., None], gate: Gate) -> None:
-    """Append a measurement, allocating a clbit when PyZX has no destination."""
+    """Append a measurement, allocating a clbit when PyZX has no destination.
+
+    Used as the ``Measurement`` handler in the PyZX-to-Qrisp gate table.
+    """
     method(gate.target, _measurement_clbit(qc, gate.result_bit))
 
 
 def _handle_single_qubit_parameter_free(qc: QuantumCircuit, method: Callable[..., None], gate: Gate) -> None:
-    """Append a parameter-free single-qubit gate or non-unitary operation."""
+    """Append a parameter-free single-qubit gate or non-unitary operation.
+
+    Used by the PyZX-to-Qrisp gate table for NOT, Y, Z, HAD, and Reset.
+    """
     method(gate.target)
 
 
 def _handle_single_qubit_with_adjoint_version(qc: QuantumCircuit, method: Callable[..., None], gate: Gate) -> None:
-    """Append a single-qubit gate, honoring its ``adjoint`` flag."""
+    """Append a single-qubit gate, honoring its ``adjoint`` flag.
+
+    Used by the PyZX-to-Qrisp gate table for S, T, and SX.
+    """
     method(gate.adjoint, gate.target)
 
 
 def _handle_single_qubit_one_parameter(qc: QuantumCircuit, method: Callable[..., None], gate: Gate) -> None:
-    """Append a single-qubit gate with one phase parameter (in units of pi)."""
+    """Append a single-qubit gate with one phase parameter (in units of pi).
+
+    Used by the PyZX-to-Qrisp gate table for XPhase, YPhase, and ZPhase.
+    """
     method(_to_float(gate.phase, "phase") * np.pi, gate.target)
 
 
 def _handle_single_qubit_multi_parameter(qc: QuantumCircuit, method: Callable[..., None], gate: Gate) -> None:
-    """Append a single-qubit gate with multiple phase parameters (in units of pi)."""
+    """Append a single-qubit gate with multiple phase parameters (in units of pi).
+
+    Used by the PyZX-to-Qrisp gate table for U2 and U3.
+    """
     method(*[_to_float(phase, "phase") * np.pi for phase in gate.phases], gate.target)
 
 
 def _handle_two_qubit_parameter_free(qc: QuantumCircuit, method: Callable[..., None], gate: Gate) -> None:
-    """Append a parameter-free two-qubit gate."""
+    """Append a parameter-free two-qubit gate.
+
+    Used by the PyZX-to-Qrisp gate table for CNOT, CY, CZ, CSX, SWAP, and CHAD.
+    """
     method(gate.control, gate.target)
 
 
 def _handle_two_qubit_one_parameter(qc: QuantumCircuit, method: Callable[..., None], gate: Gate) -> None:
-    """Append a two-qubit gate with one phase parameter (in units of pi)."""
+    """Append a two-qubit gate with one phase parameter (in units of pi).
+
+    Used by the PyZX-to-Qrisp gate table for CRX, CRY, CRZ, CPhase, RZZ, and
+    RXX.
+    """
     method(_to_float(gate.phase, "phase") * np.pi, gate.control, gate.target)
 
 
 def _handle_two_qubit_multi_parameter(qc: QuantumCircuit, method: Callable[..., None], gate: Gate) -> None:
-    """Append a two-qubit gate with multiple phase parameters (in units of pi)."""
+    """Append a two-qubit gate with multiple phase parameters (in units of pi).
+
+    Used by the PyZX-to-Qrisp gate table for CU3.
+    """
     method(*[_to_float(phase, "phase") * np.pi for phase in gate.phases], gate.control, gate.target)
 
 
 def _handle_multi_qubit_parameter_free(qc: QuantumCircuit, method: Callable[..., None], gate: Gate) -> None:
-    """Append a parameter-free three-qubit gate."""
+    """Append a parameter-free three-qubit gate.
+
+    Used by the PyZX-to-Qrisp gate table for CSWAP, Toffoli, and CCZ.
+    """
     method(gate.ctrl1, gate.ctrl2, gate.target)
 
 

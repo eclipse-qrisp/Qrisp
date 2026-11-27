@@ -2184,6 +2184,12 @@ class QuantumCircuit:
         Requires PyZX >= 0.10.1. Because PyZX does not track global phases,
         conversions are equivalent only up to global phase.
 
+        All standard Qrisp gates are supported, either directly or after
+        transpilation. The operations ``gphase``, ``id``, ``barrier``,
+        ``qb_alloc``, and ``qb_dealloc`` have no PyZX representation and are
+        intentionally dropped. Operations that cannot be transpiled raise a
+        ``ValueError``.
+
         Examples
         --------
         Let's start with a small Bell state on the Qrisp side. We add the
@@ -2297,6 +2303,11 @@ class QuantumCircuit:
         -----
         Requires PyZX >= 0.10.1. Because PyZX does not track global phases,
         round-trips are equivalent only up to global phase.
+
+        PyZX gates without a Qrisp equivalent are decomposed with
+        ``to_basic_gates()`` when possible. The following gates are genuinely
+        unsupported and raise a ``ValueError``: ``FSim``, ``InitAncilla``,
+        ``PostSelect``, ``DiscardBit``, and ``ConditionalGate``.
 
         Examples
         --------
