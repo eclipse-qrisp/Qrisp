@@ -21,10 +21,13 @@ from __future__ import annotations
 import copy
 from collections.abc import Callable
 from fractions import Fraction
-from functools import cache, partial
+from functools import partial
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as package_version
 from typing import TYPE_CHECKING
 
 import numpy as np
+from packaging.version import InvalidVersion, Version
 
 from qrisp import HGate, QuantumCircuit, RYGate, RZGate, SwapGate, SXGate, ZGate, u3Gate
 
@@ -40,11 +43,10 @@ if TYPE_CHECKING:
 # https://github.com/zxcalc/pyzx/releases/tag/v0.10.0
 # https://github.com/zxcalc/pyzx/releases/tag/v0.10.1
 MIN_PYZX_VERSION = "0.10.1"
-_REQUIRED_PYZX_GATES = frozenset({"Y", "CY", "RXX", "RZZ", "Reset", "U2", "U3"})
 
 
-def _check_pyzx_compatibility(pyzx_module: object, circuit_cls: type, gate_types: dict[str, object]) -> None:
-    """Raise a clear ``ImportError`` if the installed PyZX lacks required features.
+def _check_pyzx_compatibility(pyzx_module: object, circuit_cls: type) -> None:
+    """Raise a clear ``ImportError`` if the installed PyZX is too old.
 
     Parameters
     ----------
@@ -52,48 +54,54 @@ def _check_pyzx_compatibility(pyzx_module: object, circuit_cls: type, gate_types
         The imported ``pyzx`` module.
     circuit_cls : type
         The PyZX ``Circuit`` class.
-    gate_types : dict[str, object]
-        Mapping of PyZX gate names to gate classes.
 
     Raises
     ------
     ImportError
-        If required gate types or ``Circuit.bits`` are unavailable.
+        If the installed PyZX is older than ``MIN_PYZX_VERSION`` or lacks
+        ``Circuit.bits``.
 
     """
-    version = getattr(pyzx_module, "__version__", "unknown")
-    missing = sorted(_REQUIRED_PYZX_GATES.difference(gate_types))
-    if not missing and hasattr(circuit_cls(0), "bits"):
+    installed = getattr(pyzx_module, "__version__", None)
+    if installed is None:
+        try:
+            installed = package_version("pyzx")
+        except PackageNotFoundError:
+            installed = "unknown"
+
+    try:
+        too_old = installed != "unknown" and Version(str(installed)) < Version(MIN_PYZX_VERSION)
+    except InvalidVersion:
+        too_old = False
+
+    if not too_old and hasattr(circuit_cls(0), "bits"):
         return
 
-    details = f"; missing gate types: {', '.join(missing)}" if missing else ""
-    raise ImportError(f"PyZX >= {MIN_PYZX_VERSION} is required by the Qrisp PyZX converter (found {version}{details}).")
+    raise ImportError(f"PyZX >= {MIN_PYZX_VERSION} is required by the Qrisp PyZX converter (found {installed}).")
 
 
-@cache
-def _import_pyzx() -> tuple[object, type, dict[str, object]]:
-    """Import PyZX, verify compatibility, and return its module, Circuit, and gate types.
+def _import_pyzx() -> tuple[object, type]:
+    """Import PyZX, verify compatibility, and return its module and ``Circuit`` class.
 
     Returns
     -------
-    tuple[object, type, dict[str, object]]
-        The ``pyzx`` module, the ``Circuit`` class, and the gate-type mapping.
+    tuple[object, type]
+        The ``pyzx`` module and the ``Circuit`` class.
 
     Raises
     ------
     ImportError
-        If PyZX is not installed or lacks required features.
+        If PyZX is not installed or too old.
 
     """
     try:
         import pyzx
         from pyzx import Circuit
-        from pyzx.circuit import gates as pyzx_gates
     except ImportError as exc:
         raise ImportError("PyZX must be installed to be able to use the PyZX converter.") from exc
 
-    _check_pyzx_compatibility(pyzx, Circuit, pyzx_gates.gate_types)
-    return pyzx, Circuit, pyzx_gates.gate_types
+    _check_pyzx_compatibility(pyzx, Circuit)
+    return pyzx, Circuit
 
 
 def _to_float(value: object, description: str = "parameter") -> float:
@@ -387,8 +395,8 @@ def _emit_s_dg(
     qubits: list[int],
     _params: list[float],
 ) -> None:
-    """Emit the adjoint of S using PyZX's adjoint flag."""
-    pyzx_circuit.add_gate("S", qubits[0], adjoint=True)
+    """Emit the adjoint of S as a PyZX ZPhase gate."""
+    pyzx_circuit.add_gate("ZPhase", qubits[0], _phase(-np.pi / 2))
 
 
 def _emit_t_dg(
@@ -396,8 +404,17 @@ def _emit_t_dg(
     qubits: list[int],
     _params: list[float],
 ) -> None:
-    """Emit the adjoint of T using PyZX's adjoint flag."""
-    pyzx_circuit.add_gate("T", qubits[0], adjoint=True)
+    """Emit the adjoint of T as a PyZX ZPhase gate."""
+    pyzx_circuit.add_gate("ZPhase", qubits[0], _phase(-np.pi / 4))
+
+
+def _emit_p(
+    pyzx_circuit: Circuit,
+    qubits: list[int],
+    params: list[float],
+) -> None:
+    """Emit Qrisp's phase gate as a PyZX ZPhase gate."""
+    pyzx_circuit.add_gate("ZPhase", qubits[0], _phase(params[0]))
 
 
 def _emit_sx_dg(
@@ -405,8 +422,8 @@ def _emit_sx_dg(
     qubits: list[int],
     _params: list[float],
 ) -> None:
-    """Emit the adjoint of SX using PyZX's adjoint flag."""
-    pyzx_circuit.add_gate("SX", qubits[0], adjoint=True)
+    """Emit the adjoint of SX as a PyZX XPhase gate."""
+    pyzx_circuit.add_gate("XPhase", qubits[0], _phase(-np.pi / 2))
 
 
 def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
@@ -494,7 +511,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
     True
 
     """
-    _, Circuit, _ = _import_pyzx()
+    _, Circuit = _import_pyzx()
 
     gate_map: dict[str, str | Callable[..., None]] = {
         "cx": "CNOT",
@@ -518,7 +535,6 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
         "s": "S",
         "t": "T",
         "sx": "SX",
-        "p": "ZPhase",
         "rxx": "RXX",
         "rzz": "RZZ",
         "measure": "Measurement",
@@ -526,6 +542,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
         # Gates without a direct PyZX equivalent are handled by these callables.
         "s_dg": _emit_s_dg,
         "t_dg": _emit_t_dg,
+        "p": _emit_p,
         "sx_dg": _emit_sx_dg,
         # Skip allocation/deallocation, identity, global phase, and barriers.
         "qb_alloc": _skip_operation,

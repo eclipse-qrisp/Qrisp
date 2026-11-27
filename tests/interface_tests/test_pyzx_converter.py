@@ -19,17 +19,16 @@ from qrisp.circuit import standard_operations as qrisp_ops
 from qrisp.interface.converter.pyzx_converter import (
     _check_ctrl_state,
     _check_pyzx_compatibility,
-    _import_pyzx,
     _phase,
 )
 
 
 def test_import_error() -> None:
     """to_pyzx raises ImportError when PyZX is not installed."""
-    _import_pyzx.cache_clear()
-    with pytest.raises(ImportError):
+    qc = QuantumCircuit(1)
+
+    with pytest.raises(ImportError, match="PyZX must be installed"):
         with patch.dict(sys.modules, {"pyzx": None}):
-            qc = QuantumCircuit(1)
             qc.to_pyzx()
 
 
@@ -90,33 +89,33 @@ def test_prx_maps_to_u3_decomposition() -> None:
 
 
 @pytest.mark.parametrize(
-    "pyzx_module, gate_types, expect_error",
+    "pyzx_module, expect_error",
     [
-        (pyzx, pyzx_gates.gate_types, False),
-        (SimpleNamespace(__version__="0.9.0"), {}, True),
+        (pyzx, False),
+        (SimpleNamespace(__version__="0.9.0"), True),
     ],
     ids=["current_version", "too_old"],
 )
-def test_pyzx_compatibility_check(
-    pyzx_module: object,
-    gate_types: dict[str, object],
-    expect_error: bool,
-) -> None:
+def test_pyzx_compatibility_check(pyzx_module: object, expect_error: bool) -> None:
     """The compatibility check accepts supported PyZX and rejects old versions."""
     if expect_error:
         with pytest.raises(ImportError, match="PyZX >= 0.10.1"):
-            _check_pyzx_compatibility(pyzx_module, Circuit, gate_types)
+            _check_pyzx_compatibility(pyzx_module, Circuit)
     else:
-        _check_pyzx_compatibility(pyzx_module, Circuit, gate_types)
+        _check_pyzx_compatibility(pyzx_module, Circuit)
 
 
-def test_non_default_ctrl_state_raises() -> None:
-    """Controlled operations that trigger on |0> are rejected, not silently converted."""
+def test_inverted_control_is_transpiled() -> None:
+    """Controls that trigger on |0> are decomposed into X-conjugated default controls."""
     qc = QuantumCircuit(2)
     qc.append(qrisp_ops.XGate().control(ctrl_state=0), [0, 1])
 
-    with pytest.raises(ValueError, match="ctrl_state"):
-        qc.to_pyzx()
+    _test_qrisp_to_pyzx(qc)
+
+    expected_not_count = 2
+    names = [gate.name for gate in qc.to_pyzx().gates]
+    assert names.count("NOT") >= expected_not_count
+    assert "CNOT" in names
 
 
 @pytest.mark.parametrize(
@@ -389,6 +388,15 @@ def test_measurement_result_bit_out_of_range_raises() -> None:
         QuantumCircuit.from_pyzx(c)
 
 
+def test_measurement_negative_result_bit_raises() -> None:
+    """A negative measurement destination is rejected instead of using the last clbit."""
+    c = Circuit(1, bit_amount=1)
+    c.add_gate("Measurement", 0, result_bit=-1)
+
+    with pytest.raises(ValueError, match="targets result bit -1"):
+        QuantumCircuit.from_pyzx(c)
+
+
 def test_non_unitaries() -> None:
     """Test measurement and reset"""
     qc = QuantumCircuit(2, 1)
@@ -439,15 +447,18 @@ def _real_unknown_circuit() -> QuantumCircuit:
 )
 def test_convert_to_pyzx_raises(circuit_builder: Callable[[], QuantumCircuit], match: str) -> None:
     """Verify convert_to_pyzx raises ValueError for unsupported gates."""
+    qc = circuit_builder()
+
     with pytest.raises(ValueError, match=match):
-        qc = circuit_builder()
         qc.to_pyzx()
 
 
 def _build_pyzx_circuit_with_mock_gate() -> Circuit:
-    """PyZX circuit with an unknown mock gate."""
+    """PyZX circuit with an unknown mock gate that cannot be decomposed."""
     gate = MagicMock()
     gate.name = "some_gate"
+    gate.as_gadget = False
+    gate.to_basic_gates.side_effect = NotImplementedError("no decomposition")
 
     c = Circuit(1)
     c.add_gate(gate)
@@ -455,18 +466,16 @@ def _build_pyzx_circuit_with_mock_gate() -> Circuit:
 
 
 def _build_pyzx_circuit_with_undecomposable_gate() -> Circuit:
-    """PyZX circuit with a gate whose decomposition still contains the same gate."""
-    c = Circuit(2)
+    """PyZX circuit with a gate that always decomposes back to itself."""
     from pyzx.circuit import ParityPhase
 
-    g = ParityPhase(0, 0, 1)
+    class _SelfDecomposingGate(ParityPhase):
+        def to_basic_gates(self) -> list[pyzx_gates.Gate]:
+            """Return a fresh instance of the same undecomposable gate."""
+            return [_SelfDecomposingGate(self.phase, *self.targets)]
 
-    def _f() -> list[pyzx_gates.Gate]:
-        """Return a decomposition that still contains the undecomposable gate."""
-        return [ParityPhase(0, 0, 1)]
-
-    g.to_basic_gates = _f
-    c.add_gate(g)
+    c = Circuit(2)
+    c.add_gate(_SelfDecomposingGate(0, 0, 1))
     return c
 
 
