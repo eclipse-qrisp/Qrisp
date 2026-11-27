@@ -441,7 +441,7 @@ def pyzx_gap_params():
             marks.append(
                 pytest.mark.xfail(
                     reason="known bug: PhaseGadget is not un-gadgetted before decomposition",
-                    strict=False,
+                    strict=True,
                 )
             )
         params.append(pytest.param(name, name in PYZX_UNSUPPORTED, id=name, marks=marks))
@@ -581,7 +581,7 @@ def qrisp_gap_params():
                     id=name,
                     marks=pytest.mark.xfail(
                         reason="known gap: gate has no mapping and no definition to transpile",
-                        strict=False,
+                        strict=True,
                     ),
                 )
             )
@@ -620,7 +620,7 @@ def test_qrisp_gap_gate_roundtrip(name):
     _compare_unitaries(qc.get_unitary(), qc2.get_unitary())
 
 
-@pytest.mark.xfail(reason="known bug: classical destination is dropped on Qrisp -> PyZX", strict=False)
+@pytest.mark.xfail(reason="known bug: classical destination is dropped on Qrisp -> PyZX", strict=True)
 def test_measurement_destination_qrisp_to_pyzx():
     """A measurement's explicit clbit must survive as a PyZX result_bit."""
     qc = QuantumCircuit(2)
@@ -628,7 +628,7 @@ def test_measurement_destination_qrisp_to_pyzx():
     assert qc.to_pyzx().gates[0].result_bit == 0
 
 
-@pytest.mark.xfail(reason="known bug: Qrisp -> PyZX measurements have no QASM destination", strict=False)
+@pytest.mark.xfail(reason="known bug: Qrisp -> PyZX measurements have no QASM destination", strict=True)
 def test_measurement_qasm_export_qrisp_to_pyzx():
     """A converted measurement must carry the destination required by QASM."""
     qc = QuantumCircuit(2)
@@ -636,7 +636,7 @@ def test_measurement_qasm_export_qrisp_to_pyzx():
     qc.to_pyzx().to_qasm()
 
 
-@pytest.mark.xfail(reason="known bug: result_bit is dropped on PyZX -> Qrisp", strict=False)
+@pytest.mark.xfail(reason="known bug: result_bit is dropped on PyZX -> Qrisp", strict=True)
 def test_measurement_destination_pyzx_to_qrisp():
     """PyZX measurements sharing a result_bit must share a Qrisp clbit."""
     c = Circuit(2, bit_amount=2)

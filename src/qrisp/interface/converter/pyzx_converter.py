@@ -21,7 +21,7 @@ from functools import partial
 
 import numpy as np
 
-from qrisp import GPhaseGate, HGate, QuantumCircuit, RYGate, RZGate, SwapGate, SXGate, ZGate, u3Gate
+from qrisp import HGate, QuantumCircuit, RYGate, RZGate, SwapGate, SXGate, ZGate, u3Gate
 
 
 def _transpile(qrisp_circuit, gate_map):
@@ -112,7 +112,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
         "rz": "ZPhase",
         "u1": "ZPhase",
         "u3": "U3",
-        "r": None,
+        "prx": "U3",
         "s": "S",
         "t": "T",
         "s_dg": None,
@@ -158,13 +158,6 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
 
         special_gate_actions = {
             **dict.fromkeys(["id", "barrier", "gphase", "qb_alloc", "qb_dealloc"], lambda: None),
-            "r": lambda: pyzx_circuit.add_gate(
-                "U3",
-                *pyxz_op_qubits,
-                Fraction.from_float(float(-params[0] / np.pi)),
-                Fraction.from_float(float(params[1] / np.pi)),
-                Fraction.from_float(float(-params[1] / np.pi)),
-            ),
             "s_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 2)),
             "t_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 4)),
             "p": lambda: pyzx_circuit.add_gate(
@@ -229,7 +222,6 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
 
     def _CSX_gate(x, y):
         qc.append(SXGate().control(), [x, y])
-        qc.append(GPhaseGate(np.pi / 4).control(), [x, y])
 
     gate_map = {
         # single-qubit gates
