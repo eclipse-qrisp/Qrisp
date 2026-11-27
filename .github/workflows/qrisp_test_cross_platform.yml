@@ -61,8 +61,8 @@ jobs:
             # This module imports pennylane at the top, and pennylane is only
             # installed through the catalyst extra, which Windows cannot use.
             pytest-flags: '--ignore=tests/interface_tests/test_converter_qrisp_to_qml.py'
-            
-    steps:  
+
+    steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
