@@ -14,6 +14,7 @@ from pyzx.circuit import gates as pyzx_gates
 
 from qrisp import QuantumCircuit, QuantumVariable, U1Gate
 from qrisp.circuit import standard_operations as qrisp_ops
+from qrisp.interface.converter.pyzx_converter import _phase
 
 
 def test_import_error() -> None:
@@ -22,6 +23,37 @@ def test_import_error() -> None:
         with patch.dict(sys.modules, {"pyzx": None}):
             qc = QuantumCircuit(1)
             qc.to_pyzx()
+
+
+@pytest.mark.parametrize(
+    "angle, expected",
+    [
+        (0.0, Fraction(0)),
+        (np.pi / 4, Fraction(1, 4)),
+        (np.pi / 3, Fraction(1, 3)),
+        (2 * np.pi / 3, Fraction(2, 3)),
+        (-np.pi / 2, Fraction(-1, 2)),
+        (np.pi, Fraction(1)),
+    ],
+)
+def test_phase_snaps_to_small_denominators(angle: float, expected: Fraction) -> None:
+    """Common angles are snapped to small rational phases (in units of pi)."""
+    assert _phase(angle) == expected
+
+
+def test_phase_keeps_non_rational_angles_exact() -> None:
+    """Angles that are not close to a small rational are not snapped."""
+    max_denominator = 1024
+    phase = _phase(0.3)
+    assert float(phase) == 0.3 / np.pi
+    assert phase.denominator > max_denominator
+
+
+def test_convert_to_pyzx_snaps_phase() -> None:
+    """A converted phase gate carries a small rational phase to PyZX."""
+    qc = QuantumCircuit(1)
+    qc.p(np.pi / 3, 0)
+    assert qc.to_pyzx().gates[0].rho == Fraction(1, 3)
 
 
 def _build_single_qubit_qrisp_circuit() -> QuantumCircuit:

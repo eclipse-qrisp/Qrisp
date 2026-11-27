@@ -34,6 +34,44 @@ if TYPE_CHECKING:
     from qrisp import Clbit, Operation, Qubit
 
 
+def _phase(angle: float, max_denominator: int = 1024, tol: float = 1e-9) -> Fraction:
+    """Convert an angle in radians to a PyZX phase in units of pi.
+
+    PyZX simplification rules key on small rational phases such as ``1/4`` or
+    ``1/2``. Since most angles are not exactly representable as binary floats,
+    the result is snapped to a small denominator whenever the approximation is
+    within ``tol``. Angles that are not close to such a rational are kept as
+    their exact float value.
+
+    Parameters
+    ----------
+    angle : float
+        The angle in radians.
+    max_denominator : int, optional
+        The largest denominator allowed when snapping to a rational phase.
+        The default is 1024.
+    tol : float, optional
+        The maximum absolute error (in units of pi) for accepting a snapped
+        fraction. The default is 1e-9.
+
+    Returns
+    -------
+    Fraction
+        The angle expressed in units of pi.
+
+    Examples
+    --------
+    >>> _phase(np.pi / 3)
+    Fraction(1, 3)
+    >>> _phase(np.pi / 4) == Fraction(1, 4)
+    True
+
+    """
+    x = float(angle) / np.pi
+    fraction = Fraction(x).limit_denominator(max_denominator)
+    return fraction if abs(float(fraction) - x) < tol else Fraction(x)
+
+
 def _transpile(qrisp_circuit: QuantumCircuit, gate_map: dict[str, str | None]) -> QuantumCircuit:
     """Transpile a circuit until only operations known to ``gate_map`` remain.
 
@@ -228,12 +266,10 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
 
         special_gate_actions: dict[str, Callable[[], None]] = {
             **dict.fromkeys(["id", "barrier", "gphase", "qb_alloc", "qb_dealloc"], lambda: None),
-            "s_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 2)),
-            "t_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 4)),
-            "p": lambda: pyzx_circuit.add_gate(
-                "U3", *pyxz_op_qubits, 0, 0, Fraction.from_float(float(params[0] / np.pi))
-            ),
-            "sx_dg": lambda: pyzx_circuit.add_gate("XPhase", *pyxz_op_qubits, Fraction(-1, 2)),
+            "s_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, _phase(-np.pi / 2)),
+            "t_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, _phase(-np.pi / 4)),
+            "p": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, _phase(params[0])),
+            "sx_dg": lambda: pyzx_circuit.add_gate("XPhase", *pyxz_op_qubits, _phase(-np.pi / 2)),
         }
 
         # Gate with no direct PyZX equivalent.
@@ -250,7 +286,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
         if name == "measure" and clbits:
             pyzx_circuit.add_gate("Measurement", pyxz_op_qubits[0], pyxz_op_clbits[0])
         elif params:
-            pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, *[Fraction.from_float(float(p / np.pi)) for p in params])
+            pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, *[_phase(p) for p in params])
         else:
             pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits)
 
