@@ -16,13 +16,15 @@
 
 """Implements ControlledJaspr and the transformations that add quantum control to Jaspr equations."""
 
+from collections.abc import Callable
+
 import numpy as np
 from jax.extend.core import JaxprEqn, Var
 
 from qrisp._cache_config import qrisp_lru_compilation_cache
 from qrisp.jasp import TracingQuantumSession
 from qrisp.jasp.jasp_expression.centerclass import Jaspr
-from qrisp.jasp.jasp_expression.jaxpr_utils import rebuild_closed_jaxpr
+from qrisp.jasp.jasp_expression.jaxpr_utils import VariantBindingError, rebuild_closed_jaxpr
 from qrisp.jasp.primitives import AbstractQubit
 
 
@@ -40,7 +42,10 @@ class ControlledJaspr(Jaspr):
 
     __slots__ = ("base_jaspr", "ctrl_state")
 
-    def __init__(self, base_jaspr, ctrl_state, stop_recursion=False):
+    def __init__(self, base_jaspr: Jaspr, ctrl_state: str, stop_recursion: bool = False) -> None:
+
+        if base_jaspr._ctrl_error is not None:
+            raise VariantBindingError(*base_jaspr._ctrl_error)
 
         self.base_jaspr = base_jaspr
         self.ctrl_state = str(ctrl_state)
@@ -52,11 +57,15 @@ class ControlledJaspr(Jaspr):
 
         Jaspr.__init__(self, controlled_jaspr)
         self.envs_flattened = True
+        self._inv_error = base_jaspr._inv_error
 
         if self.base_jaspr.inv_jaspr and not stop_recursion:
-            self.inv_jaspr = ControlledJaspr(base_jaspr.inv_jaspr, ctrl_state, stop_recursion=True)
+            try:
+                self.inv_jaspr = ControlledJaspr(base_jaspr.inv_jaspr, ctrl_state, stop_recursion=True)
+            except VariantBindingError as exc:
+                self._inv_error = exc.args
 
-    def control(self, num_ctrl, ctrl_state=-1):
+    def control(self, num_ctrl: int, ctrl_state: int | str = -1) -> "ControlledJaspr":
 
         if isinstance(ctrl_state, int):
             if ctrl_state < 0:
@@ -68,20 +77,22 @@ class ControlledJaspr(Jaspr):
 
         return ControlledJaspr.from_cache(self.base_jaspr, ctrl_state + self.ctrl_state)
 
-    def inverse(self):
+    def inverse(self) -> "ControlledJaspr":
+        if self._inv_error is not None:
+            raise VariantBindingError(*self._inv_error)
         return ControlledJaspr.from_cache(self.base_jaspr.inverse(), self.ctrl_state)
 
     # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
     @classmethod
     @qrisp_lru_compilation_cache
-    def from_cache(cls, base_jaspr, ctrl_state):
+    def from_cache(cls, base_jaspr: Jaspr, ctrl_state: str) -> "ControlledJaspr":
         return ControlledJaspr(base_jaspr, ctrl_state)
 
 
 control_var_count = np.zeros(1)
 
 
-def control_eqn(eqn, ctrl_qubit_var):
+def control_eqn(eqn: JaxprEqn, ctrl_qubit_var: Var) -> JaxprEqn:
     """Receives and equation that describes either an operation or a pjit primitive
     and returns an equation that describes the inverse.
 
@@ -103,30 +114,14 @@ def control_eqn(eqn, ctrl_qubit_var):
 
         invars = list(eqn.invars)
         if isinstance(eqn.params["jaxpr"], Jaspr):
-            orig_jaxpr = eqn.params["jaxpr"]
-            controlled_jaxpr = orig_jaxpr.control(1)
-
-            # Jaspr.control() may retrieve a pre-cached ctrl_jaspr (populated
-            # by the custom_control decorator's own retrace via make_jaspr),
-            # or build one via multi_control_jaspr. Either way, values that
-            # are only used inside nested jit/cond/while sub-equations (e.g.
-            # arrays closed over by q_switch case functions) can end up
-            # reclassified as unexpected constvars during that retrace. Fold
-            # any such constvars back into genuine invars so the wrapping
-            # equation's invars line up with the controlled callee's real
-            # invars, see fold_extra_constvars_into_invars.
-            from qrisp.jasp.jasp_expression.inv_transform import fold_extra_constvars_into_invars
-
-            # controlled_jaxpr.invars starts with the newly added control
-            # qubit (see custom_control_environment.ammended_func /
-            # multi_control_jaspr), so any newly introduced constvars must be
-            # folded back in right after it to line up with the wrapping
-            # equation's [ctrl_qubit_var] + eqn.invars ordering.
-            normalized = fold_extra_constvars_into_invars(controlled_jaxpr, len(orig_jaxpr.constvars), insert_at=1)
-            if normalized is not controlled_jaxpr:
-                controlled_jaxpr = Jaspr(normalized)
-
-            new_params["jaxpr"] = controlled_jaxpr
+            # The controlled version takes [ctrl_qubit] + the arguments of the
+            # equation it replaces: a cached ctrl_jaspr was bound to pjit's
+            # calling convention when custom_control registered it (see
+            # bind_variant_to_jit_call), and a derived one is built by
+            # multi_control_jaspr from this Jaspr's own signature. Not
+            # rewrapping here is what lets a ControlledJaspr stay one, keeping
+            # its efficient nested control and its custom inverse.
+            new_params["jaxpr"] = eqn.params["jaxpr"].control(1)
             new_params["name"] = "c" + new_params["name"]
 
             invars = [ctrl_qubit_var] + eqn.invars
@@ -227,15 +222,18 @@ def control_eqn(eqn, ctrl_qubit_var):
 
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
 @qrisp_lru_compilation_cache
-def control_jaspr(jaspr):
+def control_jaspr(jaspr: Jaspr, uncontrolled_indices: tuple[int, ...] = ()) -> Jaspr:
     """Takes a Jaspr and returns a Jaspr that has an additional Qubit argument
     (located behind the QuantumState argument). The returned Jaspr is
     controlled on that Qubit argument.
 
     Parameters
     ----------
-    Jaspr : qrisp.jasp.Jaspr
+    jaspr : qrisp.jasp.Jaspr
         The Jaspr to control.
+    uncontrolled_indices : tuple[int, ...], optional
+        Equation indices in ``jaspr.eqns`` to leave uncontrolled (for example,
+        the boundary conjugators of a :class:`~qrisp.ConjugationEnvironment`).
 
     Returns
     -------
@@ -245,12 +243,17 @@ def control_jaspr(jaspr):
     """
     from qrisp.jasp import AbstractQubit, Jaspr
 
+    if jaspr._ctrl_error is not None:
+        raise VariantBindingError(*jaspr._ctrl_error)
+
     ctrl_qubit_var = Var(aval=AbstractQubit())
     control_var_count[0] += 1
 
     new_eqns = []
-    for eqn in jaspr.eqns:
-        if eqn.primitive.name == "jasp.quantum_gate" or eqn.primitive.name in [
+    for i, eqn in enumerate(jaspr.eqns):
+        if i in uncontrolled_indices:
+            new_eqns.append(eqn)
+        elif eqn.primitive.name == "jasp.quantum_gate" or eqn.primitive.name in [
             "jit",
             "while",
             "cond",
@@ -276,7 +279,7 @@ def control_jaspr(jaspr):
     )
 
 
-def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
+def multi_control_jaspr(jaspr: Jaspr, num_ctrl: int, ctrl_state: str) -> Jaspr:
     """Similar to control_jaspr but allows specification of more than
     one control and a control state
 
@@ -311,14 +314,14 @@ def multi_control_jaspr(jaspr, num_ctrl, ctrl_state):
     )
 
 
-def exec_multi_controlled_jaspr(jaspr, num_ctrls, ctrl_state):
+def exec_multi_controlled_jaspr(jaspr: Jaspr, num_ctrls: int, ctrl_state: str) -> Callable:
 
     def multi_controlled_jaspr_executor(*args):
 
         qs = TracingQuantumSession.get_instance()
         ctrls = list(args)[:num_ctrls]
         invalues = list(args)[num_ctrls:]
-        controlled_jaspr = control_jaspr(jaspr)
+        controlled_jaspr = jaspr.ctrl_jaspr if jaspr.ctrl_jaspr is not None else control_jaspr(jaspr)
 
         from qrisp.circuit import XGate
 

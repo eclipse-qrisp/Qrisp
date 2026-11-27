@@ -33,6 +33,7 @@ from qrisp.jasp import (
     flatten_environments,
 )
 from qrisp.jasp.jasp_expression import collect_environments, invert_jaspr
+from qrisp.jasp.jasp_expression.jaxpr_utils import VariantBindingError
 from qrisp.jasp.primitives import AbstractQuantumState
 
 
@@ -126,6 +127,8 @@ class Jaspr(ClosedJaxpr):
         "hashvalue",
         "ctrl_jaspr",
         "inv_jaspr",
+        "_ctrl_error",
+        "_inv_error",
         "envs_flattened",
     )
 
@@ -136,6 +139,8 @@ class Jaspr(ClosedJaxpr):
         isqfree: bool | None = None,
         ctrl_jaspr: "Jaspr | None" = None,
         inv_jaspr: "Jaspr | None" = None,
+        _ctrl_error: tuple | None = None,
+        _inv_error: tuple | None = None,
         **kwargs,
     ) -> None:
         if len(args) == 2:
@@ -177,6 +182,8 @@ class Jaspr(ClosedJaxpr):
         self.isqfree = isqfree
         self.ctrl_jaspr = ctrl_jaspr
         self.inv_jaspr = inv_jaspr
+        self._ctrl_error = _ctrl_error
+        self._inv_error = _inv_error
         self.envs_flattened = False
 
         if not isinstance(self.invars[-1].aval, AbstractQuantumState):
@@ -229,6 +236,8 @@ class Jaspr(ClosedJaxpr):
             "permeability": self.permeability,
             "isqfree": self.isqfree,
             "ctrl_jaspr": ctrl_jaspr,
+            "_ctrl_error": self._ctrl_error,
+            "_inv_error": self._inv_error,
             "constvars": list(self.constvars),
             "invars": list(self.invars),
             "outvars": list(self.outvars),
@@ -342,6 +351,9 @@ class Jaspr(ClosedJaxpr):
         (``a`` and ``b``).
 
         """
+        if self._ctrl_error is not None:
+            raise VariantBindingError(*self._ctrl_error)
+
         if self.ctrl_jaspr is not None and num_ctrl == 1 and ctrl_state == -1:
             return self.ctrl_jaspr
 
@@ -588,6 +600,8 @@ class Jaspr(ClosedJaxpr):
 
         """
         res = flatten_environments(self)
+        res._ctrl_error = self._ctrl_error
+        res._inv_error = self._inv_error
         if self.ctrl_jaspr is not None:
             res.ctrl_jaspr = self.ctrl_jaspr.flatten_environments()
         if self.inv_jaspr is not None:
@@ -1530,9 +1544,13 @@ def make_jaspr(
     return jaspr_creator
 
 
-def check_aval_equivalence(invars_1, invars_2) -> bool:
-    """Return True if every paired invar has the same abstract-value type."""
-    return all(type(v1.aval) is type(v2.aval) for v1, v2 in zip(invars_1, invars_2))
+def check_aval_equivalence(invars_1: list[Var], invars_2: list[Var]) -> bool:
+    """Return True if both signatures have the same length and every paired
+    invar has the same abstract value.
+    """
+    if len(invars_1) != len(invars_2):
+        return False
+    return all(v1.aval == v2.aval for v1, v2 in zip(invars_1, invars_2))
 
 
 def remove_redundant_allocations(closed_jaxpr: ClosedJaxpr) -> None:

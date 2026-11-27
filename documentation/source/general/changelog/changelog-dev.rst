@@ -325,18 +325,17 @@ Bug Fixes
   :func:`hamiltonian_simulation <qrisp.gqsp.hamiltonian_simulation>` were not
   affected (`PR #953 <https://github.com/eclipse-qrisp/Qrisp/pull/953>`_).
 
-* Fixed a failure when a function decorated with
-  :func:`custom_inversion <qrisp.custom_inversion>` was inverted twice, which
-  raised ``Automatic loop inversion is only supported for jrange-based loops``.
-  An inverted Jaspr keeps a back-pointer to the Jaspr it inverts, and the second
-  inversion follows it instead of deriving an inverse. Inverting can reclassify
-  arguments as constants, and folding them back rewrapped the Jaspr without
-  carrying the back-pointer over, so the second inversion fell back to inverting
-  the body, which is the derivation ``custom_inversion`` exists to avoid. This
-  affected, for instance, inverting a :func:`prepare <qrisp.prepare>` whose
-  amplitudes are only known at run time, as produced by a
-  :class:`~qrisp.block_encodings.BlockEncoding` simulation with traced
-  coefficients.
+* Fixed a bug where inverting a :func:`custom_inversion <qrisp.custom_inversion>`
+  function twice in Jasp mode failed with
+  ``Automatic loop inversion is only supported for jrange-based loops``
+  (`PR #881 <https://github.com/eclipse-qrisp/Qrisp/pull/881>`_,
+  `PR #933 <https://github.com/eclipse-qrisp/Qrisp/pull/933>`_).
+
+* Fixed a bug where :func:`custom_inversion <qrisp.custom_inversion>` and
+  :func:`custom_control <qrisp.custom_control>` functions in Jasp mode silently
+  produced wrong results when their custom variant used captured traced values
+  in a different order than the forward function
+  (`PR #933 <https://github.com/eclipse-qrisp/Qrisp/pull/933>`_).
 
 * Fixed two issues in :func:`q_switch <qrisp.q_switch>` affecting branch lists of
   odd length. The padding branch the ``"tree"`` method appends now accepts every
