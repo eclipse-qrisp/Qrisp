@@ -367,32 +367,6 @@ def _emit_sx_dg(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -
     pyzx_circuit.add_gate("XPhase", qubits[0], _phase(-np.pi / 2))
 
 
-def _emit_prx(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -> None:
-    """Emit ``PRX(theta, phi) = RZ(phi) RX(theta) RZ(-phi)`` as a PyZX U3 gate.
-
-    ``PRXGate.params`` stores the expanded U3 decomposition
-    ``[theta, phi - pi/2, pi/2 - phi]``.
-
-    Parameters
-    ----------
-    pyzx_circuit : pyzx.Circuit
-        The circuit that receives the gate.
-    qubits : list[int]
-        The PyZX qubit indices the gate acts on.
-    params : list[float]
-        The Qrisp PRX parameters in radians.
-
-    """
-    theta, phi_minus_half_pi, half_pi_minus_phi = params
-    pyzx_circuit.add_gate(
-        "U3",
-        qubits[0],
-        _phase(theta),
-        _phase(phi_minus_half_pi),
-        _phase(half_pi_minus_phi),
-    )
-
-
 def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
     """Convert a Qrisp QuantumCircuit to a PyZX Circuit.
 
@@ -487,7 +461,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
         "rz": "ZPhase",
         "u1": "ZPhase",
         "u3": "U3",
-        "prx": _emit_prx,
+        "prx": "U3",
         "s": "S",
         "t": "T",
         "sx": "SX",
