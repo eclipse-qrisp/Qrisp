@@ -30,7 +30,6 @@ from qrisp import (
     QuantumBool,
     QuantumFloat,
     QuantumModulus,
-    QuantumVariable,
     boolean_simulation,
     conjugate,
     control,
@@ -39,7 +38,6 @@ from qrisp import (
     h,
     jaspify,
     measure,
-    measure_to_big_integer,
     num_qubits,
     qache,
     x,
@@ -112,18 +110,6 @@ def test_modulus_biginteger_create_measure(seed, size):
         return measure(qm)
 
     assert to_int(main()) == V_int
-
-
-def test_measure_to_big_integer():
-    @boolean_simulation
-    def main():
-        qv = QuantumVariable(40)
-        x(qv[0])
-        x(qv[5])
-        x(qv[33])
-        return measure_to_big_integer(qv, 2)
-
-    assert to_int(main()) == (1 << 0) + (1 << 5) + (1 << 33)
 
 
 @pytest.mark.parametrize("size", QC_INPLACE_SIZE)

@@ -16,6 +16,9 @@
 
 """Defines DynamicQubitArray, a Jasp-compatible tracer-backed dynamic array of qubits."""
 
+# Private alias, so that star imports of this module do not export it.
+import typing as _typing
+
 from jax import tree_util
 
 from qrisp.jasp.primitives import AbstractQubit, fuse_qb_array, get_size, slice_qb_array
@@ -24,12 +27,22 @@ from qrisp.jasp.primitives.abstract_quantum_register import (
     _normalize_slice_bounds,
 )
 
+if _typing.TYPE_CHECKING:
+    from jax.core import Tracer
+
 
 class DynamicQubitArray:
     """A Jasp-compatible dynamic array of qubits."""
 
     def __init__(self, tracer):
         self.tracer = tracer
+
+    @_typing.overload
+    def __getitem__(self, key: slice) -> "DynamicQubitArray": ...
+
+    # Integers, NumPy integers, JAX arrays and tracers all implement __index__, slices do not.
+    @_typing.overload
+    def __getitem__(self, key: _typing.SupportsIndex) -> "Tracer": ...
 
     def __getitem__(self, key):
         if isinstance(key, slice):
