@@ -187,9 +187,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
         if name == "measure" and clbits:
             pyzx_circuit.add_gate("Measurement", pyxz_op_qubits[0], pyxz_op_clbits[0])
         elif params:
-            pyzx_circuit.add_gate(
-                pyxz_gate, *pyxz_op_qubits, *[Fraction.from_float(float(p / np.pi)) for p in params]
-            )
+            pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits, *[Fraction.from_float(float(p / np.pi)) for p in params])
         else:
             pyzx_circuit.add_gate(pyxz_gate, *pyxz_op_qubits)
 
