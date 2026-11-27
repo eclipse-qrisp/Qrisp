@@ -100,6 +100,21 @@ New Features
   * Raises ``ValueError`` for a non-positive shot count — including a
     dynamic one, which only becomes concrete once the backend runs.
 
+* **Pauli network trotterization.** :meth:`QubitOperator.trotterization
+  <qrisp.operators.qubit.QubitOperator.trotterization>` accepts
+  ``method="count_synthesis"`` and ``method="depth_synthesis"``. A Trotter
+  step is implemented as one Pauli network
+  (`arXiv:2404.03280 <https://arxiv.org/abs/2404.03280>`_): a Clifford
+  circuit that turns every Pauli string into a single-qubit rotation at some
+  point, followed by its inverse.
+
+  * ``count_synthesis`` (Algorithm 1 of the paper) aims at few CNOTs,
+    ``depth_synthesis`` (Algorithm 2) at low CNOT depth.
+  * With ``order=2``, the rotations of the second half step are placed on the
+    network's uncompute, so a second order step costs the CNOTs of a first
+    order step.
+  * Ladder and projector factors are expanded into Pauli strings first.
+
 Improvements
 ------------
 
@@ -770,6 +785,10 @@ New Tutorials/ Updated Documentation
 
 API Changes
 -----------
+
+* Renamed ``QubitOperator.terms_dict`` to ``QubitOperator.coeff_by_term`` and
+  ``QubitTerm.factor_dict`` to ``QubitTerm.factor_by_qubit``, so the names say
+  what each dict maps. ``FermionicOperator.terms_dict`` is unchanged.
 
 * Removed the deprecated ``qswitch`` function and its module
   ``qrisp.alg_primitives.program_control.switch_case``. Use

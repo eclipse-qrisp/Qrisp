@@ -98,13 +98,13 @@ class QubitTerm:
     r""" """
 
     def __init__(self, factor_dict={}):
-        self.factor_dict = dict(factor_dict)
+        self.factor_by_qubit = dict(factor_dict)
 
         self.hash_value = hash(tuple(sorted(factor_dict.items(), key=lambda x: x[0])))
 
     def update(self, update_dict):
-        self.factor_dict.update(update_dict)
-        self.hash_value = hash(tuple(sorted(self.factor_dict.items())))
+        self.factor_by_qubit.update(update_dict)
+        self.hash_value = hash(tuple(sorted(self.factor_by_qubit.items())))
 
     def __hash__(self):
         return self.hash_value
@@ -113,16 +113,16 @@ class QubitTerm:
         return self.hash_value == other.hash_value
 
     def copy(self):
-        return QubitTerm(self.factor_dict.copy())
+        return QubitTerm(self.factor_by_qubit.copy())
 
     def is_identity(self):
-        return len(self.factor_dict) == 0
+        return len(self.factor_by_qubit) == 0
 
     def binary_representation(self, n):
         x_vector = np.zeros(n, dtype=int)
         z_vector = np.zeros(n, dtype=int)
         for index in range(n):
-            curr_factor = self.factor_dict.get(index, "I")
+            curr_factor = self.factor_by_qubit.get(index, "I")
             if curr_factor == "X":
                 x_vector[index] = 1
             elif curr_factor == "Z":
@@ -157,7 +157,7 @@ class QubitTerm:
         and_int = 0
         ctrl_int = 0
         last_ladder_factor = None
-        factor_dict = self.factor_dict
+        factor_dict = self.factor_by_qubit
         for i in factor_dict.keys():
             bit = 1 << i
 
@@ -200,7 +200,7 @@ class QubitTerm:
 
         res = 1
 
-        for i, factor in self.factor_dict.items():
+        for i, factor in self.factor_by_qubit.items():
             if factor == "X":
                 res *= X(i)
             elif factor == "Y":
@@ -220,7 +220,7 @@ class QubitTerm:
 
     def adjoint(self):
         new_factor_dict = {}
-        for i, factor in self.factor_dict.items():
+        for i, factor in self.factor_by_qubit.items():
             if factor in ["X", "Y", "Z", "P0", "P1"]:
                 new_factor_dict[i] = factor
             elif factor == "A":
@@ -253,16 +253,16 @@ class QubitTerm:
         # the quantum argument is conjugated with a function that makes the
         # Operator diagonal. Please refer to the comments in QubitOperator.change_of_basis
         # to learn how this works.
-        for factor in self.factor_dict.values():
+        for factor in self.factor_by_qubit.values():
             if factor not in ["I", "Z", "P0", "P1"]:
                 qubit_op = QubitOperator({self: coeff})
                 with conjugate(qubit_op.change_of_basis)(qv) as diagonal_op:
-                    for diagonal_term, coeff in diagonal_op.terms_dict.items():
+                    for diagonal_term, diagonal_coeff in diagonal_op.coeff_by_term.items():
                         if ctrl is None:
-                            diagonal_term.simulate(coeff, qv)
+                            diagonal_term.simulate(diagonal_coeff, qv)
                         else:
                             with control(ctrl):
-                                diagonal_term.simulate(coeff, qv)
+                                diagonal_term.simulate(diagonal_coeff, qv)
                 return
 
         qs = find_qs(qv)
@@ -280,7 +280,7 @@ class QubitTerm:
         # Contains the booleans, which specify whether P0 or P1
         projector_state = []
 
-        factor_dict = self.factor_dict
+        factor_dict = self.factor_by_qubit
         for i in factor_dict.keys():
             if factor_dict[i] == "Z":
                 Z_indices.append(i)
@@ -489,7 +489,7 @@ class QubitTerm:
 
     def non_trivial_indices(self):
         res = set()
-        for index, P in self.factor_dict.items():
+        for index, P in self.factor_by_qubit.items():
             res.add(index)
         return res
 
@@ -522,10 +522,10 @@ class QubitTerm:
                 return Symbol("P1(" + str(index) + ")", commutative=False)
 
         expr = 1
-        index_list = sorted(list(self.factor_dict.keys()))
+        index_list = sorted(list(self.factor_by_qubit.keys()))
 
         for i in index_list:
-            expr = expr * to_spin(self.factor_dict[i], str(i))
+            expr = expr * to_spin(self.factor_by_qubit[i], str(i))
 
         return expr
 
@@ -545,8 +545,8 @@ class QubitTerm:
     def __mul__(self, other):
         result_factor_dict = {}
         result_coeff = 1
-        a = self.factor_dict
-        b = other.factor_dict
+        a = self.factor_by_qubit
+        b = other.factor_by_qubit
 
         keys = set(a.keys()) | set(b.keys())
         for key in keys:
@@ -572,7 +572,7 @@ class QubitTerm:
             The resulting coefficient.
 
         """
-        result_factor_dict = self.factor_dict.copy()
+        result_factor_dict = self.factor_by_qubit.copy()
         result_coeff = 1
 
         for key, value in subs_dict.items():
@@ -597,7 +597,7 @@ class QubitTerm:
         """
 
         def unitary_(operand):
-            for i, factor in self.factor_dict.items():
+            for i, factor in self.factor_by_qubit.items():
                 if factor == "X":
                     x(operand[i])
                 elif factor == "Y":
@@ -619,7 +619,7 @@ class QubitTerm:
                 A Boolean indicating whether a phase -1 must be applied. The default is False.
 
         """
-        for i, factor in self.factor_dict.items():
+        for i, factor in self.factor_by_qubit.items():
             if factor == "X":
                 x(operand[i])
             elif factor == "Y":
@@ -646,8 +646,8 @@ class QubitTerm:
 
     def commute(self, other):
         """Checks if two QubitTerms commute."""
-        a = self.factor_dict
-        b = other.factor_dict
+        a = self.factor_by_qubit
+        b = other.factor_by_qubit
 
         keys = set()
         keys.update(set(a.keys()))
@@ -668,14 +668,14 @@ class QubitTerm:
                     sign_flip *= -1
                     continue
             else:
-                return len(self.commutator(other).terms_dict) == 0
+                return len(self.commutator(other).coeff_by_term) == 0
 
         return sign_flip == 1
 
     def commute_pauli(self, other):
         """Checks if the Pauli factors of two QubitTerms commute and the ladder factors commute qubit-wise."""
-        a = self.factor_dict
-        b = other.factor_dict
+        a = self.factor_by_qubit
+        b = other.factor_by_qubit
 
         keys = set()
         keys.update(set(a.keys()))
@@ -703,8 +703,8 @@ class QubitTerm:
 
     def commute_qw(self, other):
         """Checks if two QubitTerms commute qubit-wise."""
-        a = self.factor_dict
-        b = other.factor_dict
+        a = self.factor_by_qubit
+        b = other.factor_by_qubit
 
         if len(a) > len(b):
             a, b = b, a
@@ -717,7 +717,7 @@ class QubitTerm:
 
     def intersect(self, other):
         """Checks if two QubitTerms operate on the same qubit."""
-        return len(set(self.factor_dict.keys()).intersection(other.factor_dict.keys())) != 0
+        return len(set(self.factor_by_qubit.keys()).intersection(other.factor_by_qubit.keys())) != 0
 
     def ladders_agree(self, other):
         """Checks if the ladder operators of two QubitTerms operate on the same set of qubits.
@@ -732,8 +732,8 @@ class QubitTerm:
         None.
 
         """
-        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
-        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
+        ladder_indices_self = [factor[0] for factor in self.factor_by_qubit.items() if factor[1] in ["A", "C"]]
+        ladder_indices_other = [factor[0] for factor in other.factor_by_qubit.items() if factor[1] in ["A", "C"]]
         return set(ladder_indices_self) == set(ladder_indices_other)
 
     def ladders_intersect(self, other):
@@ -749,6 +749,6 @@ class QubitTerm:
         None.
 
         """
-        ladder_indices_self = [factor[0] for factor in self.factor_dict.items() if factor[1] in ["A", "C"]]
-        ladder_indices_other = [factor[0] for factor in other.factor_dict.items() if factor[1] in ["A", "C"]]
+        ladder_indices_self = [factor[0] for factor in self.factor_by_qubit.items() if factor[1] in ["A", "C"]]
+        ladder_indices_other = [factor[0] for factor in other.factor_by_qubit.items() if factor[1] in ["A", "C"]]
         return len(set(ladder_indices_self).intersection(ladder_indices_other)) != 0

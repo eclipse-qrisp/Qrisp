@@ -46,13 +46,12 @@ from qrisp.operators.hamiltonian_tools import group_up_iterable
 from qrisp.operators.qubit.commutativity_tools import construct_change_of_basis
 from qrisp.operators.qubit.jasp_measurement import get_jasp_measurement
 from qrisp.operators.qubit.measurement import get_measurement
+from qrisp.operators.qubit.pauli_network.depth import depth_synthesis
+from qrisp.operators.qubit.pauli_network.pauli_set import PauliSet
+from qrisp.operators.qubit.pauli_network.synthesis import count_synthesis
 from qrisp.operators.qubit.qubit_term import QubitTerm
 
 threshold = 1e-9
-
-#
-# QubitOperator
-#
 
 
 class QubitOperator(Hamiltonian):
@@ -189,11 +188,12 @@ class QubitOperator(Hamiltonian):
 
     """
 
-    def __init__(self, terms_dict={}):
-        self.terms_dict = dict(terms_dict)
+    def __init__(self, coeff_by_term={}):
+        """Create the operator from a dict mapping each QubitTerm to its coefficient."""
+        self.coeff_by_term = dict(coeff_by_term)
 
     def len(self):
-        return len(self.terms_dict)
+        return len(self.coeff_by_term)
 
     def coeffs(self):
         """Returns the coefficients of the operator.
@@ -211,7 +211,7 @@ class QubitOperator(Hamiltonian):
         array([1. , 1. , 0.5])
 
         """
-        return np.array(list(self.terms_dict.values()))
+        return np.array(list(self.coeff_by_term.values()))
 
     #
     # Printing
@@ -241,7 +241,7 @@ class QubitOperator(Hamiltonian):
 
         """
         expr = 0
-        for term, coeff in self.terms_dict.items():
+        for term, coeff in self.coeff_by_term.items():
             expr += coeff * term.to_expr()
         return expr
 
@@ -273,7 +273,7 @@ class QubitOperator(Hamiltonian):
         """
         res_terms_dict = {}
         for op in operators:
-            for term, coeff in op.terms_dict.items():
+            for term, coeff in op.coeff_by_term.items():
                 new_coeff = res_terms_dict.get(term, 0) + coeff
                 if abs(new_coeff) < threshold:
                     res_terms_dict.pop(term, None)
@@ -308,12 +308,12 @@ class QubitOperator(Hamiltonian):
 
         res_terms_dict = {}
 
-        for term, coeff in self.terms_dict.items():
+        for term, coeff in self.coeff_by_term.items():
             res_terms_dict[term] = res_terms_dict.get(term, 0) + coeff
             if abs(res_terms_dict[term]) < threshold:
                 del res_terms_dict[term]
 
-        for term, coeff in other.terms_dict.items():
+        for term, coeff in other.coeff_by_term.items():
             res_terms_dict[term] = res_terms_dict.get(term, 0) + coeff
             if abs(res_terms_dict[term]) < threshold:
                 del res_terms_dict[term]
@@ -342,12 +342,12 @@ class QubitOperator(Hamiltonian):
 
         res_terms_dict = {}
 
-        for term, coeff in self.terms_dict.items():
+        for term, coeff in self.coeff_by_term.items():
             res_terms_dict[term] = res_terms_dict.get(term, 0) + coeff
             if abs(res_terms_dict[term]) < threshold:
                 del res_terms_dict[term]
 
-        for term, coeff in other.terms_dict.items():
+        for term, coeff in other.coeff_by_term.items():
             res_terms_dict[term] = res_terms_dict.get(term, 0) - coeff
             if abs(res_terms_dict[term]) < threshold:
                 del res_terms_dict[term]
@@ -376,12 +376,12 @@ class QubitOperator(Hamiltonian):
 
         res_terms_dict = {}
 
-        for term, coeff in self.terms_dict.items():
+        for term, coeff in self.coeff_by_term.items():
             res_terms_dict[term] = res_terms_dict.get(term, 0) - coeff
             if abs(res_terms_dict[term]) < threshold:
                 del res_terms_dict[term]
 
-        for term, coeff in other.terms_dict.items():
+        for term, coeff in other.coeff_by_term.items():
             res_terms_dict[term] = res_terms_dict.get(term, 0) + coeff
             if abs(res_terms_dict[term]) < threshold:
                 del res_terms_dict[term]
@@ -410,8 +410,8 @@ class QubitOperator(Hamiltonian):
 
         res_terms_dict = {}
 
-        for term1, coeff1 in self.terms_dict.items():
-            for term2, coeff2 in other.terms_dict.items():
+        for term1, coeff1 in self.coeff_by_term.items():
+            for term2, coeff2 in other.coeff_by_term.items():
                 curr_term, curr_coeff = term1 * term2
                 res_terms_dict[curr_term] = res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
 
@@ -436,15 +436,15 @@ class QubitOperator(Hamiltonian):
 
         """
         if isinstance(other, (int, float, complex)):
-            self.terms_dict[QubitTerm()] = self.terms_dict.get(QubitTerm(), 0) + other
+            self.coeff_by_term[QubitTerm()] = self.coeff_by_term.get(QubitTerm(), 0) + other
             return self
         if not isinstance(other, QubitOperator):
             raise TypeError("Cannot add QubitOperator and " + str(type(other)))
 
-        for term, coeff in other.terms_dict.items():
-            self.terms_dict[term] = self.terms_dict.get(term, 0) + coeff
-            if abs(self.terms_dict[term]) < threshold:
-                del self.terms_dict[term]
+        for term, coeff in other.coeff_by_term.items():
+            self.coeff_by_term[term] = self.coeff_by_term.get(term, 0) + coeff
+            if abs(self.coeff_by_term[term]) < threshold:
+                del self.coeff_by_term[term]
         return self
 
     def __isub__(self, other):
@@ -457,15 +457,15 @@ class QubitOperator(Hamiltonian):
 
         """
         if isinstance(other, (int, float, complex)):
-            self.terms_dict[QubitTerm()] = self.terms_dict.get(QubitTerm(), 0) - other
+            self.coeff_by_term[QubitTerm()] = self.coeff_by_term.get(QubitTerm(), 0) - other
             return self
         if not isinstance(other, QubitOperator):
             raise TypeError("Cannot add QubitOperator and " + str(type(other)))
 
-        for term, coeff in other.terms_dict.items():
-            self.terms_dict[term] = self.terms_dict.get(term, 0) - coeff
-            if abs(self.terms_dict[term]) < threshold:
-                del self.terms_dict[term]
+        for term, coeff in other.coeff_by_term.items():
+            self.coeff_by_term[term] = self.coeff_by_term.get(term, 0) - coeff
+            if abs(self.coeff_by_term[term]) < threshold:
+                del self.coeff_by_term[term]
         return self
 
     def __imul__(self, other):
@@ -479,11 +479,11 @@ class QubitOperator(Hamiltonian):
         """
         if isinstance(other, (int, float, complex)):
             # other = QubitOperator({QubitTerm():other})
-            for term in self.terms_dict:
-                self.terms_dict[term] *= other
+            for term in self.coeff_by_term:
+                self.coeff_by_term[term] *= other
 
-            res_terms_dict = {term: coeff for term, coeff in self.terms_dict.items() if abs(coeff) >= threshold}
-            self.terms_dict = res_terms_dict
+            res_terms_dict = {term: coeff for term, coeff in self.coeff_by_term.items() if abs(coeff) >= threshold}
+            self.coeff_by_term = res_terms_dict
             return self
 
         if not isinstance(other, QubitOperator):
@@ -491,13 +491,13 @@ class QubitOperator(Hamiltonian):
 
         res_terms_dict = {}
 
-        for term1, coeff1 in self.terms_dict.items():
-            for term2, coeff2 in other.terms_dict.items():
+        for term1, coeff1 in self.coeff_by_term.items():
+            for term2, coeff2 in other.coeff_by_term.items():
                 curr_term, curr_coeff = term1 * term2
                 res_terms_dict[curr_term] = res_terms_dict.get(curr_term, 0) + curr_coeff * coeff1 * coeff2
 
         res_terms_dict = {term: coeff for term, coeff in res_terms_dict.items() if abs(coeff) >= threshold}
-        self.terms_dict = res_terms_dict
+        self.coeff_by_term = res_terms_dict
         return self
 
     #
@@ -518,7 +518,7 @@ class QubitOperator(Hamiltonian):
         """
         res_terms_dict = {}
 
-        for term, coeff in self.terms_dict.items():
+        for term, coeff in self.coeff_by_term.items():
             curr_term, curr_coeff = term.subs(subs_dict)
             res_terms_dict[curr_term] = res_terms_dict.get(curr_term, 0) + curr_coeff * coeff
 
@@ -529,7 +529,7 @@ class QubitOperator(Hamiltonian):
     #
 
     def find_minimal_qubit_amount(self):
-        indices = sum([list(term.factor_dict.keys()) for term in self.terms_dict.keys()], [])
+        indices = sum([list(term.factor_by_qubit.keys()) for term in self.coeff_by_term.keys()], [])
         if len(indices) == 0:
             return 0
         return max(indices) + 1
@@ -565,12 +565,12 @@ class QubitOperator(Hamiltonian):
         """
         res = 0
 
-        for term_self, coeff_self in self.terms_dict.items():
-            for term_other, coeff_other in other.terms_dict.items():
+        for term_self, coeff_self in self.coeff_by_term.items():
+            for term_other, coeff_other in other.coeff_by_term.items():
                 res += coeff_self * coeff_other * term_self.commutator(term_other)
 
-        min_coeff_self = min([abs(coeff) for coeff in self.terms_dict.values()])
-        min_coeff_other = min([abs(coeff) for coeff in other.terms_dict.values()])
+        min_coeff_self = min([abs(coeff) for coeff in self.coeff_by_term.values()])
+        min_coeff_other = min([abs(coeff) for coeff in other.coeff_by_term.values()])
 
         res.apply_threshold(min_coeff_self * min_coeff_other / 2)
 
@@ -586,8 +586,8 @@ class QubitOperator(Hamiltonian):
 
         """
         delete_list = []
-        new_terms_dict = dict(self.terms_dict)
-        for term, coeff in self.terms_dict.items():
+        new_terms_dict = dict(self.coeff_by_term)
+        for term, coeff in self.coeff_by_term.items():
             if abs(coeff) <= threshold:
                 delete_list.append(term)
         for term in delete_list:
@@ -694,7 +694,7 @@ class QubitOperator(Hamiltonian):
                 else:
                     factor_dict[n - k - 1] = OPERATOR_TABLE[(i, j)]
 
-            O.terms_dict[QubitTerm(factor_dict)] = value
+            O.coeff_by_term[QubitTerm(factor_dict)] = value
         return O
 
     def to_sparse_matrix(self, factor_amount: int | None = None) -> "sp_sparse.csr_matrix":
@@ -743,8 +743,8 @@ class QubitOperator(Hamiltonian):
         coeffs = []
 
         participating_indices = set()
-        for term, coeff in self.terms_dict.items():
-            curr_dict = term.factor_dict
+        for term, coeff in self.coeff_by_term.items():
+            curr_dict = term.factor_by_qubit
             term_dicts.append(curr_dict)
             coeffs.append(coeff)
             participating_indices = participating_indices.union(term.non_trivial_indices())
@@ -826,7 +826,7 @@ class QubitOperator(Hamiltonian):
 
         """
         res = 0
-        for term, coeff in self.terms_dict.items():
+        for term, coeff in self.coeff_by_term.items():
             res += coeff * term.to_pauli()
         if isinstance(res, (float, int)):
             return QubitOperator({QubitTerm({}): res})
@@ -884,8 +884,8 @@ class QubitOperator(Hamiltonian):
         O = self.to_pauli()
         result = {}
 
-        for term, coeff in O.terms_dict.items():
-            factors = tuple(sorted((int(index), str(pauli)) for index, pauli in term.factor_dict.items()))
+        for term, coeff in O.coeff_by_term.items():
+            factors = tuple(sorted((int(index), str(pauli)) for index, pauli in term.factor_by_qubit.items()))
             result[factors] = result.get(factors, 0) + coeff
 
         return result
@@ -909,7 +909,7 @@ class QubitOperator(Hamiltonian):
 
         """
         new_terms_dict = {}
-        for term, coeff in self.terms_dict.items():
+        for term, coeff in self.coeff_by_term.items():
             new_terms_dict[term.adjoint()] = np.conjugate(coeff)
         return QubitOperator(new_terms_dict)
 
@@ -928,8 +928,8 @@ class QubitOperator(Hamiltonian):
 
     def eliminate_ladder_conjugates(self):
         new_terms_dict = {}
-        for term, coeff in self.terms_dict.items():
-            for factor in term.factor_dict.values():
+        for term, coeff in self.coeff_by_term.items():
+            for factor in term.factor_by_qubit.values():
                 if factor in ["A", "C"]:
                     break
             else:
@@ -957,7 +957,7 @@ class QubitOperator(Hamiltonian):
         hamiltonian = hamiltonian.eliminate_ladder_conjugates()
         hamiltonian = hamiltonian.apply_threshold(0)
 
-        if len(hamiltonian.terms_dict) == 0:
+        if len(hamiltonian.coeff_by_term) == 0:
             return 0
 
         M = self.hermitize().to_sparse_matrix()
@@ -990,18 +990,18 @@ class QubitOperator(Hamiltonian):
         groups = []  # Groups of commuting QubitTerms
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
-        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
+        sorted_terms = sorted(self.coeff_by_term.items(), key=lambda item: abs(item[1]), reverse=True)
 
         for term, coeff in sorted_terms:
             commute_bool = False
             if len(groups) > 0:
                 for group in groups:
-                    for term_, coeff_ in group.terms_dict.items():
+                    for term_, coeff_ in group.coeff_by_term.items():
                         commute_bool = term_.commute(term)
                         if not commute_bool:
                             break
                     if commute_bool:
-                        group.terms_dict[term] = coeff
+                        group.coeff_by_term[term] = coeff
                         break
             if len(groups) == 0 or not commute_bool:
                 groups.append(QubitOperator({term: coeff}))
@@ -1026,12 +1026,12 @@ class QubitOperator(Hamiltonian):
             The partition of the QubitOperator.
 
         """
-        term_groups = group_up_iterable(list(self.terms_dict.keys()), group_denominator)
+        term_groups = group_up_iterable(list(self.coeff_by_term.keys()), group_denominator)
         if len(term_groups) == 0:
             return [self]
         groups = []
         for term_group in term_groups:
-            H = QubitOperator({term: self.terms_dict[term] for term in term_group})
+            H = QubitOperator({term: self.coeff_by_term[term] for term in term_group})
             groups.append(H)
 
         return groups
@@ -1056,16 +1056,16 @@ class QubitOperator(Hamiltonian):
         bases = []  # Bases as termTerms
 
         if use_graph_coloring:
-            term_groups = group_up_iterable(list(self.terms_dict.keys()), lambda a, b: a.commute_qw(b))
+            term_groups = group_up_iterable(list(self.coeff_by_term.keys()), lambda a, b: a.commute_qw(b))
             for term_group in term_groups:
-                H = QubitOperator({term: self.terms_dict[term] for term in term_group})
+                H = QubitOperator({term: self.coeff_by_term[term] for term in term_group})
                 groups.append(H)
 
                 if show_bases:
                     factor_dict = {}
 
                     for term in term_group:
-                        for index, factor in term.factor_dict.items():
+                        for index, factor in term.factor_by_qubit.items():
                             if factor in ["X", "Y", "Z"]:
                                 factor_dict[index] = factor
 
@@ -1077,7 +1077,7 @@ class QubitOperator(Hamiltonian):
                 return groups
 
         # Sorted insertion heuristic https://quantum-journal.org/papers/q-2021-01-20-385/pdf/
-        sorted_terms = sorted(self.terms_dict.items(), key=lambda item: abs(item[1]), reverse=True)
+        sorted_terms = sorted(self.coeff_by_term.items(), key=lambda item: abs(item[1]), reverse=True)
 
         for term, coeff in sorted_terms:
             commute_bool = False
@@ -1086,8 +1086,8 @@ class QubitOperator(Hamiltonian):
                 for i in range(n):
                     commute_bool = bases[i].commute_qw(term)
                     if commute_bool:
-                        bases[i].update(term.factor_dict)
-                        groups[i].terms_dict[term] = coeff
+                        bases[i].update(term.factor_by_qubit)
+                        groups[i].coeff_by_term[term] = coeff
                         break
             if len(groups) == 0 or not commute_bool:
                 groups.append(QubitOperator({term: coeff}))
@@ -1196,8 +1196,8 @@ class QubitOperator(Hamiltonian):
             basis_dict = {}
 
             # We iterate through the terms and apply the appropriate basis transformation
-            for term, coeff in self.terms_dict.items():
-                factor_dict = term.factor_dict
+            for term, coeff in self.coeff_by_term.items():
+                factor_dict = term.factor_by_qubit
                 # This dictionary will contain the factors of the new term
                 new_factor_dict = {}
 
@@ -1241,7 +1241,7 @@ class QubitOperator(Hamiltonian):
             # Calculate S: Matrix where the colums correspond to the binary representation (Z/X) of the Pauli terms
             x_vectors = []
             z_vectors = []
-            for term, coeff in self.terms_dict.items():
+            for term, coeff in self.coeff_by_term.items():
                 x_vector, z_vector = term.binary_representation(n)
                 x_vectors.append(x_vector)
                 z_vectors.append(z_vector)
@@ -1330,12 +1330,12 @@ class QubitOperator(Hamiltonian):
         processed_ladder_index_sets = []
 
         # Ladder operators
-        for term, coeff in self.terms_dict.items():
+        for term, coeff in self.coeff_by_term.items():
             prefactor = prefactors.pop(0)
             new_factor_dict = new_factor_dicts.pop(0)
 
             # Next we treat the ladder operators
-            ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
+            ladder_operators = [base for base in term.factor_by_qubit.items() if base[1] in ["A", "C"]]
             ladder_operators.sort(key=lambda x: x[0])
 
             if ladder_operators:
@@ -1378,12 +1378,12 @@ class QubitOperator(Hamiltonian):
 
                 prefactor *= 0.5
 
-            for k, v in term.factor_dict.items():
+            for k, v in term.factor_by_qubit.items():
                 if v in ["P0", "P1"]:
                     new_factor_dict[k] = v
 
             new_term = QubitTerm(new_factor_dict)
-            new_terms_dict[new_term] = prefactor * self.terms_dict[term]
+            new_terms_dict[new_term] = prefactor * self.coeff_by_term[term]
 
         return QubitOperator(new_terms_dict)
 
@@ -1466,8 +1466,8 @@ class QubitOperator(Hamiltonian):
         basis_dict = {}
 
         # We iterate through the terms and apply the appropriate basis transformation
-        for term, coeff in self.terms_dict.items():
-            factor_dict = term.factor_dict
+        for term, coeff in self.coeff_by_term.items():
+            factor_dict = term.factor_by_qubit
             for j in range(n):
                 # If there is no entry in the factor dict, this corresponds to
                 # identity => no basis change required.
@@ -1494,7 +1494,7 @@ class QubitOperator(Hamiltonian):
                     qc.sx(j)
 
             # Next we treat the ladder operators
-            ladder_operators = [base for base in term.factor_dict.items() if base[1] in ["A", "C"]]
+            ladder_operators = [base for base in term.factor_by_qubit.items() if base[1] in ["A", "C"]]
 
             if ladder_operators:
                 # The anchor factor is the "last" ladder operator.
@@ -1516,7 +1516,7 @@ class QubitOperator(Hamiltonian):
                 # Execute the H-gate
                 qc.h(anchor_factor[0])
 
-        return qc, QubitOperator(self.terms_dict)
+        return qc, QubitOperator(self.coeff_by_term)
 
     def get_operator_variance(self, n=1):
         """Calculates the optimal distribution and number of shots following https://quantum-journal.org/papers/q-2021-01-20-385/pdf/.
@@ -1558,8 +1558,8 @@ class QubitOperator(Hamiltonian):
         """
         var = 0
         pauli_form = self.hermitize().to_pauli()
-        for term, coeff in pauli_form.terms_dict.items():
-            if len(term.factor_dict) != 0:
+        for term, coeff in pauli_form.coeff_by_term.items():
+            if len(term.factor_by_qubit) != 0:
                 var += abs(coeff) ** 2
         alpha_n = 1 - 1 / (2**n + 1)
 
@@ -1779,6 +1779,7 @@ class QubitOperator(Hamiltonian):
 
     def trotterization(self, order=1, method="commuting_qw", forward_evolution=True):
         r"""Returns a function for performing Hamiltonian simulation, i.e., approximately implementing the unitary operator $U(t) = e^{-itH}$ via Trotterization.
+
         Note that this method will always simulate the **hermitized** operator, i.e.
 
         .. math::
@@ -1792,8 +1793,17 @@ class QubitOperator(Hamiltonian):
             The order of Trotter-Suzuki formula.
             Available are `1` and `2`, corresponding to the first and second order formulae.
         method : str, optional
-            The method for grouping the QubitTerms.
-            Available are ``commuting`` (groups such that all QubitTerms mutually commute) and ``commuting_qw`` (groups such that all QubitTerms mutually commute qubit-wise).
+            The method for grouping the QubitTerms. Available are:
+
+            * ``commuting_qw``: groups such that all QubitTerms mutually commute qubit-wise.
+            * ``commuting``: groups such that all QubitTerms mutually commute.
+            * ``count_synthesis`` / ``depth_synthesis``: one Pauli network
+              (`arXiv:2404.03280 <https://arxiv.org/abs/2404.03280>`_) for the whole operator,
+              minimizing the CNOT count / CNOT depth. Ladder and projector factors are expanded
+              into Pauli strings first. With ``order=2``, the rotations of the second half of the step
+              are placed on the network's uncompute, so a step costs about as many CNOTs as a
+              first order step.
+
             The default is ``commuting_qw``.
         forward_evolution : bool, optional
             If set to False $U(t)^\dagger = e^{itH}$ will be executed (usefull for quantum phase estimation). The default is ``True``.
@@ -1825,6 +1835,11 @@ class QubitOperator(Hamiltonian):
                 The number of Trotter steps $N$. The default is 1.
             * iter : int, optional
                 The number of iterations the unitary $U(t,N)$ is applied. The default is 1.
+
+        Raises
+        ------
+        ValueError
+            If ``order`` or ``method`` is not one of the available values.
 
         Examples
         --------
@@ -1860,10 +1875,22 @@ class QubitOperator(Hamiltonian):
         {'0000': 0.77015, '0001': 0.22985}
 
         """
-        O = self.hermitize().eliminate_ladder_conjugates()
-        commuting_groups = O.group_up(lambda a, b: a.commute_pauli(b))
+        pauli_network_methods = {"count_synthesis": count_synthesis, "depth_synthesis": depth_synthesis}
+        methods = ("commuting_qw", "commuting", *pauli_network_methods)
+        if method not in methods:
+            raise ValueError(f"method must be one of {methods}, got {method!r}")
+        if order not in (1, 2):
+            raise ValueError(f"order must be 1 or 2, got {order!r}")
+
+        # Symmetric second order step; the Pauli network methods replace it with the mirror step below.
+        def second_order_step(qarg, dt):
+            trotter_step(qarg, dt / 2)
+            with invert():
+                trotter_step(qarg, -dt / 2)
 
         if method == "commuting_qw":
+            hamiltonian = self.hermitize().eliminate_ladder_conjugates()
+            commuting_groups = hamiltonian.group_up(lambda a, b: a.commute_pauli(b))
             com_qw_cache = []
             for com_group in commuting_groups:
                 qw_groups = com_group.group_up(lambda a, b: a.commute_qw(b) and a.ladders_agree(b))
@@ -1874,7 +1901,7 @@ class QubitOperator(Hamiltonian):
             # outside tracing mode), so populate it on first real invocation.
             intersect_cache = {}
 
-            def trotter_step(qarg, t, steps):
+            def trotter_step(qarg, dt):
                 for qw_groups in com_qw_cache:
                     for qw_group in qw_groups:
                         with conjugate(qw_group.change_of_basis)(qarg) as diagonal_operator:
@@ -1884,14 +1911,16 @@ class QubitOperator(Hamiltonian):
                                 cached = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                                 intersect_cache[key] = cached
                             for intersect_group in cached:
-                                for term, coeff in intersect_group.terms_dict.items():
+                                for term, coeff in intersect_group.coeff_by_term.items():
                                     coeff = jnp.real(coeff)
                                     term.simulate(
-                                        -coeff * t / steps * (-1) ** int(forward_evolution),
+                                        -coeff * dt * (-1) ** int(forward_evolution),
                                         qarg,
                                     )
 
-        if method == "commuting":
+        elif method == "commuting":
+            hamiltonian = self.hermitize().eliminate_ladder_conjugates()
+            commuting_groups = hamiltonian.group_up(lambda a, b: a.commute_pauli(b))
             com_qw_cache = []
             for com_group in commuting_groups:
                 qw_groups = com_group.group_up(lambda a, b: a.ladders_agree(b))
@@ -1899,7 +1928,7 @@ class QubitOperator(Hamiltonian):
 
             intersect_cache = {}
 
-            def trotter_step(qarg, t, steps):
+            def trotter_step(qarg, dt):
                 for com_group, qw_groups in com_qw_cache:
                     for qw_group in qw_groups:
                         with conjugate(com_group.change_of_basis)(qarg, method="commuting") as diagonal_operator:
@@ -1909,31 +1938,42 @@ class QubitOperator(Hamiltonian):
                                 cached = diagonal_operator.group_up(lambda a, b: not a.intersect(b))
                                 intersect_cache[key] = cached
                             for intersect_group in cached:
-                                for term, coeff in intersect_group.terms_dict.items():
+                                for term, coeff in intersect_group.coeff_by_term.items():
                                     coeff = jnp.real(coeff)
                                     term.simulate(
-                                        -coeff * t / steps * (-1) ** int(forward_evolution),
+                                        -coeff * dt * (-1) ** int(forward_evolution),
                                         qarg,
                                     )
 
+        else:
+            # Pauli networks take Pauli strings only, so ladder and projector factors are expanded.
+            hamiltonian = self.hermitize().to_pauli()
+            coeffs = np.real(list(hamiltonian.coeff_by_term.values()))
+            network = pauli_network_methods[method](PauliSet.from_operator(hamiltonian))
+            sign = 1 if forward_evolution else -1
+
+            def trotter_step(qarg, dt):
+                network.apply(qarg, sign * dt * coeffs)
+
+            def second_order_step(qarg, dt):
+                # The mirror step has the same unitary and the CNOTs of a first order step.
+                network.apply(qarg, sign * dt * coeffs, mirror=True)
+
         def U(qarg, t=1, steps=1, iter=1):
+            dt = t / steps
             if check_for_tracing_mode():
                 for i in jrange(iter * steps):
                     if order == 1:
-                        trotter_step(qarg, t, steps)
+                        trotter_step(qarg, dt)
                     elif order == 2:
-                        trotter_step(qarg, t, steps * 2)
-                        with invert():
-                            trotter_step(qarg, -t, steps * 2)
+                        second_order_step(qarg, dt)
             else:
                 merge([qarg])
                 with IterationEnvironment(qarg.qs, iter * steps):
                     if order == 1:
-                        trotter_step(qarg, t, steps)
+                        trotter_step(qarg, dt)
                     elif order == 2:
-                        trotter_step(qarg, t, steps * 2)
-                        with invert():
-                            trotter_step(qarg, -t, steps * 2)
+                        second_order_step(qarg, dt)
 
         return U
 
@@ -2094,8 +2134,8 @@ class QubitOperator(Hamiltonian):
         # and use the q_switch with classical index to apply the j-th function
         # within a (dynamic) loop where j is sampled at random.
         O = self.hermitize().eliminate_ladder_conjugates()
-        terms = list(O.terms_dict.keys())
-        coeffs = np.array(list(O.terms_dict.values()))
+        terms = list(O.coeff_by_term.keys())
+        coeffs = np.array(list(O.coeff_by_term.values()))
         signs = (-1) ** int(not forward_evolution) * jnp.sign(coeffs)
 
         # List of functions performing forward evolution e^{-itH_j}.
@@ -2230,7 +2270,7 @@ class QubitOperator(Hamiltonian):
         unitaries = []
         coefficients = []
 
-        for term, coeff in hamiltonian.terms_dict.items():
+        for term, coeff in hamiltonian.coeff_by_term.items():
             coeff_ = np.real(coeff)
             unitaries.append(term.unitary(sign=(coeff_ < 0)))
             coefficients.append(np.abs(coeff_))

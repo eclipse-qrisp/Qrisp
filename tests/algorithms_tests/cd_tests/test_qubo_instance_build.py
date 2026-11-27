@@ -40,9 +40,9 @@ def test_qubit_operator_sum_matches_naive_sum():
     naive = sum(coeffs[i] * Z(i) for i in range(N))
     fast = QubitOperator.sum(coeffs[i] * Z(i) for i in range(N))
 
-    assert fast.terms_dict.keys() == naive.terms_dict.keys()
-    for term, coeff in naive.terms_dict.items():
-        assert abs(fast.terms_dict[term] - coeff) < _ATOL
+    assert fast.coeff_by_term.keys() == naive.coeff_by_term.keys()
+    for term, coeff in naive.coeff_by_term.items():
+        assert abs(fast.coeff_by_term[term] - coeff) < _ATOL
 
 
 def test_create_cold_instance_H_prob_matches_naive_build():
@@ -58,9 +58,9 @@ def test_create_cold_instance_H_prob_matches_naive_build():
 
     _, _, H_prob, _, _, _, _ = create_COLD_instance(Q, uniform_AGP_coeffs=False)
 
-    assert H_prob.terms_dict.keys() == H_prob_naive.terms_dict.keys()
-    for term, coeff in H_prob_naive.terms_dict.items():
-        assert abs(H_prob.terms_dict[term] - coeff) < _ATOL
+    assert H_prob.coeff_by_term.keys() == H_prob_naive.coeff_by_term.keys()
+    for term, coeff in H_prob_naive.coeff_by_term.items():
+        assert abs(H_prob.coeff_by_term[term] - coeff) < _ATOL
 
 
 def test_create_lcd_instance_H_prob_and_nc_agp_match_naive_build():
@@ -83,15 +83,15 @@ def test_create_lcd_instance_H_prob_and_nc_agp_match_naive_build():
     _, _, _, _, uniform_agp_coeffs, _ = create_LCD_instance(Q, agp_type="nc", uniform_AGP_coeffs=True)
     assert np.asarray(uniform_agp_coeffs(0.5)).shape == (N,)
 
-    assert H_prob.terms_dict.keys() == H_prob_naive.terms_dict.keys()
-    for term, coeff in H_prob_naive.terms_dict.items():
-        assert abs(H_prob.terms_dict[term] - coeff) < _ATOL
+    assert H_prob.coeff_by_term.keys() == H_prob_naive.coeff_by_term.keys()
+    for term, coeff in H_prob_naive.coeff_by_term.items():
+        assert abs(H_prob.coeff_by_term[term] - coeff) < _ATOL
 
     assert len(A_lam) == len(A_lam_naive)
     for op, op_naive in zip(A_lam, A_lam_naive):
-        assert op.terms_dict.keys() == op_naive.terms_dict.keys()
-        for term, coeff in op_naive.terms_dict.items():
-            assert abs(op.terms_dict[term] - coeff) < _ATOL
+        assert op.coeff_by_term.keys() == op_naive.coeff_by_term.keys()
+        for term, coeff in op_naive.coeff_by_term.items():
+            assert abs(op.coeff_by_term[term] - coeff) < _ATOL
 
 
 @pytest.mark.parametrize(

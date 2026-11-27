@@ -103,15 +103,15 @@ def fermionic_trotterization(H, forward_evolution=True):
 
                     # This function permutes the indices of the fermionic term
                     qubit_operator = ferm_term.fermionic_swap(permutation).to_qubit_term()
-                    qubit_term = list(qubit_operator.terms_dict.keys())[0]
+                    qubit_term = list(qubit_operator.coeff_by_term.keys())[0]
 
                     if not len(ferm_term.get_unipolars()) % 2:
-                        for factor in qubit_term.factor_dict.values():
+                        for factor in qubit_term.factor_by_qubit.values():
                             if factor == "Z":
                                 raise Exception("Fermionic matching failed: Z Operator found")
 
                     qubit_term.simulate(
-                        -coeff * t / steps * qubit_operator.terms_dict[qubit_term] * (-1) ** int(forward_evolution),
+                        -coeff * t / steps * qubit_operator.coeff_by_term[qubit_term] * (-1) ** int(forward_evolution),
                         new_qarg,
                     )
 
