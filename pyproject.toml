@@ -84,7 +84,7 @@ dev-testing-windows = [
 ]
 dev-testing = [
     "qrisp[dev-testing-windows]",
-    "pyscf",
+    "pyscf==2.15.0",
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
@@ -105,6 +105,12 @@ dev-windows = [
 # time. The CUDA-Q tests run in eclipse-qrisp/qrisp-cudaq.
 all = [
     "qrisp[qiskit,iqm,catalyst,xdsl,docs,dev]",
+]
+# Windows counterpart of `all`: catalyst is left out because pennylane-catalyst
+# ships no Windows wheels, and dev-windows replaces dev because pyscf does not
+# support Windows. aqt and cudaq stay out for the same reasons as in `all`.
+all-windows = [
+    "qrisp[qiskit,iqm,xdsl,docs,dev-windows]",
 ]
 
 [project.urls]
