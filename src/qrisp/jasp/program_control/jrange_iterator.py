@@ -109,7 +109,7 @@ class JRangeIterator:
     loop_index: Any
     iter_env: "JIterationEnvironment"
 
-    def __init__(self, *args: Any) -> None:
+    def __init__(self, *args: int | jax.Array) -> None:
         """Initialize the iterator from ``stop`` or ``start, stop``."""
         match args:
             case (stop,):
@@ -362,6 +362,9 @@ def make_tracer(x: bool | int | float | complex) -> jax.Array:
         # There is nothing to trace, and jit would compile a new function on every call.
         return jnp.array(x, dtype)
 
+    # NOTE: A module-level jit with x and dtype as static arguments would trace each integer
+    # or boolean once, about 5 times faster per call. Floats and complex numbers cannot be
+    # cached this way, since the cache does not tell 0.0 from -0.0.
     def tracerizer() -> jax.Array:
         """Return ``x`` as an array of type ``dtype``.
 

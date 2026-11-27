@@ -25,7 +25,15 @@ import pytest
 from jax.core import Tracer
 
 from qrisp import QuantumFloat, control, cx, h, invert, measure, x
-from qrisp.jasp import boolean_simulation, jlen, jrange, make_jaspr, make_tracer, qache
+from qrisp.jasp import (
+    DynamicQubitArray,
+    boolean_simulation,
+    jlen,
+    jrange,
+    make_jaspr,
+    make_tracer,
+    qache,
+)
 from qrisp.jasp.program_control.jrange_iterator import JRANGE_MARKER_NAME, JRangeIterator
 
 ARGUMENT_COUNT_MESSAGE = r"jrange takes 1 or 2 arguments \(\d given\)\. The step argument"
@@ -300,7 +308,11 @@ def test_jasp_concrete_array_bounds(start, stop, expected):
 # JRangeIterator
 
 
-@pytest.mark.parametrize("args, start, stop", [((5,), None, 4), ((2, 5), 2, 4)])
+@pytest.mark.parametrize(
+    "args, start, stop",
+    [((5,), None, 4), ((2, 5), 2, 4), ((jnp.array(2), jnp.array(5)), 2, 4)],
+    ids=["stop", "start-stop", "jax-arrays"],
+)
 def test_iterator_bounds(args, start, stop):
     """Without a start argument, start is None. The stop index is inclusive."""
     iterator = JRangeIterator(*args)
@@ -406,10 +418,15 @@ def test_jlen_traced():
         qf = QuantumFloat(n)
         qubits = [qf[0], qf[1]]
         lengths["quantum_float"] = jlen(qf)
+        lengths["qubit_array"] = (jlen(qf.reg), type(qf.reg))
         lengths["list"] = (jlen(qubits), len(qubits))
         return measure(qf)
 
     make_jaspr(main)(3)
     assert isinstance(lengths["quantum_float"], Tracer)
+    # The register of a QuantumVariable is a DynamicQubitArray, with a traced size too.
+    array_length, array_type = lengths["qubit_array"]
+    assert array_type is DynamicQubitArray
+    assert isinstance(array_length, Tracer)
     length, expected = lengths["list"]
     assert length == expected
