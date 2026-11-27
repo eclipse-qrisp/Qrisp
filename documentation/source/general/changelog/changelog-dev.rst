@@ -164,11 +164,12 @@ Improvements
   files for static and Jasp mode
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
-- Refactored :func:`jrange <qrisp.jasp.jrange>`. It now has type hints and
-  dedicated tests. Together with the refactoring of ``control`` and
-  ``measure``, pyright now reports 1538 errors instead of 1747 across
-  ``src/qrisp``, mostly because the loop variable of ``jrange`` now has a
-  precise type
+- Refactored :func:`jrange <qrisp.jasp.jrange>`. It now has type hints, examples
+  that run under doctest, and dedicated tests in ``test_jrange.py``, which
+  replaces ``test_control_flow_capturing.py``. ``make_tracer`` raises a
+  ``TypeError`` instead of a generic ``Exception`` for unsupported types, with
+  the same message. Pyright reports 205 fewer errors across ``src/qrisp`` (13%),
+  mostly because the loop variable of ``jrange`` now has a precise type
   (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 - **Faster resource estimation of modular multiplications in Jasp**
@@ -694,11 +695,6 @@ Compatibility
   ``except Exception:`` is unaffected
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
-* ``make_tracer`` now raises a ``TypeError`` for unsupported types, instead of
-  a generic ``Exception``. The message is unchanged, and code using
-  ``except Exception:`` is unaffected
-  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
-
 * :ref:`IQPE <IQPE>` returns the phase instead of twice the phase modulo 1
   (see Bug Fixes). It raises a ``TypeError`` for a precision that is not an
   integer and, unless the precision is traced, a ``ValueError`` for a precision
@@ -750,10 +746,6 @@ New Tutorials/ Updated Documentation
 
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
-
-* Rewrote the docstring of :func:`jrange <qrisp.jasp.jrange>` with examples
-  that run under doctest
-  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 
 
@@ -973,12 +965,6 @@ Development
 * Added a doctest workflow that runs the docstring examples of ``qrisp.qtypes``
   on pull requests. Further packages are added as their examples are fixed
   (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
-
-* Consolidated the tests of ``jrange``, ``JRangeIterator``, ``make_tracer`` and
-  ``jlen`` into ``test_jrange.py``, which replaces
-  ``test_control_flow_capturing.py``. Most of them run with
-  ``boolean_simulation`` instead of the full simulator
-  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 Dependency Upgrades
 -------------------
