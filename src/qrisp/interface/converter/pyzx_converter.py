@@ -66,6 +66,31 @@ def _check_pyzx_compatibility(pyzx_module: object, circuit_cls: type, gate_types
     raise ImportError(f"PyZX >= {MIN_PYZX_VERSION} is required by the Qrisp PyZX converter (found {version}{details}).")
 
 
+def _import_pyzx() -> tuple[object, type, dict[str, object]]:
+    """Import PyZX, verify compatibility, and return its module, Circuit, and gate types.
+
+    Returns
+    -------
+    tuple[object, type, dict[str, object]]
+        The ``pyzx`` module, the ``Circuit`` class, and the gate-type mapping.
+
+    Raises
+    ------
+    ImportError
+        If PyZX is not installed or lacks required features.
+
+    """
+    try:
+        import pyzx
+        from pyzx import Circuit
+        from pyzx.circuit import gates as pyzx_gates
+    except ImportError as exc:
+        raise ImportError("PyZX must be installed to be able to use the PyZX converter.") from exc
+
+    _check_pyzx_compatibility(pyzx, Circuit, pyzx_gates.gate_types)
+    return pyzx, Circuit, pyzx_gates.gate_types
+
+
 def _to_float(value: object, description: str = "parameter") -> float:
     """Convert a numeric value to float, raising a clear error for symbolic values.
 
@@ -135,10 +160,10 @@ def _phase(angle: float, max_denominator: int = 1024, tol: float = 1e-9) -> Frac
 
 
 def _ungadget(gate: Gate) -> Gate:
-    """Return a copy of ``gate`` with the phase-gadget flag disabled.
+    """Return a copy of a phase gadget with its gadget flag disabled.
 
-    A copy is made for parity-phase gadgets so that converting a PyZX circuit
-    does not mutate the caller's gate objects.
+    A copy is made so that converting a PyZX circuit does not mutate the
+    caller's gate objects. Gates that are not gadgets are returned unchanged.
 
     Parameters
     ----------
@@ -148,10 +173,10 @@ def _ungadget(gate: Gate) -> Gate:
     Returns
     -------
     pyzx.circuit.gates.Gate
-        The original gate, or an un-gadgetted copy if it is a parity phase.
+        The original gate, or an un-gadgetted copy.
 
     """
-    if gate.name != "ParityPhase":
+    if not getattr(gate, "as_gadget", False):
         return gate
     result = copy.copy(gate)
     result.as_gadget = False
@@ -303,7 +328,14 @@ def _check_ctrl_state(op: Operation) -> None:
     controls = getattr(op, "controls", None)
     if ctrl_state is None or controls is None:
         return
-    if set(str(ctrl_state)) != {"1"}:
+
+    if isinstance(ctrl_state, int):
+        is_all_ones = ctrl_state in (-1, (1 << len(controls)) - 1)
+    else:
+        state = str(ctrl_state)
+        is_all_ones = len(state) == len(controls) and set(state) == {"1"}
+
+    if not is_all_ones:
         raise ValueError(
             f"Controlled operation {op.name!r} with ctrl_state={ctrl_state!r} is not supported. "
             "Only controls that trigger on |1> are supported by the PyZX converter."
@@ -333,6 +365,32 @@ def _emit_p(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -> No
 def _emit_sx_dg(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -> None:
     """Emit the adjoint of SX as a PyZX XPhase gate."""
     pyzx_circuit.add_gate("XPhase", qubits[0], _phase(-np.pi / 2))
+
+
+def _emit_prx(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -> None:
+    """Emit ``PRX(theta, phi) = RZ(phi) RX(theta) RZ(-phi)`` as a PyZX U3 gate.
+
+    ``PRXGate.params`` stores the expanded U3 decomposition
+    ``[theta, phi - pi/2, pi/2 - phi]``.
+
+    Parameters
+    ----------
+    pyzx_circuit : pyzx.Circuit
+        The circuit that receives the gate.
+    qubits : list[int]
+        The PyZX qubit indices the gate acts on.
+    params : list[float]
+        The Qrisp PRX parameters in radians.
+
+    """
+    theta, phi_minus_half_pi, half_pi_minus_phi = params
+    pyzx_circuit.add_gate(
+        "U3",
+        qubits[0],
+        _phase(theta),
+        _phase(phi_minus_half_pi),
+        _phase(half_pi_minus_phi),
+    )
 
 
 def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
@@ -409,14 +467,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
     True
 
     """
-    try:
-        import pyzx
-        from pyzx import Circuit
-        from pyzx.circuit import gates as pyzx_gates
-    except ImportError as exc:
-        raise ImportError("PyZX must be installed to be able to use the Qrisp to PyZX converter.") from exc
-
-    _check_pyzx_compatibility(pyzx, Circuit, pyzx_gates.gate_types)
+    _, Circuit, _ = _import_pyzx()
 
     gate_map: dict[str, str | Callable[..., None]] = {
         "cx": "CNOT",
@@ -436,7 +487,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
         "rz": "ZPhase",
         "u1": "ZPhase",
         "u3": "U3",
-        "prx": "U3",
+        "prx": _emit_prx,
         "s": "S",
         "t": "T",
         "sx": "SX",
@@ -557,6 +608,8 @@ def convert_from_pyzx(pyzx_circuit: Circuit) -> QuantumCircuit:
 
     Raises
     ------
+    ImportError
+        If PyZX is not installed or older than ``0.10.1``.
     ValueError
         If a gate is not supported by the converter or a parameter is symbolic.
 
@@ -615,6 +668,7 @@ def convert_from_pyzx(pyzx_circuit: Circuit) -> QuantumCircuit:
     ['cx', 'cx', 'rz', 'cx', 'cx']
 
     """
+    _import_pyzx()
     qc = QuantumCircuit(pyzx_circuit.qubits, pyzx_circuit.bits)
 
     gate_table: dict[str, tuple[Callable[..., None] | None, Callable[..., None] | None]] = {

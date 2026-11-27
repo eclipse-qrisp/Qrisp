@@ -5,16 +5,18 @@ from __future__ import annotations
 import sys
 from collections.abc import Callable
 from fractions import Fraction
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+import pyzx
 from pyzx import Circuit
 from pyzx.circuit import gates as pyzx_gates
 
 from qrisp import QuantumCircuit, QuantumVariable, U1Gate
 from qrisp.circuit import standard_operations as qrisp_ops
-from qrisp.interface.converter.pyzx_converter import _check_pyzx_compatibility, _phase
+from qrisp.interface.converter.pyzx_converter import _check_ctrl_state, _check_pyzx_compatibility, _phase
 
 
 def test_import_error() -> None:
@@ -68,20 +70,38 @@ def test_convert_to_pyzx_zphase_gates(method: str, args: tuple, expected: Fracti
     assert gate.phase == expected
 
 
-def test_pyzx_compatibility_check_accepts_current_version() -> None:
-    """The installed PyZX provides all features used by the converter."""
-    import pyzx
-    from pyzx.circuit import gates as pyzx_gates
+def test_prx_maps_to_u3_decomposition() -> None:
+    """PRX is converted with the correct three-parameter U3 decomposition."""
+    theta, phi = 0.3, 0.2
+    qc = QuantumCircuit(1)
+    qc.prx(theta, phi, 0)
 
-    _check_pyzx_compatibility(pyzx, Circuit, pyzx_gates.gate_types)
+    gate = qc.to_pyzx().gates[0]
+
+    assert gate.name == "U3"
+    expected = [theta / np.pi, (phi - np.pi / 2) / np.pi, (np.pi / 2 - phi) / np.pi]
+    np.testing.assert_allclose([float(gate.theta), float(gate.phi), float(gate.rho)], expected)
 
 
-def test_pyzx_compatibility_check_rejects_old_version() -> None:
-    """An incompatible PyZX produces a clear ImportError."""
-    from types import SimpleNamespace
-
-    with pytest.raises(ImportError, match="PyZX >= 0.10.1"):
-        _check_pyzx_compatibility(SimpleNamespace(__version__="0.9.0"), Circuit, {})
+@pytest.mark.parametrize(
+    "pyzx_module, gate_types, expect_error",
+    [
+        (pyzx, pyzx_gates.gate_types, False),
+        (SimpleNamespace(__version__="0.9.0"), {}, True),
+    ],
+    ids=["current_version", "too_old"],
+)
+def test_pyzx_compatibility_check(
+    pyzx_module: object,
+    gate_types: dict[str, object],
+    expect_error: bool,
+) -> None:
+    """The compatibility check accepts supported PyZX and rejects old versions."""
+    if expect_error:
+        with pytest.raises(ImportError, match="PyZX >= 0.10.1"):
+            _check_pyzx_compatibility(pyzx_module, Circuit, gate_types)
+    else:
+        _check_pyzx_compatibility(pyzx_module, Circuit, gate_types)
 
 
 def test_non_default_ctrl_state_raises() -> None:
@@ -93,16 +113,50 @@ def test_non_default_ctrl_state_raises() -> None:
         qc.to_pyzx()
 
 
-def test_symbolic_qrisp_parameter_raises() -> None:
-    """Symbolic Qrisp parameters produce a clear error instead of a TypeError."""
+@pytest.mark.parametrize(
+    "ctrl_state, expect_error",
+    [(3, False), (2, True)],
+    ids=["integer_all_ones", "integer_mixed"],
+)
+def test_check_ctrl_state_integer(ctrl_state: int, expect_error: bool) -> None:
+    """Integer control states are validated by their bit pattern."""
+    op = SimpleNamespace(name="cx", ctrl_state=ctrl_state, controls=[object(), object()])
+
+    if expect_error:
+        with pytest.raises(ValueError, match="ctrl_state"):
+            _check_ctrl_state(op)
+    else:
+        _check_ctrl_state(op)
+
+
+def _convert_symbolic_qrisp_circuit() -> None:
+    """Convert a Qrisp circuit with an unresolved symbolic parameter."""
     from sympy import symbols
 
     theta = symbols("theta")
     qc = QuantumCircuit(1)
     qc.p(theta, 0)
+    qc.to_pyzx()
 
+
+def _convert_symbolic_pyzx_circuit() -> None:
+    """Convert a PyZX circuit with an unresolved symbolic phase."""
+    from pyzx.symbolic import new_var
+
+    c = Circuit(1)
+    c.add_gate("ZPhase", 0, new_var("theta", False))
+    QuantumCircuit.from_pyzx(c)
+
+
+@pytest.mark.parametrize(
+    "convert",
+    [_convert_symbolic_qrisp_circuit, _convert_symbolic_pyzx_circuit],
+    ids=["qrisp_to_pyzx", "pyzx_to_qrisp"],
+)
+def test_symbolic_parameter_raises(convert: Callable[[], None]) -> None:
+    """Symbolic parameters produce a clear error instead of a TypeError."""
     with pytest.raises(ValueError, match="Bind symbolic parameters"):
-        qc.to_pyzx()
+        convert()
 
 
 def _build_single_qubit_qrisp_circuit() -> QuantumCircuit:
@@ -149,7 +203,7 @@ def _build_single_qubit_pyzx_circuit() -> Circuit:
     c = Circuit(4)
     c.add_gate("NOT", 0)
     c.add_gate("Y", 1)
-    (c.add_gate("Z", 2),)
+    c.add_gate("Z", 2)
     c.add_gate("HAD", 3)
     c.add_gate("XPhase", 0, Fraction(2, 3))
     c.add_gate("YPhase", 1, Fraction(1, 3))
@@ -337,9 +391,13 @@ def test_non_unitaries() -> None:
 
 
 def _mock_unknown_circuit() -> QuantumCircuit:
-    """Qrisp circuit with a MagicMock operation (triggers Exception during transpile)."""
+    """Qrisp circuit with a genuinely unknown mock operation (triggers an error during transpile)."""
+    op = MagicMock()
+    op.name = "some_gate"
+    op.params = []
+
     qc = QuantumCircuit(1)
-    qc.data = [MagicMock(op=MagicMock(name="some_gate", params=[]), qubits=[MagicMock()])]
+    qc.data = [MagicMock(op=op, qubits=[MagicMock()])]
     return qc
 
 
@@ -369,14 +427,17 @@ def test_convert_to_pyzx_raises(circuit_builder: Callable[[], QuantumCircuit], m
 
 
 def _build_pyzx_circuit_with_mock_gate() -> Circuit:
-    """Qrisp circuit with a MagicMock operation (triggers immediate exception during conversion)."""
+    """PyZX circuit with an unknown mock gate."""
+    gate = MagicMock()
+    gate.name = "some_gate"
+
     c = Circuit(1)
-    c.add_gate(MagicMock(name="some_gate"), 0)
+    c.add_gate(gate)
     return c
 
 
 def _build_pyzx_circuit_with_undecomposable_gate() -> Circuit:
-    """Qrisp circuit with a gate with mock decomposition (triggers exception upon attempt to decompose gate)."""
+    """PyZX circuit with a gate whose decomposition still contains the same gate."""
     c = Circuit(2)
     from pyzx.circuit import ParityPhase
 
@@ -387,7 +448,7 @@ def _build_pyzx_circuit_with_undecomposable_gate() -> Circuit:
         return [ParityPhase(0, 0, 1)]
 
     g.to_basic_gates = _f
-    c.add_gate(g, 0)
+    c.add_gate(g)
     return c
 
 
@@ -405,29 +466,16 @@ def test_convert_from_pyzx_raises(circuit_builder: Callable[[], Circuit], match:
         QuantumCircuit.from_pyzx(circuit_builder())
 
 
-def test_symbolic_pyzx_parameter_raises() -> None:
-    """Symbolic PyZX phases produce a clear error instead of a TypeError."""
-    from pyzx.symbolic import new_var
-
-    phase = new_var("theta", False)
-    c = Circuit(1)
-    c.add_gate("ZPhase", 0, phase)
-
-    with pytest.raises(ValueError, match="Bind symbolic parameters"):
-        QuantumCircuit.from_pyzx(c)
-
-
 # ---------------------------------------------------------------------------
 # Smoke and gap tests
 #
 # The tests above verify correctness (unitary equivalence, round-trips) for a
-# representative set of gates.  These tests add complementary breadth:
+# representative set of gates. These tests add complementary breadth:
 #
-#   * ``*_smoke`` walks the complete gate inventory and only asserts graceful
-#     handling -- the converter either converts or raises a clear ValueError,
-#     never an undocumented exception.
-#   * ``*_gap_gate`` covers the gates the fixtures above do not touch, so no
-#     conversion assertion is duplicated.
+#   * ``*_smoke`` checks the expected outcome for every gate key: supported
+#     gates convert and explicitly unsupported gates raise a ``ValueError``.
+#   * ``*_gap_gate`` adds unitary checks for gates the fixtures above do not
+#     cover.
 # ---------------------------------------------------------------------------
 
 # Aliases accepted by Circuit.add_gate that resolve to a canonical gate class.
@@ -540,27 +588,31 @@ def pyzx_gap_params() -> list:
 
 @pytest.mark.parametrize("key", sorted(pyzx_gates.gate_types))
 def test_pyzx_gate_key_smoke(key: str) -> None:
-    """Every PyZX gate key either converts or raises a clear ValueError."""
+    """Every PyZX gate key either converts or is explicitly unsupported."""
     canonical = PYZX_ALIASES.get(key, key)
+    if canonical not in PYZX_GATE_SPECS:
+        pytest.fail(f"New PyZX gate {key!r}: add it to PYZX_GATE_SPECS (and PYZX_UNSUPPORTED if needed).")
+
     c = Circuit(4, bit_amount=1)
     c.add_gate(pyzx_gate_instance(canonical))
-    try:
-        result = QuantumCircuit.from_pyzx(c)
-    except ValueError:
-        return
-    assert isinstance(result, QuantumCircuit)
+
+    if canonical in PYZX_UNSUPPORTED:
+        with pytest.raises(ValueError):
+            QuantumCircuit.from_pyzx(c)
+    else:
+        assert isinstance(QuantumCircuit.from_pyzx(c), QuantumCircuit)
 
 
 @pytest.mark.parametrize("name, expect_raise", pyzx_gap_params())
 def test_pyzx_gap_gate(name: str, expect_raise: bool) -> None:
-    """PyZX gates absent from the fixtures convert or raise as expected."""
+    """PyZX gates absent from the fixtures convert unitarily or raise as expected."""
     c = Circuit(4)
     c.add_gate(pyzx_gate_instance(name))
     if expect_raise:
         with pytest.raises(ValueError):
             QuantumCircuit.from_pyzx(c)
     else:
-        assert isinstance(QuantumCircuit.from_pyzx(c), QuantumCircuit)
+        _test_pyzx_to_qrisp(c)
 
 
 @pytest.mark.parametrize("name", ["CRX", "CRY", "CRZ", "CPhase", "RXX", "RZZ", "CU3"])
@@ -591,6 +643,7 @@ QRISP_GATE_SPECS = {
     "rx": (1, "rx", (0.3, 0)),
     "ry": (1, "ry", (0.3, 0)),
     "rz": (1, "rz", (0.3, 0)),
+    "prx": (1, "prx", (0.3, 0.2, 0)),
     "r": (1, "r", (0.3, 0.2, 0)),
     "gphase": (1, "gphase", (0.3, 0)),
     "cx": (2, "cx", (0, 1)),
@@ -638,16 +691,27 @@ def test_native_pyzx_gate_mapping(name: str, expected: str) -> None:
     assert [gate.name for gate in gates] == [expected]
 
 
+def test_phase_tolerant_toffoli_has_distinct_name() -> None:
+    """Phase-tolerant Toffoli variants are not confused with the native TOF mapping."""
+    qc = QuantumCircuit(3)
+    qc.mcx([0, 1], 2, method="gray_pt")
+
+    assert qc.data[0].op.name == "pt2cx"
+    assert "Tof" not in [gate.name for gate in qc.to_pyzx().gates]
+
+
 CONTROLLED_PARAMETRIC_GATES = ["crx", "cry", "crz", "cp", "cu3", "rxx", "rzz"]
 
 
 @pytest.mark.parametrize("name", CONTROLLED_PARAMETRIC_GATES)
-def test_controlled_parametric_gate_roundtrip_phase_is_global(name: str) -> None:
-    """A controlled round-trip may differ by a global phase only, never a relative one.
+def test_qrisp_controlled_parametric_gate_roundtrip_phase_is_global(name: str) -> None:
+    """A Qrisp controlled round-trip may differ by a global phase only.
 
-    PyZX intentionally drops global phases, so exact equality is not preserved.
-    Wrapping the gate under control turns any target global phase into a relative
-    phase, which this test would detect.
+    These Qrisp gates are transpiled before conversion, so this test covers that
+    path rather than the direct PyZX CRX/CRY/CRZ/CU3 handlers (which are covered
+    by ``test_pyzx_two_qubit_parametric_gate_roundtrip``). PyZX intentionally
+    drops global phases, so exact equality is not preserved; wrapping the gate
+    under control would expose any relative phase error.
     """
     qc = qrisp_gate_circuit(name)
     qc_roundtrip = QuantumCircuit.from_pyzx(qc.to_pyzx())
@@ -691,25 +755,20 @@ QRISP_FIXTURE_GATES = {
 }
 
 
+# Qrisp standard gates that legitimately cannot be converted.
+QRISP_UNSUPPORTED: set[str] = set()
+
+
 @pytest.mark.parametrize("name", sorted(QRISP_GATE_SPECS))
 def test_qrisp_gate_smoke(name: str) -> None:
-    """Every Qrisp standard gate converts or raises a clear ValueError."""
-    try:
-        result = qrisp_gate_circuit(name).to_pyzx()
-    except ValueError:
-        return
-    assert isinstance(result, Circuit)
+    """Every Qrisp standard gate either converts or is explicitly unsupported."""
+    qc = qrisp_gate_circuit(name)
 
-
-def qrisp_gap_params() -> list:
-    """Parametrize Qrisp gates not covered by the pre-existing fixtures."""
-    return [pytest.param(name, id=name) for name in sorted(QRISP_GATE_SPECS) if name not in QRISP_FIXTURE_GATES]
-
-
-@pytest.mark.parametrize("name", qrisp_gap_params())
-def test_qrisp_gap_gate(name: str) -> None:
-    """Qrisp gates absent from the fixtures convert as expected."""
-    assert isinstance(qrisp_gate_circuit(name).to_pyzx(), Circuit)
+    if name in QRISP_UNSUPPORTED:
+        with pytest.raises(ValueError):
+            qc.to_pyzx()
+    else:
+        assert isinstance(qc.to_pyzx(), Circuit)
 
 
 def test_empty_circuit_smoke() -> None:
@@ -729,25 +788,25 @@ QRISP_GAP_SUPPORTED = sorted(set(QRISP_GATE_SPECS) - QRISP_FIXTURE_GATES)
 
 @pytest.mark.parametrize("name", QRISP_GAP_SUPPORTED)
 def test_qrisp_gap_gate_roundtrip(name: str) -> None:
-    """Gap gates that convert survive a Qrisp -> PyZX -> Qrisp round-trip."""
+    """Gap gates survive both Qrisp -> PyZX and a full round-trip."""
     qc = qrisp_gate_circuit(name)
+
+    _test_qrisp_to_pyzx(qc)
+
     qc2 = QuantumCircuit.from_pyzx(qc.to_pyzx())
     assert qc2.num_qubits() == qc.num_qubits()
     _compare_unitaries(qc.get_unitary(), qc2.get_unitary())
 
 
 def test_measurement_destination_qrisp_to_pyzx() -> None:
-    """A measurement's explicit clbit must survive as a PyZX result_bit."""
+    """A measurement's explicit clbit survives as a PyZX result bit and in QASM."""
     qc = QuantumCircuit(2)
     qc.measure(0, qc.add_clbit())
-    assert qc.to_pyzx().gates[0].result_bit == 0
 
+    pyzx_circuit = qc.to_pyzx()
 
-def test_measurement_qasm_export_qrisp_to_pyzx() -> None:
-    """A converted measurement must carry the destination required by QASM."""
-    qc = QuantumCircuit(2)
-    qc.measure(0, qc.add_clbit())
-    qc.to_pyzx().to_qasm()
+    assert pyzx_circuit.gates[0].result_bit == 0
+    assert "measure" in pyzx_circuit.to_qasm()
 
 
 def test_measurement_destination_pyzx_to_qrisp() -> None:
