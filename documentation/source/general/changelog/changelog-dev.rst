@@ -164,6 +164,14 @@ Improvements
   files for static and Jasp mode
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
+- Refactored :func:`jrange <qrisp.jasp.jrange>`. It now has type hints, examples
+  that run under doctest, and dedicated tests in ``test_jrange.py``, which
+  replaces ``test_control_flow_capturing.py``. ``make_tracer`` raises a
+  ``TypeError`` instead of a generic ``Exception`` for unsupported types, with
+  the same message. Pyright reports 205 fewer errors across ``src/qrisp`` (13%),
+  mostly because the loop variable of ``jrange`` now has a precise type
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
+
 - **Faster resource estimation of modular multiplications in Jasp**
   The classical constants of the multiplication of a
   :class:`~qrisp.QuantumModulus` by a classical factor are now computed by
@@ -547,6 +555,14 @@ Bug Fixes
   that does not take effect no longer discards a ``KeyboardInterrupt`` or
   ``SystemExit`` raised in its body
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
+* In Jasp mode, :func:`jrange <qrisp.jasp.jrange>` now accepts as a bound a
+  concrete JAX array created outside of the traced function, and a NumPy
+  integer as ``start``. ``make_tracer``, which ``jrange`` uses to turn Python
+  integer bounds into traced values, raised an ``AttributeError`` for complex
+  numbers because it used ``jnp.complex32``, which does not exist in JAX. It now
+  returns a ``complex128`` array
+  (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
   (``qm *= X`` and ``qm * X``, and ``QuantumArray @ matrix``) now chooses the
