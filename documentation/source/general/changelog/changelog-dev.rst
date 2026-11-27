@@ -157,9 +157,11 @@ Improvements
   docstring, more specific exceptions and dedicated tests
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
-- Refactored :func:`control <qrisp.control>`. It now has type hints and
-  dedicated tests, accepts a tuple of controls and raises a ``TypeError`` for
-  unsupported or mixed controls
+- Refactored :func:`control <qrisp.control>`. It is typed with overloads, accepts
+  a tuple of controls and raises a ``TypeError`` for unsupported or mixed controls.
+  It is documented on the :ref:`ControlEnvironment <ControlEnvironment>` page with
+  examples that run under doctest, and its tests are consolidated into dedicated
+  files for static and Jasp mode
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
 - Refactored :func:`jrange <qrisp.jasp.jrange>`. It now has type hints and
@@ -545,17 +547,12 @@ Bug Fixes
 
 * :func:`control <qrisp.control>` now honors ``invert=True`` for classical
   control outside of Jasp mode and for quantum control in Jasp mode, where it
-  was ignored. In Jasp mode, the condition of several controls is computed
-  into a helper qubit, which is uncomputed afterwards
-  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
-
-* In Jasp mode, :func:`control <qrisp.control>` negated Python booleans and
-  traced integers bitwise, so ``invert=True`` and a ``0`` in ``ctrl_state`` had no
-  effect on them (``~True`` is ``-2``), and several traced integer controls were
-  combined with a bitwise AND, so two controls with the values ``1`` and ``2`` did
-  not hold. These controls are now converted to booleans before they are negated
-  or combined: a traced integer holds if it is not ``0``. Python integers are
-  still not accepted as controls
+  was ignored. In Jasp mode, Python booleans and traced integers were negated and
+  combined bitwise (``~True`` is ``-2``), so ``invert=True``, a ``0`` in
+  ``ctrl_state`` and several integer controls gave wrong results: they are now
+  converted to booleans first. Outside of Jasp mode, a classical control block
+  that does not take effect no longer discards a ``KeyboardInterrupt`` or
+  ``SystemExit`` raised in its body
   (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
 * In Jasp mode, :func:`jrange <qrisp.jasp.jrange>` now accepts as a bound a
@@ -753,11 +750,6 @@ New Tutorials/ Updated Documentation
 
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
-
-* Documented :func:`control <qrisp.control>` on the
-  :ref:`ControlEnvironment <ControlEnvironment>` page, and rewrote its
-  docstring with examples that run under doctest
-  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
 * Rewrote the docstring of :func:`jrange <qrisp.jasp.jrange>` with examples
   that run under doctest
@@ -981,15 +973,6 @@ Development
 * Added a doctest workflow that runs the docstring examples of ``qrisp.qtypes``
   on pull requests. Further packages are added as their examples are fixed
   (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
-
-* Consolidated the tests of ``control`` into dedicated files, split into static
-  and Jasp mode like the rest of the test suite. The tests of
-  ``test_control_compilation.py`` and the classical control test of
-  ``test_control_flow_capturing.py`` moved there, mostly running with
-  ``boolean_simulation`` instead of the full simulator. Function-level imports
-  in the control environment modules moved to module level, except one that
-  would be circular, which is commented
-  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
 * Consolidated the tests of ``jrange``, ``JRangeIterator``, ``make_tracer`` and
   ``jlen`` into ``test_jrange.py``, which replaces

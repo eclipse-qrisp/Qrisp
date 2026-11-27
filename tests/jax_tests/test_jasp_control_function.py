@@ -28,6 +28,7 @@ from qrisp import (
     QuantumVariable,
     conjugate,
     control,
+    cx,
     gidney_adder,
     h,
     invert,
@@ -37,7 +38,13 @@ from qrisp import (
     swap,
     x,
 )
-from qrisp.jasp import boolean_simulation, make_jaspr, qache, terminal_sampling
+from qrisp.jasp import (
+    TracingQuantumSession,
+    boolean_simulation,
+    make_jaspr,
+    qache,
+    terminal_sampling,
+)
 
 UNSUPPORTED_MESSAGE = "Don't know how to control from input type"
 
@@ -72,6 +79,68 @@ def test_jasp_dispatch(make_ctrl, expected_type):
 
     make_jaspr(main)()
     assert environment_types == [expected_type]
+
+
+# Every kind of traced control the docstring of control lists, built from a QuantumFloat of
+# two qubits, a QuantumBool holding its first qubit, and the measurement of that QuantumBool.
+JASP_CONTROLS = {
+    "traced qubit": lambda a, flag, m: a[0],
+    "list of qubits": lambda a, flag, m: [a[0], a[1]],
+    "tuple of qubits": lambda a, flag, m: (a[0], a[1]),
+    "QuantumBool": lambda a, flag, m: flag,
+    "traced boolean": lambda a, flag, m: m,
+    "list of traced booleans": lambda a, flag, m: [m, m],
+    "tuple of traced booleans": lambda a, flag, m: (m, m),
+}
+
+
+@pytest.mark.parametrize("kind", JASP_CONTROLS)
+def test_jasp_control_kinds(kind):
+    """Every kind of control takes effect exactly when its qubits or booleans are 1."""
+
+    @boolean_simulation
+    def main(n):
+        a = QuantumFloat(2)
+        a[:] = n
+        flag = QuantumBool()
+        cx(a[0], flag[0])
+        m = measure(flag)
+        target = QuantumBool()
+        with control(JASP_CONTROLS[kind](a, flag, m)):
+            x(target)
+        return measure(target)
+
+    assert [bool(main(n)) for n in (0, 3)] == [False, True]
+
+
+@pytest.mark.parametrize("on", [False, True])
+@pytest.mark.parametrize("make_flag", [bool, jnp.array], ids=["bool", "JAX array"])
+def test_jasp_concrete_boolean_controls(make_flag, on):
+    """A Python bool and a JAX array created in the traced function also control a block."""
+
+    @boolean_simulation
+    def main():
+        target = QuantumBool()
+        with control(make_flag(on)):
+            x(target)
+        return measure(target)
+
+    assert bool(main()) == on
+
+
+def test_jasp_quantum_control_accepts_ctrl_method():
+    """In Jasp mode, ctrl_method is accepted by keyword for traced qubits."""
+
+    @boolean_simulation
+    def main(n):
+        a = QuantumFloat(1)
+        a[:] = n
+        target = QuantumBool()
+        with control(a[0], ctrl_method="gray"):
+            x(target)
+        return measure(target)
+
+    assert [bool(main(n)) for n in (0, 1)] == [False, True]
 
 
 @pytest.mark.parametrize(
@@ -442,6 +511,25 @@ def test_jasp_quantum_invert_several_controls(ctrl_state):
         fired, controls = main(value)
         assert bool(fired) == (value != activating_value)
         assert int(controls) == value
+
+
+def test_jasp_quantum_invert_helper_qubits_are_released():
+    """The helper qubits of nested inverted blocks are released, and no other variable is."""
+    registered = {}
+
+    def main():
+        a, b = QuantumFloat(2), QuantumFloat(2)
+        # Named like the Python variable holding the helper, so a helper named after
+        # its variable would make the tracing session delete this one instead.
+        user = QuantumBool(name="condition")
+        with control([a[0], a[1]], invert=True), control([b[0], b[1]], invert=True):
+            x(user)
+        registered["created"] = [a, b, user]
+        registered["after"] = list(TracingQuantumSession.get_instance().qv_list)
+        return measure(user)
+
+    make_jaspr(main)()
+    assert [id(qv) for qv in registered["after"]] == [id(qv) for qv in registered["created"]]
 
 
 @pytest.mark.parametrize("ctrl_state", ["10", 3, 0])

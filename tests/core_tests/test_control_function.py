@@ -78,6 +78,52 @@ def test_static_dispatch(make_ctrl, expected_type):
     assert isinstance(control(make_ctrl(qv)), expected_type)
 
 
+# Every kind of control the docstring of control lists, built from a QuantumVariable of
+# two qubits and two QuantumBools for quantum control, and from a bool for classical control.
+QUANTUM_CONTROLS = {
+    "Qubit": lambda qv, qbs: qv[0],
+    "QuantumBool": lambda qv, qbs: qbs[0],
+    "QuantumVariable": lambda qv, qbs: qv,
+    "list of qubits": lambda qv, qbs: [qv[0], qv[1]],
+    "tuple of qubits": lambda qv, qbs: (qv[0], qv[1]),
+    "list of QuantumBools": lambda qv, qbs: list(qbs),
+}
+
+CLASSICAL_CONTROLS = {
+    "bool": lambda on: on,
+    "numpy.bool_": np.bool_,
+    "JAX array": jnp.array,
+    "list of bools": lambda on: [on, on],
+    "tuple of bools": lambda on: (on, on),
+    "list of JAX arrays": lambda on: [jnp.array(on), jnp.array(on)],
+}
+
+
+@pytest.mark.parametrize("on", [False, True])
+@pytest.mark.parametrize("kind", QUANTUM_CONTROLS)
+def test_static_quantum_control_kinds(kind, on):
+    """Every kind of quantum control takes effect exactly when its qubits are in state 1."""
+    qv, qbs = QuantumVariable(2), (QuantumBool(), QuantumBool())
+    if on:
+        x(qv)
+        for qb in qbs:
+            x(qb)
+    target = QuantumBool()
+    with control(QUANTUM_CONTROLS[kind](qv, qbs)):
+        x(target)
+    assert bit(target) == on
+
+
+@pytest.mark.parametrize("on", [False, True])
+@pytest.mark.parametrize("kind", CLASSICAL_CONTROLS)
+def test_static_classical_control_kinds(kind, on):
+    """Every kind of classical control takes effect exactly when its booleans are True."""
+    target = QuantumBool()
+    with control(CLASSICAL_CONTROLS[kind](on)):
+        x(target)
+    assert bit(target) == on
+
+
 def test_static_quantum_controls_are_normalized():
     """A QuantumBool becomes its qubit, a QuantumVariable its qubits, a tuple a list."""
     qv = QuantumVariable(3)
@@ -116,6 +162,10 @@ def test_quantum_arguments_are_forwarded():
     assert quantum_env(qv[0], 1, "gray").ctrl_method == "gray"
     assert quantum_env(qv[0], ctrl_method="gray").ctrl_method == "gray"
     assert quantum_env(qv[0], invert=True).invert is True
+    # The fourth positional argument is invert, after a ctrl_method that can be None.
+    env = quantum_env(qv[0], -1, None, True)
+    assert env.ctrl_method is None
+    assert env.invert is True
 
 
 def test_classical_arguments_are_forwarded():
@@ -176,17 +226,6 @@ def test_static_quantum_ctrl_state(value, ctrl_state):
     assert bit(target) == (value == 1)
 
 
-@pytest.mark.parametrize("flipped", [False, True])
-def test_static_environment_on_a_single_qubit(flipped):
-    """A ControlEnvironment accepts a single Qubit, also with the default ctrl_state."""
-    ctrl, target = QuantumBool(), QuantumBool()
-    if flipped:
-        x(ctrl)
-    with ControlEnvironment(ctrl[0]):
-        x(target)
-    assert bit(target) == flipped
-
-
 @pytest.mark.parametrize("value", range(4))
 def test_static_quantum_invert(value):
     """invert=True activates the block for every state except ctrl_state."""
@@ -235,6 +274,14 @@ def test_static_classical_inactive_block_errors_are_discarded(flag, inverted):
         x(target)
         raise IndexError("raised inside an inactive block")
     assert not bit(target)
+
+
+@pytest.mark.parametrize("exception", [KeyboardInterrupt, SystemExit])
+@pytest.mark.parametrize("flag, inverted", [(False, False), (True, True)])
+def test_static_classical_inactive_block_interrupts_propagate(flag, inverted, exception):
+    """Interrupts and exits, which are not Exception subclasses, are not discarded."""
+    with pytest.raises(exception), control(flag, invert=inverted):
+        raise exception()
 
 
 def test_static_classical_active_block_errors_propagate():
