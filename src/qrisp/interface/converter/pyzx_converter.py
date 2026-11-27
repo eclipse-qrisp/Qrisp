@@ -21,7 +21,7 @@ from __future__ import annotations
 import copy
 from collections.abc import Callable
 from fractions import Fraction
-from functools import partial
+from functools import cache, partial
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -35,6 +35,10 @@ if TYPE_CHECKING:
     from qrisp import Clbit, Operation, Qubit
 
 
+# PyZX 0.10 introduced the expanded circuit gate set and ``Circuit.bits`` we
+# rely on; 0.10.1 is the first supported release. See the PyZX release notes:
+# https://github.com/zxcalc/pyzx/releases/tag/v0.10.0
+# https://github.com/zxcalc/pyzx/releases/tag/v0.10.1
 MIN_PYZX_VERSION = "0.10.1"
 _REQUIRED_PYZX_GATES = frozenset({"Y", "CY", "RXX", "RZZ", "Reset", "U2", "U3"})
 
@@ -66,6 +70,7 @@ def _check_pyzx_compatibility(pyzx_module: object, circuit_cls: type, gate_types
     raise ImportError(f"PyZX >= {MIN_PYZX_VERSION} is required by the Qrisp PyZX converter (found {version}{details}).")
 
 
+@cache
 def _import_pyzx() -> tuple[object, type, dict[str, object]]:
     """Import PyZX, verify compatibility, and return its module, Circuit, and gate types.
 
@@ -210,7 +215,7 @@ def _measurement_clbit(qc: QuantumCircuit, result_bit: int | None) -> Clbit:
     """
     if result_bit is None:
         return qc.add_clbit()
-    if result_bit >= len(qc.clbits):
+    if not 0 <= result_bit < len(qc.clbits):
         raise ValueError(
             f"Measurement targets result bit {result_bit}, but the PyZX circuit "
             f"only declares {len(qc.clbits)} classical bits."
@@ -235,11 +240,12 @@ def _transpile(
     qrisp_circuit: QuantumCircuit,
     gate_map: dict[str, str | Callable[..., None]],
     max_iterations: int = 100,
+    needs_transpile: Callable[[Operation], bool] | None = None,
 ) -> QuantumCircuit:
-    """Transpile a circuit until only operations known to ``gate_map`` remain.
+    """Transpile a circuit until only supported operations remain.
 
-    Unknown operations are repeatedly transpiled until no further progress can
-    be made. The code was adapted from the Cirq converter.
+    Operations are repeatedly transpiled until no further progress can be made.
+    The code was adapted from the Cirq converter.
 
     Parameters
     ----------
@@ -251,32 +257,41 @@ def _transpile(
     max_iterations : int, optional
         The maximum number of transpilation rounds before giving up. The
         default is 100.
+    needs_transpile : Callable[[Operation], bool] or None, optional
+        Predicate deciding whether an operation must be transpiled. By default,
+        operations whose names are not keys of ``gate_map`` are transpiled.
 
     Returns
     -------
     QuantumCircuit
-        A circuit containing only operations whose names occur in ``gate_map``.
+        A circuit containing only supported operations.
 
     Raises
     ------
     ValueError
-        If an unknown operation cannot be transpiled, if transpilation makes no
-        further progress, or if ``max_iterations`` is exceeded.
+        If an operation cannot be transpiled, if transpilation makes no further
+        progress, or if ``max_iterations`` is exceeded.
 
     """
 
+    def _needs_transpile(op: Operation) -> bool:
+        """Return whether ``op`` has to be transpiled."""
+        if needs_transpile is not None:
+            return needs_transpile(op)
+        return op.name not in gate_map
+
     def _unknown_names(circuit: QuantumCircuit) -> set[str]:
-        """Return the names of all operations that are not keys of ``gate_map``."""
-        return {instr.op.name for instr in circuit.data if instr.op.name not in gate_map}
+        """Return the names of all operations that must be transpiled."""
+        return {instr.op.name for instr in circuit.data if _needs_transpile(instr.op)}
 
     for _ in range(max_iterations):
         unknown = _unknown_names(qrisp_circuit)
         if not unknown:
             return qrisp_circuit
 
-        def _transpile_predicate(op: Operation, _unknown: set[str] = unknown) -> bool:
-            """Return whether ``op`` belongs to the set of unknown operations."""
-            return op.name in _unknown
+        def _transpile_predicate(op: Operation) -> bool:
+            """Return whether ``op`` must be transpiled."""
+            return _needs_transpile(op)
 
         try:
             transpiled = qrisp_circuit.transpile(transpile_predicate=_transpile_predicate)
@@ -305,13 +320,40 @@ def _transpile(
     )
 
 
+def _has_default_ctrl_state(op: Operation) -> bool:
+    """Return whether all controls of ``op`` trigger on ``|1>``.
+
+    Parameters
+    ----------
+    op : qrisp.Operation
+        The operation to inspect.
+
+    Returns
+    -------
+    bool
+        ``True`` if the operation has no controls or all controls use the
+        default ``|1>`` state.
+
+    """
+    ctrl_state = getattr(op, "ctrl_state", None)
+    controls = getattr(op, "controls", None)
+    if ctrl_state is None or controls is None:
+        return True
+
+    if isinstance(ctrl_state, int):
+        return ctrl_state in (-1, (1 << len(controls)) - 1)
+
+    state = str(ctrl_state)
+    return len(state) == len(controls) and set(state) == {"1"}
+
+
 def _check_ctrl_state(op: Operation) -> None:
-    """Raise if a controlled operation uses non-default (``|0>``) controls.
+    """Raise if an inverted control survived transpilation.
 
     Qrisp keeps the operation name (for example ``"cx"``) when a control is
-    inverted via ``ctrl_state``. Since PyZX has no equivalent of an inverted
-    control, such operations must be rejected instead of silently converted as
-    if they triggered on ``|1>``.
+    inverted via ``ctrl_state``. Such operations are normally routed through
+    Qrisp's transpiler, which conjugates them with X gates. This check is a
+    safety net for the rare case that transpilation leaves one behind.
 
     Parameters
     ----------
@@ -324,47 +366,47 @@ def _check_ctrl_state(op: Operation) -> None:
         If the operation has a control state other than all ones.
 
     """
-    ctrl_state = getattr(op, "ctrl_state", None)
-    controls = getattr(op, "controls", None)
-    if ctrl_state is None or controls is None:
-        return
-
-    if isinstance(ctrl_state, int):
-        is_all_ones = ctrl_state in (-1, (1 << len(controls)) - 1)
-    else:
-        state = str(ctrl_state)
-        is_all_ones = len(state) == len(controls) and set(state) == {"1"}
-
-    if not is_all_ones:
+    if not _has_default_ctrl_state(op):
         raise ValueError(
-            f"Controlled operation {op.name!r} with ctrl_state={ctrl_state!r} is not supported. "
-            "Only controls that trigger on |1> are supported by the PyZX converter."
+            f"Controlled operation {op.name!r} with ctrl_state={getattr(op, 'ctrl_state', None)!r} "
+            "could not be transpiled into default controls."
         )
 
 
-def _skip_operation(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -> None:
+def _skip_operation(
+    pyzx_circuit: Circuit,
+    qubits: list[int],
+    _params: list[float],
+) -> None:
     """Drop an operation that has no PyZX representation."""
     return None
 
 
-def _emit_s_dg(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -> None:
-    """Emit the adjoint of S as a PyZX ZPhase gate."""
-    pyzx_circuit.add_gate("ZPhase", qubits[0], _phase(-np.pi / 2))
+def _emit_s_dg(
+    pyzx_circuit: Circuit,
+    qubits: list[int],
+    _params: list[float],
+) -> None:
+    """Emit the adjoint of S using PyZX's adjoint flag."""
+    pyzx_circuit.add_gate("S", qubits[0], adjoint=True)
 
 
-def _emit_t_dg(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -> None:
-    """Emit the adjoint of T as a PyZX ZPhase gate."""
-    pyzx_circuit.add_gate("ZPhase", qubits[0], _phase(-np.pi / 4))
+def _emit_t_dg(
+    pyzx_circuit: Circuit,
+    qubits: list[int],
+    _params: list[float],
+) -> None:
+    """Emit the adjoint of T using PyZX's adjoint flag."""
+    pyzx_circuit.add_gate("T", qubits[0], adjoint=True)
 
 
-def _emit_p(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -> None:
-    """Emit Qrisp's phase gate as a PyZX ZPhase gate."""
-    pyzx_circuit.add_gate("ZPhase", qubits[0], _phase(params[0]))
-
-
-def _emit_sx_dg(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -> None:
-    """Emit the adjoint of SX as a PyZX XPhase gate."""
-    pyzx_circuit.add_gate("XPhase", qubits[0], _phase(-np.pi / 2))
+def _emit_sx_dg(
+    pyzx_circuit: Circuit,
+    qubits: list[int],
+    _params: list[float],
+) -> None:
+    """Emit the adjoint of SX using PyZX's adjoint flag."""
+    pyzx_circuit.add_gate("SX", qubits[0], adjoint=True)
 
 
 def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
@@ -402,7 +444,8 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
 
     Examples
     --------
-    Convert a Qrisp Bell-state circuit to PyZX and back:
+    Let's start with a small Bell state on the Qrisp side. We add the qubits
+    explicitly so that the printed diagram has predictable labels:
 
     >>> from qrisp import QuantumCircuit, Qubit
     >>> from qrisp.interface import convert_from_pyzx, convert_to_pyzx
@@ -417,23 +460,33 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
         └───┘┌─┴─┐
     q1: ─────┤ X ├
              └───┘
+
+    Handing this circuit to :func:`convert_to_pyzx` gives us the matching PyZX
+    gates, with PyZX's own names for H and CNOT:
+
     >>> pyzx_circuit = convert_to_pyzx(qc)
     >>> print(pyzx_circuit)
     Circuit(2 qubits, 0 bits, 2 gates)
     >>> [(gate.name, gate.target) for gate in pyzx_circuit.gates]
     [('HAD', 0), ('CNOT', 1)]
+
+    If we convert that PyZX circuit back, we get the same operations again.
+    The result is only defined up to global phase, since PyZX does not track it:
+
     >>> qc_roundtrip = convert_from_pyzx(pyzx_circuit)
     >>> [(ins.op.name, [qc_roundtrip.qubits.index(q) for q in ins.qubits]) for ins in qc_roundtrip.data]
     [('h', [0]), ('cx', [0, 1])]
 
-    Measurement destinations are preserved as PyZX result bits:
+    Measurements carry their classical destination along. When qubit 0 is
+    measured into classical bit 0, the PyZX gate remembers that result bit:
 
     >>> qc = QuantumCircuit(1, 1)
     >>> qc.measure(0, 0)
     >>> convert_to_pyzx(qc).gates[0].result_bit
     0
 
-    Gates without a native PyZX counterpart are transpiled automatically:
+    Gates that PyZX does not have natively are first broken down by Qrisp's
+    transpiler, so they still make the trip:
 
     >>> qc = QuantumCircuit(2)
     >>> qc.ryy(0.1, 0, 1)
@@ -465,6 +518,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
         "s": "S",
         "t": "T",
         "sx": "SX",
+        "p": "ZPhase",
         "rxx": "RXX",
         "rzz": "RZZ",
         "measure": "Measurement",
@@ -472,7 +526,6 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
         # Gates without a direct PyZX equivalent are handled by these callables.
         "s_dg": _emit_s_dg,
         "t_dg": _emit_t_dg,
-        "p": _emit_p,
         "sx_dg": _emit_sx_dg,
         # Skip allocation/deallocation, identity, global phase, and barriers.
         "qb_alloc": _skip_operation,
@@ -482,7 +535,11 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
         "barrier": _skip_operation,
     }
 
-    qrisp_circuit = _transpile(qrisp_circuit, gate_map)
+    qrisp_circuit = _transpile(
+        qrisp_circuit,
+        gate_map,
+        needs_transpile=lambda op: op.name not in gate_map or not _has_default_ctrl_state(op),
+    )
 
     num_qubits = qrisp_circuit.num_qubits()
     num_clbits = len(qrisp_circuit.clbits)
@@ -601,7 +658,8 @@ def convert_from_pyzx(pyzx_circuit: Circuit) -> QuantumCircuit:
 
     Examples
     --------
-    Convert a PyZX Bell-state circuit to Qrisp and back:
+    This time we start on the PyZX side and build a two-qubit Bell circuit
+    directly from PyZX gates:
 
     >>> from pyzx import Circuit
     >>> from qrisp.interface import convert_from_pyzx, convert_to_pyzx
@@ -610,6 +668,11 @@ def convert_from_pyzx(pyzx_circuit: Circuit) -> QuantumCircuit:
     >>> pyzx_circuit.add_gate("CNOT", 0, 1)
     >>> print(pyzx_circuit)
     Circuit(2 qubits, 0 bits, 2 gates)
+
+    Calling :func:`convert_from_pyzx` gives us the equivalent Qrisp circuit.
+    We rename the auto-generated qubits here only so the printed diagram stays
+    stable from run to run:
+
     >>> qc = convert_from_pyzx(pyzx_circuit)
     >>> for i, qubit in enumerate(qc.qubits):
     ...     qubit.identifier = f"q{i}"
@@ -619,13 +682,19 @@ def convert_from_pyzx(pyzx_circuit: Circuit) -> QuantumCircuit:
         └───┘┌─┴─┐
     q1: ─────┤ X ├
              └───┘
+
+    Sending it back through :func:`convert_to_pyzx` reproduces the same PyZX
+    gates we started with:
+
     >>> pyzx_roundtrip = convert_to_pyzx(qc)
     >>> print(pyzx_roundtrip)
     Circuit(2 qubits, 0 bits, 2 gates)
     >>> [(gate.name, gate.target) for gate in pyzx_roundtrip.gates]
     [('HAD', 0), ('CNOT', 1)]
 
-    Measurement result bits are mapped to the corresponding classical bits:
+    A PyZX result bit becomes the Qrisp clbit that receives the measurement.
+    Here qubit 0 is measured into result bit 0, and the converted circuit
+    stores the outcome in the matching clbit:
 
     >>> pyzx_circuit = Circuit(1, bit_amount=1)
     >>> pyzx_circuit.add_gate("Measurement", 0, result_bit=0)
@@ -633,7 +702,8 @@ def convert_from_pyzx(pyzx_circuit: Circuit) -> QuantumCircuit:
     >>> [(ins.op.name, qc.clbits.index(ins.clbits[0])) for ins in qc.data]
     [('measure', 0)]
 
-    Gates without a direct Qrisp equivalent are decomposed by PyZX first:
+    If PyZX has a gate that Qrisp does not, PyZX is asked to decompose it
+    first. A parity-phase gate, for example, becomes a short CNOT/RZ sequence:
 
     >>> from fractions import Fraction
     >>> pyzx_circuit = Circuit(3)

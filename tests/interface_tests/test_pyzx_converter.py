@@ -16,11 +16,17 @@ from pyzx.circuit import gates as pyzx_gates
 
 from qrisp import QuantumCircuit, QuantumVariable, U1Gate
 from qrisp.circuit import standard_operations as qrisp_ops
-from qrisp.interface.converter.pyzx_converter import _check_ctrl_state, _check_pyzx_compatibility, _phase
+from qrisp.interface.converter.pyzx_converter import (
+    _check_ctrl_state,
+    _check_pyzx_compatibility,
+    _import_pyzx,
+    _phase,
+)
 
 
 def test_import_error() -> None:
     """to_pyzx raises ImportError when PyZX is not installed."""
+    _import_pyzx.cache_clear()
     with pytest.raises(ImportError):
         with patch.dict(sys.modules, {"pyzx": None}):
             qc = QuantumCircuit(1)
@@ -115,11 +121,23 @@ def test_non_default_ctrl_state_raises() -> None:
 
 @pytest.mark.parametrize(
     "ctrl_state, expect_error",
-    [(3, False), (2, True)],
-    ids=["integer_all_ones", "integer_mixed"],
+    [
+        (3, False),
+        (2, True),
+        ("11", False),
+        ("10", True),
+        ("1", True),
+    ],
+    ids=[
+        "integer_all_ones",
+        "integer_mixed",
+        "string_all_ones",
+        "string_mixed",
+        "string_length_mismatch",
+    ],
 )
-def test_check_ctrl_state_integer(ctrl_state: int, expect_error: bool) -> None:
-    """Integer control states are validated by their bit pattern."""
+def test_check_ctrl_state(ctrl_state: int | str, expect_error: bool) -> None:
+    """Integer and string control states are validated against the number of controls."""
     op = SimpleNamespace(name="cx", ctrl_state=ctrl_state, controls=[object(), object()])
 
     if expect_error:
@@ -698,6 +716,8 @@ def test_phase_tolerant_toffoli_has_distinct_name() -> None:
 
     assert qc.data[0].op.name == "pt2cx"
     assert "Tof" not in [gate.name for gate in qc.to_pyzx().gates]
+
+    _test_qrisp_to_pyzx(qc)
 
 
 CONTROLLED_PARAMETRIC_GATES = ["crx", "cry", "crz", "cp", "cu3", "rxx", "rzz"]
