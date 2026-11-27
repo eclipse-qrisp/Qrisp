@@ -560,7 +560,10 @@ Bug Fixes
 
 * In Jasp mode, :func:`jrange <qrisp.jasp.jrange>` now accepts as a bound a
   concrete JAX array created outside of the traced function, and a NumPy
-  integer as ``start``, and ``make_tracer`` no longer fails on complex numbers
+  integer as ``start``. ``make_tracer``, which ``jrange`` uses to turn Python
+  integer bounds into traced values, raised an ``AttributeError`` for complex
+  numbers because it used ``jnp.complex32``, which does not exist in JAX. It now
+  returns a ``complex128`` array
   (`PR #1024 <https://github.com/eclipse-qrisp/Qrisp/pull/1024>`_).
 
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor

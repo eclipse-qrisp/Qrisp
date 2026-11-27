@@ -180,8 +180,8 @@ def jrange(*args: Any) -> "JRangeIterator | range":
     Parameters
     ----------
     *args : int or numpy.integer or jax.Array
-        ``stop``, or ``start`` and ``stop``. Outside of Jasp mode, they are
-        converted to :class:`int`.
+        ``stop``, or ``start`` and ``stop``. There is no ``step``: the step is
+        always 1. Outside of Jasp mode, the arguments are converted to :class:`int`.
 
     Returns
     -------
@@ -215,7 +215,8 @@ def jrange(*args: Any) -> "JRangeIterator | range":
     For another step, compute the index from the loop variable: ``2 * k`` for
     ``k`` in ``jrange((n + 1) // 2)`` steps through the even numbers below ``n``.
     To iterate backwards, use ``n - 1 - k``, or put the loop in an
-    :ref:`InversionEnvironment`, which also inverts its operations.
+    :ref:`InversionEnvironment`, which also inverts its operations. In Jasp mode,
+    ``reversed(jrange(n))`` and ``jrange(n)[::-1]`` raise a :class:`TypeError`.
 
     Examples
     --------
@@ -225,7 +226,8 @@ def jrange(*args: Any) -> "JRangeIterator | range":
     >>> list(jrange(2, 5))
     [2, 3, 4]
 
-    In Jasp mode, the number of iterations can depend on the arguments:
+    In Jasp mode, the number of iterations can depend on the arguments, while the
+    step is always 1:
 
     >>> from qrisp import QuantumFloat, cx, invert, measure, x
     >>> from qrisp.jasp import boolean_simulation
