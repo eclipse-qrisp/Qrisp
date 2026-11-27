@@ -2171,6 +2171,82 @@ class QuantumCircuit:
 
         return convert_to_cirq(self)
 
+    def to_pyzx(self):
+        """Method to convert the given QuantumCircuit to a PyZX Circuit.
+
+        Returns
+        -------
+        pyzx.Circuit
+            A PyZX Circuit equivalent to the Qrisp QuantumCircuit.
+
+        Notes
+        -----
+        Requires PyZX >= 0.10.1. Because PyZX does not track global phases,
+        conversions are equivalent only up to global phase.
+
+        All standard Qrisp gates are supported, either directly or after
+        transpilation. The operations ``gphase``, ``id``, ``barrier``,
+        ``qb_alloc``, and ``qb_dealloc`` have no PyZX representation and are
+        intentionally dropped. Operations that cannot be transpiled raise a
+        ``ValueError``.
+
+        Examples
+        --------
+        Let's start with a small Bell state on the Qrisp side. We add the
+        qubits explicitly so that the printed diagram has predictable labels:
+
+        >>> from qrisp import QuantumCircuit, Qubit
+        >>> qc = QuantumCircuit()
+        >>> _ = qc.add_qubit(Qubit("q0"))
+        >>> _ = qc.add_qubit(Qubit("q1"))
+        >>> qc.h(0)
+        >>> qc.cx(0, 1)
+        >>> print(qc)  # doctest: +NORMALIZE_WHITESPACE
+            ┌───┐
+        q0: ┤ H ├──■──
+            └───┘┌─┴─┐
+        q1: ─────┤ X ├
+                 └───┘
+
+        Handing this circuit to :meth:`to_pyzx` gives us the matching PyZX
+        gates, with PyZX's own names for H and CNOT:
+
+        >>> pyzx_circuit = qc.to_pyzx()
+        >>> print(pyzx_circuit)
+        Circuit(2 qubits, 0 bits, 2 gates)
+        >>> [(gate.name, gate.target) for gate in pyzx_circuit.gates]
+        [('HAD', 0), ('CNOT', 1)]
+
+        If we convert that PyZX circuit back with :meth:`from_pyzx`, we get the
+        same operations again. The result is only defined up to global phase,
+        since PyZX does not track it:
+
+        >>> qc_roundtrip = QuantumCircuit.from_pyzx(pyzx_circuit)
+        >>> [(ins.op.name, [qc_roundtrip.qubits.index(q) for q in ins.qubits]) for ins in qc_roundtrip.data]
+        [('h', [0]), ('cx', [0, 1])]
+
+        Measurements carry their classical destination along. When qubit 0 is
+        measured into classical bit 0, the PyZX gate remembers that result bit:
+
+        >>> qc = QuantumCircuit(1, 1)
+        >>> qc.measure(0, 0)
+        >>> qc.to_pyzx().gates[0].result_bit
+        0
+
+        Gates that PyZX does not have natively are first broken down by Qrisp's
+        transpiler, so they still make the trip:
+
+        >>> qc = QuantumCircuit(2)
+        >>> qc.ryy(0.1, 0, 1)
+        >>> len(qc.to_pyzx().gates) > 0
+        True
+
+        """
+        # NOTE: This is here to avoid circular imports
+        from qrisp.interface import convert_to_pyzx
+
+        return convert_to_pyzx(self)
+
     @classmethod
     def from_cirq(cls, cirq_circuit):
         """Class method to create QuantumCircuits from Cirq Circuits.
@@ -2208,6 +2284,92 @@ class QuantumCircuit:
         from qrisp.interface import convert_from_cirq
 
         return convert_from_cirq(cirq_circuit)
+
+    @classmethod
+    def from_pyzx(cls, pyzx_circuit):
+        """Class method to create QuantumCircuits from PyZX Circuits.
+
+        Parameters
+        ----------
+        pyzx_circuit : pyzx.Circuit
+            The PyZX Circuit to convert.
+
+        Returns
+        -------
+        QuantumCircuit
+            The converted QuantumCircuit.
+
+        Notes
+        -----
+        Requires PyZX >= 0.10.1. Because PyZX does not track global phases,
+        round-trips are equivalent only up to global phase.
+
+        PyZX gates without a Qrisp equivalent are decomposed with
+        ``to_basic_gates()`` when possible. The following gates are genuinely
+        unsupported and raise a ``ValueError``: ``FSim``, ``InitAncilla``,
+        ``PostSelect``, ``DiscardBit``, and ``ConditionalGate``.
+
+        Examples
+        --------
+        This time we start on the PyZX side and build a two-qubit Bell circuit
+        directly from PyZX gates:
+
+        >>> from pyzx import Circuit
+        >>> from qrisp import QuantumCircuit
+        >>> pyzx_circuit = Circuit(2)
+        >>> pyzx_circuit.add_gate("HAD", 0)
+        >>> pyzx_circuit.add_gate("CNOT", 0, 1)
+        >>> print(pyzx_circuit)
+        Circuit(2 qubits, 0 bits, 2 gates)
+
+        Calling :meth:`from_pyzx` gives us the equivalent Qrisp circuit. We
+        rename the auto-generated qubits here only so the printed diagram stays
+        stable from run to run:
+
+        >>> qc = QuantumCircuit.from_pyzx(pyzx_circuit)
+        >>> for i, qubit in enumerate(qc.qubits):
+        ...     qubit.identifier = f"q{i}"
+        >>> print(qc)  # doctest: +NORMALIZE_WHITESPACE
+            ┌───┐
+        q0: ┤ H ├──■──
+            └───┘┌─┴─┐
+        q1: ─────┤ X ├
+                 └───┘
+
+        Sending it back through :meth:`to_pyzx` reproduces the same PyZX gates
+        we started with:
+
+        >>> pyzx_roundtrip = qc.to_pyzx()
+        >>> print(pyzx_roundtrip)
+        Circuit(2 qubits, 0 bits, 2 gates)
+        >>> [(gate.name, gate.target) for gate in pyzx_roundtrip.gates]
+        [('HAD', 0), ('CNOT', 1)]
+
+        A PyZX result bit becomes the Qrisp clbit that receives the measurement.
+        Here qubit 0 is measured into result bit 0, and the converted circuit
+        stores the outcome in the matching clbit:
+
+        >>> pyzx_circuit = Circuit(1, bit_amount=1)
+        >>> pyzx_circuit.add_gate("Measurement", 0, result_bit=0)
+        >>> qc = QuantumCircuit.from_pyzx(pyzx_circuit)
+        >>> [(ins.op.name, qc.clbits.index(ins.clbits[0])) for ins in qc.data]
+        [('measure', 0)]
+
+        If PyZX has a gate that Qrisp does not, PyZX is asked to decompose it
+        first. A parity-phase gate, for example, becomes a short CNOT/RZ
+        sequence:
+
+        >>> from fractions import Fraction
+        >>> pyzx_circuit = Circuit(3)
+        >>> pyzx_circuit.add_gate("ParityPhase", Fraction(1, 2), 0, 1, 2)
+        >>> [ins.op.name for ins in QuantumCircuit.from_pyzx(pyzx_circuit).data]
+        ['cx', 'cx', 'rz', 'cx', 'cx']
+
+        """
+        # NOTE: This is here to avoid circular imports
+        from qrisp.interface import convert_from_pyzx
+
+        return convert_from_pyzx(pyzx_circuit)
 
     def to_pdag(self, remove_artificials: bool = False):
         """Method to convert the given QuantumCircuit to a PermeabilityGraph.

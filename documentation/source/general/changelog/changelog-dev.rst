@@ -864,6 +864,8 @@ API Changes
 Development
 -----------
 
+* Added a PyZX bidirectional conversion interface
+  (`PR #782 <https://github.com/eclipse-qrisp/Qrisp/pull/782>`_).
 * Removed the obsolete ``src/qrisp/examples`` directory. These standalone
   scripts were not part of the installed package and duplicated examples that
   are maintained in the documentation
@@ -1053,6 +1055,7 @@ Dependency Upgrades
 First Time Contributors 🎉
 --------------------------
 
+* `philipp-heinen <https://github.com/philipp-heinen>`_
 * `alighazi288 <https://github.com/alighazi288>`_
 * `NedislavKolev <https://github.com/NedislavKolev>`_
 * `Shanwis <https://github.com/Shanwis>`_
