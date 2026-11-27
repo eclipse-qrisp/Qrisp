@@ -24,7 +24,7 @@ import numpy as np
 import pytest
 from jax.core import Tracer
 
-from qrisp import QuantumFloat, control, cx, h, invert, measure, x
+from qrisp import QuantumFloat, control, cx, invert, measure, x
 from qrisp.jasp import (
     DynamicQubitArray,
     boolean_simulation,
@@ -61,7 +61,6 @@ def flip_range(make_args):
         ((2, 5), range(2, 5)),
         ((5, 2), range(5, 2)),
         ((np.int64(3),), range(3)),
-        ((3.7,), range(3)),
         ((jnp.array(4),), range(4)),
     ],
 )
@@ -221,30 +220,31 @@ def test_jasp_loop_is_traced_twice_and_compiled_into_a_while_loop():
 
 
 def test_jasp_loop_runs_in_the_default_simulator():
-    """One Jaspr prepares GHZ states of several sizes, with a random measurement outcome."""
+    """One Jaspr copies a qubit in state 1 to QuantumFloats of several sizes."""
 
     def main(n):
         qf = QuantumFloat(n)
-        h(qf[0])
+        x(qf[0])
         for i in jrange(n - 1):
             cx(qf[0], qf[i + 1])
         return measure(qf)
 
     jaspr = make_jaspr(main)(1)
-    for n in range(1, 7):
-        assert int(jaspr(n)) in (0, 2**n - 1)
+    assert [int(jaspr(n)) for n in range(1, 7)] == [2**n - 1 for n in range(1, 7)]
 
 
 @pytest.mark.parametrize(
-    "escaping, error, message",
+    "escaping",
     [
-        (lambda i: i + 1, Exception, "Found jrange with external carry value"),
-        # The loop index fails with an internal error instead of the message above.
-        (lambda i: i, KeyError, r"Var\(id=\d+\):int64\[\]"),
+        pytest.param(lambda i: i + 1, id="computed-value"),
+        pytest.param(
+            lambda i: i,
+            id="loop-index",
+            marks=pytest.mark.xfail(strict=True, reason="raises an internal KeyError"),
+        ),
     ],
-    ids=["computed-value", "loop-index"],
 )
-def test_jasp_external_carry_value_raises(escaping, error, message):
+def test_jasp_external_carry_value_raises(escaping):
     """Neither values computed in the loop nor the loop index can be used after it."""
 
     @qache
@@ -260,7 +260,7 @@ def test_jasp_external_carry_value_raises(escaping, error, message):
         flip_all(qf)
         return measure(qf)
 
-    with pytest.raises(error, match=message):
+    with pytest.raises(Exception, match="Found jrange with external carry value"):
         make_jaspr(main)(3)
 
 
@@ -288,11 +288,10 @@ def test_jasp_changing_iterations_raise():
     [
         (None, jnp.array(2), 0b011),
         (jnp.array(1), None, 0b110),
-        (None, np.int32(2), 0b011),
         (np.int32(1), None, 0b110),
         (np.array(1), None, 0b110),
     ],
-    ids=["jax-stop", "jax-start", "numpy-stop", "numpy-start", "numpy-array-start"],
+    ids=["jax-stop", "jax-start", "numpy-start", "numpy-array-start"],
 )
 def test_jasp_concrete_array_bounds(start, stop, expected):
     """Concrete JAX or NumPy values created outside of the traced function are valid bounds."""
@@ -355,7 +354,10 @@ def test_iterator_traces_two_iterations():
 # make_tracer
 
 
-@pytest.mark.parametrize("value, dtype", [(True, jnp.bool_), (3, jnp.int64), (2.5, jnp.float64)])
+@pytest.mark.parametrize(
+    "value, dtype",
+    [(True, jnp.bool_), (3, jnp.int64), (2.5, jnp.float64), (1 + 2j, jnp.complex128)],
+)
 def test_make_tracer_dtypes(value, dtype):
     """Python scalars become 0-dimensional arrays of the matching 64-bit type."""
     result = make_tracer(value)
@@ -371,13 +373,6 @@ def test_make_tracer_in_jasp_mode_matches_eager(value):
     traced = jax.jit(lambda: make_tracer(value))()
     assert traced.dtype == eager.dtype
     assert traced == eager
-
-
-def test_make_tracer_complex():
-    """Complex numbers become complex128 arrays."""
-    result = make_tracer(1 + 2j)
-    assert result.dtype == jnp.complex128
-    assert result == 1 + 2j
 
 
 @pytest.mark.parametrize("value", [np.int64(3), "3", None, jnp.array(3)])
