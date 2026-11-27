@@ -35,8 +35,12 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
      - Recursively dissolve synthesized gates into elementary gates
    * - :doc:`gray_synth_toffoli <gray_synth_toffoli>`
      - Synthesize Toffoli gates using Gray-code decomposition
+   * - :doc:`layerize <layerize>`
+     - Reorder instructions into as-soon-as-possible (ASAP) layers
    * - :doc:`manual_layout <manual_layout>`
      - Re-index qubits according to a user-supplied mapping
+   * - :doc:`promote_barriers <promote_barriers>`
+     - Widen every barrier to the full circuit, turning local fences into global time boundaries
    * - :doc:`remove_barriers <remove_barriers>`
      - Remove barrier instructions from the circuit
    * - :doc:`resolve_swaps <resolve_swaps>`
@@ -60,7 +64,9 @@ Qrisp ships with the following circuit transformation passes. Each pass is a
    convert_to_prx
    decompose
    gray_synth_toffoli
+   layerize
    manual_layout
+   promote_barriers
    remove_barriers
    resolve_swaps
    reverse_parallelize

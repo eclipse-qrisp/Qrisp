@@ -100,6 +100,26 @@ New Features
   * Raises ``ValueError`` for a non-positive shot count — including a
     dynamic one, which only becomes concrete once the backend runs.
 
+- **layerize — ASAP circuit scheduling pass**
+  The new :func:`~qrisp.layerize` pass reorders circuit instructions
+  into as-soon-as-possible layers: gates acting on disjoint qubits are
+  pulled into the same time layer, compacting the Stim timeline diagram
+  without changing circuit semantics.  Only instructions that represent a
+  physical time step advance the layer clock, so each error channel stays in
+  the time step of the gate it annotates, and each layer is emitted so that
+  Stim actually draws it in parallel.
+
+  ``layerize(insert_barriers=True)`` additionally writes the schedule
+  back into the circuit as barriers, giving one ``TICK`` per time step in the
+  Stim output.
+
+- **promote_barriers — widen barriers to the full circuit**
+  The new :func:`~qrisp.promote_barriers` pass rewrites every barrier in a
+  circuit to span all of its qubits, which is how a local fence is declared to
+  be a global time boundary.  Promotion adds scheduling constraints, so it 
+  is an explicit opt-in: it widens the schedule and inflates the idle-noise
+  budget of the qubits the original barriers did not name.
+
 Improvements
 ------------
 
@@ -214,6 +234,14 @@ Improvements
   Redirected or captured output, such as log files, CI runs and doctests, no
   longer contains progress bar text
   (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
+
+- **A Stim** ``TICK`` **is now emitted only for full-width barriers.**  A
+  barrier constrains the qubits it names, while a ``TICK`` is a global
+  time-step boundary; the two coincide exactly for a full-width barrier.  A
+  barrier over part of the register is a local fence and no longer produces a
+  ``TICK`` — use :func:`~qrisp.promote_barriers` to widen one.  These
+  ``TICK``\ s are purely presentational: :func:`~qrisp.find_detectors` strips
+  every incoming ``TICK`` and regenerates the moment structure it needs.
 
 Other New Features
 ------------------
