@@ -761,7 +761,10 @@ New Tutorials/ Updated Documentation
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
-
+* :doc:`Dynamical Cooling tutorial </general/tutorial/dynamical_cooling>` - A new tutorial
+  on using Qrisp to implement the ground state preparation algorithm
+  by `Motlagh et al. <https://arxiv.org/abs/2404.05810>`_ with BlockEncodings
+  (`PR #987 <https://github.com/eclipse-qrisp/Qrisp/pull/987>`_).
 
 .. Add new tutorials above this line
 
