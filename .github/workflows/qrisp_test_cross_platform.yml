@@ -20,9 +20,8 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+# No concurrency group on purpose: every push to main must run to completion so
+# that a failure points to a single commit.
 
 jobs:
   build:
