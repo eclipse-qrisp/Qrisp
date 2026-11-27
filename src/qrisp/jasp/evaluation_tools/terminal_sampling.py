@@ -39,7 +39,9 @@ def terminal_sampling(func=None, shots=0):
     .. note::
 
         ``terminal_sampling`` only supports sampling kernels that return
-        :ref:`QuantumVariables <QuantumVariable>`.  Kernels that return
+        :ref:`QuantumVariables <QuantumVariable>` or
+        :ref:`QuantumArrays <QuantumArray>` (which are decoded into
+        ``OutcomeArray`` keys of the corresponding shape).  Kernels that return
         classical values (from :func:`mid-circuit measurements <measure>`)
         are **not** supported — use :func:`~qrisp.jasp.sample` with
         ``@jaspify(terminal_sampling=False)`` (the default) for those.
@@ -50,12 +52,13 @@ def terminal_sampling(func=None, shots=0):
         ``terminal_sampling=True`` raises an exception).
 
     To use the terminal sampling decorator, a Jasp-compatible sampling kernel
-    returning some QuantumVariables has to be given as a parameter.
+    returning QuantumVariables or QuantumArrays has to be given as a parameter.
 
     Parameters
     ----------
     func : callable
-        A Jasp-compatible sampling kernel returning QuantumVariables.
+        A Jasp-compatible sampling kernel returning QuantumVariables or
+        QuantumArrays.
     shots : int, optional
         An integer specifying the amount of shots. The default is ``0``,
         which results in the exact probabilities being returned instead of
@@ -139,10 +142,37 @@ def terminal_sampling(func=None, shots=0):
     if func is None:
         return lambda x: terminal_sampling(x, shots)
 
-    def tracing_function(*args):
-        from qrisp.jasp.program_control import expectation_value
+    return _terminal_sampling(func, shots)
 
-        return expectation_value(func, shots, return_dict=True)(*args)
+
+def _terminal_sampling(sampling_kernel, shots, post_processor=None):
+    """Return a function that samples *sampling_kernel* via terminal sampling.
+
+    Also used by :func:`~qrisp.jasp.sample` outside of tracing mode, which is
+    why it accepts a *post_processor*.
+
+    Parameters
+    ----------
+    sampling_kernel : callable
+        The sampling kernel.
+    shots : int
+        The number of shots.  ``0`` returns the exact probabilities.
+    post_processor : callable, optional
+        Applied to the decoded results of every outcome.
+
+    Returns
+    -------
+    callable
+        A function returning a dict of outcomes and their counts (or
+        probabilities).
+
+    """
+
+    def tracing_function(*args):
+        from qrisp.jasp import make_tracer
+        from qrisp.jasp.program_control._sampling_core import _sampling_procedure
+
+        return _sampling_procedure(sampling_kernel, post_processor, "dict")(*args, shots=make_tracer(shots))
 
     def return_function(*args):
         from qrisp.jasp import simulate_jaspr

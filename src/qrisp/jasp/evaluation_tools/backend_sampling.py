@@ -68,7 +68,7 @@ Architecture
 
 from jax import ShapeDtypeStruct, jit
 from jax.experimental import io_callback
-from jax.tree_util import tree_flatten
+from jax.tree_util import tree_flatten, tree_structure, tree_unflatten
 
 from qrisp.circuit import fast_append
 from qrisp.jasp import make_jaxpr
@@ -127,24 +127,6 @@ def _make_backend_eqn_evaluator(backend, error_box):
         name = eqn.params.get("name", "")
         prim = eqn.primitive.name
 
-        # ``expectation_value(..., return_dict=True)`` renames its eval
-        # function to mark itself for the terminal-sampling interpreter,
-        # which returns a dict of outcomes.  There is no equivalent here:
-        # results leave this decorator through a jitted
-        # :func:`jax.experimental.io_callback`, which has to declare a
-        # static output shape and so cannot return a dict.  Reject it
-        # rather than fall through -- untouched, the quantum state reaches
-        # the jit boundary and XLA fails with an unintelligible aval error.
-        if prim in ("jit", "pjit") and name == "dict_sampling_eval_function":
-            raise NotImplementedError(
-                "backend_sampler does not support "
-                "expectation_value(..., return_dict=True): a dict of outcomes "
-                "cannot be returned through the jitted io_callback this "
-                "decorator relies on. Use return_dict=False to obtain the "
-                "expectation value, sample() to obtain the individual shots, "
-                "or terminal_sampling() for the dict form."
-            )
-
         if prim in ("jit", "pjit") and name in (
             "sampling_eval_function",
             "expectation_value_eval_function",
@@ -154,9 +136,9 @@ def _make_backend_eqn_evaluator(backend, error_box):
 
             fn = _make_backend_sampling_fn(inner_jaxpr, name, backend)
 
-            # Both eval functions return a single array today, but declare a
-            # shape per outvar so an additional return value would flow
-            # through instead of being silently dropped.
+            # A shape is declared per outvar: sample() returns one array per
+            # leaf of the kernel's return pytree, so a container return shows
+            # up here as several outvars rather than a single array.
             result_shapes = tuple(ShapeDtypeStruct(outvar.aval.shape, outvar.aval.dtype) for outvar in eqn.outvars)
 
             def callback(*args, fn=fn):
@@ -437,7 +419,17 @@ def _make_backend_sampler_wrapper(func, backend):
                     raise error_box[0] from None
                 raise
 
-        return res
+        # Evaluating the Jaspr gives the flat outputs (a bare value if there is
+        # only one of them), so the structure of the decorated function's return
+        # value is restored from out_shape, which is a pytree of
+        # ShapeDtypeStructs mirroring that structure. Without this, a function
+        # returning a container of values - say one list of X detectors and one
+        # list of Z detectors - would give the flattened values, leaving no way
+        # to tell which value belonged to which container.
+        if not isinstance(res, (tuple, list)):
+            res = [res]
+
+        return tree_unflatten(tree_structure(out_shape), list(res))
 
     wrapper.__name__ = getattr(func, "__name__", "backend_sampler_wrapper")
     return wrapper
