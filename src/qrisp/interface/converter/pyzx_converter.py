@@ -122,6 +122,46 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
     new unknown gates appeared.  This repeats until all gates are known
     or transpilation makes no progress.
 
+    Examples
+    --------
+    Convert a Qrisp Bell-state circuit to PyZX and back:
+
+    >>> from qrisp import QuantumCircuit, Qubit
+    >>> from qrisp.interface import convert_from_pyzx, convert_to_pyzx
+    >>> qc = QuantumCircuit()
+    >>> _ = qc.add_qubit(Qubit("q0"))
+    >>> _ = qc.add_qubit(Qubit("q1"))
+    >>> qc.h(0)
+    >>> qc.cx(0, 1)
+    >>> print(qc)  # doctest: +NORMALIZE_WHITESPACE
+        ┌───┐
+    q0: ┤ H ├──■──
+        └───┘┌─┴─┐
+    q1: ─────┤ X ├
+             └───┘
+    >>> pyzx_circuit = convert_to_pyzx(qc)
+    >>> print(pyzx_circuit)
+    Circuit(2 qubits, 0 bits, 2 gates)
+    >>> [(gate.name, gate.target) for gate in pyzx_circuit.gates]
+    [('HAD', 0), ('CNOT', 1)]
+    >>> qc_roundtrip = convert_from_pyzx(pyzx_circuit)
+    >>> [(ins.op.name, [qc_roundtrip.qubits.index(q) for q in ins.qubits]) for ins in qc_roundtrip.data]
+    [('h', [0]), ('cx', [0, 1])]
+
+    Measurement destinations are preserved as PyZX result bits:
+
+    >>> qc = QuantumCircuit(1, 1)
+    >>> qc.measure(0, 0)
+    >>> convert_to_pyzx(qc).gates[0].result_bit
+    0
+
+    Gates without a native PyZX counterpart are transpiled automatically:
+
+    >>> qc = QuantumCircuit(3)
+    >>> qc.ccx(0, 1, 2)
+    >>> len(convert_to_pyzx(qc).gates) > 0
+    True
+
     """
     try:
         from pyzx import Circuit
@@ -240,6 +280,48 @@ def convert_from_pyzx(pyzx_circuit: Circuit) -> QuantumCircuit:
     Gates that exist in PyZX but not in Qrisp are either substituted directly if they
     have a straightforward equivalent (which applies to U2 and several controlled
     gates), or PyZX's ``to_basic_gates()`` method is used to decompose them.
+
+    Examples
+    --------
+    Convert a PyZX Bell-state circuit to Qrisp and back:
+
+    >>> from pyzx import Circuit
+    >>> from qrisp.interface import convert_from_pyzx, convert_to_pyzx
+    >>> pyzx_circuit = Circuit(2)
+    >>> pyzx_circuit.add_gate("HAD", 0)
+    >>> pyzx_circuit.add_gate("CNOT", 0, 1)
+    >>> print(pyzx_circuit)
+    Circuit(2 qubits, 0 bits, 2 gates)
+    >>> qc = convert_from_pyzx(pyzx_circuit)
+    >>> for i, qubit in enumerate(qc.qubits):
+    ...     qubit.identifier = f"q{i}"
+    >>> print(qc)  # doctest: +NORMALIZE_WHITESPACE
+        ┌───┐
+    q0: ┤ H ├──■──
+        └───┘┌─┴─┐
+    q1: ─────┤ X ├
+             └───┘
+    >>> pyzx_roundtrip = convert_to_pyzx(qc)
+    >>> print(pyzx_roundtrip)
+    Circuit(2 qubits, 0 bits, 2 gates)
+    >>> [(gate.name, gate.target) for gate in pyzx_roundtrip.gates]
+    [('HAD', 0), ('CNOT', 1)]
+
+    Measurement result bits are mapped to the corresponding classical bits:
+
+    >>> pyzx_circuit = Circuit(1, bit_amount=1)
+    >>> pyzx_circuit.add_gate("Measurement", 0, result_bit=0)
+    >>> qc = convert_from_pyzx(pyzx_circuit)
+    >>> [(ins.op.name, qc.clbits.index(ins.clbits[0])) for ins in qc.data]
+    [('measure', 0)]
+
+    Gates without a direct Qrisp equivalent are decomposed by PyZX first:
+
+    >>> from fractions import Fraction
+    >>> pyzx_circuit = Circuit(3)
+    >>> pyzx_circuit.add_gate("ParityPhase", Fraction(1, 2), 0, 1, 2)
+    >>> [ins.op.name for ins in convert_from_pyzx(pyzx_circuit).data]
+    ['cx', 'cx', 'rz', 'cx', 'cx']
 
     """
     qc = QuantumCircuit(pyzx_circuit.qubits, pyzx_circuit.bits)
