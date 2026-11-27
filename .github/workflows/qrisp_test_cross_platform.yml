@@ -54,9 +54,8 @@ jobs:
             test-group-name: core
             # pennylane-catalyst ships no Windows wheels, so qjit cannot run here,
             # and most tests in these two files call qjit without checking that
-            # catalyst is installed. -k also matches module names, so this
-            # deselects every test in both files, not just the two named ones.
-            pytest-flags: '-k "not test_catalyst_interface and not test_qubit_array_fusion"'          
+            # catalyst is installed.
+            pytest-flags: '--ignore=tests/jax_tests/test_catalyst_interface.py --ignore=tests/jax_tests/test_qubit_array_fusion.py'
           - os: windows-latest
             test-group-name: algorithms-and-integrations
             # This module imports pennylane at the top, and pennylane is only
