@@ -70,13 +70,13 @@ if has_pennylane:
         "s": QMLGateDescriptor(qml.S),
         "t": QMLGateDescriptor(qml.T),
         "id": QMLGateDescriptor(qml.Identity, param_fn=lambda _: []),
-        "sx": QMLGateDescriptor(qml.RX, param_fn=lambda _: [np.pi / 2]),  # SXGate() -> qml.RX(pi/2)
+        "sx": QMLGateDescriptor(qml.SX),
         "gphase": QMLGateDescriptor(
             qml.GlobalPhase, param_fn=lambda op: [-op.params[0]]
         ),  # GPhaseGate(phi) -> qml.GlobalPhase(-phi)
-        "r": QMLGateDescriptor(
-            qml.Rot, param_fn=lambda op: [-op.params[1], -op.params[0], op.params[1]]
-        ),  # RGate(theta, phi) -> qml.Rot(-phi, -theta, phi)
+        "prx": QMLGateDescriptor(
+            qml.Rot, param_fn=lambda op: [np.pi / 2 - op.beta, op.alpha, op.beta - np.pi / 2]
+        ),  # PRXGate(alpha, beta) = RZ(beta) RX(alpha) RZ(-beta) -> qml.Rot(pi/2 - beta, alpha, beta - pi/2)
         "measure": QMLGateDescriptor(qml.measurements.MidMeasureMP),
     }
 
@@ -156,7 +156,8 @@ def _process_qrisp_circuit(qc: QuantumCircuit | QuantumSession, wire_map: dict, 
         n_ctrls = len(op.ctrl_state) if is_controlled else 0
         controls, targets = qml_wires[:n_ctrls], qml_wires[n_ctrls:]
 
-        qml_params = qml_gate_desc.param_fn(op)
+        # param_fn is keyed by the base gate's name, so it reads the base gate's attributes (e.g. PRXGate.alpha)
+        qml_params = qml_gate_desc.param_fn(op.base_operation if is_controlled else op)
 
         if subs_dic is not None:
             qml_params = _evaluate_abstract_params(qml_params, subs_dic)

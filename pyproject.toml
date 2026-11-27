@@ -1,7 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=61", # first version that reads [project] and [tool.setuptools] from pyproject.toml
-    "wheel"
+    "setuptools>=77.0.3", # first version with full PEP 639 support for SPDX license expressions
 ]
 build-backend = "setuptools.build_meta"
 
@@ -16,7 +15,6 @@ readme = "README.md"
 requires-python = ">=3.11, <3.14"
 classifiers = [
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
@@ -26,15 +24,17 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Quantum Computing",
     "Topic :: Software Development :: Compilers",
 ]
-license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
+license = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"
+license-files = ["LICENSE"]
 
 dependencies = [
     "numpy>=2.0,<2.5",
-    "sympy<=1.13",
+    "sympy>=1.13,<1.15",
     # qiskit 2.6.0 takes up almost all of glibc's static TLS reserve on Linux,
     # so libgomp (bundled by qiskit-aer, pyscf, pennylane-lightning) fails to
     # load after `import qrisp` with "cannot allocate memory in static TLS block"
-    "qiskit>=0.44.0,<2.6",
+    # This has been fixed in qiskit 2.6.1 with issue #17213.
+    "qiskit>=0.45.0,!=2.6.0",
     "matplotlib>=3.5.1",
     "scipy>=1.10.0",
     "numba",

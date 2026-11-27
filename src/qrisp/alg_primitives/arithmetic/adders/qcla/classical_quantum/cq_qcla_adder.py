@@ -16,6 +16,8 @@
 
 """Implements the classical-quantum higher-radix quantum carry-lookahead adder (cq_qcla)."""
 
+import warnings
+
 import numpy as np
 
 from qrisp.alg_primitives.arithmetic.adders.gidney_adder import gidney_adder
@@ -28,6 +30,7 @@ from qrisp.alg_primitives.arithmetic.adders.qcla.classical_quantum.cq_sum_path i
 )
 from qrisp.core.gate_application_functions import cx, x
 from qrisp.environments import QuantumEnvironment, custom_control, invert
+from qrisp.misc.exceptions import QrispDeprecationWarning
 from qrisp.misc.utility import bin_rep, redirect_qfunction
 
 verify_manual_uncomputations = np.zeros(1)
@@ -40,6 +43,13 @@ verify_manual_uncomputations = np.zeros(1)
 # R = radix_base**radix_exponent
 @custom_control
 def cq_qcla(a, b, radix_base=2, radix_exponent=1, t_depth_reduction=True, ctrl=None):
+    warnings.warn(
+        "cq_qcla is part of the deprecated QCLA adder and will be removed in Qrisp v0.12. "
+        "Removing it is part of the plan to introduce a new quantum adder interface, "
+        "which will provide a single, unified way to select an in-place adder.",
+        QrispDeprecationWarning,
+        stacklevel=3,
+    )
 
     if isinstance(a, int):
         a = bin_rep(a % (2 ** len(b)), len(b))[::-1]

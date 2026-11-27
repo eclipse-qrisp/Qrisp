@@ -429,25 +429,3 @@ def test_ev_and_sample_together():
     assert samples.shape == (30,)
     assert np.isclose(ev, 3.0)
     assert np.allclose(samples, 3.0)
-
-
-def test_return_dict_is_rejected():
-    """``return_dict=True`` marks the eval function for terminal sampling.
-
-    ``backend_sampler`` returns through a jitted ``pure_callback``, which needs
-    a static output shape and so cannot produce a dict. Left unintercepted the
-    quantum state reaches the jit boundary and XLA raises an opaque aval error,
-    so the decorator rejects it explicitly instead.
-    """
-
-    def kernel():
-        qf = QuantumFloat(3)
-        h(qf[0])
-        return measure(qf)
-
-    @backend_sampler(backend=_get_backend())
-    def main():
-        return expectation_value(kernel, shots=20, return_dict=True)()
-
-    with pytest.raises(NotImplementedError, match="return_dict"):
-        main()

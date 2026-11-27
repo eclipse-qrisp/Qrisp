@@ -17,6 +17,36 @@ changelog enforcement.
 New Features
 ------------
 
+- **Pytree-aware return signatures for** ``sample()`` **and**
+  ``expectation_value()``
+  The return structure now mirrors the structure of the sampling kernel's
+  return value.  For example ``return a, b, c`` from a kernel produces
+  ``(array_a, array_b, array_c)`` — a tuple of three 1D arrays — instead of
+  a single flat ``(shots, 3)`` array.  Nested tuples, lists, and dicts are
+  preserved (e.g. ``[ (a,b), c ]`` → ``[ (array_a, array_b), array_c ]``).
+  In ``sample()`` each leaf retains its native dtype (``bool`` stays
+  ``bool``, ``int`` stays ``int``) and array-valued leaves naturally stack
+  along the leading dimension (``(3,)`` → ``(shots, 3)``).
+  ``expectation_value()`` does not preserve leaf dtypes: an expectation
+  value is a mean, so every leaf comes back floating point (complex leaves
+  stay complex).  User-defined JAX pytree types raise a descriptive
+  ``TypeError``.  Kernels may also return a :ref:`QuantumArray`, which is
+  measured element-wise and decoded into an array of its own shape, also
+  under terminal sampling and ``@backend_sampler``.  QuantumVariables and
+  QuantumArrays may sit anywhere inside nested ``tuple``, ``list`` and
+  ``dict`` returns.
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_)
+
+  **Breaking change:** Multi-value returns are now tuples of arrays instead
+  of a single 2D array.  Code that indexed ``res[:, i]`` must use
+  ``res[i]``.  The same applies to ``expectation_value()`` which now returns
+  a tuple of scalars for multi-value kernels.  The first parameter of
+  ``expectation_value()`` is renamed from ``state_prep`` to
+  ``sampling_kernel``, matching ``sample()``, and its undocumented
+  ``return_dict`` parameter, which only served
+  :func:`~qrisp.jasp.terminal_sampling` internally, is removed.
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_)
+
 * **CUDA-Q interface.** Qrisp programs can now be compiled to and run on
   `CUDA-Q <https://nvidia.github.io/cuda-quantum/>`_, NVIDIA's platform for
   hybrid quantum-classical computing. The interface ships as the separate
@@ -153,6 +183,10 @@ Improvements
   generation to QuantumSession in a central place.
   (`PR #882 <https://github.com/eclipse-qrisp/Qrisp/pull/882>`_).
 
+- Refactored :func:`measure <qrisp.measure>`. It now has an accurate
+  docstring, more specific exceptions and dedicated tests
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
 - **Faster resource estimation of modular multiplications in Jasp**
   The classical constants of the multiplication of a
   :class:`~qrisp.QuantumModulus` by a classical factor are now computed by
@@ -175,6 +209,11 @@ Improvements
   state function uses ancillas. Printed circuits show the individual
   operations instead of a single ``reflection`` gate. Jasp mode is unaffected
   (`PR #947 <https://github.com/eclipse-qrisp/Qrisp/pull/947>`_).
+
+* The simulator shows its progress bar only in terminals and Jupyter notebooks.
+  Redirected or captured output, such as log files, CI runs and doctests, no
+  longer contains progress bar text
+  (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
 
 Other New Features
 ------------------
@@ -218,6 +257,16 @@ Other New Features
 
 Bug Fixes
 ---------
+
+* Fixed terminal sampling returning fewer than ``shots`` samples from
+  :func:`~qrisp.jasp.sample` when distinct measurement results decode to the
+  same value (e.g. under a ``post_processor`` that is not injective). The
+  counts of such outcomes are now summed instead of overwritten
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_).
+
+* Fixed :func:`~qrisp.jasp.sample` ignoring its ``post_processor`` when
+  called outside of a Jasp-traced function
+  (`PR #749 <https://github.com/eclipse-qrisp/Qrisp/pull/749>`_).
 
 * Fixed the lowering of unsigned integers by
   :meth:`Jaspr.to_mlir <qrisp.jasp.Jaspr.to_mlir>` with
@@ -510,6 +559,18 @@ Bug Fixes
 
   (`PR #917 <https://github.com/eclipse-qrisp/Qrisp/pull/917>`_).
 
+* Under :func:`~qrisp.jasp.boolean_simulation`, measuring a single qubit
+  returned a ``uint64`` instead of a boolean, so ``~measure(qb)``, and
+  ``invert=True`` or ``ctrl_state=0`` on measured booleans, gave wrong
+  results. Measured qubits are now booleans, as with
+  :func:`~qrisp.jasp.jaspify`
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
+* Outside of Jasp mode, :func:`measure <qrisp.measure>` raised a
+  ``ValueError`` for a :class:`~qrisp.QuantumArray` whose elements have
+  several qubits. Every qubit of the array now gets its own classical bit
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
   (``qm *= X`` and ``qm * X``, and ``QuantumArray @ matrix``) now chooses the
   Montgomery shift from the number of qubits of the register, as the Montgomery
@@ -607,6 +668,19 @@ Bug Fixes
 * Fixed ``reset`` on a single qubit, such as ``reset(qv[0])``, failing to
   compile with :ref:`qjit <qjit>`. Resetting a whole QuantumVariable was not
   affected (`PR #941 <https://github.com/eclipse-qrisp/Qrisp/pull/941>`_).
+* Fixed the matrices of several standard gates and their conversions:
+
+  - ``RGate(theta, phi)`` now implements ``RZ(phi) RX(theta) RZ(-phi)``,
+    matching the standard R gate. Its PennyLane conversion is now
+    ``qml.Rot(pi/2 - phi, theta, phi - pi/2)``.
+  - ``SXGate`` and ``SXDGGate`` now carry the global phase ``±pi/4``, so they
+    are the exact square roots of ``X`` instead of ``RX(±pi/2)``. This phase is
+    also kept when they are controlled. They are now converted to ``qml.SX``
+    in PennyLane.
+  - ``U1Gate`` now converts to Qiskit's ``RZGate`` instead of ``PhaseGate``,
+    since Qrisp's ``U1`` is an RZ rotation.
+
+  (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
 
 Compatibility
 -------------
@@ -622,6 +696,12 @@ Compatibility
   generic ``Exception``. Code using ``except Exception:`` is unaffected
   (`PR #846 <https://github.com/eclipse-qrisp/Qrisp/pull/846>`_).
 
+* In Jasp mode, :func:`measure <qrisp.measure>` now raises a ``TypeError`` for
+  unsupported inputs and a ``RuntimeError`` when the quantum state is lost,
+  instead of a generic ``Exception``. The messages are unchanged, and code using
+  ``except Exception:`` is unaffected
+  (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
 * :ref:`IQPE <IQPE>` returns the phase instead of twice the phase modulo 1
   (see Bug Fixes). It raises a ``TypeError`` for a precision that is not an
   integer and, unless the precision is traced, a ``ValueError`` for a precision
@@ -629,10 +709,40 @@ Compatibility
   integer
   (`PR #932 <https://github.com/eclipse-qrisp/Qrisp/pull/932>`_).
 
+* Qrisp now supports SymPy 1.14. Multi-``QuantumVariable`` statevectors are
+  built with ``TensorProduct``, which SymPy 1.14 requires, and the dependency
+  bound is now ``sympy>=1.13,<1.15``
+  (`PR #590 <https://github.com/eclipse-qrisp/Qrisp/pull/590>`_).
+* ``RGate`` and ``QuantumCircuit.r`` are deprecated in favor of the identical
+  ``PRXGate`` and the new ``QuantumCircuit.prx``. Both still work but emit a
+  ``QrispDeprecationWarning``. ``RGate(theta, phi)`` now builds a
+  ``PRXGate(theta, phi)``, so the resulting operation is named ``"prx"`` instead
+  of ``"r"`` and stores its angles as ``alpha`` and ``beta``. ``PRXGate`` can now
+  also be imported from ``qrisp.circuit.standard_operations``
+  (`PR #949 <https://github.com/eclipse-qrisp/Qrisp/pull/949>`_).
+
+* The QCLA adder (``qcla``, ``cq_qcla`` and ``qq_qcla``) is deprecated and will
+  be removed in Qrisp v0.12. Calling any of these still works but emits a
+  ``QrispDeprecationWarning``. Removing it is part of the plan to introduce a
+  new quantum adder interface that will provide a single, unified way to select
+  an in-place adder
+  (`PR #1028 <https://github.com/eclipse-qrisp/Qrisp/pull/1028>`_).
+
 .. Add compatibility notes above this line
 
 New Tutorials/ Updated Documentation
 -------------------------------------
+
+* Updated the :doc:`BigInteger tutorial </general/tutorial/BigInteger>`, which
+  compiles the order-finding circuit of Shor's algorithm and counts its gates up
+  to 2048 bits. The parallel resource estimation now draws odd moduli with a
+  coprime base, uses BigIntegers wide enough for the products before their
+  reduction, and passes precomputed multipliers and inverses to the in-place
+  multiplication. The 2048-bit counts are therefore correct, and they take
+  minutes instead of hours. The tutorial also counts the peak number of qubits,
+  on the first multiplication, which reaches the peak of the whole circuit. The
+  operator examples no longer overflow, and the code uses explicit imports
+  (`PR #1002 <https://github.com/eclipse-qrisp/Qrisp/pull/1002>`_).
 
 * :doc:`CUDA-Q tutorial </general/tutorial/CUDAQ>` - Compiling and running
   Qrisp kernels on NVIDIA's CUDA-Q platform, from a Bell-state example to
@@ -651,12 +761,26 @@ New Tutorials/ Updated Documentation
 * Fixed the installation verification command in the getting started documentation
   (`PR #935 <https://github.com/eclipse-qrisp/Qrisp/pull/935>`_).
 
-
+* :doc:`Dynamical Cooling tutorial </general/tutorial/dynamical_cooling>` - A new tutorial
+  on using Qrisp to implement the ground state preparation algorithm
+  by `Motlagh et al. <https://arxiv.org/abs/2404.05810>`_ with BlockEncodings
+  (`PR #987 <https://github.com/eclipse-qrisp/Qrisp/pull/987>`_).
 
 .. Add new tutorials above this line
 
 API Changes
 -----------
+
+* Removed the deprecated ``qswitch`` function and its module
+  ``qrisp.alg_primitives.program_control.switch_case``. Use
+  :func:`q_switch <qrisp.q_switch>` instead.
+
+* The PyTket converter has been removed in this release: the
+  ``qrisp.interface.converter.pytket_converter`` module and its exports,
+  the ``pytket`` optional dependency, and the associated tests and
+  documentation are gone. :meth:`~qrisp.QuantumCircuit.to_pytket` is kept
+  only as a stub that raises ``NotImplementedError``
+  (`PR #662 <https://github.com/eclipse-qrisp/Qrisp/pull/662>`_).
 
 * :class:`~qrisp.interface.IQMBackend` is now a delegation shim that
   re-exports ``IQMBackend`` from ``iqm.qrisp_iqm`` (IQM client).
@@ -739,6 +863,11 @@ API Changes
 
 Development
 -----------
+
+* Removed the obsolete ``src/qrisp/examples`` directory. These standalone
+  scripts were not part of the installed package and duplicated examples that
+  are maintained in the documentation
+  (`PR #1033 <https://github.com/eclipse-qrisp/Qrisp/pull/1033>`_).
 
 * Added ``jaspr_to_static_register_jaspr``, which rewrites a Jaspr so that all
   qubits come from a single register of fixed size allocated at program start.
@@ -863,6 +992,19 @@ Development
   version badge linked to the PyPI project page
   (`PR #921 <https://github.com/eclipse-qrisp/Qrisp/pull/921>`_).
 
+* Added a doctest workflow that runs the docstring examples of ``qrisp.qtypes``
+  on pull requests. Further packages are added as their examples are fixed
+  (`PR #991 <https://github.com/eclipse-qrisp/Qrisp/pull/991>`_).
+
+* Updated the ``pyproject.toml`` license metadata to the
+  `PEP 639 <https://peps.python.org/pep-0639/>`_ SPDX format and removed the
+  deprecated license classifier
+  (`Issue #1044 <https://github.com/eclipse-qrisp/Qrisp/issues/1044>`_,
+  `PR #1048 <https://github.com/eclipse-qrisp/Qrisp/pull/1048>`_).
+
+* Added ``AGENTS.md`` to ``.gitignore`` so that developers can keep their own
+  agent conventions locally without committing them.
+
 Dependency Upgrades
 -------------------
 
@@ -901,11 +1043,6 @@ Dependency Upgrades
   ``sphinx.ext.coverage``, ``sphinx.ext.todo`` and
   ``sphinx_toolbox.sidebar_links`` Sphinx extensions
   (`PR #961 <https://github.com/eclipse-qrisp/Qrisp/pull/961>`_).
-
-* Pinned ``qiskit`` to ``<2.6``. With qiskit 2.6.0 on Linux, importing
-  ``qiskit_aer``, ``pyscf`` or PennyLane Lightning after ``qrisp`` fails with
-  ``cannot allocate memory in static TLS block``
-  (`PR #976 <https://github.com/eclipse-qrisp/Qrisp/pull/976>`_).
 
 * Required ``iqm-client[qrisp]>=35.0.0`` in the ``iqm`` and ``dev-testing``
   dependency groups. Older releases do not provide the ``qrisp`` extra, so pip

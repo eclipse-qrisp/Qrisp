@@ -243,13 +243,19 @@ def terminal_sampling_evaluator(sampling_res_type):
                 # ints into the appropriate parts and decode them.
                 # Splitting means turning the int "1001001" into "100" and "1001".
                 if function_name == "sampling_helper_2":
-                    if sampling_res_type == "ev":
-                        sampling_res = jnp.zeros(len(eqn.outvars))
-                    elif sampling_res_type == "array":
-                        sampling_res = []
-                        sampling_res_dict = {}
-                    elif sampling_res_type == "dict":
-                        sampling_res = {}
+                    n_outputs = len(eqn.params["jaxpr"].jaxpr.outvars)
+
+                    # "array" and "dict" mode: decoded outcome -> count (or
+                    # probability).  Distinct measurement results can decode
+                    # to the same outcome (e.g. under a post_processor that is
+                    # not injective), so their weights are summed.
+                    outcome_weights = {}
+                    # "array" mode: one dtype per decoder output, taken from
+                    # the first decoded outcome, so that each output keeps the
+                    # dtype its decoder produced.
+                    leaf_dtypes = None
+                    # "ev" mode: one running weighted sum per decoder output.
+                    ev_sums = [0] * n_outputs
 
                     # Compile the decoder
                     decoder = decoder_compiler(eqn.params["jaxpr"], eqn_evaluator)
@@ -275,59 +281,54 @@ def terminal_sampling_evaluator(sampling_res_type):
                         # Evaluate the decoder
                         outvalues = decoder(*new_invalues)
 
-                        # We now build the key for the result dict.
-                        # For that we turn the Jax types into the corresponding
-                        # Python types.
-                        #
-                        # This treats the case that the decoder returned only
-                        # a single result (instead of a tuple).
-                        if len(eqn.params["jaxpr"].jaxpr.outvars) == 1:
-                            if sampling_res_type == "ev":
-                                sampling_res += outvalues * v
-                            elif sampling_res_type == "array":
-                                sampling_res_dict[outvalues.item()] = v
-                            elif sampling_res_type == "dict":
-                                key = outvalues
-                                if type(v) not in [int, float]:
-                                    if v.dtype in [np.float64, np.float32]:
-                                        v = float(v.item())
-                                    elif v.dtype in [np.int32, np.int64]:
-                                        v = int(v.item())
-                                    else:
-                                        raise
-                                sampling_res[key.item()] = v
-                        # If the user function returned more than one value,
-                        # the key is a tuple to be built up.
-                        elif sampling_res_type == "ev":
-                            sampling_res += jnp.array(outvalues) * v
-                        elif sampling_res_type == "array":
-                            sampling_res_dict[tuple(np.array(outvalues))] = v
-                        elif sampling_res_type == "dict":
-                            if type(v) not in [int, float]:
-                                if v.dtype in [np.float64, np.float32]:
-                                    v = float(v.item())
-                                elif v.dtype in [np.int32, np.int64]:
-                                    v = int(v.item())
-                                else:
-                                    raise
-                            sampling_res[tuple(x.item() for x in outvalues)] = v
+                        # Treat a single output like a one-element tuple.  Outputs
+                        # may be arrays (e.g. a decoded QuantumArray), so the
+                        # keys are built via _outcome_key instead of .item().
+                        if n_outputs == 1:
+                            outvalues = (outvalues,)
+                        outvalues = [np.asarray(x) for x in outvalues]
+
+                        if sampling_res_type == "ev":
+                            # Promote before weighting so integer products cannot overflow int64.
+                            ev_sums = [
+                                acc + x.astype(np.promote_types(x.dtype, np.float64)) * v
+                                for acc, x in zip(ev_sums, outvalues)
+                            ]
+                            continue
+
+                        if leaf_dtypes is None:
+                            leaf_dtypes = [x.dtype for x in outvalues]
+
+                        key = tuple(_outcome_key(x) for x in outvalues)
+                        outcome_weights[key] = outcome_weights.get(key, 0) + _to_python_weight(v)
 
                     if sampling_res_type == "array":
-                        keys = np.array(list(sampling_res_dict.keys()))
-                        counts = np.array(list(sampling_res_dict.values()))
-                        sampling_res = np.repeat(keys, counts, axis=0)
-                        np.random.shuffle(sampling_res)
+                        keys = list(outcome_weights)
+                        counts = np.array(list(outcome_weights.values()))
+                        # A single permutation shared by every column: the
+                        # values of one shot belong together, so shuffling
+                        # the columns independently would destroy the
+                        # correlation between the sampled outputs.
+                        perm = np.random.permutation(int(counts.sum()))
+                        # Stacking the i-th key entries gives an array of shape
+                        # (len(keys), *leaf_shape); np.repeat expands it to one
+                        # row per shot.
+                        decoded_meas_res.extend(
+                            np.repeat(np.array([key[i] for key in keys], dtype=dt), counts, axis=0)[perm]
+                            for i, dt in enumerate(leaf_dtypes)
+                        )
                     elif sampling_res_type == "ev":
-                        sampling_res = sampling_res / shots
-                        if sampling_res.shape[0] == 1:
-                            sampling_res = sampling_res[0]
+                        # One mean per decoder output, matching the outputs of
+                        # expectation_value_eval_function leaf by leaf.
+                        decoded_meas_res.extend(jnp.asarray(acc / shots) for acc in ev_sums)
                     elif sampling_res_type == "dict":
+                        if n_outputs == 1:
+                            outcome_weights = {key[0]: w for key, w in outcome_weights.items()}
                         # Sort the counts such that the most probable values
                         # come first.
-                        sampling_res = dict(sorted(sampling_res.items(), key=lambda item: item[0]))
+                        sampling_res = dict(sorted(outcome_weights.items(), key=_outcome_sort_key))
                         sampling_res = dict(sorted(sampling_res.items(), key=lambda item: -item[1]))
-
-                    decoded_meas_res.append(sampling_res)
+                        decoded_meas_res.append(sampling_res)
 
             return eqn_evaluator(eqn, context_dic)
 
@@ -352,6 +353,39 @@ def terminal_sampling_evaluator(sampling_res_type):
         insert_outvalues(eqn, context_dic, decoded_meas_res)
 
     return sampling_eqn_evaluator
+
+
+def _outcome_key(value):
+    """Return a hashable representation of one decoded output.
+
+    Scalars become plain Python values.  Array-valued outputs (e.g. a decoded
+    :ref:`QuantumArray <QuantumArray>`) become an ``OutcomeArray``, the
+    hashable array type that ``QuantumArray.get_measurement`` uses as well.
+    """
+    from qrisp.core import OutcomeArray
+
+    if value.ndim == 0:
+        return value.item()
+    return OutcomeArray(value)
+
+
+def _outcome_sort_key(item):
+    """Sort key ordering the items of a result dict by their outcome."""
+    key = item[0]
+    parts = key if isinstance(key, tuple) else (key,)
+    return tuple(tuple(p.ravel().tolist()) if isinstance(p, np.ndarray) else p for p in parts)
+
+
+def _to_python_weight(v):
+    """Turn a count or probability into a plain Python ``int`` or ``float``."""
+    # An exact type check: np.float64 subclasses float, but should be converted.
+    if type(v) in (int, float):
+        return v
+    if v.dtype in (np.float64, np.float32):
+        return float(v.item())
+    if v.dtype in (np.int32, np.int64):
+        return int(v.item())
+    raise TypeError(f"Unexpected sampling weight of type {type(v).__name__}")
 
 
 # LRU cache controlled by QRISP_COMPILATION_CACHE_SIZE env var
