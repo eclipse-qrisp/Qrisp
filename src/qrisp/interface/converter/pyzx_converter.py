@@ -16,23 +16,52 @@
 
 """This module provides functionalities for converting between Qrisp and PyZX quantum circuits."""
 
+from __future__ import annotations
+
+from collections.abc import Callable
 from fractions import Fraction
 from functools import partial
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from qrisp import HGate, QuantumCircuit, RYGate, RZGate, SwapGate, SXGate, ZGate, u3Gate
 
+if TYPE_CHECKING:
+    from pyzx import Circuit
+    from pyzx.circuit.gates import Gate
 
-def _transpile(qrisp_circuit, gate_map):
-    """Helper function that transpiles a qrisp_circuit such that only gates from gate_map remain in the circuit.
+    from qrisp import Clbit, Operation, Qubit
 
-    To that end, it repeatedly transpiles unknown gates until only known ones remain.
-    Used in the conversion from Qrisp to PyZX.
-    The code was adapted from the Cirq converter.
+
+def _transpile(qrisp_circuit: QuantumCircuit, gate_map: dict[str, str | None]) -> QuantumCircuit:
+    """Transpile a circuit until only operations known to ``gate_map`` remain.
+
+    Unknown operations are repeatedly transpiled until no further progress can
+    be made. The code was adapted from the Cirq converter.
+
+    Parameters
+    ----------
+    qrisp_circuit : QuantumCircuit
+        The circuit to transpile.
+    gate_map : dict[str, str | None]
+        Mapping from supported Qrisp operation names to their PyZX gate names.
+
+    Returns
+    -------
+    QuantumCircuit
+        A circuit containing only operations whose names occur in ``gate_map``.
+
+    Raises
+    ------
+    ValueError
+        If an unknown operation cannot be transpiled or if transpilation makes
+        no further progress.
+
     """
 
-    def _unknown_names(circuit):
+    def _unknown_names(circuit: QuantumCircuit) -> set[str]:
+        """Return the names of all operations that are not keys of ``gate_map``."""
         return {instr.op.name for instr in circuit.data if instr.op.name not in gate_map}
 
     while True:
@@ -40,7 +69,8 @@ def _transpile(qrisp_circuit, gate_map):
         if not unknown:
             break
 
-        def _transpile_predicate(op, _unknown=unknown):
+        def _transpile_predicate(op: Operation, _unknown: set[str] = unknown) -> bool:
+            """Return whether ``op`` belongs to the set of unknown operations."""
             return op.name in _unknown
 
         try:
@@ -65,7 +95,7 @@ def _transpile(qrisp_circuit, gate_map):
     return qrisp_circuit
 
 
-def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
+def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
     """Convert a Qrisp QuantumCircuit to a PyZX Circuit.
 
     Parameters
@@ -98,7 +128,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
     except (ModuleNotFoundError, ImportError) as exc:
         raise ImportError("PyZX must be installed to be able to use the Qrisp to PyZX converter.") from exc
 
-    gate_map = {
+    gate_map: dict[str, str | None] = {
         "cx": "CNOT",
         "cy": "CY",
         "cz": "CZ",
@@ -139,10 +169,10 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
     num_clbits = len(qrisp_circuit.clbits)
     pyzx_circuit = Circuit(qubit_amount=num_qubits, bit_amount=num_clbits)
 
-    qubit_map = {}
+    qubit_map: dict[Qubit, int] = {}
     for i, q in enumerate(qrisp_circuit.qubits):
         qubit_map[q] = i
-    clbit_map = {}
+    clbit_map: dict[Clbit, int] = {}
     for i, c in enumerate(qrisp_circuit.clbits):
         clbit_map[c] = i
 
@@ -156,7 +186,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
         pyxz_op_qubits = [qubit_map[q] for q in qubits]
         pyxz_op_clbits = [clbit_map[c] for c in clbits]
 
-        special_gate_actions = {
+        special_gate_actions: dict[str, Callable[[], None]] = {
             **dict.fromkeys(["id", "barrier", "gphase", "qb_alloc", "qb_dealloc"], lambda: None),
             "s_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 2)),
             "t_dg": lambda: pyzx_circuit.add_gate("U3", *pyxz_op_qubits, 0, 0, Fraction(-1, 4)),
@@ -166,7 +196,7 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
             "sx_dg": lambda: pyzx_circuit.add_gate("XPhase", *pyxz_op_qubits, Fraction(-1, 2)),
         }
 
-        # gate with no direct PyXZ equivalent
+        # Gate with no direct PyZX equivalent.
         if pyxz_gate is None:
             if name in special_gate_actions:
                 special_gate_actions[name]()
@@ -187,14 +217,8 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit):
     return pyzx_circuit
 
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from pyzx import Circuit
-
-
-def convert_from_pyzx(pyzx_circuit: "Circuit"):
-    """Convert a PyZX QuantumCircuit to a Qrisp Circuit.
+def convert_from_pyzx(pyzx_circuit: Circuit) -> QuantumCircuit:
+    """Convert a PyZX Circuit to a Qrisp QuantumCircuit.
 
     Parameters
     ----------
@@ -214,16 +238,17 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
     Notes
     -----
     Gates that exist in PyZX but not in Qrisp are either substituted directly if they
-    have a straightforward equivalent (applies to U2 and several controlled gates),
-    or it is used PyZX's to_basic_gates() method to decompose those gates.
+    have a straightforward equivalent (which applies to U2 and several controlled
+    gates), or PyZX's ``to_basic_gates()`` method is used to decompose them.
 
     """
     qc = QuantumCircuit(pyzx_circuit.qubits, pyzx_circuit.bits)
 
-    def _CSX_gate(x, y):
+    def _CSX_gate(x: Qubit, y: Qubit) -> None:
+        """Append a controlled SX gate acting on ``x`` (control) and ``y`` (target)."""
         qc.append(SXGate().control(), [x, y])
 
-    gate_map = {
+    gate_map: dict[str, Callable[..., None] | None] = {
         # single-qubit gates
         "NOT": qc.x,
         "Y": qc.y,
@@ -267,44 +292,46 @@ def convert_from_pyzx(pyzx_circuit: "Circuit"):
         "ConditionalGate": None,
     }
 
-    def add_gate(gate):
-        # measurements
-        def _measurement(gate):
+    def add_gate(gate: Gate) -> None:
+        """Dispatch a single PyZX gate to its Qrisp counterpart."""
+
+        def _measurement(gate: Gate) -> None:
+            """Append a measurement that stores its outcome in ``gate.result_bit``."""
             gate_map[gate.name](gate.target, gate.result_bit)
 
-        # single-qubit, parameter-free gates without adjoint version and non-unitary operations
-        def _single_qubit_parameter_free(gate):
+        def _single_qubit_parameter_free(gate: Gate) -> None:
+            """Append a parameter-free single-qubit gate or non-unitary operation."""
             gate_map[gate.name](gate.target)
 
-        # single-qubit gates with adjoint version
-        def _single_qubit_with_adjoint_version(gate):
+        def _single_qubit_with_adjoint_version(gate: Gate) -> None:
+            """Append a single-qubit gate, honoring its ``adjoint`` flag."""
             gate_map[gate.name](gate.adjoint, gate.target)
 
-        # single-qubit, one-parameter gates
-        def _single_qubit_one_parameter(gate):
+        def _single_qubit_one_parameter(gate: Gate) -> None:
+            """Append a single-qubit gate with one phase parameter (in units of pi)."""
             gate_map[gate.name](float(gate.phase) * np.pi, gate.target)
 
-        # single-qubit, multi-parameter gates
-        def _single_qubit_multi_parameter(gate):
+        def _single_qubit_multi_parameter(gate: Gate) -> None:
+            """Append a single-qubit gate with multiple phase parameters (in units of pi)."""
             gate_map[gate.name](*[float(p) * np.pi for p in gate.phases], gate.target)
 
-        # two-qubit, paratemeter-free gates
-        def _two_qubit_parameter_free(gate):
+        def _two_qubit_parameter_free(gate: Gate) -> None:
+            """Append a parameter-free two-qubit gate."""
             gate_map[gate.name](gate.control, gate.target)
 
-        # two-qubit, one-paratemeter gates
-        def _two_qubit_one_parameter(gate):
+        def _two_qubit_one_parameter(gate: Gate) -> None:
+            """Append a two-qubit gate with one phase parameter (in units of pi)."""
             gate_map[gate.name](float(gate.phase) * np.pi, gate.control, gate.target)
 
-        # two-qubit, multi-paratemeter gates
-        def _two_qubit_multi_parameter(gate):
+        def _two_qubit_multi_parameter(gate: Gate) -> None:
+            """Append a two-qubit gate with multiple phase parameters (in units of pi)."""
             gate_map[gate.name](*[float(p) * np.pi for p in gate.phases], gate.control, gate.target)
 
-        # multi-qubit, paratemeter-free gates
-        def _multi_qubit_parameter_free(gate):
+        def _multi_qubit_parameter_free(gate: Gate) -> None:
+            """Append a parameter-free three-qubit gate."""
             gate_map[gate.name](gate.ctrl1, gate.ctrl2, gate.target)
 
-        function_map = {
+        function_map: dict[str, Callable[[Gate], None]] = {
             **dict.fromkeys(["Measurement"], _measurement),
             **dict.fromkeys(["NOT", "Y", "Z", "HAD", "Reset"], _single_qubit_parameter_free),
             **dict.fromkeys(["SX", "S", "T"], _single_qubit_with_adjoint_version),

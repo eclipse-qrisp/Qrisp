@@ -1,6 +1,9 @@
 """Tests for the Qrisp <-> PyZX circuit converter."""
 
+from __future__ import annotations
+
 import sys
+from collections.abc import Callable
 from fractions import Fraction
 from unittest.mock import MagicMock, patch
 
@@ -13,7 +16,7 @@ from qrisp import QuantumCircuit, QuantumVariable, U1Gate
 from qrisp.circuit import standard_operations as qrisp_ops
 
 
-def test_import_error():
+def test_import_error() -> None:
     """to_pyzx raises ImportError when PyZX is not installed."""
     with pytest.raises(ImportError):
         with patch.dict(sys.modules, {"pyzx": None}):
@@ -21,7 +24,7 @@ def test_import_error():
             qc.to_pyzx()
 
 
-def _build_single_qubit_qrisp_circuit():
+def _build_single_qubit_qrisp_circuit() -> QuantumCircuit:
     """Qrisp circuit with single-qubit gates. Example adapted from cirq converter test"""
     qc = QuantumCircuit(4)
     qc.h(0)
@@ -47,7 +50,7 @@ def _build_single_qubit_qrisp_circuit():
     return qc
 
 
-def _build_multi_qubit_qrisp_circuit():
+def _build_multi_qubit_qrisp_circuit() -> QuantumCircuit:
     """Qrisp circuit with multi-qubit gates."""
     qc = QuantumCircuit(4)
     qc.cx(0, 1)
@@ -60,7 +63,7 @@ def _build_multi_qubit_qrisp_circuit():
     return qc
 
 
-def _build_single_qubit_pyzx_circuit():
+def _build_single_qubit_pyzx_circuit() -> Circuit:
     """PyZX circuit with single-qubit gates."""
     c = Circuit(4)
     c.add_gate("NOT", 0)
@@ -81,7 +84,7 @@ def _build_single_qubit_pyzx_circuit():
     return c
 
 
-def _build_multi_qubit_pyzx_circuit():
+def _build_multi_qubit_pyzx_circuit() -> Circuit:
     """PyZX circuit with multi-qubit gates."""
     c = Circuit(4)
     c.add_gate("CNOT", 0, 1)
@@ -108,7 +111,7 @@ def _build_multi_qubit_pyzx_circuit():
     return c
 
 
-def _compare_unitaries(U1, U2):
+def _compare_unitaries(U1: np.ndarray, U2: np.ndarray) -> None:
     """Compare two unitaries, taking into account a potential phase mismatch"""
     # PyZX does not keep track of global phases and instead normalizes the phase,
     # which leads to a potential phase mismatch.
@@ -119,88 +122,89 @@ def _compare_unitaries(U1, U2):
     np.testing.assert_array_almost_equal(phase * U1, U2)
 
 
-def _test_qrisp_to_pyzx(qc):
+def _test_qrisp_to_pyzx(qc: QuantumCircuit) -> None:
     """Test conversion of qrisp circuit qc to pyzx circuit"""
     c = qc.to_pyzx()
     _compare_unitaries(qc.get_unitary(), c.to_matrix())
 
 
-def _test_pyzx_to_qrisp(c):
+def _test_pyzx_to_qrisp(c: Circuit) -> None:
     """Test conversion of pyzx circuit c to qrisp circuit"""
     qc = QuantumCircuit.from_pyzx(c)
     _compare_unitaries(qc.get_unitary(), c.to_matrix())
 
 
-def _test_roundtrip(qc):
+def _test_roundtrip(qc: QuantumCircuit) -> None:
     """Test roundtrip starting from qrisp circuit qc"""
     c = qc.to_pyzx()
     qc2 = QuantumCircuit.from_pyzx(c)
     _compare_unitaries(qc.get_unitary(), qc2.get_unitary())
 
 
-def _test_roundtrip_reverse(c):
+def _test_roundtrip_reverse(c: Circuit) -> None:
     """Test roundtrip starting from pyzx circuit c"""
     qc = QuantumCircuit.from_pyzx(c)
     c2 = qc.to_pyzx()
     _compare_unitaries(c.to_matrix(), c2.to_matrix())
 
 
-def test_single_qubit_circuit_qrisp_to_pyzx():
+def test_single_qubit_circuit_qrisp_to_pyzx() -> None:
     """Test conversion of qrisp circuit to pyzx circuit for single qubit gates"""
     qc = _build_single_qubit_qrisp_circuit()
     _test_qrisp_to_pyzx(qc)
 
 
-def test_multi_qubit_circuit_qrisp_to_pyzx():
+def test_multi_qubit_circuit_qrisp_to_pyzx() -> None:
     """Test conversion of qrisp circuit to pyzx circuit for multi qubit gates"""
     qc = _build_multi_qubit_qrisp_circuit()
     _test_qrisp_to_pyzx(qc)
 
 
-def test_single_qubit_circuit_pyzx_to_qrisp():
+def test_single_qubit_circuit_pyzx_to_qrisp() -> None:
     """Test conversion of pyzx circuit to qrisp circuit for single qubit gates"""
     c = _build_single_qubit_pyzx_circuit()
     _test_pyzx_to_qrisp(c)
 
 
-def test_multi_qubit_circuit_pyzx_to_qrisp():
+def test_multi_qubit_circuit_pyzx_to_qrisp() -> None:
     """Test conversion of pyzx circuit to qrisp circuit for multi qubit gates"""
     c = _build_multi_qubit_pyzx_circuit()
     _test_pyzx_to_qrisp(c)
 
 
-def test_single_qubit_circuit_roundtrip():
+def test_single_qubit_circuit_roundtrip() -> None:
     """Test roundtrip starting from qrisp circuit for single qubit gates"""
     qc = _build_single_qubit_qrisp_circuit()
     _test_roundtrip(qc)
 
 
-def test_multi_qubit_circuit_roundtrip():
+def test_multi_qubit_circuit_roundtrip() -> None:
     """Test roundtrip starting from qrisp circuit for multi qubit gates"""
     qc = _build_multi_qubit_qrisp_circuit()
     _test_roundtrip(qc)
 
 
-def test_single_qubit_circuit_roundtrip_reverse():
+def test_single_qubit_circuit_roundtrip_reverse() -> None:
     """Test roundtrip starting from pyzx circuit for single qubit gates"""
     c = _build_single_qubit_pyzx_circuit()
     _test_roundtrip_reverse(c)
 
 
-def test_multi_qubit_circuit_roundtrip_reverse():
+def test_multi_qubit_circuit_roundtrip_reverse() -> None:
     """Test roundtrip starting from pyzx circuit for multi qubit gates"""
     c = _build_multi_qubit_pyzx_circuit()
     _test_roundtrip_reverse(c)
 
 
-def test_qrisp_transpilation():
+def test_qrisp_transpilation() -> None:
     """Test transpilation for a circuit that has to be decomposed first.
 
     Example adapted from test_cirq_converter.py.
     """
     from qrisp import QPE, h, p
 
-    def U(qv):
+    def U(qv: QuantumVariable) -> None:
+        """Apply phase gates with non-trivial angles to ``qv``."""
         x = 0.5
         y = 0.125
 
@@ -216,7 +220,7 @@ def test_qrisp_transpilation():
     _test_roundtrip(qc)
 
 
-def test_non_unitaries():
+def test_non_unitaries() -> None:
     """Test measurement and reset"""
     qc = QuantumCircuit(2, 1)
     qc.measure(0, 0)
@@ -235,14 +239,14 @@ def test_non_unitaries():
     assert qc.data[0].clbits[0] == qc.clbits[1]
 
 
-def _mock_unknown_circuit():
+def _mock_unknown_circuit() -> QuantumCircuit:
     """Qrisp circuit with a MagicMock operation (triggers Exception during transpile)."""
     qc = QuantumCircuit(1)
     qc.data = [MagicMock(op=MagicMock(name="some_gate", params=[]), qubits=[MagicMock()])]
     return qc
 
 
-def _mock_none_gate_circuit():
+def _mock_none_gate_circuit() -> QuantumCircuit:
     """Qrisp circuit with a gate mapping to None and no definition (rxx)."""
     qc = QuantumCircuit(2)
     mock_op = MagicMock()
@@ -253,7 +257,7 @@ def _mock_none_gate_circuit():
     return qc
 
 
-def _real_unknown_circuit():
+def _real_unknown_circuit() -> QuantumCircuit:
     """Circuit with a real operation not in gate_map and no definition."""
     from qrisp.circuit import Instruction, Operation
 
@@ -272,28 +276,29 @@ def _real_unknown_circuit():
     ],
     ids=["unknown_gate", "none_gate_no_definition", "real_unknown_no_progress"],
 )
-def test_convert_to_pyzx_raises(circuit_builder, match):
+def test_convert_to_pyzx_raises(circuit_builder: Callable[[], QuantumCircuit], match: str) -> None:
     """Verify convert_to_cirq raises ValueError for unsupported gates."""
     with pytest.raises(ValueError, match=match):
         qc = circuit_builder()
         qc.to_pyzx()
 
 
-def _build_pyzx_circuit_with_mock_gate():
+def _build_pyzx_circuit_with_mock_gate() -> Circuit:
     """Qrisp circuit with a MagicMock operation (triggers immediate exception during conversion)."""
     c = Circuit(1)
     c.add_gate(MagicMock(name="some_gate"), 0)
     return c
 
 
-def _build_pyzx_circuit_with_undecomposable_gate():
+def _build_pyzx_circuit_with_undecomposable_gate() -> Circuit:
     """Qrisp circuit with a gate with mock decomposition (triggers exception upon attempt to decompose gate)."""
     c = Circuit(2)
     from pyzx.circuit import ParityPhase
 
     g = ParityPhase(0, 0, 1)
 
-    def _f():
+    def _f() -> list[pyzx_gates.Gate]:
+        """Return a decomposition that still contains the undecomposable gate."""
         return [ParityPhase(0, 0, 1)]
 
     g.to_basic_gates = _f
@@ -301,14 +306,14 @@ def _build_pyzx_circuit_with_undecomposable_gate():
     return c
 
 
-def test_error_pyzx_to_qrisp_mock_gate():
+def test_error_pyzx_to_qrisp_mock_gate() -> None:
     """from_pyzx raises ValueError for a gate unknown to PyZX."""
     c = _build_pyzx_circuit_with_mock_gate()
     with pytest.raises(ValueError, match="of PyZX is unknown"):
         QuantumCircuit.from_pyzx(c)
 
 
-def test_error_pyzx_to_qrisp_undecomposable_gate():
+def test_error_pyzx_to_qrisp_undecomposable_gate() -> None:
     """from_pyzx raises ValueError for a gate PyZX cannot decompose."""
     c = _build_pyzx_circuit_with_undecomposable_gate()
     with pytest.raises(ValueError, match="cannot be decomposed either"):
@@ -417,7 +422,7 @@ PYZX_GATE_SPECS = {
 }
 
 
-def pyzx_gate_instance(name):
+def pyzx_gate_instance(name: str) -> pyzx_gates.Gate:
     """Return a fresh instance of the named PyZX gate."""
     gate_cls, args, kwargs = PYZX_GATE_SPECS[name]
     return gate_cls(*args, **kwargs)
@@ -430,7 +435,7 @@ PYZX_UNSUPPORTED = {"FSim", "InitAncilla", "PostSelect", "DiscardBit", "Conditio
 PYZX_KNOWN_GAPS = {"PhaseGadget"}
 
 
-def pyzx_gap_params():
+def pyzx_gap_params() -> list:
     """Parametrize PyZX gates not covered by the pre-existing fixtures."""
     params = []
     for name in sorted(PYZX_GATE_SPECS):
@@ -449,7 +454,7 @@ def pyzx_gap_params():
 
 
 @pytest.mark.parametrize("key", sorted(pyzx_gates.gate_types))
-def test_pyzx_gate_key_smoke(key):
+def test_pyzx_gate_key_smoke(key: str) -> None:
     """Every PyZX gate key either converts or raises a clear ValueError."""
     canonical = PYZX_ALIASES.get(key, key)
     c = Circuit(4, bit_amount=1)
@@ -462,7 +467,7 @@ def test_pyzx_gate_key_smoke(key):
 
 
 @pytest.mark.parametrize("name, expect_raise", pyzx_gap_params())
-def test_pyzx_gap_gate(name, expect_raise):
+def test_pyzx_gap_gate(name: str, expect_raise: bool) -> None:
     """PyZX gates absent from the fixtures convert or raise as expected."""
     c = Circuit(4)
     c.add_gate(pyzx_gate_instance(name))
@@ -513,7 +518,7 @@ QRISP_GATE_SPECS = {
 }
 
 
-def qrisp_gate_circuit(name):
+def qrisp_gate_circuit(name: str) -> QuantumCircuit:
     """Build a fresh Qrisp circuit containing the named standard gate."""
     num_qubits, method, args = QRISP_GATE_SPECS[name]
     qc = QuantumCircuit(num_qubits)
@@ -559,7 +564,7 @@ QRISP_KNOWN_GAPS = {"u1", "r", "barrier"}
 
 
 @pytest.mark.parametrize("name", sorted(QRISP_GATE_SPECS))
-def test_qrisp_gate_smoke(name):
+def test_qrisp_gate_smoke(name: str) -> None:
     """Every Qrisp standard gate converts or raises a clear ValueError."""
     try:
         result = qrisp_gate_circuit(name).to_pyzx()
@@ -568,7 +573,7 @@ def test_qrisp_gate_smoke(name):
     assert isinstance(result, Circuit)
 
 
-def qrisp_gap_params():
+def qrisp_gap_params() -> list:
     """Parametrize Qrisp gates not covered by the pre-existing fixtures."""
     params = []
     for name in sorted(QRISP_GATE_SPECS):
@@ -591,12 +596,12 @@ def qrisp_gap_params():
 
 
 @pytest.mark.parametrize("name", qrisp_gap_params())
-def test_qrisp_gap_gate(name):
+def test_qrisp_gap_gate(name: str) -> None:
     """Qrisp gates absent from the fixtures convert as expected."""
     assert isinstance(qrisp_gate_circuit(name).to_pyzx(), Circuit)
 
 
-def test_empty_circuit_smoke():
+def test_empty_circuit_smoke() -> None:
     """Empty circuits convert in both directions without error."""
     c = QuantumCircuit(0).to_pyzx()
     assert isinstance(c, Circuit)
@@ -612,7 +617,7 @@ QRISP_GAP_SUPPORTED = sorted(set(QRISP_GATE_SPECS) - QRISP_FIXTURE_GATES - QRISP
 
 
 @pytest.mark.parametrize("name", QRISP_GAP_SUPPORTED)
-def test_qrisp_gap_gate_roundtrip(name):
+def test_qrisp_gap_gate_roundtrip(name: str) -> None:
     """Gap gates that convert survive a Qrisp -> PyZX -> Qrisp round-trip."""
     qc = qrisp_gate_circuit(name)
     qc2 = QuantumCircuit.from_pyzx(qc.to_pyzx())
@@ -621,7 +626,7 @@ def test_qrisp_gap_gate_roundtrip(name):
 
 
 @pytest.mark.xfail(reason="known bug: classical destination is dropped on Qrisp -> PyZX", strict=True)
-def test_measurement_destination_qrisp_to_pyzx():
+def test_measurement_destination_qrisp_to_pyzx() -> None:
     """A measurement's explicit clbit must survive as a PyZX result_bit."""
     qc = QuantumCircuit(2)
     qc.measure(0, qc.add_clbit())
@@ -629,7 +634,7 @@ def test_measurement_destination_qrisp_to_pyzx():
 
 
 @pytest.mark.xfail(reason="known bug: Qrisp -> PyZX measurements have no QASM destination", strict=True)
-def test_measurement_qasm_export_qrisp_to_pyzx():
+def test_measurement_qasm_export_qrisp_to_pyzx() -> None:
     """A converted measurement must carry the destination required by QASM."""
     qc = QuantumCircuit(2)
     qc.measure(0, qc.add_clbit())
@@ -637,7 +642,7 @@ def test_measurement_qasm_export_qrisp_to_pyzx():
 
 
 @pytest.mark.xfail(reason="known bug: result_bit is dropped on PyZX -> Qrisp", strict=True)
-def test_measurement_destination_pyzx_to_qrisp():
+def test_measurement_destination_pyzx_to_qrisp() -> None:
     """PyZX measurements sharing a result_bit must share a Qrisp clbit."""
     c = Circuit(2, bit_amount=2)
     c.add_gate("Measurement", 0, result_bit=1)
