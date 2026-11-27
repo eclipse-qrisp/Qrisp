@@ -35,6 +35,37 @@ if TYPE_CHECKING:
     from qrisp import Clbit, Operation, Qubit
 
 
+MIN_PYZX_VERSION = "0.10.1"
+_REQUIRED_PYZX_GATES = frozenset({"Y", "CY", "RXX", "RZZ", "Reset", "U2", "U3"})
+
+
+def _check_pyzx_compatibility(pyzx_module: object, circuit_cls: type, gate_types: dict[str, object]) -> None:
+    """Raise a clear ``ImportError`` if the installed PyZX lacks required features.
+
+    Parameters
+    ----------
+    pyzx_module : object
+        The imported ``pyzx`` module.
+    circuit_cls : type
+        The PyZX ``Circuit`` class.
+    gate_types : dict[str, object]
+        Mapping of PyZX gate names to gate classes.
+
+    Raises
+    ------
+    ImportError
+        If required gate types or ``Circuit.bits`` are unavailable.
+
+    """
+    version = getattr(pyzx_module, "__version__", "unknown")
+    missing = sorted(_REQUIRED_PYZX_GATES.difference(gate_types))
+    if not missing and hasattr(circuit_cls(0), "bits"):
+        return
+
+    details = f"; missing gate types: {', '.join(missing)}" if missing else ""
+    raise ImportError(f"PyZX >= {MIN_PYZX_VERSION} is required by the Qrisp PyZX converter (found {version}{details}).")
+
+
 def _to_float(value: object, description: str = "parameter") -> float:
     """Convert a numeric value to float, raising a clear error for symbolic values.
 
@@ -249,6 +280,36 @@ def _transpile(
     )
 
 
+def _check_ctrl_state(op: Operation) -> None:
+    """Raise if a controlled operation uses non-default (``|0>``) controls.
+
+    Qrisp keeps the operation name (for example ``"cx"``) when a control is
+    inverted via ``ctrl_state``. Since PyZX has no equivalent of an inverted
+    control, such operations must be rejected instead of silently converted as
+    if they triggered on ``|1>``.
+
+    Parameters
+    ----------
+    op : qrisp.Operation
+        The operation to inspect.
+
+    Raises
+    ------
+    ValueError
+        If the operation has a control state other than all ones.
+
+    """
+    ctrl_state = getattr(op, "ctrl_state", None)
+    controls = getattr(op, "controls", None)
+    if ctrl_state is None or controls is None:
+        return
+    if set(str(ctrl_state)) != {"1"}:
+        raise ValueError(
+            f"Controlled operation {op.name!r} with ctrl_state={ctrl_state!r} is not supported. "
+            "Only controls that trigger on |1> are supported by the PyZX converter."
+        )
+
+
 def _skip_operation(pyzx_circuit: Circuit, qubits: list[int], params: list[float]) -> None:
     """Drop an operation that has no PyZX representation."""
     return None
@@ -290,12 +351,14 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
     Raises
     ------
     ImportError
-        If PyZX is not installed.
+        If PyZX is not installed or older than ``0.10.1``.
     ValueError
         If a gate is not supported by the converter or a parameter is symbolic.
 
     Notes
     -----
+    Requires PyZX >= 0.10.1.
+
     Unknown gates are decomposed by Qrisp's transpiler before conversion.
     The converter transpiles all unknown gates together, then checks if any
     new unknown gates appeared.  This repeats until all gates are known
@@ -347,9 +410,13 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
 
     """
     try:
+        import pyzx
         from pyzx import Circuit
+        from pyzx.circuit import gates as pyzx_gates
     except ImportError as exc:
         raise ImportError("PyZX must be installed to be able to use the Qrisp to PyZX converter.") from exc
+
+    _check_pyzx_compatibility(pyzx, Circuit, pyzx_gates.gate_types)
 
     gate_map: dict[str, str | Callable[..., None]] = {
         "cx": "CNOT",
@@ -404,6 +471,8 @@ def convert_to_pyzx(qrisp_circuit: QuantumCircuit) -> Circuit:
         clbit_map[c] = i
 
     for instr in qrisp_circuit.data:
+        _check_ctrl_state(instr.op)
+
         name = instr.op.name
         params = instr.op.params if hasattr(instr.op, "params") else []
         pyzx_op_qubits = [qubit_map[qubit] for qubit in instr.qubits]
@@ -493,6 +562,8 @@ def convert_from_pyzx(pyzx_circuit: Circuit) -> QuantumCircuit:
 
     Notes
     -----
+    Requires PyZX >= 0.10.1.
+
     Gates that exist in PyZX but not in Qrisp are either substituted directly if they
     have a straightforward equivalent (which applies to U2 and several controlled
     gates), or PyZX's ``to_basic_gates()`` method is used to decompose them.
