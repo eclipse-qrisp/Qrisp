@@ -187,6 +187,13 @@ Improvements
   docstring, more specific exceptions and dedicated tests
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
 
+- Refactored :func:`control <qrisp.control>`. It is typed with overloads, accepts
+  a tuple of controls and raises a ``TypeError`` for unsupported or mixed controls.
+  It is documented on the :ref:`ControlEnvironment <ControlEnvironment>` page with
+  examples that run under doctest, and its tests are consolidated into dedicated
+  files for static and Jasp mode
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
+
 - **Faster resource estimation of modular multiplications in Jasp**
   The classical constants of the multiplication of a
   :class:`~qrisp.QuantumModulus` by a classical factor are now computed by
@@ -570,6 +577,16 @@ Bug Fixes
   ``ValueError`` for a :class:`~qrisp.QuantumArray` whose elements have
   several qubits. Every qubit of the array now gets its own classical bit
   (`PR #912 <https://github.com/eclipse-qrisp/Qrisp/pull/912>`_).
+
+* :func:`control <qrisp.control>` now honors ``invert=True`` for classical
+  control outside of Jasp mode and for quantum control in Jasp mode, where it
+  was ignored. In Jasp mode, Python booleans and traced integers were negated and
+  combined bitwise (``~True`` is ``-2``), so ``invert=True``, a ``0`` in
+  ``ctrl_state`` and several integer controls gave wrong results: they are now
+  converted to booleans first. Outside of Jasp mode, a classical control block
+  that does not take effect no longer discards a ``KeyboardInterrupt`` or
+  ``SystemExit`` raised in its body
+  (`PR #1023 <https://github.com/eclipse-qrisp/Qrisp/pull/1023>`_).
 
 * The multiplication of a :class:`~qrisp.QuantumModulus` by a classical factor
   (``qm *= X`` and ``qm * X``, and ``QuantumArray @ matrix``) now chooses the
