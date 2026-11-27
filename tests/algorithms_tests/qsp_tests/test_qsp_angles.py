@@ -46,6 +46,9 @@ from qrisp.algorithms.gqsp.gqsp_angles_verification import (
         np.array([1.3, 0.3, 0.2, 0.1, 0.9, -0.4, 0.6, 0.3]),
         np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]),
         np.array([0.1, 0.3, 0.0, -0.2, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]),
+        # Complex coefficients
+        np.array([0.5, 0.5j]),
+        np.array([0.1, 0.3j, 0.0, -0.2, 0.1 + 0.5j, 0.7j]),
     ],
 )
 def test_gqsp_polynomial(target_coeffs):
@@ -70,6 +73,9 @@ def test_gqsp_polynomial(target_coeffs):
         np.array([1.3, 0.3, 0.2, 0.1, 0.9, -0.4, 0.6, 0.3]),
         np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]),
         np.array([0.1, 0.3, 0.0, -0.2, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]),
+        # Complex coefficients
+        np.array([0.5, 0.5j]),
+        np.array([0.1, 0.3j, 0.0, -0.2, 0.1 + 0.5j, 0.7j]),
     ],
 )
 def test_nlft_sequence(target_coeffs):

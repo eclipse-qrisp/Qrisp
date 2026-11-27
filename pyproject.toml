@@ -1,13 +1,12 @@
 [build-system]
 requires = [
-    "setuptools>=61", # first version that reads [project] and [tool.setuptools] from pyproject.toml
-    "wheel"
+    "setuptools>=77.0.3", # first version with full PEP 639 support for SPDX license expressions
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "qrisp"
-version = "0.9.9"
+version = "0.9.10"
 authors = [
     {name = "The Qrisp authors"},
 ]
@@ -16,7 +15,6 @@ readme = "README.md"
 requires-python = ">=3.11, <3.14"
 classifiers = [
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
@@ -26,12 +24,17 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Quantum Computing",
     "Topic :: Software Development :: Compilers",
 ]
-license = {text = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"}
+license = "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0"
+license-files = ["LICENSE"]
 
 dependencies = [
     "numpy>=2.0,<2.5",
-    "sympy<=1.13",
-    "qiskit>=0.44.0",
+    "sympy>=1.13,<1.15",
+    # qiskit 2.6.0 takes up almost all of glibc's static TLS reserve on Linux,
+    # so libgomp (bundled by qiskit-aer, pyscf, pennylane-lightning) fails to
+    # load after `import qrisp` with "cannot allocate memory in static TLS block"
+    # This has been fixed in qiskit 2.6.1 with issue #17213.
+    "qiskit>=0.45.0,!=2.6.0",
     "matplotlib>=3.5.1",
     "scipy>=1.10.0",
     "numba",
@@ -47,27 +50,29 @@ dependencies = [
 aqt = ["qiskit-aqt-provider>=1.15.0"]
 qiskit = ["qiskit-aer", "qiskit-ibm-runtime"]
 iqm = [
-    "iqm-client[qrisp]"
+    # The qrisp extra (and iqm.qrisp_iqm) exists only from 35.0.0 on. Without
+    # this floor pip can backtrack to an older iqm-client, drop the extra with
+    # just a warning, and silently install no IQM backend.
+    "iqm-client[qrisp]>=35.0.0"
 ]
 catalyst = ["pennylane-catalyst==0.15.0", "pennylane"]
 xdsl = ["xdsl==0.59.0"]
+cudaq = ["qrisp-cudaq"]
 docs = [
-    "sphinx>=7,<9", # sphinx_toolbox.sidebar_links not compatible with Sphinx 9
-    "sphinx-toolbox==4.1.2",
+    "sphinx>=7,<10",
     "nbsphinx==0.9.8",
-    "ipykernel==7.3.0",
-    "myst-parser==5.1.0",
+    "ipykernel==7.4.0",
+    # texext's math_dollar converts $...$ in docstrings/RST to :math:`...`
     "texext==0.6.8",
-    "numpydoc==1.10.0",
+    "numpydoc==1.11.0",
     "sphinx-sitemap==2.9.0",
     "sphinx-copybutton==0.5.2",
     "sphinx-design==0.7.0",
     "sphinx-thebe==0.3.1",
-    "sphinx-new-tab-link==0.8.1",
-    "pydata-sphinx-theme==0.17.1",
+    "pydata-sphinx-theme==0.23.0",
 ]
 dev-code-style = [
-    "ruff==0.16.5",
+    "ruff==0.17.0",
 ]
 dev-testing = [
     "pytest==9.1.1",
@@ -77,7 +82,7 @@ dev-testing = [
     "cirq",
     "pyzx>=0.10.1,<=0.10.7",
     "tqecd",
-    "iqm-client[qrisp]",
+    "iqm-client[qrisp]>=35.0.0",
 ]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
@@ -89,6 +94,9 @@ dev = [
 # the release of the Qiskit SDK v2.x series and no longer receives bug fixes,
 # security updates, or other patches
 # (https://www.ibm.com/quantum/blog/qiskit-2-5-release-summary).
+# cudaq is intentionally excluded from `all`: the Qrisp test suites do not
+# exercise the CUDA-Q backend, so installing CUDA-Q in every CI job only costs
+# time. The CUDA-Q tests run in eclipse-qrisp/qrisp-cudaq.
 all = [
     "qrisp[qiskit,iqm,catalyst,xdsl,docs,dev]",
 ]
@@ -96,6 +104,13 @@ all = [
 [project.urls]
 Homepage = "https://github.com/eclipse-qrisp/Qrisp"
 "Bug Tracker" = "https://github.com/eclipse-qrisp/Qrisp/issues"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
 
 [tool.setuptools.package-data]
 # PEP 561 marker telling type checkers that qrisp ships inline type annotations

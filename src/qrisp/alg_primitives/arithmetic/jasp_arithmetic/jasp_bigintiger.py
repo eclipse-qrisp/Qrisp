@@ -22,12 +22,39 @@ from dataclasses import dataclass
 import jax
 import jax.core
 import jax.numpy as jnp
+import numpy as np
 from jax import lax
 from jax.tree_util import register_pytree_node_class
 
 BASE = 2**32
 DTYPE = jnp.uint32
 BASE_FL = float(BASE)
+
+
+def _static_digits(n, size) -> np.ndarray:
+    """Return the limbs of ``BigInteger.create_static(n, size)`` as a NumPy array.
+
+    Unlike a JAX array, the NumPy array is not traced in Jasp mode, so it can fill
+    tables of classical constants that are computed while a program is traced.
+
+    Parameters
+    ----------
+    n : int or float
+        Non-negative number. Floats are truncated.
+    size : int
+        Number of limbs (digits).
+
+    Returns
+    -------
+    np.ndarray
+        The `size` little-endian limbs of `n` modulo 2^(32*size), of dtype `DTYPE`.
+
+    """
+    digits = []
+    for _ in range(size):
+        digits.append(n % BASE)
+        n //= BASE
+    return np.array(digits, dtype=DTYPE)
 
 
 @register_pytree_node_class
@@ -139,12 +166,7 @@ class BigInteger:
         """
         if n < 0:
             raise ValueError(f"Input must be non-negative, got {n}.")
-
-        digits = []
-        for _ in range(size):
-            digits.append(n % BASE)
-            n //= BASE
-        return BigInteger(jnp.array(digits, dtype=DTYPE))
+        return BigInteger(jnp.array(_static_digits(n, size)))
 
     @staticmethod
     def create(n, size) -> "BigInteger":

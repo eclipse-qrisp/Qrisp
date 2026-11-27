@@ -17,6 +17,7 @@
 """Tests the quantum carry-lookahead adder (qcla) carry generation and addition for qq and cq cases."""
 
 import numpy as np
+import pytest
 
 from qrisp import (
     QuantumBool,
@@ -25,12 +26,27 @@ from qrisp import (
     bin_rep,
     control,
     cq_calc_carry,
+    cq_qcla,
     h,
     multi_measurement,
     qcla,
     qq_calc_carry,
+    qq_qcla,
     x,
 )
+from qrisp.misc.exceptions import QrispDeprecationWarning
+
+
+def test_qcla_deprecation_warning():
+    """The QCLA entry points emit a deprecation warning announcing removal in v0.12."""
+    with pytest.warns(QrispDeprecationWarning, match="QCLA.*v0.12"):
+        qcla(QuantumFloat(3), QuantumFloat(3))
+
+    with pytest.warns(QrispDeprecationWarning, match="QCLA.*v0.12"):
+        cq_qcla(3, QuantumFloat(3))
+
+    with pytest.warns(QrispDeprecationWarning, match="QCLA.*v0.12"):
+        qq_qcla(QuantumFloat(3), QuantumFloat(3))
 
 
 def test_qq_carry_generation():
