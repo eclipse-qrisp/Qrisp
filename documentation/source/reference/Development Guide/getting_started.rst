@@ -114,7 +114,7 @@ machine. This gives you a clean baseline to compare against.
 **Windows**
 
 .. note::
-    Because certain unsupported dependencies are missing on Windows, you must ignore specific interface and JAX tests when running the suite:
+    Because certain unsupported dependencies (pyscf, pennylane-catalyst) are not supported on Windows, you must ignore specific interface and JAX tests when running the suite:
 
 .. code-block:: bash
 
