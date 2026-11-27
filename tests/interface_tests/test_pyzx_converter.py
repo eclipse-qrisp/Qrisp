@@ -238,6 +238,16 @@ def test_qrisp_transpilation() -> None:
     _test_roundtrip(qc)
 
 
+def test_convert_from_pyzx_does_not_mutate_input() -> None:
+    """Converting a phase gadget must not change the source PyZX circuit."""
+    c = Circuit(3)
+    c.add_gate("PhaseGadget", Fraction(1, 2), 0, 1, 2)
+
+    QuantumCircuit.from_pyzx(c)
+
+    assert c.gates[0].as_gadget is True
+
+
 def test_non_unitaries() -> None:
     """Test measurement and reset"""
     qc = QuantumCircuit(2, 1)

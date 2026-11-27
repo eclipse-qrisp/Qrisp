@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Callable
 from fractions import Fraction
 from functools import partial
@@ -70,6 +71,30 @@ def _phase(angle: float, max_denominator: int = 1024, tol: float = 1e-9) -> Frac
     x = float(angle) / np.pi
     fraction = Fraction(x).limit_denominator(max_denominator)
     return fraction if abs(float(fraction) - x) < tol else Fraction(x)
+
+
+def _ungadget(gate: Gate) -> Gate:
+    """Return a copy of ``gate`` with the phase-gadget flag disabled.
+
+    A copy is made for parity-phase gadgets so that converting a PyZX circuit
+    does not mutate the caller's gate objects.
+
+    Parameters
+    ----------
+    gate : pyzx.circuit.gates.Gate
+        The gate to inspect.
+
+    Returns
+    -------
+    pyzx.circuit.gates.Gate
+        The original gate, or an un-gadgetted copy if it is a parity phase.
+
+    """
+    if gate.name != "ParityPhase":
+        return gate
+    result = copy.copy(gate)
+    result.as_gadget = False
+    return result
 
 
 def _transpile(qrisp_circuit: QuantumCircuit, gate_map: dict[str, str | None]) -> QuantumCircuit:
@@ -468,10 +493,8 @@ def convert_from_pyzx(pyzx_circuit: Circuit) -> QuantumCircuit:
             if gate_map[gate.name] is not None:
                 add_gate(gate)
             else:
-                # try with pyzx's basic gate decomposition
-                if gate.name == "ParityPhase":
-                    gate.as_gadget = False
-                for _gate in gate.to_basic_gates():
+                # Try with PyZX's basic gate decomposition.
+                for _gate in _ungadget(gate).to_basic_gates():
                     if _gate.name in gate_map and gate_map[_gate.name] is not None:
                         add_gate(_gate)
                     else:
