@@ -48,7 +48,7 @@ For development you will also want the test and documentation dependencies:
    * - ``dev``
      - Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf)
    * - ``dev-windows``
-     - Same as ``dev`` but without pyscf, for Windows
+     - Same as ``dev`` but without ``pyscf``, for Windows
    * - ``docs``
      - Sphinx and related extensions for building the documentation
    * - ``aqt``
@@ -68,7 +68,7 @@ For development you will also want the test and documentation dependencies:
        ``xdsl``) for a complete development environment
    * - ``all-windows``
      - Windows version of ``all``: the base install plus ``dev-windows``, ``docs``,
-       ``qiskit`` and  ``iqm``. Like ``all``, it leaves out ``aqt``
+       ``qiskit`` and  ``iqm``. It leaves out ``aqt``, and ``catalyst`` because they are not supported on Windows.
 
 Include the groups you need in brackets, either at install time or later:
 
