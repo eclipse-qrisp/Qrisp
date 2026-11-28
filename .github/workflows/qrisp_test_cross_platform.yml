@@ -1,0 +1,85 @@
+name: Qrisp unit tests via Pytest on Windows and macOS
+
+on:
+  push:
+    branches:
+      - main
+  # TEMPORARY: run on pull requests so the Windows/macOS setup can be checked
+  # before merging. Remove this trigger before the PR is merged.
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    branches:
+      - main
+      - multiple_environments_dev
+      - multiple_enviroments
+
+permissions:
+  contents: read
+
+# No concurrency group on purpose: every push to main must run to completion so
+# that a failure points to a single commit.
+
+jobs:
+  build:
+    name: Test Py${{ matrix.python-version }} on ${{ matrix.os }} (${{ matrix.test-group-name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        # Actual dimensions that need to be multiplied out
+        os: [macos-latest, windows-latest]
+        python-version: ["3.11.*", "3.12.*", "3.13.*"]
+        test-group-name: [core, algorithms-and-integrations]
+
+        include:
+          # Map paths to test groups globally
+          - test-group-name: core
+            test-group-paths: "tests/circuit_tests tests/core_tests tests/primitives_tests tests/jax_tests tests/test_typing.py tests/simulator_tests"
+          - test-group-name: algorithms-and-integrations
+            test-group-paths: "tests/algorithms_tests tests/operators_tests tests/block_encodings_tests tests/interface_tests tests/stim_integration_tests"
+
+          # Assign pip-extras based on OS type
+          - os: macos-latest
+            pip-extras: "[dev,catalyst,xdsl,iqm]"
+          - os: windows-latest
+            pip-extras: "[dev-windows,xdsl,iqm]"
+
+          # Inject specific pytest flags for Windows test groups
+          - os: windows-latest
+            test-group-name: core
+            # pennylane-catalyst ships no Windows wheels, so qjit cannot run here,
+            # and most tests in these two files call qjit without checking that
+            # catalyst is installed.
+            pytest-flags: '--ignore=tests/jax_tests/test_catalyst_interface.py --ignore=tests/jax_tests/test_qubit_array_fusion.py'
+          - os: windows-latest
+            test-group-name: algorithms-and-integrations
+            # This module imports pennylane at the top, and pennylane is only
+            # installed through the catalyst extra, which Windows cannot use.
+            pytest-flags: '--ignore=tests/interface_tests/test_converter_qrisp_to_qml.py'
+
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".${{ matrix.pip-extras }}"
+      - name: Test with pytest (${{ matrix.test-group-name }})
+        shell: bash
+        run: |
+          pytest ${{ matrix.test-group-paths }} ${{ matrix.pytest-flags }}

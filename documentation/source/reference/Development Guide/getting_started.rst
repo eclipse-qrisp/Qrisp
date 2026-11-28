@@ -28,6 +28,17 @@ For development you will also want the test and documentation dependencies:
 
     pip install -e ".[dev,docs]"
 
+**Windows**
+
+.. note::
+    The ``dev`` dependency group includes ``pyscf``, which is not supported on Windows.
+    Windows users should install ``dev-windows`` instead. It contains the same test and
+    code-style tools as ``dev``, without ``pyscf``:
+
+.. code-block:: bash
+
+    pip install -e ".[dev-windows,docs]"
+
 .. list-table:: Optional dependency groups
    :header-rows: 1
    :widths: 15 40
@@ -36,29 +47,38 @@ For development you will also want the test and documentation dependencies:
      - What it installs
    * - ``dev``
      - Test runner (pytest), simulators (qiskit-aer, cirq), and chemistry (pyscf)
+   * - ``dev-windows``
+     - Same as ``dev`` but without ``pyscf``, for Windows
    * - ``docs``
      - Sphinx and related extensions for building the documentation
    * - ``aqt``
-     - Client for AQT quantum hardware
+     - Client for AQT quantum hardware. Its pytest plugin only loads when
+       ``pytest-httpx`` is installed, so install that as well if you run the tests
    * - ``qiskit``
      - Qiskit Aer simulator and IBM Quantum Runtime hardware
    * - ``iqm``
      - Client for IQM quantum hardware
    * - ``catalyst``
-     - PennyLane Catalyst JIT compiler
+     - PennyLane Catalyst JIT compiler *(Not supported on Windows)*
    * - ``xdsl``
      - xDSL compiler infrastructure
    * - ``all``
      - Everything except ``aqt``: the base install plus ``dev``, ``docs``, and
        every backend/client/compiler extra (``qiskit``, ``iqm``, ``catalyst``,
        ``xdsl``) for a complete development environment
+   * - ``all-windows``
+     - Windows version of ``all``: the base install plus ``dev-windows``, ``docs``,
+       ``qiskit`` and  ``iqm``. It leaves out ``aqt``, and ``catalyst`` because they are not supported on Windows.
 
 Include the groups you need in brackets, either at install time or later:
 
 .. code-block:: bash
 
-    # Everything (base install plus every optional group)
+    # Everything (base install plus every optional group) (Linux/macOS)
     pip install -e ".[all]"
+
+    # Everything that is supported on Windows
+    pip install -e ".[all-windows]"
 
     # Or individual groups after the base install
     pip install -e ".[dev]"
@@ -84,10 +104,26 @@ Running the test suite
 Before making any changes, confirm that the existing test suite passes on your
 machine. This gives you a clean baseline to compare against.
 
+**Linux and macOS**
+
 .. code-block:: bash
 
     # Run the full suite (note: this currently takes up to ~1 hour)
     pytest tests/
+
+**Windows**
+
+.. note::
+    Because certain unsupported dependencies (pyscf, pennylane-catalyst) are not supported on Windows, you must ignore specific interface and JAX tests when running the suite:
+
+.. code-block:: bash
+
+    # Run the full suite while ignoring unsupported dependency tests
+    pytest tests/ --ignore=tests/interface_tests/test_converter_qrisp_to_qml.py --ignore=tests/jax_tests/test_catalyst_interface.py --ignore=tests/jax_tests/test_qubit_array_fusion.py
+
+**Subsystem testing (All Platforms)**
+
+.. code-block:: bash
 
     # Run only a specific subsystem — much faster during development
     pytest tests/circuit_tests/

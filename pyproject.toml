@@ -74,18 +74,25 @@ docs = [
 dev-code-style = [
     "ruff==0.17.0",
 ]
-dev-testing = [
+dev-testing-windows = [
     "pytest==9.1.1",
     "pytest-cov>=6.0",
     "qiskit-aer",
-    "pyscf",
     "cirq",
     "tqecd",
     "iqm-client[qrisp]>=35.0.0",
 ]
+dev-testing = [
+    "qrisp[dev-testing-windows]",
+    "pyscf==2.15.0",
+]
 dev = [
     "qrisp[dev-code-style,dev-testing]",
 ]
+dev-windows = [
+    "qrisp[dev-code-style, dev-testing-windows]",
+]
+
 # aqt is intentionally excluded from `all` because qiskit-aqt-provider ships a
 # pytest plugin (qiskit_aqt_provider.test.fixtures) that fails to load when
 # pytest-httpx is not installed, breaking any pytest invocation. 
@@ -98,6 +105,12 @@ dev = [
 # time. The CUDA-Q tests run in eclipse-qrisp/qrisp-cudaq.
 all = [
     "qrisp[qiskit,iqm,catalyst,xdsl,docs,dev]",
+]
+# Windows counterpart of `all`: catalyst is left out because pennylane-catalyst
+# ships no Windows wheels, and dev-windows replaces dev because pyscf does not
+# support Windows. aqt and cudaq stay out for the same reasons as in `all`.
+all-windows = [
+    "qrisp[qiskit,iqm,xdsl,docs,dev-windows]",
 ]
 
 [project.urls]
